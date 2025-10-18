@@ -10,24 +10,60 @@ export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [dateOfBirth, setDateOfBirth] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [ageError, setAgeError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+
+  const calculateAge = (dob: string): number => {
+    const birthDate = new Date(dob)
+    const today = new Date()
+    let age = today.getFullYear() - birthDate.getFullYear()
+    const monthDiff = today.getMonth() - birthDate.getMonth()
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--
+    }
+    return age
+  }
+
+  const validatePassword = (password: string): { valid: boolean; errors: string[] } => {
+    const errors: string[] = []
+    
+    if (password.length < 8) errors.push('At least 8 characters')
+    if (!/[A-Z]/.test(password)) errors.push('One uppercase letter')
+    if (!/[a-z]/.test(password)) errors.push('One lowercase letter')
+    if (!/[0-9]/.test(password)) errors.push('One number')
+    if (!/[!@#$%^&*]/.test(password)) errors.push('One special character (!@#$%^&*)')
+    
+    return { valid: errors.length === 0, errors }
+  }
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
+    setAgeError(null)
 
-    // Validation
-    if (password !== confirmPassword) {
-      setError('Passwords do not match')
+    // Age verification
+    const age = calculateAge(dateOfBirth)
+    if (age < 18) {
+      setAgeError('You must be 18 or older to use SLTR')
       setLoading(false)
       return
     }
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters')
+    // Password validation
+    const passwordCheck = validatePassword(password)
+    if (!passwordCheck.valid) {
+      setError(`Password must have: ${passwordCheck.errors.join(', ')}`)
+      setLoading(false)
+      return
+    }
+
+    // Validation
+    if (password !== confirmPassword) {
+      setError('Passwords do not match')
       setLoading(false)
       return
     }
@@ -135,25 +171,50 @@ export default function SignupPage() {
             />
           </div>
 
-          <div>
+          {/* Date of Birth */}
+          <div className="glass-bubble p-4">
+            <label className="text-sm text-gray-400 mb-2 block">Date of Birth</label>
+            <input
+              type="date"
+              value={dateOfBirth}
+              onChange={(e) => setDateOfBirth(e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
+              className="w-full bg-transparent text-white outline-none"
+              required
+            />
+          </div>
+
+          <div className="glass-bubble p-4">
             <label htmlFor="password" className="sr-only">
               Password
             </label>
             <input
               id="password"
               type="password"
-              placeholder="Password (min 8 characters)"
+              placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-200"
-              style={{
-                background: 'rgba(255, 255, 255, 0.1)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '16px'
-              }}
+              className="w-full bg-transparent outline-none text-white placeholder-gray-400"
               required
-              minLength={8}
             />
+            {password && (
+              <div className="mt-2">
+                <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full transition-all ${
+                      validatePassword(password).valid 
+                        ? 'bg-green-500 w-full' 
+                        : 'bg-yellow-500 w-1/2'
+                    }`}
+                  />
+                </div>
+                {!validatePassword(password).valid && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    {validatePassword(password).errors.join(', ')}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <div>
@@ -194,6 +255,14 @@ export default function SignupPage() {
             {loading ? 'Creating Account...' : 'Sign Up'}
           </button>
         </form>
+
+        {/* Age Error Display */}
+        {ageError && (
+          <div className="glass-bubble bg-red-500/10 border-red-500/50 p-4 mb-4">
+            <p className="text-red-400 text-sm">{ageError}</p>
+            <p className="text-red-300 text-xs mt-2">SLTR is only available to adults 18+</p>
+          </div>
+        )}
 
         <div className="text-center mt-6">
           <p className="text-white/60 text-sm">
