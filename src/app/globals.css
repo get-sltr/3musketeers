@@ -1,3 +1,31 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  .glass-bubble {
+    @apply bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl transition-all duration-300;
+  }
+  
+  .glass-bubble:hover {
+    @apply bg-white/10 scale-[1.02] shadow-[0_0_30px_rgba(0,212,255,0.2)];
+  }
+  
+  .glass-bubble.active {
+    @apply bg-gradient-to-r from-[#00d4ff] to-[#ff00ff] border-0 scale-105;
+  }
+  
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+body {
+  background: #000000;
+  color: #ffffff;
+}
