@@ -14,7 +14,14 @@ interface Message {
 }
 
 export default function ConversationPage({ params }: { params: { id: string } }) {
-  if (!params?.id) return null
+  // Add this guard at the very start
+  if (!params?.id) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <p className="text-white">Invalid conversation</p>
+      </div>
+    )
+  }
   
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
