@@ -14,6 +14,8 @@ interface Message {
 }
 
 export default function ConversationPage({ params }: { params: { id: string } }) {
+  if (!params?.id) return null
+  
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
@@ -150,7 +152,7 @@ export default function ConversationPage({ params }: { params: { id: string } })
       
       const responseMessage: Message = {
         id: (Date.now() + 1).toString(),
-        senderId: params.id,
+        senderId: params.id || 'unknown',
         text: responses[Math.floor(Math.random() * responses.length)],
         timestamp: new Date(),
         isSent: false
