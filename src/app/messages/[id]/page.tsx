@@ -1,5 +1,6 @@
 'use client'
 
+// Phase 3 fixed
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
