@@ -165,8 +165,8 @@ export default async function ConversationPage({
       
       const responseMessage: Message = {
         id: (Date.now() + 1).toString(),
-        senderId: id || 'unknown',
-        text: responses[Math.floor(Math.random() * responses.length)],
+        senderId: (id || 'unknown') as string,
+        text: responses[Math.floor(Math.random() * responses.length)] as string,
         timestamp: new Date(),
         isSent: false
       }
