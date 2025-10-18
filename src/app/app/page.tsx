@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import GridView from '@/components/GridView'
 import MapView from '@/components/MapView'
 import FilterBar from '@/components/FilterBar'
+import PanicButton from '@/components/PanicButton'
 
 type ViewMode = 'grid' | 'map'
 
@@ -79,6 +80,15 @@ export default function AppPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </button>
+            <button 
+              onClick={() => router.push('/guidelines')} 
+              className="glass-bubble p-3 hover:bg-white/10 transition-all duration-300"
+              title="Community Guidelines"
+            >
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
           </div>
 
           {/* View Toggle */}
@@ -119,6 +129,9 @@ export default function AppPage() {
           <MapView />
         )}
       </main>
+
+      {/* Emergency Panic Button */}
+      <PanicButton />
     </div>
   )
 }

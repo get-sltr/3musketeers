@@ -10,6 +10,8 @@ export default function ProfilePage() {
   const [age, setAge] = useState('')
   const [bio, setBio] = useState('')
   const [photo, setPhoto] = useState('')
+  const [hideLocation, setHideLocation] = useState(false)
+  const [showExactDistance, setShowExactDistance] = useState(true)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -31,6 +33,14 @@ export default function ProfilePage() {
       setAge(user.user_metadata?.age || '')
       setBio(user.user_metadata?.bio || '')
       setPhoto(user.user_metadata?.photo || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400')
+      
+      // Load privacy settings
+      const privacySettings = localStorage.getItem('sltr_privacy')
+      if (privacySettings) {
+        const settings = JSON.parse(privacySettings)
+        setHideLocation(settings.hideLocation || false)
+        setShowExactDistance(settings.showExactDistance !== false)
+      }
     }
     loadProfile()
   }, [router, supabase.auth])
@@ -74,6 +84,15 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  const handleSavePrivacy = () => {
+    localStorage.setItem('sltr_privacy', JSON.stringify({
+      hideLocation,
+      showExactDistance
+    }))
+    setSuccess(true)
+    setTimeout(() => setSuccess(false), 3000)
   }
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -203,6 +222,55 @@ export default function ProfilePage() {
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </form>
+
+        {/* Privacy Settings */}
+        <div className="glass-bubble p-6 mb-4">
+          <h3 className="text-lg font-semibold mb-4">Privacy Settings</h3>
+          
+          <div className="space-y-4">
+            <label className="flex items-center justify-between cursor-pointer">
+              <span>Hide my location</span>
+              <input
+                type="checkbox"
+                checked={hideLocation}
+                onChange={(e) => setHideLocation(e.target.checked)}
+                className="toggle"
+              />
+            </label>
+
+            <label className="flex items-center justify-between cursor-pointer">
+              <span>Show exact distance</span>
+              <input
+                type="checkbox"
+                checked={showExactDistance}
+                onChange={(e) => setShowExactDistance(e.target.checked)}
+                className="toggle"
+              />
+            </label>
+
+            <p className="text-sm text-gray-400">
+              When location is hidden, only your city will be shown. When exact distance is off, it will show approximate distance.
+            </p>
+
+            <button
+              onClick={handleSavePrivacy}
+              className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 py-3 rounded-xl font-semibold"
+            >
+              Save Privacy Settings
+            </button>
+          </div>
+        </div>
+
+        {/* Guidelines Link */}
+        <div className="mb-4">
+          <Link
+            href="/guidelines"
+            className="glass-bubble p-4 flex items-center justify-between"
+          >
+            <span>Community Guidelines</span>
+            <span className="text-gray-400">→</span>
+          </Link>
+        </div>
 
         {/* Logout Button */}
         <div className="mt-8">

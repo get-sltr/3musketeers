@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { blockUser } from '@/lib/safety'
+import ReportModal from './ReportModal'
 
 interface User {
   id: string
@@ -31,6 +33,8 @@ export default function UserProfileModal({
   onReport
 }: UserProfileModalProps) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
+  const [showReportModal, setShowReportModal] = useState(false)
+  const [blocked, setBlocked] = useState(false)
   const router = useRouter()
 
   if (!isOpen || !user) return null
@@ -42,13 +46,16 @@ export default function UserProfileModal({
   }
 
   const handleBlock = () => {
-    onBlock?.(user.id)
-    onClose()
+    if (confirm(`Block ${user.username}? They won't be able to see your profile or message you.`)) {
+      blockUser(user.id, 'Blocked from profile')
+      setBlocked(true)
+      onBlock?.(user.id)
+      setTimeout(() => onClose(), 1000)
+    }
   }
 
   const handleReport = () => {
-    onReport?.(user.id)
-    onClose()
+    setShowReportModal(true)
   }
 
   const nextPhoto = () => {
@@ -195,8 +202,9 @@ export default function UserProfileModal({
             <button
               onClick={handleBlock}
               className="flex-1 glass-bubble py-3 rounded-2xl text-white/80 font-medium hover:bg-red-500/10 hover:text-red-400 transition-all duration-300"
+              disabled={blocked}
             >
-              🚫 Block
+              {blocked ? 'Blocked' : '🚫 Block'}
             </button>
             <button
               onClick={handleReport}
@@ -207,6 +215,17 @@ export default function UserProfileModal({
           </div>
         </div>
       </div>
+
+      {/* Report Modal */}
+      <ReportModal
+        userId={user.id}
+        username={user.username}
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        onSuccess={() => {
+          alert('Thank you for your report. Our team will review it shortly.')
+        }}
+      />
     </div>
   )
 }
