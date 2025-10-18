@@ -13,9 +13,14 @@ interface Message {
   isSent: boolean
 }
 
-export default function ConversationPage({ params }: { params: { id: string } }) {
-  // Add this guard at the very start
-  if (!params?.id) {
+export default async function ConversationPage({ 
+  params 
+}: { 
+  params: Promise<{ id: string }> 
+}) {
+  const { id } = await params
+  
+  if (!id) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <p className="text-white">Invalid conversation</p>
@@ -50,7 +55,7 @@ export default function ConversationPage({ params }: { params: { id: string } })
     }
   }
 
-  const conversation = mockConversations[params.id as keyof typeof mockConversations] || {
+  const conversation = mockConversations[id as keyof typeof mockConversations] || {
     username: 'Unknown',
     photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400',
     isOnline: false
@@ -60,7 +65,7 @@ export default function ConversationPage({ params }: { params: { id: string } })
   const mockMessages: Message[] = [
     {
       id: '1',
-      senderId: params.id || 'unknown',
+      senderId: id || 'unknown',
       text: 'Hey! How are you doing today?',
       timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
       isSent: false
@@ -74,7 +79,7 @@ export default function ConversationPage({ params }: { params: { id: string } })
     },
     {
       id: '3',
-      senderId: params.id || 'unknown',
+      senderId: id || 'unknown',
       text: 'Pretty good! Just working on some projects. What are you up to?',
       timestamp: new Date(Date.now() - 1000 * 60 * 20), // 20 minutes ago
       isSent: false
@@ -88,7 +93,7 @@ export default function ConversationPage({ params }: { params: { id: string } })
     },
     {
       id: '5',
-      senderId: params.id || 'unknown',
+      senderId: id || 'unknown',
       text: 'That sounds amazing! I\'d love to hear more about it sometime.',
       timestamp: new Date(Date.now() - 1000 * 60 * 10), // 10 minutes ago
       isSent: false
@@ -117,7 +122,7 @@ export default function ConversationPage({ params }: { params: { id: string } })
   useEffect(() => {
     // Load messages for this conversation
     setMessages(mockMessages)
-  }, [params.id])
+  }, [id])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -159,7 +164,7 @@ export default function ConversationPage({ params }: { params: { id: string } })
       
       const responseMessage: Message = {
         id: (Date.now() + 1).toString(),
-        senderId: params.id || 'unknown',
+        senderId: id || 'unknown',
         text: responses[Math.floor(Math.random() * responses.length)],
         timestamp: new Date(),
         isSent: false
