@@ -15,6 +15,10 @@
     @apply bg-gradient-to-r from-[#00d4ff] to-[#ff00ff] border-0 scale-105;
   }
   
+  .glass-card {
+    @apply bg-black/95 border border-white/20 backdrop-blur-2xl rounded-3xl;
+  }
+  
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
@@ -22,6 +26,44 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+  
+  .gradient-text {
+    background: linear-gradient(135deg, #00d4ff, #ff00ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .gradient-button {
+    background: linear-gradient(135deg, #00d4ff, #ff00ff);
+    border-radius: 16px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+  }
+  
+  .gradient-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+  }
+  
+  .sent-bubble {
+    background: linear-gradient(135deg, #00d4ff, #ff00ff);
+    border-radius: 20px 20px 4px 20px;
+    padding: 12px 16px;
+    max-width: 70%;
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+  }
+  
+  .received-bubble {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px 20px 20px 4px;
+    padding: 12px 16px;
+    max-width: 70%;
+    backdrop-filter: blur(10px);
   }
 }
 
