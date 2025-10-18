@@ -53,7 +53,7 @@ export default function ConversationPage({ params }: { params: { id: string } })
   const mockMessages: Message[] = [
     {
       id: '1',
-      senderId: params.id,
+      senderId: params.id || 'unknown',
       text: 'Hey! How are you doing today?',
       timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
       isSent: false
@@ -67,7 +67,7 @@ export default function ConversationPage({ params }: { params: { id: string } })
     },
     {
       id: '3',
-      senderId: params.id,
+      senderId: params.id || 'unknown',
       text: 'Pretty good! Just working on some projects. What are you up to?',
       timestamp: new Date(Date.now() - 1000 * 60 * 20), // 20 minutes ago
       isSent: false
@@ -81,7 +81,7 @@ export default function ConversationPage({ params }: { params: { id: string } })
     },
     {
       id: '5',
-      senderId: params.id,
+      senderId: params.id || 'unknown',
       text: 'That sounds amazing! I\'d love to hear more about it sometime.',
       timestamp: new Date(Date.now() - 1000 * 60 * 10), // 10 minutes ago
       isSent: false
