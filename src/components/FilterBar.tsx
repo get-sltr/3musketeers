@@ -11,10 +11,10 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
 
   const filters = [
     { id: 'online', label: 'Online' },
-    { id: 'dtfn', label: 'DTFN' },
-    { id: 'fresh', label: 'Fresh' },
+    { id: 'dtfn', label: '⚡ DTFN' },
+    { id: 'party', label: '🥳 Party' },
     { id: 'age', label: 'Age' },
-    { id: 'distance', label: 'Distance' },
+    { id: 'position', label: 'Position' },
   ]
 
   const toggleFilter = (filterId: string) => {

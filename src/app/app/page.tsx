@@ -28,7 +28,7 @@ export default function AppPage() {
       setLoading(false)
     }
     checkAuth()
-  }, [router])
+  }, [])
 
   if (loading) {
     return (
