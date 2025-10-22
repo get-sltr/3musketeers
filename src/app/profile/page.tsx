@@ -43,7 +43,7 @@ export default function ProfilePage() {
       }
     }
     loadProfile()
-  }, [router, supabase.auth])
+  }, [])
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()

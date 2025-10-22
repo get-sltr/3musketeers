@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import UserProfileModal from './UserProfileModal'
 
 interface User {
@@ -13,6 +14,9 @@ interface User {
   isOnline: boolean
   photos?: string[]
   bio?: string
+  position?: string
+  party_friendly?: boolean
+  dtfn?: boolean
 }
 
 interface GridViewProps {
@@ -22,122 +26,58 @@ interface GridViewProps {
 export default function GridView({ onUserClick }: GridViewProps) {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
   const router = useRouter()
-  const mockUsers: User[] = [
-    {
-      id: '1',
-      username: 'Alex',
-      age: 25,
-      photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop&crop=face',
-      distance: '0.5 mi',
-      isOnline: true,
-      photos: [
-        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop&crop=face',
-        'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop&crop=face',
-        'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop&crop=face'
-      ],
-      bio: 'Love hiking, photography, and good coffee. Always up for an adventure!'
-    },
-    {
-      id: '2',
-      username: 'Jordan',
-      age: 28,
-      photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop&crop=face',
-      distance: '1.2 mi',
-      isOnline: true,
-      photos: [
-        'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop&crop=face',
-        'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=600&fit=crop&crop=face'
-      ],
-      bio: 'Fitness enthusiast and foodie. Let\'s grab a workout and then some amazing food!'
-    },
-    {
-      id: '3',
-      username: 'Casey',
-      age: 23,
-      photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop&crop=face',
-      distance: '2.1 mi',
-      isOnline: false,
-      photos: [
-        'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop&crop=face',
-        'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=600&fit=crop&crop=face'
-      ],
-      bio: 'Artist and musician. Love creating and exploring new places.'
-    },
-    {
-      id: '4',
-      username: 'Riley',
-      age: 26,
-      photo: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=600&fit=crop&crop=face',
-      distance: '0.8 mi',
-      isOnline: true,
-      photos: [
-        'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=600&fit=crop&crop=face'
-      ],
-      bio: 'Tech professional by day, chef by night. Always experimenting with new recipes!'
-    },
-    {
-      id: '5',
-      username: 'Morgan',
-      age: 24,
-      photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=600&fit=crop&crop=face',
-      distance: '1.5 mi',
-      isOnline: false,
-      photos: [
-        'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=600&fit=crop&crop=face',
-        'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=600&fit=crop&crop=face'
-      ],
-      bio: 'Travel blogger and adventure seeker. Let\'s explore the world together!'
-    },
-    {
-      id: '6',
-      username: 'Taylor',
-      age: 27,
-      photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=600&fit=crop&crop=face',
-      distance: '3.2 mi',
-      isOnline: true,
-      photos: [
-        'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=600&fit=crop&crop=face'
-      ],
-      bio: 'Yoga instructor and wellness coach. Let\'s find balance together!'
-    },
-    {
-      id: '7',
-      username: 'Avery',
-      age: 22,
-      photo: 'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?w=400&h=600&fit=crop&crop=face',
-      distance: '0.3 mi',
-      isOnline: true,
-      photos: [
-        'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?w=400&h=600&fit=crop&crop=face'
-      ],
-      bio: 'Student and aspiring entrepreneur. Love learning and growing!'
-    },
-    {
-      id: '8',
-      username: 'Quinn',
-      age: 29,
-      photo: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=400&h=600&fit=crop&crop=face',
-      distance: '2.8 mi',
-      isOnline: false,
-      photos: [
-        'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=400&h=600&fit=crop&crop=face'
-      ],
-      bio: 'Engineer and outdoor enthusiast. Always up for a challenge!'
-    },
-    {
-      id: '9',
-      username: 'Sage',
-      age: 25,
-      photo: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=600&fit=crop&crop=face',
-      distance: '1.7 mi',
-      isOnline: true,
-      photos: [
-        'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=600&fit=crop&crop=face'
-      ],
-      bio: 'Writer and book lover. Let\'s discuss our favorite stories!'
+  const supabase = createClient()
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const { data: profiles, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('last_active', { ascending: false })
+
+        if (error) {
+          console.error('Error loading profiles:', error)
+          return
+        }
+
+        // Convert profiles to User format
+        const userList: User[] = profiles?.map(profile => ({
+          id: profile.id,
+          username: profile.display_name || 'Unknown',
+          age: profile.age || 18,
+          photo: profile.photo_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400',
+          distance: '0.5 mi', // TODO: Calculate real distance
+          isOnline: profile.online || false,
+          photos: [profile.photo_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400'],
+          bio: profile.about || '',
+          position: profile.position,
+          party_friendly: profile.party_friendly || false,
+          dtfn: profile.dtfn || false
+        })) || []
+
+        setUsers(userList)
+      } catch (err) {
+        console.error('Error loading users:', err)
+      } finally {
+        setLoading(false)
+      }
     }
-  ]
+
+    loadUsers()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white">Loading users...</div>
+      </div>
+    )
+  }
+
 
   const handleUserClick = (user: User) => {
     setSelectedUser(user)
@@ -162,7 +102,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-        {mockUsers.map(user => (
+        {users.length > 0 ? users.map(user => (
           <div 
             key={user.id}
             onClick={() => handleUserClick(user)}
@@ -186,6 +126,22 @@ export default function GridView({ onUserClick }: GridViewProps) {
                   }}
                 />
               )}
+
+              {/* Status Badges */}
+              {(user.party_friendly || user.dtfn) && (
+                <div className="absolute top-2 left-2 flex gap-1">
+                  {user.party_friendly && (
+                    <div className="glass-bubble px-2 py-1 text-sm">
+                      <span>🥳</span>
+                    </div>
+                  )}
+                  {user.dtfn && (
+                    <div className="glass-bubble px-2 py-1 text-sm">
+                      <span>⚡</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* User Info */}
@@ -200,9 +156,19 @@ export default function GridView({ onUserClick }: GridViewProps) {
               <p className="text-white/70 text-sm">
                 {user.distance} away
               </p>
+              {user.position && (
+                <p className="text-white/50 text-xs">
+                  {user.position}
+                </p>
+              )}
             </div>
           </div>
-        ))}
+        )) : (
+          <div className="col-span-full text-center py-12">
+            <div className="text-white/60 text-lg">No users found</div>
+            <div className="text-white/40 text-sm mt-2">Check back later for new profiles</div>
+          </div>
+        )}
       </div>
 
       {/* User Profile Modal */}
@@ -217,3 +183,4 @@ export default function GridView({ onUserClick }: GridViewProps) {
     </>
   )
 }
+

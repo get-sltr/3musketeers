@@ -81,19 +81,39 @@ export default function SignupPage() {
     }
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { username }
+        data: { 
+          username,
+          age: age,
+          date_of_birth: dateOfBirth
+        }
       }
     })
 
     if (error) {
       setError(error.message)
       setLoading(false)
-    } else {
-      // Show success message or redirect
+    } else if (data.user) {
+      // Create profile in profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: data.user.id,
+          email: data.user.email,
+          display_name: username,
+          age: age,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+
+      if (profileError) {
+        console.error('Profile creation error:', profileError)
+        // Still redirect to login even if profile creation fails
+      }
+      
       router.push('/login?message=Check your email to confirm your account')
     }
   }

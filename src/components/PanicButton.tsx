@@ -31,10 +31,10 @@ export default function PanicButton() {
     <>
       <button
         onClick={() => setShowConfirm(true)}
-        className="fixed bottom-20 right-4 w-14 h-14 bg-red-500 rounded-full shadow-lg flex items-center justify-center text-white text-2xl z-50 hover:bg-red-600 transition"
-        title="Emergency Exit"
+        className="fixed bottom-20 right-4 w-14 h-14 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full shadow-lg flex items-center justify-center text-white text-2xl z-50 hover:scale-110 transition-all duration-300"
+        title="AI Assistant"
       >
-        🚨
+        🤖
       </button>
 
       {showConfirm && (

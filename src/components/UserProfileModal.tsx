@@ -13,6 +13,9 @@ interface User {
   bio?: string
   distance?: string
   isOnline: boolean
+  position?: string
+  party_friendly?: boolean
+  dtfn?: boolean
 }
 
 interface UserProfileModalProps {
@@ -149,8 +152,15 @@ export default function UserProfileModal({
           {/* Name and Age */}
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-3xl font-bold text-white">{user.username}</h2>
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-3xl font-bold text-white">{user.username}</h2>
+                {user.party_friendly && <span className="text-2xl">🥳</span>}
+                {user.dtfn && <span className="text-2xl">⚡</span>}
+              </div>
               <p className="text-white/60 text-lg">{user.age} years old</p>
+              {user.position && (
+                <p className="text-white/50 text-sm">{user.position}</p>
+              )}
             </div>
             {user.distance && (
               <div className="glass-bubble px-3 py-1">
