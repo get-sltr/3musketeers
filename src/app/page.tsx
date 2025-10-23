@@ -45,7 +45,6 @@ export default function LandingPage() {
 
     window.addEventListener('mousemove', handleMouseMove)
     return () => {
-      clearInterval(timer)
       window.removeEventListener('mousemove', handleMouseMove)
     }
   }, [])
