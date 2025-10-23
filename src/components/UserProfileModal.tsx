@@ -63,13 +63,13 @@ export default function UserProfileModal({
 
   const nextPhoto = () => {
     if (user.photos && user.photos.length > 0) {
-      setCurrentPhotoIndex((prev) => (prev + 1) % user.photos.length)
+      setCurrentPhotoIndex((prev) => (prev + 1) % user.photos!.length)
     }
   }
 
   const prevPhoto = () => {
     if (user.photos && user.photos.length > 0) {
-      setCurrentPhotoIndex((prev) => (prev - 1 + user.photos.length) % user.photos.length)
+      setCurrentPhotoIndex((prev) => (prev - 1 + user.photos!.length) % user.photos!.length)
     }
   }
 
