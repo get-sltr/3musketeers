@@ -98,7 +98,7 @@ export default function UserProfileModal({
         <div className="relative">
           <div className="w-full h-80 bg-gradient-to-br from-gray-800 to-gray-900 rounded-t-3xl overflow-hidden">
             <img
-              src={user.photos?.[currentPhotoIndex] || user.photo || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400'}
+              src={user.photos?.[currentPhotoIndex] || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400'}
               alt={`${user.username} photo ${currentPhotoIndex + 1}`}
               className="w-full h-full object-cover"
             />
