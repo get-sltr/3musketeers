@@ -103,7 +103,7 @@ export default function MessagesPage() {
       // Transform data to our format
       const transformedConversations: Conversation[] = conversationsData?.map(conv => {
         const otherUserId = conv.user1_id === user.id ? conv.user2_id : conv.user1_id
-        const lastMessage = conv.messages
+        const lastMessage = conv.messages?.[0]
         return {
           id: conv.id,
           other_user: {
