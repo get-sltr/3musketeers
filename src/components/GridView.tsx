@@ -146,6 +146,32 @@ export default function GridView({ onUserClick }: GridViewProps) {
     // In real app, this would report the user
   }
 
+  const handleToggleFavorite = async (userId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { error } = await supabase
+        .from('favorites')
+        .upsert({
+          user_id: user.id,
+          favorite_user_id: userId,
+          created_at: new Date().toISOString()
+        })
+
+      if (error) {
+        console.error('Error toggling favorite:', error)
+      } else {
+        // Update local state
+        setUsers(prev => prev.map(u => 
+          u.id === userId ? { ...u, isFavorited: !u.isFavorited } : u
+        ))
+      }
+    } catch (err) {
+      console.error('Error toggling favorite:', err)
+    }
+  }
+
   return (
     <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
