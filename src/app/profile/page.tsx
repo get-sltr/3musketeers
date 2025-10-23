@@ -15,18 +15,7 @@ export default function ProfilePage() {
     tags: [] as string[],
     party_friendly: false,
     dtfn: false,
-    photos: [] as string[],
-    // New fields from Grindr reference
-    height: '',
-    weight: '',
-    body_type: '',
-    ethnicity: '',
-    relationship_status: '',
-    tribe: [] as string[],
-    expectations: '',
-    hiv_status: '',
-    last_tested: '',
-    vaccinated_for: [] as string[]
+    photos: [] as string[]
   })
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -62,7 +51,6 @@ export default function ProfilePage() {
           return
         }
         
-        // Load profile from profiles table
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
@@ -79,17 +67,7 @@ export default function ProfilePage() {
             tags: profile.tags || [],
             party_friendly: profile.party_friendly || false,
             dtfn: profile.dtfn || false,
-            photos: profile.photos || [],
-            height: profile.height || '',
-            weight: profile.weight || '',
-            body_type: profile.body_type || '',
-            ethnicity: profile.ethnicity || '',
-            relationship_status: profile.relationship_status || '',
-            tribe: profile.tribe || [],
-            expectations: profile.expectations || '',
-            hiv_status: profile.hiv_status || '',
-            last_tested: profile.last_tested || '',
-            vaccinated_for: profile.vaccinated_for || []
+            photos: profile.photos || []
           })
         }
       } catch (err) {
@@ -114,7 +92,6 @@ export default function ProfilePage() {
         return
       }
 
-      // Update profile in profiles table
       const { error } = await supabase
         .from('profiles')
         .upsert({
@@ -128,16 +105,6 @@ export default function ProfilePage() {
           party_friendly: profileData.party_friendly,
           dtfn: profileData.dtfn,
           photos: profileData.photos,
-          height: profileData.height,
-          weight: profileData.weight,
-          body_type: profileData.body_type,
-          ethnicity: profileData.ethnicity,
-          relationship_status: profileData.relationship_status,
-          tribe: profileData.tribe,
-          expectations: profileData.expectations,
-          hiv_status: profileData.hiv_status,
-          last_tested: profileData.last_tested,
-          vaccinated_for: profileData.vaccinated_for,
           updated_at: new Date().toISOString()
         })
 
@@ -179,12 +146,10 @@ export default function ProfilePage() {
     try {
       setLoading(true)
       
-      // Create unique filename
       const fileExt = file.name.split('.').pop()
       const fileName = `${Date.now()}.${fileExt}`
       const filePath = `profiles/${fileName}`
 
-      // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('photos')
         .upload(filePath, file)
@@ -194,12 +159,10 @@ export default function ProfilePage() {
         return
       }
 
-      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('photos')
         .getPublicUrl(filePath)
 
-      // Add to photos array
       setProfileData(prev => ({
         ...prev,
         photos: [...prev.photos, publicUrl]
@@ -236,7 +199,6 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-black">
-      {/* Header */}
       <div className="fixed top-0 w-full bg-black/95 backdrop-blur-xl border-b border-white/10 p-4 z-50">
         <div className="flex items-center justify-between">
           <Link href="/app" className="glass-bubble p-2 hover:bg-white/10 transition-all duration-300">
@@ -249,7 +211,6 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="pt-20 p-4 max-w-2xl mx-auto">
         <form onSubmit={handleSave} className="space-y-6">
           {/* Photo Upload Section */}
@@ -258,7 +219,6 @@ export default function ProfilePage() {
               Photos
             </label>
             
-            {/* Current Photos */}
             {profileData.photos.length > 0 && (
               <div className="grid grid-cols-3 gap-3 mb-4">
                 {profileData.photos.map((photo, index) => (
@@ -280,7 +240,6 @@ export default function ProfilePage() {
               </div>
             )}
             
-            {/* Upload Button */}
             <label className="block">
               <div className="glass-bubble p-4 text-center cursor-pointer hover:bg-white/10 transition-all duration-300 border-2 border-dashed border-white/20 rounded-xl">
                 <svg className="w-8 h-8 text-white/60 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -423,171 +382,6 @@ export default function ProfilePage() {
                   {tag}
                 </button>
               ))}
-            </div>
-          </div>
-
-          {/* Physical Stats */}
-          <div className="glass-bubble p-4">
-            <label className="block text-white/80 text-sm font-medium mb-3">
-              Physical Stats
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-white/60 text-xs mb-1">Height</label>
-                <input
-                  type="text"
-                  value={profileData.height}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, height: e.target.value }))}
-                  className="w-full bg-white/5 border border-white/20 rounded-xl px-3 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300"
-                  placeholder="5'11\""
-                />
-              </div>
-              <div>
-                <label className="block text-white/60 text-xs mb-1">Weight</label>
-                <input
-                  type="text"
-                  value={profileData.weight}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, weight: e.target.value }))}
-                  className="w-full bg-white/5 border border-white/20 rounded-xl px-3 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300"
-                  placeholder="210 lb"
-                />
-              </div>
-            </div>
-            <div className="mt-3">
-              <label className="block text-white/60 text-xs mb-1">Body Type</label>
-              <select
-                value={profileData.body_type}
-                onChange={(e) => setProfileData(prev => ({ ...prev, body_type: e.target.value }))}
-                className="w-full bg-white/5 border border-white/20 rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300"
-              >
-                <option value="">Select body type</option>
-                <option value="Muscular" className="bg-gray-800">Muscular</option>
-                <option value="Athletic" className="bg-gray-800">Athletic</option>
-                <option value="Average" className="bg-gray-800">Average</option>
-                <option value="Slim" className="bg-gray-800">Slim</option>
-                <option value="Stocky" className="bg-gray-800">Stocky</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Identity */}
-          <div className="glass-bubble p-4">
-            <label className="block text-white/80 text-sm font-medium mb-3">
-              Identity
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-white/60 text-xs mb-1">Ethnicity</label>
-                <select
-                  value={profileData.ethnicity}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, ethnicity: e.target.value }))}
-                  className="w-full bg-white/5 border border-white/20 rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300"
-                >
-                  <option value="">Select ethnicity</option>
-                  <option value="White" className="bg-gray-800">White</option>
-                  <option value="Black" className="bg-gray-800">Black</option>
-                  <option value="Hispanic" className="bg-gray-800">Hispanic</option>
-                  <option value="Asian" className="bg-gray-800">Asian</option>
-                  <option value="Mixed" className="bg-gray-800">Mixed</option>
-                  <option value="Other" className="bg-gray-800">Other</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-white/60 text-xs mb-1">Relationship Status</label>
-                <select
-                  value={profileData.relationship_status}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, relationship_status: e.target.value }))}
-                  className="w-full bg-white/5 border border-white/20 rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300"
-                >
-                  <option value="">Select status</option>
-                  <option value="Single" className="bg-gray-800">Single</option>
-                  <option value="Dating" className="bg-gray-800">Dating</option>
-                  <option value="Open Relationship" className="bg-gray-800">Open Relationship</option>
-                  <option value="Married" className="bg-gray-800">Married</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Tribe */}
-          <div className="glass-bubble p-4">
-            <label className="block text-white/80 text-sm font-medium mb-3">
-              Tribe
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {['Bear', 'Jock', 'Rugged', 'Twink', 'Daddy', 'Cub', 'Otter', 'Wolf', 'Geek', 'Artist', 'Musician', 'Professional'].map(tribe => (
-                <button
-                  key={tribe}
-                  type="button"
-                  onClick={() => {
-                    setProfileData(prev => ({
-                      ...prev,
-                      tribe: prev.tribe.includes(tribe)
-                        ? prev.tribe.filter(t => t !== tribe)
-                        : [...prev.tribe, tribe]
-                    }))
-                  }}
-                  className={`px-3 py-1 rounded-full text-sm transition-all duration-300 ${
-                    profileData.tribe.includes(tribe)
-                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                      : 'bg-white/10 text-white/60 border border-white/20 hover:bg-white/20'
-                  }`}
-                >
-                  {tribe}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Expectations */}
-          <div className="glass-bubble p-4">
-            <label className="block text-white/80 text-sm font-medium mb-2">
-              What are you looking for?
-            </label>
-            <select
-              value={profileData.expectations}
-              onChange={(e) => setProfileData(prev => ({ ...prev, expectations: e.target.value }))}
-              className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300"
-            >
-              <option value="">Select what you're looking for</option>
-              <option value="Hookups" className="bg-gray-800">Hookups</option>
-              <option value="Dating" className="bg-gray-800">Dating</option>
-              <option value="Friends" className="bg-gray-800">Friends</option>
-              <option value="Relationship" className="bg-gray-800">Relationship</option>
-              <option value="Networking" className="bg-gray-800">Networking</option>
-            </select>
-          </div>
-
-          {/* Health Info */}
-          <div className="glass-bubble p-4">
-            <label className="block text-white/80 text-sm font-medium mb-3">
-              Health Information
-            </label>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-white/60 text-xs mb-1">HIV Status</label>
-                <select
-                  value={profileData.hiv_status}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, hiv_status: e.target.value }))}
-                  className="w-full bg-white/5 border border-white/20 rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300"
-                >
-                  <option value="">Select HIV status</option>
-                  <option value="Negative" className="bg-gray-800">Negative</option>
-                  <option value="Negative, on PrEP" className="bg-gray-800">Negative, on PrEP</option>
-                  <option value="Positive, undetectable" className="bg-gray-800">Positive, undetectable</option>
-                  <option value="Prefer not to say" className="bg-gray-800">Prefer not to say</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-white/60 text-xs mb-1">Last Tested</label>
-                <input
-                  type="text"
-                  value={profileData.last_tested}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, last_tested: e.target.value }))}
-                  className="w-full bg-white/5 border border-white/20 rounded-xl px-3 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300"
-                  placeholder="April 2024"
-                />
-              </div>
             </div>
           </div>
 
