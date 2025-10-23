@@ -107,10 +107,13 @@ export default function GridView({ onUserClick }: GridViewProps) {
   }
 
 
-  const handleUserClick = (user: User) => {
-    setSelectedUser(user)
-    setIsModalOpen(true)
-    onUserClick?.(user.id)
+  const handleUserClick = (userId: string) => {
+    const user = users.find(u => u.id === userId)
+    if (user) {
+      setSelectedUser(user)
+      setIsModalOpen(true)
+      onUserClick?.(userId)
+    }
   }
 
   const handleMessage = async (userId: string) => {
