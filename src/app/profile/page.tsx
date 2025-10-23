@@ -102,6 +102,7 @@ export default function ProfilePage() {
         .from('profiles')
         .upsert({
           id: user.id,
+          email: user.email, // Add email field
           display_name: profileData.display_name,
           age: parseInt(profileData.age),
           about: profileData.bio,
