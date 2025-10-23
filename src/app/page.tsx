@@ -15,19 +15,28 @@ export default function LandingPage() {
   useEffect(() => {
     setMounted(true)
     
-    // Animate user count
-    let count = 0
-    const target = 12847
-    const increment = target / 100
-    const timer = setInterval(() => {
-      count += increment
-      if (count >= target) {
-        setUserCount(target)
-        clearInterval(timer)
-      } else {
-        setUserCount(Math.floor(count))
+    // Get real user count from database
+    const getRealUserCount = async () => {
+      try {
+        const { createClient } = await import('@/lib/supabase/client')
+        const supabase = createClient()
+        const { count } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+        
+        if (count && count > 0) {
+          setUserCount(count)
+        } else {
+          // If no users yet, show a small number or "New"
+          setUserCount(0)
+        }
+      } catch (error) {
+        console.log('Could not fetch user count, showing 0')
+        setUserCount(0)
       }
-    }, 20)
+    }
+    
+    getRealUserCount()
 
     // Mouse tracking for parallax
     const handleMouseMove = (e: MouseEvent) => {
@@ -210,12 +219,29 @@ export default function LandingPage() {
 
           {/* Subheading */}
           <p 
-            className={`text-2xl md:text-3xl text-white/70 mb-16 max-w-4xl mx-auto transition-all duration-1000 delay-500 ${
+            className={`text-2xl md:text-3xl text-white/70 mb-8 max-w-4xl mx-auto transition-all duration-1000 delay-500 ${
               mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
             }`}
           >
             Connect with nearby guys instantly. No games, no waiting, just real connections.
           </p>
+
+          {/* Early Adopter Message */}
+          {userCount === 0 && (
+            <div 
+              className={`glass-bubble px-8 py-4 mb-8 max-w-2xl mx-auto transition-all duration-1000 delay-600 ${
+                mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+              }`}
+              style={{
+                background: 'linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(255, 0, 255, 0.1))',
+                border: '1px solid rgba(0, 212, 255, 0.3)'
+              }}
+            >
+              <p className="text-cyan-300 text-lg font-semibold text-center">
+                🚀 Be among the first to join SLTR - Early access now open!
+              </p>
+            </div>
+          )}
 
           {/* Live Stats with Hover Effects */}
           <div 
@@ -224,7 +250,11 @@ export default function LandingPage() {
             }`}
           >
             {[
-              { value: `${userCount.toLocaleString()}+`, label: 'Active Users', color: 'from-cyan-400 to-blue-500' },
+              { 
+                value: userCount > 0 ? `${userCount.toLocaleString()}+` : 'New', 
+                label: userCount > 0 ? 'Active Users' : 'Just Launched', 
+                color: 'from-cyan-400 to-blue-500' 
+              },
               { value: '24/7', label: 'Always On', color: 'from-purple-400 to-pink-500' },
               { value: '∞', label: 'Possibilities', color: 'from-yellow-400 to-orange-500' }
             ].map((stat, index) => (
