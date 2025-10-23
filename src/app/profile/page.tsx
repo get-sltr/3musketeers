@@ -79,7 +79,17 @@ export default function ProfilePage() {
             tags: profile.tags || [],
             party_friendly: profile.party_friendly || false,
             dtfn: profile.dtfn || false,
-            photos: profile.photos || []
+            photos: profile.photos || [],
+            height: profile.height || '',
+            weight: profile.weight || '',
+            body_type: profile.body_type || '',
+            ethnicity: profile.ethnicity || '',
+            relationship_status: profile.relationship_status || '',
+            tribe: profile.tribe || [],
+            expectations: profile.expectations || '',
+            hiv_status: profile.hiv_status || '',
+            last_tested: profile.last_tested || '',
+            vaccinated_for: profile.vaccinated_for || []
           })
         }
       } catch (err) {
@@ -118,6 +128,16 @@ export default function ProfilePage() {
           party_friendly: profileData.party_friendly,
           dtfn: profileData.dtfn,
           photos: profileData.photos,
+          height: profileData.height,
+          weight: profileData.weight,
+          body_type: profileData.body_type,
+          ethnicity: profileData.ethnicity,
+          relationship_status: profileData.relationship_status,
+          tribe: profileData.tribe,
+          expectations: profileData.expectations,
+          hiv_status: profileData.hiv_status,
+          last_tested: profileData.last_tested,
+          vaccinated_for: profileData.vaccinated_for,
           updated_at: new Date().toISOString()
         })
 
