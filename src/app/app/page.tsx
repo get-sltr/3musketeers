@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import GridView from '@/components/GridView'
-import MapView from '@/components/MapView'
+import LeafletMap from '@/components/LeafletMap'
 import FilterBar from '@/components/FilterBar'
 import PanicButton from '@/components/PanicButton'
 
@@ -169,7 +169,10 @@ export default function AppPage() {
         {viewMode === 'grid' ? (
           <GridView />
         ) : (
-          <MapView />
+          <LeafletMap onUserClick={(userId) => {
+            // Handle user click from map
+            console.log('User clicked from map:', userId)
+          }} />
         )}
       </main>
 
