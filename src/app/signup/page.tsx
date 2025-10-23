@@ -97,7 +97,7 @@ export default function SignupPage() {
       setError(error.message)
       setLoading(false)
     } else if (data.user) {
-      // Create profile in profiles table
+      // Create profile in profiles table with all required fields
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
@@ -105,8 +105,15 @@ export default function SignupPage() {
           email: data.user.email,
           display_name: username,
           age: age,
+          photos: [], // Initialize empty photos array
+          kinks: [], // Initialize empty kinks array
+          tags: [], // Initialize empty tags array
+          party_friendly: false, // Default to false
+          dtfn: false, // Default to false
+          online: false, // Default to offline
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          last_active: new Date().toISOString()
         })
 
       if (profileError) {
