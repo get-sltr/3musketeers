@@ -145,16 +145,20 @@ export default function ProfilePage() {
 
     try {
       setLoading(true)
+      setError(null)
       
       const fileExt = file.name.split('.').pop()
       const fileName = `${Date.now()}.${fileExt}`
       const filePath = `profiles/${fileName}`
+
+      console.log('Uploading photo:', filePath)
 
       const { error: uploadError } = await supabase.storage
         .from('photos')
         .upload(filePath, file)
 
       if (uploadError) {
+        console.error('Upload error:', uploadError)
         setError(`Upload failed: ${uploadError.message}`)
         return
       }
@@ -163,14 +167,21 @@ export default function ProfilePage() {
         .from('photos')
         .getPublicUrl(filePath)
 
-      setProfileData(prev => ({
-        ...prev,
-        photos: [...prev.photos, publicUrl]
-      }))
+      console.log('Photo uploaded successfully:', publicUrl)
+
+      setProfileData(prev => {
+        const newPhotos = [...prev.photos, publicUrl]
+        console.log('Updated photos array:', newPhotos)
+        return {
+          ...prev,
+          photos: newPhotos
+        }
+      })
 
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     } catch (err) {
+      console.error('Photo upload error:', err)
       setError('Failed to upload photo')
     } finally {
       setLoading(false)
@@ -221,24 +232,37 @@ export default function ProfilePage() {
             
             {profileData.photos.length > 0 && (
               <div className="grid grid-cols-3 gap-3 mb-4">
-                {profileData.photos.map((photo, index) => (
-                  <div key={index} className="relative group">
-                    <img
-                      src={photo}
-                      alt={`Photo ${index + 1}`}
-                      className="w-full aspect-square object-cover rounded-xl"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removePhoto(index)}
-                      className="absolute top-2 right-2 bg-red-500/80 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-500 transition-all duration-300"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
+                {profileData.photos.map((photo, index) => {
+                  console.log('Rendering photo:', photo, 'at index:', index)
+                  return (
+                    <div key={index} className="relative group">
+                      <img
+                        src={photo}
+                        alt={`Photo ${index + 1}`}
+                        className="w-full aspect-square object-cover rounded-xl"
+                        onError={(e) => {
+                          console.error('Image failed to load:', photo)
+                          e.currentTarget.src = 'https://via.placeholder.com/300x300/333/fff?text=Photo+Error'
+                        }}
+                        onLoad={() => console.log('Image loaded successfully:', photo)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(index)}
+                        className="absolute top-2 right-2 bg-red-500/80 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-500 transition-all duration-300"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )
+                })}
               </div>
             )}
+            
+            {/* Debug info */}
+            <div className="text-xs text-white/40 mb-2">
+              Photos count: {profileData.photos.length}
+            </div>
             
             <label className="block">
               <div className="glass-bubble p-4 text-center cursor-pointer hover:bg-white/10 transition-all duration-300 border-2 border-dashed border-white/20 rounded-xl">
