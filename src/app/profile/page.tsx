@@ -44,8 +44,18 @@ export default function ProfilePage() {
   useEffect(() => {
     const loadProfile = async () => {
       setLoading(true)
+      setError(null)
+      
       try {
-        const { data: { user } } = await supabase.auth.getUser()
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        
+        if (authError) {
+          console.error('Auth error:', authError)
+          setError('Authentication failed. Please login again.')
+          router.push('/login')
+          return
+        }
+        
         if (!user) {
           router.push('/login')
           return
@@ -59,6 +69,12 @@ export default function ProfilePage() {
 
         console.log('Profile loaded:', profile)
         console.log('Profile error:', profileError)
+
+        if (profileError) {
+          console.error('Profile error:', profileError)
+          setError('Failed to load profile. Please try again.')
+          return
+        }
 
         if (profile) {
           console.log('Profile photos:', profile.photos)
@@ -76,12 +92,13 @@ export default function ProfilePage() {
         }
       } catch (err) {
         console.error('Error loading profile:', err)
+        setError('An unexpected error occurred. Please refresh the page.')
       } finally {
         setLoading(false)
       }
     }
     loadProfile()
-  }, [])
+  }, [router, supabase])
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -177,6 +194,19 @@ export default function ProfilePage() {
         .getPublicUrl(filePath)
 
       console.log('Photo uploaded successfully:', publicUrl)
+      
+      // Validate the URL is accessible
+      try {
+        const response = await fetch(publicUrl, { method: 'HEAD' })
+        if (!response.ok) {
+          throw new Error(`Photo URL not accessible: ${response.status}`)
+        }
+        console.log('Photo URL validated successfully')
+      } catch (urlError) {
+        console.error('Photo URL validation failed:', urlError)
+        setError('Photo uploaded but URL is not accessible. Please try again.')
+        return
+      }
 
       setProfileData(prev => {
         const newPhotos = [...prev.photos, publicUrl]
@@ -251,9 +281,14 @@ export default function ProfilePage() {
                         className="w-full aspect-square object-cover rounded-xl"
                         onError={(e) => {
                           console.error('Image failed to load:', photo)
-                          e.currentTarget.src = 'https://via.placeholder.com/300x300/333/fff?text=Photo+Error'
+                          // Remove the broken photo from the array
+                          setProfileData(prev => ({
+                            ...prev,
+                            photos: prev.photos.filter((_, i) => i !== index)
+                          }))
                         }}
                         onLoad={() => console.log('Image loaded successfully:', photo)}
+                        loading="lazy"
                       />
                       <button
                         type="button"
