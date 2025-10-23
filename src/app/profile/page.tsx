@@ -67,7 +67,7 @@ export default function ProfilePage() {
             tags: profile.tags || [],
             party_friendly: profile.party_friendly || false,
             dtfn: profile.dtfn || false,
-            photos: profile.photos || []
+            photos: profile.photo_urls || [] // Use photo_urls column
           })
         }
       } catch (err) {
@@ -104,7 +104,7 @@ export default function ProfilePage() {
           tags: profileData.tags,
           party_friendly: profileData.party_friendly,
           dtfn: profileData.dtfn,
-          photos: profileData.photos,
+          photo_urls: profileData.photos, // Store photos as JSON array
           updated_at: new Date().toISOString()
         })
 
