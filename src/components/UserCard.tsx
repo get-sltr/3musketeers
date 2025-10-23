@@ -1,7 +1,25 @@
 'use client'
 
 import { useState } from 'react'
-import { User } from '../types/user'
+
+interface User {
+  id: string
+  username: string
+  display_name?: string
+  age: number
+  photo?: string
+  photos?: string[]
+  distance: string
+  isOnline: boolean
+  bio?: string
+  position?: string
+  party_friendly?: boolean
+  dtfn?: boolean
+  latitude?: number
+  longitude?: number
+  eta?: string
+  tags?: string[]
+}
 
 interface UserCardProps {
   user: User
