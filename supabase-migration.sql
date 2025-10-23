@@ -31,6 +31,9 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS online BOOLEAN DEFAULT false;
 -- Add last_active timestamp
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS last_active TIMESTAMP WITH TIME ZONE DEFAULT NOW();
 
+-- Add updated_at timestamp
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+
 -- Add additional profile fields from Grindr reference
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS height TEXT;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS weight TEXT;
