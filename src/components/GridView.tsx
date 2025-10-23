@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import UserProfileModal from './UserProfileModal'
 import { useLocation } from '../hooks/useLocation'
-import { useSocket } from '../hooks/useSocket'
+// import { useSocket } from '../hooks/useSocket'
 import { calculateDistance } from '../utils/geohash'
 
 interface User {
@@ -37,9 +37,9 @@ export default function GridView({ onUserClick }: GridViewProps) {
   const router = useRouter()
   const supabase = createClient()
   
-  // New location and socket hooks
+  // New location hooks (Socket.io temporarily disabled)
   const { location, error: locationError } = useLocation()
-  const { nearbyUsers, isConnected, updateLocation } = useSocket()
+  // const { nearbyUsers, isConnected, updateLocation } = useSocket()
 
   useEffect(() => {
     const loadUsers = async () => {
