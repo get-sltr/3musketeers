@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import UserProfileModal from './UserProfileModal'
-import { useLocation } from '../hooks/useLocation'
+// import { useLocation } from '../hooks/useLocation'
 // import { useSocket } from '../hooks/useSocket'
-import { calculateDistance } from '../utils/geohash'
+// import { calculateDistance } from '../utils/geohash'
 
 interface User {
   id: string
@@ -37,8 +37,8 @@ export default function GridView({ onUserClick }: GridViewProps) {
   const router = useRouter()
   const supabase = createClient()
   
-  // New location hooks (Socket.io temporarily disabled)
-  const { location, error: locationError } = useLocation()
+  // New location hooks (temporarily disabled for deployment)
+  // const { location, error: locationError } = useLocation()
   // const { nearbyUsers, isConnected, updateLocation } = useSocket()
 
   useEffect(() => {
