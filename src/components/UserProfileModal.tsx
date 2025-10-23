@@ -180,21 +180,6 @@ export default function UserProfileModal({
             </div>
           )}
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="glass-bubble p-3 text-center">
-              <div className="text-2xl font-bold text-white">24</div>
-              <div className="text-xs text-white/60">Photos</div>
-            </div>
-            <div className="glass-bubble p-3 text-center">
-              <div className="text-2xl font-bold text-white">1.2k</div>
-              <div className="text-xs text-white/60">Followers</div>
-            </div>
-            <div className="glass-bubble p-3 text-center">
-              <div className="text-2xl font-bold text-white">89</div>
-              <div className="text-xs text-white/60">Following</div>
-            </div>
-          </div>
         </div>
 
         {/* Action Buttons */}
