@@ -6,12 +6,17 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 export default function ProfilePage() {
-  const [username, setUsername] = useState('')
-  const [age, setAge] = useState('')
-  const [bio, setBio] = useState('')
-  const [photo, setPhoto] = useState('')
-  const [hideLocation, setHideLocation] = useState(false)
-  const [showExactDistance, setShowExactDistance] = useState(true)
+  const [profileData, setProfileData] = useState({
+    display_name: '',
+    age: '',
+    bio: '',
+    position: '',
+    kinks: [] as string[],
+    tags: [] as string[],
+    party_friendly: false,
+    dtfn: false,
+    photos: [] as string[]
+  })
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -20,26 +25,56 @@ export default function ProfilePage() {
   const router = useRouter()
   const supabase = createClient()
 
+  const kinkOptions = [
+    'BDSM', 'Roleplay', 'Fetish', 'Kink', 'Bondage', 'Domination', 'Submission',
+    'S&M', 'Leather', 'Latex', 'Foot', 'Anal', 'Oral', 'Threesome', 'Group',
+    'Public', 'Voyeur', 'Exhibition', 'Toys', 'Rough', 'Gentle', 'Romantic'
+  ]
+
+  const positionOptions = [
+    'Top', 'Bottom', 'Vers Top', 'Vers Bottom', 'Versatile', 'Side'
+  ]
+
+  const tagOptions = [
+    'Athletic', 'Bear', 'Daddy', 'Twink', 'Jock', 'Geek', 'Artist', 'Musician',
+    'Student', 'Professional', 'Traveler', 'Foodie', 'Gamer', 'Fitness', 'Yoga',
+    'Outdoors', 'Nightlife', 'Quiet', 'Social', 'Adventurous', 'Chill', 'Wild'
+  ]
+
   useEffect(() => {
     const loadProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/login')
-        return
-      }
-      
-      // Load user profile data
-      setUsername(user.user_metadata?.username || '')
-      setAge(user.user_metadata?.age || '')
-      setBio(user.user_metadata?.bio || '')
-      setPhoto(user.user_metadata?.photo || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400')
-      
-      // Load privacy settings
-      const privacySettings = localStorage.getItem('sltr_privacy')
-      if (privacySettings) {
-        const settings = JSON.parse(privacySettings)
-        setHideLocation(settings.hideLocation || false)
-        setShowExactDistance(settings.showExactDistance !== false)
+      setLoading(true)
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          router.push('/login')
+          return
+        }
+        
+        // Load profile from profiles table
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+
+        if (profile) {
+          setProfileData({
+            display_name: profile.display_name || '',
+            age: profile.age?.toString() || '',
+            bio: profile.about || '',
+            position: profile.position || '',
+            kinks: profile.kinks || [],
+            tags: profile.tags || [],
+            party_friendly: profile.party_friendly || false,
+            dtfn: profile.dtfn || false,
+            photos: profile.photos || []
+          })
+        }
+      } catch (err) {
+        console.error('Error loading profile:', err)
+      } finally {
+        setLoading(false)
       }
     }
     loadProfile()
@@ -58,15 +93,22 @@ export default function ProfilePage() {
         return
       }
 
-      // Update user metadata
-      const { error } = await supabase.auth.updateUser({
-        data: {
-          username,
-          age: parseInt(age),
-          bio,
-          photo
-        }
-      })
+      // Update profile in profiles table
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          display_name: profileData.display_name,
+          age: parseInt(profileData.age),
+          about: profileData.bio,
+          position: profileData.position,
+          kinks: profileData.kinks,
+          tags: profileData.tags,
+          party_friendly: profileData.party_friendly,
+          dtfn: profileData.dtfn,
+          photos: profileData.photos,
+          updated_at: new Date().toISOString()
+        })
 
       if (error) {
         setError(error.message)
@@ -81,27 +123,35 @@ export default function ProfilePage() {
     }
   }
 
+  const handleKinkToggle = (kink: string) => {
+    setProfileData(prev => ({
+      ...prev,
+      kinks: prev.kinks.includes(kink)
+        ? prev.kinks.filter(k => k !== kink)
+        : [...prev.kinks, kink]
+    }))
+  }
+
+  const handleTagToggle = (tag: string) => {
+    setProfileData(prev => ({
+      ...prev,
+      tags: prev.tags.includes(tag)
+        ? prev.tags.filter(t => t !== tag)
+        : [...prev.tags, tag]
+    }))
+  }
+
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/login')
   }
 
-  const handleSavePrivacy = () => {
-    localStorage.setItem('sltr_privacy', JSON.stringify({
-      hideLocation,
-      showExactDistance
-    }))
-    setSuccess(true)
-    setTimeout(() => setSuccess(false), 3000)
-  }
-
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      // For now, just use a placeholder URL
-      // In production, you'd upload to Supabase Storage
-      setPhoto('https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400')
-    }
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white">Loading profile...</div>
+      </div>
+    )
   }
 
   return (
@@ -122,41 +172,17 @@ export default function ProfilePage() {
       {/* Main Content */}
       <div className="pt-20 p-4 max-w-2xl mx-auto">
         <form onSubmit={handleSave} className="space-y-6">
-          {/* Profile Photo Section */}
-          <div className="glass-bubble p-6 text-center">
-            <div className="relative inline-block">
-              <img
-                src={photo}
-                alt="Profile"
-                className="w-32 h-32 rounded-2xl object-cover mx-auto mb-4"
-              />
-              <label className="absolute bottom-0 right-0 glass-bubble p-2 rounded-full cursor-pointer hover:bg-white/20 transition-all duration-300">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoChange}
-                  className="hidden"
-                />
-              </label>
-            </div>
-            <p className="text-white/60 text-sm">Tap to change photo</p>
-          </div>
-
-          {/* Username */}
+          {/* Display Name */}
           <div className="glass-bubble p-4">
             <label className="block text-white/80 text-sm font-medium mb-2">
-              Username
+              Display Name *
             </label>
             <input
               type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={profileData.display_name}
+              onChange={(e) => setProfileData(prev => ({ ...prev, display_name: e.target.value }))}
               className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300"
-              placeholder="Enter your username"
+              placeholder="Your display name"
               required
             />
           </div>
@@ -164,18 +190,115 @@ export default function ProfilePage() {
           {/* Age */}
           <div className="glass-bubble p-4">
             <label className="block text-white/80 text-sm font-medium mb-2">
-              Age
+              Age *
             </label>
             <input
               type="number"
-              value={age}
-              onChange={(e) => setAge(e.target.value)}
+              value={profileData.age}
+              onChange={(e) => setProfileData(prev => ({ ...prev, age: e.target.value }))}
               className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300"
-              placeholder="Enter your age"
+              placeholder="Your age"
               min="18"
               max="100"
               required
             />
+          </div>
+
+          {/* Position */}
+          <div className="glass-bubble p-4">
+            <label className="block text-white/80 text-sm font-medium mb-2">
+              Position *
+            </label>
+            <select
+              value={profileData.position}
+              onChange={(e) => setProfileData(prev => ({ ...prev, position: e.target.value }))}
+              className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300"
+              required
+            >
+              <option value="">Select position</option>
+              {positionOptions.map(pos => (
+                <option key={pos} value={pos} className="bg-gray-800">{pos}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Status Toggles */}
+          <div className="glass-bubble p-4">
+            <label className="block text-white/80 text-sm font-medium mb-4">
+              Status
+            </label>
+            <div className="space-y-3">
+              <label className="flex items-center justify-between cursor-pointer">
+                <span className="flex items-center gap-2">
+                  <span>🥳</span>
+                  Party Friendly
+                </span>
+                <input
+                  type="checkbox"
+                  checked={profileData.party_friendly}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, party_friendly: e.target.checked }))}
+                  className="toggle"
+                />
+              </label>
+              <label className="flex items-center justify-between cursor-pointer">
+                <span className="flex items-center gap-2">
+                  <span>⚡</span>
+                  DTFN (Down to F*** Now)
+                </span>
+                <input
+                  type="checkbox"
+                  checked={profileData.dtfn}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, dtfn: e.target.checked }))}
+                  className="toggle"
+                />
+              </label>
+            </div>
+          </div>
+
+          {/* Kinks */}
+          <div className="glass-bubble p-4">
+            <label className="block text-white/80 text-sm font-medium mb-3">
+              Kinks
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {kinkOptions.map(kink => (
+                <button
+                  key={kink}
+                  type="button"
+                  onClick={() => handleKinkToggle(kink)}
+                  className={`px-3 py-1 rounded-full text-sm transition-all duration-300 ${
+                    profileData.kinks.includes(kink)
+                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                      : 'bg-white/10 text-white/60 border border-white/20 hover:bg-white/20'
+                  }`}
+                >
+                  {kink}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Tags */}
+          <div className="glass-bubble p-4">
+            <label className="block text-white/80 text-sm font-medium mb-3">
+              Tags
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {tagOptions.map(tag => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => handleTagToggle(tag)}
+                  className={`px-3 py-1 rounded-full text-sm transition-all duration-300 ${
+                    profileData.tags.includes(tag)
+                      ? 'bg-pink-500/20 text-pink-300 border border-pink-500/30'
+                      : 'bg-white/10 text-white/60 border border-white/20 hover:bg-white/20'
+                  }`}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Bio */}
@@ -184,15 +307,15 @@ export default function ProfilePage() {
               Bio
             </label>
             <textarea
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
+              value={profileData.bio}
+              onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
               className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300 resize-none"
               placeholder="Tell us about yourself..."
               rows={4}
               maxLength={500}
             />
             <div className="text-right text-xs text-white/40 mt-1">
-              {bio.length}/500
+              {profileData.bio.length}/500
             </div>
           </div>
 
@@ -223,46 +346,8 @@ export default function ProfilePage() {
           </button>
         </form>
 
-        {/* Privacy Settings */}
-        <div className="glass-bubble p-6 mb-4">
-          <h3 className="text-lg font-semibold mb-4">Privacy Settings</h3>
-          
-          <div className="space-y-4">
-            <label className="flex items-center justify-between cursor-pointer">
-              <span>Hide my location</span>
-              <input
-                type="checkbox"
-                checked={hideLocation}
-                onChange={(e) => setHideLocation(e.target.checked)}
-                className="toggle"
-              />
-            </label>
-
-            <label className="flex items-center justify-between cursor-pointer">
-              <span>Show exact distance</span>
-              <input
-                type="checkbox"
-                checked={showExactDistance}
-                onChange={(e) => setShowExactDistance(e.target.checked)}
-                className="toggle"
-              />
-            </label>
-
-            <p className="text-sm text-gray-400">
-              When location is hidden, only your city will be shown. When exact distance is off, it will show approximate distance.
-            </p>
-
-            <button
-              onClick={handleSavePrivacy}
-              className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 py-3 rounded-xl font-semibold"
-            >
-              Save Privacy Settings
-            </button>
-          </div>
-        </div>
-
         {/* Guidelines Link */}
-        <div className="mb-4">
+        <div className="mb-4 mt-6">
           <Link
             href="/guidelines"
             className="glass-bubble p-4 flex items-center justify-between"
@@ -273,7 +358,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Logout Button */}
-        <div className="mt-8">
+        <div className="mt-4">
           <button
             onClick={handleLogout}
             className="w-full glass-bubble py-4 rounded-2xl text-red-400 font-semibold text-lg hover:bg-red-500/10 hover:text-red-300 transition-all duration-300"
