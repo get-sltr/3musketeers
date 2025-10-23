@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import UserProfileModal from './UserProfileModal'
-import UserCard from './UserCard'
+import ScrollableProfileCard from './ScrollableProfileCard'
 // import { useLocation } from '../hooks/useLocation'
 // import { useSocket } from '../hooks/useSocket'
 // import { calculateDistance } from '../utils/geohash'
@@ -145,20 +145,24 @@ export default function GridView({ onUserClick }: GridViewProps) {
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-        {users.length > 0 ? users.map(user => (
-          <UserCard
-            key={user.id}
-            user={user}
-            onClick={handleUserClick}
-          />
-        )) : (
-          <div className="col-span-full text-center py-12">
-            <div className="text-white/60 text-lg">No users found</div>
-            <div className="text-white/40 text-sm mt-2">Check back later for new profiles</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+            {users.length > 0 ? users.map(user => (
+              <ScrollableProfileCard
+                key={user.id}
+                user={user}
+                onUserClick={handleUserClick}
+                onMessage={handleMessage}
+                onFavorite={handleToggleFavorite}
+                isFavorited={user.isFavorited}
+                variant="grid"
+              />
+            )) : (
+              <div className="col-span-full text-center py-12">
+                <div className="text-white/60 text-lg">No users found</div>
+                <div className="text-white/40 text-sm mt-2">Check back later for new profiles</div>
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
       {/* User Profile Modal */}
       <UserProfileModal
