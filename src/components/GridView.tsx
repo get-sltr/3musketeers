@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import UserProfileModal from './UserProfileModal'
+import UserCard from './UserCard'
 // import { useLocation } from '../hooks/useLocation'
 // import { useSocket } from '../hooks/useSocket'
 // import { calculateDistance } from '../utils/geohash'
@@ -11,11 +12,12 @@ import UserProfileModal from './UserProfileModal'
 interface User {
   id: string
   username: string
+  display_name?: string
   age: number
-  photo: string
+  photo?: string
+  photos?: string[]
   distance: string
   isOnline: boolean
-  photos?: string[]
   bio?: string
   position?: string
   party_friendly?: boolean
@@ -23,6 +25,7 @@ interface User {
   latitude?: number
   longitude?: number
   eta?: string
+  tags?: string[]
 }
 
 interface GridViewProps {
@@ -57,16 +60,19 @@ export default function GridView({ onUserClick }: GridViewProps) {
         // Convert profiles to User format
         const userList: User[] = profiles?.map(profile => ({
           id: profile.id,
-          username: profile.display_name || 'Unknown',
+          username: profile.username || 'Unknown',
+          display_name: profile.display_name,
           age: profile.age || 18,
-          photo: profile.photo_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400',
+          photo: profile.photo_url,
+          photos: profile.photos || [profile.photo_url].filter(Boolean),
           distance: '0.5 mi', // TODO: Calculate real distance
           isOnline: profile.online || false,
-          photos: [profile.photo_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400'],
           bio: profile.about || '',
           position: profile.position,
           party_friendly: profile.party_friendly || false,
-          dtfn: profile.dtfn || false
+          dtfn: profile.dtfn || false,
+          tags: profile.tags || [],
+          eta: '5 min'
         })) || []
 
         setUsers(userList)
@@ -113,66 +119,11 @@ export default function GridView({ onUserClick }: GridViewProps) {
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
         {users.length > 0 ? users.map(user => (
-          <div 
+          <UserCard
             key={user.id}
-            onClick={() => handleUserClick(user)}
-            className="glass-bubble cursor-pointer p-4 group hover:scale-105 transition-all duration-300"
-          >
-            {/* Photo Container */}
-            <div className="relative mb-3">
-              <img
-                src={user.photo}
-                alt={user.username}
-                className="w-full aspect-[3/4] object-cover rounded-2xl"
-              />
-              
-              {/* Online Indicator */}
-              {user.isOnline && (
-                <div 
-                  className="absolute top-2 right-2 w-3 h-3 rounded-full"
-                  style={{
-                    background: 'rgba(0, 255, 0, 0.8)',
-                    boxShadow: '0 0 10px rgba(0, 255, 0, 0.5)'
-                  }}
-                />
-              )}
-
-              {/* Status Badges */}
-              {(user.party_friendly || user.dtfn) && (
-                <div className="absolute top-2 left-2 flex gap-1">
-                  {user.party_friendly && (
-                    <div className="glass-bubble px-2 py-1 text-sm">
-                      <span>🥳</span>
-                    </div>
-                  )}
-                  {user.dtfn && (
-                    <div className="glass-bubble px-2 py-1 text-sm">
-                      <span>⚡</span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* User Info */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <h3 className="text-white font-semibold text-lg">
-                  {user.username}
-                </h3>
-                <span className="text-white/60 text-lg">{user.age}</span>
-              </div>
-              
-              <p className="text-white/70 text-sm">
-                {user.distance} away
-              </p>
-              {user.position && (
-                <p className="text-white/50 text-xs">
-                  {user.position}
-                </p>
-              )}
-            </div>
-          </div>
+            user={user}
+            onClick={handleUserClick}
+          />
         )) : (
           <div className="col-span-full text-center py-12">
             <div className="text-white/60 text-lg">No users found</div>
