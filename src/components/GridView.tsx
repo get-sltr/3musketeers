@@ -113,8 +113,24 @@ export default function GridView({ onUserClick }: GridViewProps) {
     onUserClick?.(user.id)
   }
 
-  const handleMessage = (userId: string) => {
-    router.push(`/messages/${userId}`)
+  const handleMessage = async (userId: string) => {
+    try {
+      const { startConversation } = await import('@/utils/messaging')
+      const conversationId = await startConversation(userId)
+      
+      if (conversationId) {
+        // Redirect to messages page with the conversation
+        router.push(`/messages?conversation=${conversationId}`)
+      } else {
+        console.error('Failed to start conversation')
+        // Fallback to old behavior
+        router.push(`/messages/${userId}`)
+      }
+    } catch (error) {
+      console.error('Error starting conversation:', error)
+      // Fallback to old behavior
+      router.push(`/messages/${userId}`)
+    }
   }
 
   const handleBlock = (userId: string) => {
