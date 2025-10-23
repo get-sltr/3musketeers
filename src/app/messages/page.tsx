@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import VideoCall from '@/components/VideoCall'
+// import VideoCall from '@/components/VideoCall'
 
 interface Message {
   id: string
@@ -248,16 +248,16 @@ export default function MessagesPage() {
     )
   }
 
-  if (isVideoCallActive && currentCallUser && selectedConversation) {
-    return (
-      <VideoCall
-        conversationId={selectedConversation}
-        otherUserId={currentCallUser.id}
-        otherUserName={currentCallUser.name}
-        onEndCall={endVideoCall}
-      />
-    )
-  }
+  // if (isVideoCallActive && currentCallUser && selectedConversation) {
+  //   return (
+  //     <VideoCall
+  //       conversationId={selectedConversation}
+  //       otherUserId={currentCallUser.id}
+  //       otherUserName={currentCallUser.name}
+  //       onEndCall={endVideoCall}
+  //     />
+  //   )
+  // }
 
   return (
     <div className="min-h-screen bg-black">
