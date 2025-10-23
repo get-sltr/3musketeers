@@ -51,13 +51,17 @@ export default function ProfilePage() {
           return
         }
         
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
           .single()
 
+        console.log('Profile loaded:', profile)
+        console.log('Profile error:', profileError)
+
         if (profile) {
+          console.log('Profile photos:', profile.photos)
           setProfileData({
             display_name: profile.display_name || '',
             age: profile.age?.toString() || '',
@@ -67,7 +71,7 @@ export default function ProfilePage() {
             tags: profile.tags || [],
             party_friendly: profile.party_friendly || false,
             dtfn: profile.dtfn || false,
-            photos: profile.photo_urls || [] // Use photo_urls column
+            photos: profile.photos || [] // Use photos column
           })
         }
       } catch (err) {
@@ -92,6 +96,8 @@ export default function ProfilePage() {
         return
       }
 
+      console.log('Saving profile with photos:', profileData.photos)
+      
       const { error } = await supabase
         .from('profiles')
         .upsert({
@@ -104,9 +110,11 @@ export default function ProfilePage() {
           tags: profileData.tags,
           party_friendly: profileData.party_friendly,
           dtfn: profileData.dtfn,
-          photo_urls: profileData.photos, // Store photos as JSON array
+          photos: profileData.photos, // Store photos as JSON array
           updated_at: new Date().toISOString()
         })
+
+      console.log('Save error:', error)
 
       if (error) {
         setError(error.message)
