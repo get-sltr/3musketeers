@@ -9,7 +9,7 @@ interface User {
   id: string
   username: string
   age: number
-  photos: string[]
+  photos?: string[]
   bio?: string
   distance?: string
   isOnline: boolean
@@ -62,11 +62,15 @@ export default function UserProfileModal({
   }
 
   const nextPhoto = () => {
-    setCurrentPhotoIndex((prev) => (prev + 1) % user.photos.length)
+    if (user.photos && user.photos.length > 0) {
+      setCurrentPhotoIndex((prev) => (prev + 1) % user.photos.length)
+    }
   }
 
   const prevPhoto = () => {
-    setCurrentPhotoIndex((prev) => (prev - 1 + user.photos.length) % user.photos.length)
+    if (user.photos && user.photos.length > 0) {
+      setCurrentPhotoIndex((prev) => (prev - 1 + user.photos.length) % user.photos.length)
+    }
   }
 
   return (
@@ -94,13 +98,13 @@ export default function UserProfileModal({
         <div className="relative">
           <div className="w-full h-80 bg-gradient-to-br from-gray-800 to-gray-900 rounded-t-3xl overflow-hidden">
             <img
-              src={user.photos[currentPhotoIndex]}
+              src={user.photos?.[currentPhotoIndex] || user.photo || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400'}
               alt={`${user.username} photo ${currentPhotoIndex + 1}`}
               className="w-full h-full object-cover"
             />
             
             {/* Photo Navigation */}
-            {user.photos.length > 1 && (
+            {user.photos && user.photos.length > 1 && (
               <>
                 <button
                   onClick={prevPhoto}
@@ -129,7 +133,7 @@ export default function UserProfileModal({
             )}
 
             {/* Photo Indicators */}
-            {user.photos.length > 1 && (
+            {user.photos && user.photos.length > 1 && (
               <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
                 {user.photos.map((_, index) => (
                   <button
