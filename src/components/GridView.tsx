@@ -47,10 +47,13 @@ export default function GridView({ onUserClick }: GridViewProps) {
   useEffect(() => {
     const loadUsers = async () => {
       try {
+        // Get current user to put their profile first
+        const { data: { user: currentUser } } = await supabase.auth.getUser()
+        
         const { data: profiles, error } = await supabase
           .from('profiles')
           .select('*')
-          .order('last_active', { ascending: false })
+          .order('created_at', { ascending: false })
 
         if (error) {
           console.error('Error loading profiles:', error)
@@ -58,13 +61,13 @@ export default function GridView({ onUserClick }: GridViewProps) {
         }
 
         // Convert profiles to User format
-        const userList: User[] = profiles?.map(profile => ({
+        let userList: User[] = profiles?.map(profile => ({
           id: profile.id,
           username: profile.username || 'Unknown',
-          display_name: profile.display_name,
+          display_name: profile.display_name || 'Unknown',
           age: profile.age || 18,
-          photo: profile.photo_url,
-          photos: profile.photos || [profile.photo_url].filter(Boolean),
+          photo: profile.photos?.[0] || profile.photo_url, // Use first photo from photos array
+          photos: profile.photos || [],
           distance: '0.5 mi', // TODO: Calculate real distance
           isOnline: profile.online || false,
           bio: profile.about || '',
@@ -74,6 +77,15 @@ export default function GridView({ onUserClick }: GridViewProps) {
           tags: profile.tags || [],
           eta: '5 min'
         })) || []
+
+        // Sort to put current user first
+        if (currentUser) {
+          userList = userList.sort((a, b) => {
+            if (a.id === currentUser.id) return -1
+            if (b.id === currentUser.id) return 1
+            return 0
+          })
+        }
 
         setUsers(userList)
       } catch (err) {
