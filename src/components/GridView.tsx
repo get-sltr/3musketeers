@@ -26,6 +26,7 @@ interface User {
   longitude?: number
   eta?: string
   tags?: string[]
+  isFavorited?: boolean
 }
 
 interface GridViewProps {
