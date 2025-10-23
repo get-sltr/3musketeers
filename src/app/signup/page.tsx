@@ -121,7 +121,14 @@ export default function SignupPage() {
         // Still redirect to login even if profile creation fails
       }
       
-      router.push('/login?message=Check your email to confirm your account')
+      // Check if email confirmation is required
+      if (data.user && !data.user.email_confirmed_at) {
+        // Email confirmation required - redirect to verify page
+        router.push('/verify-email')
+      } else {
+        // Email already confirmed or auto-confirmed - go to profile setup
+        router.push('/profile/setup')
+      }
     }
   }
 
