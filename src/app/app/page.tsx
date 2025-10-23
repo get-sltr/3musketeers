@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import GridView from '@/components/GridView'
-import MapWithProfiles from '@/components/MapWithProfiles'
+// import MapWithProfiles from '@/components/MapWithProfiles'
 import FilterBar from '@/components/FilterBar'
 import PanicButton from '@/components/PanicButton'
 
@@ -169,10 +169,13 @@ export default function AppPage() {
         {viewMode === 'grid' ? (
           <GridView />
         ) : (
-          <MapWithProfiles onUserClick={(userId) => {
-            // Handle user click from map
-            console.log('User clicked from map:', userId)
-          }} />
+          <div className="h-96 flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-6xl mb-4">🗺️</div>
+              <h3 className="text-white text-xl mb-2">Map Coming Soon</h3>
+              <p className="text-white/60">Map view is being optimized for deployment</p>
+            </div>
+          </div>
         )}
       </main>
 
