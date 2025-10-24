@@ -8,6 +8,11 @@ import { useSocket } from '@/hooks/useSocket'
 import { MessagesLoadingSkeleton } from '@/components/LoadingSkeleton'
 import LazyWrapper, { LazyVideoCall, LazyFileUpload, LazyBlazeAI } from '@/components/LazyWrapper'
 
+interface Profile {
+  display_name: string
+  photos: string[]
+}
+
 interface Message {
   id: string
   sender_id: string
@@ -17,6 +22,7 @@ interface Message {
   read_at?: string
   sender_name?: string
   sender_photo?: string
+  profiles?: Profile[]
 }
 
 interface Conversation {
@@ -201,7 +207,7 @@ export default function MessagesPage() {
       // Transform data to our format
       const transformedConversations: Conversation[] = conversationsData?.map(conv => {
         const otherUserId = conv.user1_id === user.id ? conv.user2_id : conv.user1_id
-        const lastMessage = conv.messages?.[0]
+        const lastMessage = Array.isArray(conv.messages) ? conv.messages[0] : conv.messages
         return {
           id: conv.id,
           other_user: {
