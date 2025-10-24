@@ -204,35 +204,35 @@ export default function MessagesPage() {
         return
       }
 
-      // Transform data to our format
-      const transformedConversations: Conversation[] = conversationsData?.map(conv => {
-        const otherUserId = conv.user1_id === user.id ? conv.user2_id : conv.user1_id
-        const lastMessage = conv.messages?.[0]
-        
-        // Pick the first (or latest) message from the array
-        const message = conv.messages?.[0]
-        
-        return {
-          id: conv.id,
-          other_user: {
-            id: otherUserId,
-            display_name: message?.profiles?.[0]?.display_name || 'Unknown',
-            photo: message?.profiles?.[0]?.photos?.[0] || '',
-            online: false // TODO: Implement online status
-          },
-          last_message: {
-            id: message?.id || '',
-            sender_id: message?.sender_id || '',
-            receiver_id: user.id,
-            content: message?.content || '',
-            created_at: message?.created_at || '',
-            sender_name: message?.profiles?.[0]?.display_name || 'Unknown'
-          },
-          unread_count: 0 // TODO: Implement unread count
-        }
-      }) || []
+     // Transform data to our format
+const transformedConversations: Conversation[] = conversationsData?.map(conv => {
+  const otherUserId = conv.user1_id === user.id ? conv.user2_id : conv.user1_id
 
-      setConversations(transformedConversations)
+  // Safely get the first message if it exists
+  const message = conv.messages && conv.messages.length > 0 ? conv.messages[0] : null
+
+  return {
+    id: conv.id,
+    other_user: {
+      id: otherUserId,
+      display_name: message?.profiles?.[0]?.display_name ?? 'Unknown',
+      photo: message?.profiles?.[0]?.photos?.[0] ?? '',
+      online: false // TODO: Implement online status
+    },
+    last_message: {
+      id: message?.id ?? '',
+      sender_id: message?.sender_id ?? '',
+      receiver_id: user.id,
+      content: message?.content ?? '',
+      created_at: message?.created_at ?? '',
+      sender_name: message?.profiles?.[0]?.display_name ?? 'Unknown'
+    },
+    unread_count: 0 // TODO: Implement unread count
+  }
+}) || []
+
+setConversations(transformedConversations)
+ 
     } catch (err) {
       console.error('Error loading conversations:', err)
     } finally {
