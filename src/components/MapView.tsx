@@ -1,9 +1,14 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import mapboxgl from 'mapbox-gl'
-import 'mapbox-gl/dist/mapbox-gl.css'
+import dynamic from 'next/dynamic'
+
+// Dynamically import Leaflet components to avoid SSR issues
+const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { ssr: false })
+const TileLayer = dynamic(() => import('react-leaflet').then(mod => mod.TileLayer), { ssr: false })
+const Marker = dynamic(() => import('react-leaflet').then(mod => mod.Marker), { ssr: false })
+const Popup = dynamic(() => import('react-leaflet').then(mod => mod.Popup), { ssr: false })
 
 interface User {
   id: string
@@ -18,10 +23,8 @@ interface User {
   position?: string
   party_friendly?: boolean
   dtfn?: boolean
-  latitude?: number
-  longitude?: number
-  eta?: string
-  tags?: string[]
+  latitude: number
+  longitude: number
 }
 
 interface MapViewProps {
@@ -30,9 +33,6 @@ interface MapViewProps {
 }
 
 export default function MapView({ onMarkerClick, onUserClick }: MapViewProps) {
-  const mapContainer = useRef<HTMLDivElement>(null)
-  const map = useRef<mapboxgl.Map | null>(null)
-  const markers = useRef<mapboxgl.Marker[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null)
@@ -50,11 +50,6 @@ export default function MapView({ onMarkerClick, onUserClick }: MapViewProps) {
         (position) => {
           const { latitude, longitude } = position.coords
           setUserLocation({ lat: latitude, lng: longitude })
-          
-          if (map.current) {
-            map.current.setCenter([longitude, latitude])
-            map.current.setZoom(12)
-          }
         },
         (error) => {
           console.error('Location error:', error)
@@ -76,30 +71,27 @@ export default function MapView({ onMarkerClick, onUserClick }: MapViewProps) {
         .select('*')
         .not('latitude', 'is', null)
         .not('longitude', 'is', null)
-        .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error loading profiles:', error)
+        console.error('Error loading users:', error)
         return
       }
 
-      const userList: User[] = profiles?.map(profile => ({
+      const userList: User[] = (profiles || []).map((profile: any) => ({
         id: profile.id,
-        username: profile.username || 'Unknown',
+        username: profile.username,
         display_name: profile.display_name,
-        age: profile.age || 18,
-        photo: profile.photos?.[0] || profile.photo_url,
-        photos: profile.photos || [],
-        distance: '0.5 mi', // TODO: Calculate real distance
-        isOnline: profile.online || false,
-        bio: profile.about || '',
+        age: profile.age,
+        photo: profile.photos?.[0],
+        photos: profile.photos,
+        distance: profile.distance,
+        isOnline: profile.is_online || false,
+        bio: profile.bio,
         position: profile.position,
-        party_friendly: profile.party_friendly || false,
-        dtfn: profile.dtfn || false,
+        party_friendly: profile.party_friendly,
+        dtfn: profile.dtfn,
         latitude: profile.latitude,
-        longitude: profile.longitude,
-        tags: profile.tags || [],
-        eta: '5 min'
+        longitude: profile.longitude
       })) || []
 
       setUsers(userList)
@@ -109,178 +101,6 @@ export default function MapView({ onMarkerClick, onUserClick }: MapViewProps) {
       setLoading(false)
     }
   }
-
-  useEffect(() => {
-    if (!mapContainer.current || !userLocation) return
-
-    // Initialize map
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/dark-v11',
-      center: [userLocation.lng, userLocation.lat],
-      zoom: 12,
-      accessToken: process.env.NEXT_PUBLIC_MAPBOX_TOKEN
-    })
-
-    // Add user's location marker
-    const userMarker = new mapboxgl.Marker({
-      color: '#00d4ff',
-      scale: 1.2
-    })
-      .setLngLat([userLocation.lng, userLocation.lat])
-      .addTo(map.current)
-
-    // Add navigation controls
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
-
-    // Add geolocate control
-    map.current.addControl(
-      new mapboxgl.GeolocateControl({
-        positionOptions: {
-          enableHighAccuracy: true
-        },
-        trackUserLocation: true,
-        showUserHeading: true
-      }),
-      'top-right'
-    )
-
-    return () => {
-      if (map.current) {
-        map.current.remove()
-      }
-    }
-  }, [userLocation])
-
-  useEffect(() => {
-    if (!map.current || users.length === 0) return
-
-    // Clear existing markers
-    markers.current.forEach(marker => marker.remove())
-    markers.current = []
-
-    // Add user markers
-    users.forEach(user => {
-      if (!user.latitude || !user.longitude) return
-
-      // Create custom marker element
-      const markerEl = document.createElement('div')
-      markerEl.className = 'user-marker'
-      markerEl.style.cssText = `
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #00d4ff, #ff00ff);
-        border: 3px solid white;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        transition: all 0.3s ease;
-      `
-
-      // Add user photo or initial
-      if (user.photo) {
-        markerEl.innerHTML = `
-          <img 
-            src="${user.photo}" 
-            alt="${user.username}"
-            style="
-              width: 44px;
-              height: 44px;
-              border-radius: 50%;
-              object-fit: cover;
-            "
-          />
-        `
-      } else {
-        markerEl.innerHTML = `
-          <span style="
-            color: white;
-            font-weight: bold;
-            font-size: 18px;
-          ">${user.username.charAt(0).toUpperCase()}</span>
-        `
-      }
-
-      // Add status indicators
-      const statusEl = document.createElement('div')
-      statusEl.style.cssText = `
-        position: absolute;
-        bottom: -2px;
-        right: -2px;
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        border: 2px solid white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 10px;
-      `
-
-      if (user.isOnline) {
-        statusEl.style.background = '#00ff00'
-        statusEl.innerHTML = '●'
-      } else {
-        statusEl.style.background = '#666'
-        statusEl.innerHTML = '○'
-      }
-
-      markerEl.appendChild(statusEl)
-
-      // Add party/DTFN indicators
-      if (user.party_friendly || user.dtfn) {
-        const indicatorEl = document.createElement('div')
-        indicatorEl.style.cssText = `
-          position: absolute;
-          top: -5px;
-          right: -5px;
-          width: 20px;
-          height: 20px;
-          border-radius: 50%;
-          background: ${user.dtfn ? '#ff4444' : '#ffaa00'};
-          border: 2px solid white;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 12px;
-        `
-        indicatorEl.innerHTML = user.dtfn ? '⚡' : '🥳'
-        markerEl.appendChild(indicatorEl)
-      }
-
-      // Add hover effect
-      markerEl.addEventListener('mouseenter', () => {
-        markerEl.style.transform = 'scale(1.1)'
-        markerEl.style.zIndex = '1000'
-      })
-
-      markerEl.addEventListener('mouseleave', () => {
-        markerEl.style.transform = 'scale(1)'
-        markerEl.style.zIndex = '1'
-      })
-
-      // Add click handler
-      markerEl.addEventListener('click', () => {
-        if (onMarkerClick) {
-          onMarkerClick(user)
-        }
-        if (onUserClick) {
-          onUserClick(user.id)
-        }
-      })
-
-      // Create marker
-      const marker = new mapboxgl.Marker(markerEl)
-        .setLngLat([user.longitude, user.latitude])
-        .addTo(map.current!)
-
-      markers.current.push(marker)
-    })
-  }, [users, onMarkerClick, onUserClick])
 
   if (loading) {
     return (
@@ -296,11 +116,71 @@ export default function MapView({ onMarkerClick, onUserClick }: MapViewProps) {
   return (
     <div className="h-full relative">
       {/* Map Container */}
-      <div 
-        ref={mapContainer} 
-        className="w-full h-full rounded-2xl overflow-hidden"
-        style={{ minHeight: '500px' }}
-      />
+      {userLocation && (
+        <MapContainer
+          center={[userLocation.lat, userLocation.lng]}
+          zoom={12}
+          className="w-full h-full rounded-2xl overflow-hidden"
+          style={{ minHeight: '500px' }}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          
+          {/* User's location marker */}
+          <Marker position={[userLocation.lat, userLocation.lng]}>
+            <Popup>
+              <div className="text-center">
+                <div className="w-4 h-4 bg-cyan-500 rounded-full mx-auto mb-2"></div>
+                <p className="text-sm font-semibold">You are here</p>
+              </div>
+            </Popup>
+          </Marker>
+          
+          {/* User markers */}
+          {users.map((user) => (
+            <Marker 
+              key={user.id} 
+              position={[user.latitude, user.longitude]}
+              eventHandlers={{
+                click: () => {
+                  if (onMarkerClick) onMarkerClick(user)
+                  if (onUserClick) onUserClick(user.id)
+                }
+              }}
+            >
+              <Popup>
+                <div className="text-center p-2">
+                  {user.photo && (
+                    <img 
+                      src={user.photo} 
+                      alt={user.display_name || user.username}
+                      className="w-12 h-12 rounded-full mx-auto mb-2 object-cover"
+                    />
+                  )}
+                  <h3 className="font-semibold text-sm">{user.display_name || user.username}</h3>
+                  <p className="text-xs text-gray-600">{user.age} years old</p>
+                  {user.distance && (
+                    <p className="text-xs text-blue-600">{user.distance} away</p>
+                  )}
+                  <div className="flex gap-1 mt-2">
+                    {user.isOnline && (
+                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    )}
+                    {user.party_friendly && (
+                      <span className="text-yellow-400">🥳</span>
+                    )}
+                    {user.dtfn && (
+                      <span className="text-red-400">⚡</span>
+                    )}
+                  </div>
+                </div>
+              </Popup>
+            </Marker>
+          ))}
+        </MapContainer>
+      )}
 
       {/* Map Controls Overlay */}
       <div className="absolute top-4 left-4 space-y-2">
