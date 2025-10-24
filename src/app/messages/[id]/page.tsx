@@ -14,28 +14,71 @@ interface Message {
   isSent: boolean
 }
 
-export default async function ConversationPage({ 
+export default function ConversationPage({ 
   params 
 }: { 
   params: Promise<{ id: string }> 
 }) {
-  const { id } = await params
+  // All hooks must be at the top
+  const [conversationId, setConversationId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [message, setMessage] = useState('')
+  const [messages, setMessages] = useState<Message[]>([])
+  const [sending, setSending] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
+  const supabase = createClient()
   
-  if (!id) {
+  useEffect(() => {
+    const getParams = async () => {
+      const { id } = await params
+      setConversationId(id)
+      setLoading(false)
+    }
+    getParams()
+  }, [params])
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        router.push('/login')
+        return
+      }
+    }
+    checkAuth()
+  }, [router, supabase.auth])
+
+  useEffect(() => {
+    // Load messages for this conversation
+    if (conversationId) {
+      setMessages(mockMessages)
+    }
+  }, [conversationId])
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    )
+  }
+  
+  if (!conversationId) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <p className="text-white">Invalid conversation</p>
       </div>
     )
   }
-  
-  const [message, setMessage] = useState('')
-  const [messages, setMessages] = useState<Message[]>([])
-  const [loading, setLoading] = useState(true)
-  const [sending, setSending] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const router = useRouter()
-  const supabase = createClient()
 
   // Mock conversation data
   const mockConversations = {
@@ -56,7 +99,7 @@ export default async function ConversationPage({
     }
   }
 
-  const conversation = mockConversations[id as keyof typeof mockConversations] || {
+  const conversation = mockConversations[conversationId as keyof typeof mockConversations] || {
     username: 'Unknown',
     photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400',
     isOnline: false
@@ -66,7 +109,7 @@ export default async function ConversationPage({
   const mockMessages: Message[] = [
     {
       id: '1',
-      senderId: id || 'unknown',
+      senderId: conversationId || 'unknown',
       text: 'Hey! How are you doing today?',
       timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
       isSent: false
@@ -80,7 +123,7 @@ export default async function ConversationPage({
     },
     {
       id: '3',
-      senderId: id || 'unknown',
+      senderId: conversationId || 'unknown',
       text: 'Pretty good! Just working on some projects. What are you up to?',
       timestamp: new Date(Date.now() - 1000 * 60 * 20), // 20 minutes ago
       isSent: false
@@ -94,7 +137,7 @@ export default async function ConversationPage({
     },
     {
       id: '5',
-      senderId: id || 'unknown',
+      senderId: conversationId || 'unknown',
       text: 'That sounds amazing! I\'d love to hear more about it sometime.',
       timestamp: new Date(Date.now() - 1000 * 60 * 10), // 10 minutes ago
       isSent: false
@@ -108,30 +151,6 @@ export default async function ConversationPage({
     }
   ]
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        router.push('/login')
-        return
-      }
-      setLoading(false)
-    }
-    checkAuth()
-  }, [router, supabase.auth])
-
-  useEffect(() => {
-    // Load messages for this conversation
-    setMessages(mockMessages)
-  }, [id])
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages])
 
   const handleSend = async () => {
     if (!message.trim() || sending) return
@@ -165,7 +184,7 @@ export default async function ConversationPage({
       
       const responseMessage: Message = {
         id: (Date.now() + 1).toString(),
-        senderId: (id || 'unknown') as string,
+        senderId: (conversationId || 'unknown') as string,
         text: responses[Math.floor(Math.random() * responses.length)]!,
         timestamp: new Date(),
         isSent: false
