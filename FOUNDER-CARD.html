@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLTR Founder Card</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2a2a2a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .card {
+            width: 400px;
+            height: 250px;
+            background: linear-gradient(135deg, 
+                rgba(0, 212, 255, 0.1) 0%, 
+                rgba(255, 0, 255, 0.1) 50%, 
+                rgba(255, 165, 0, 0.1) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, 
+                rgba(0, 212, 255, 0.1) 0%, 
+                rgba(255, 0, 255, 0.1) 50%, 
+                rgba(255, 165, 0, 0.1) 100%);
+            border-radius: 20px;
+            z-index: -1;
+        }
+
+        .card-content {
+            padding: 30px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(45deg, #00d4ff, #ff00ff);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 8px 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .title-section h1 {
+            color: white;
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 5px;
+            background: linear-gradient(45deg, #00d4ff, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .title-section p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .founder-badge {
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+
+        .incentive {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .incentive h3 {
+            color: #00d4ff;
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .incentive p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .qr-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .qr-code {
+            width: 60px;
+            height: 60px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #333;
+        }
+
+        .qr-info {
+            flex: 1;
+        }
+
+        .qr-info h4 {
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .qr-info p {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+        }
+
+        .floating-elements {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .floating-elements::before {
+            content: '🔥';
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 20px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .floating-elements::after {
+            content: '⚡';
+            position: absolute;
+            bottom: 30px;
+            right: 20px;
+            font-size: 16px;
+            animation: float 2s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 212, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 212, 255, 0); }
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover .logo {
+            animation: pulse 1s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="floating-elements"></div>
+        
+        <div class="card-content">
+            <div class="header">
+                <div class="logo">SLTR</div>
+                <div class="title-section">
+                    <h1>Founder Card</h1>
+                    <p>Exclusive Access</p>
+                </div>
+            </div>
+
+            <div class="founder-badge">Founder's Circle</div>
+
+            <div class="incentive">
+                <h3>🔥 Lifetime Membership</h3>
+                <p>Join the founder's circle and get <strong>FREE lifetime access</strong> to all premium features, AI-powered tools, and exclusive benefits!</p>
+            </div>
+
+            <div class="qr-section">
+                <div class="qr-code">📱</div>
+                <div class="qr-info">
+                    <h4>Scan to Join</h4>
+                    <p>Use this link to get your lifetime membership</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add some interactive effects
+        const card = document.querySelector('.card');
+        
+        card.addEventListener('mouseenter', () => {
+            card.style.transform = 'translateY(-10px) scale(1.02)';
+        });
+        
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = 'translateY(0) scale(1)';
+        });
+    </script>
+</body>
+</html>
