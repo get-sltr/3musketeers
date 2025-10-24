@@ -206,8 +206,8 @@ export default function MessagesPage() {
           id: conv.id,
           other_user: {
             id: otherUserId,
-            display_name: 'Unknown', // TODO: Get from user profile
-            photo: '', // TODO: Get from user profile
+            display_name: lastMessage?.profiles?.[0]?.display_name || 'Unknown',
+            photo: lastMessage?.profiles?.[0]?.photos?.[0] || '',
             online: false // TODO: Implement online status
           },
           last_message: {
@@ -216,7 +216,7 @@ export default function MessagesPage() {
             receiver_id: user.id,
             content: lastMessage?.content || '',
             created_at: lastMessage?.created_at || '',
-            sender_name: 'Unknown' // TODO: Get from user profile
+            sender_name: lastMessage?.profiles?.[0]?.display_name || 'Unknown'
           },
           unread_count: 0 // TODO: Implement unread count
         }
