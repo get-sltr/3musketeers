@@ -51,11 +51,44 @@ export default function ConversationPage({
   }, [router, supabase.auth])
 
   useEffect(() => {
-    // Load messages for this conversation
+    // Load real messages for this conversation
     if (conversationId) {
-      setMessages(mockMessages)
+      loadMessages(conversationId)
     }
   }, [conversationId])
+
+  const loadMessages = async (conversationId: string) => {
+    try {
+      const { data: messagesData, error } = await supabase
+        .from('messages')
+        .select(`
+          *,
+          profiles!messages_sender_id_fkey (
+            display_name,
+            photos
+          )
+        `)
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true })
+
+      if (error) {
+        console.error('Error loading messages:', error)
+        return
+      }
+
+      const transformedMessages: Message[] = messagesData?.map((msg: any) => ({
+        id: msg.id,
+        senderId: msg.sender_id,
+        text: msg.content,
+        timestamp: new Date(msg.created_at),
+        isSent: msg.sender_id === (await supabase.auth.getUser()).data.user?.id
+      })) || []
+
+      setMessages(transformedMessages)
+    } catch (err) {
+      console.error('Error loading messages:', err)
+    }
+  }
 
   useEffect(() => {
     scrollToBottom()
@@ -81,120 +114,124 @@ export default function ConversationPage({
     )
   }
 
-  // Mock conversation data
-  const mockConversations = {
-    '1': {
-      username: 'Alex',
-      photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-      isOnline: true
-    },
-    '2': {
-      username: 'Jordan',
-      photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',
-      isOnline: false
-    },
-    '3': {
-      username: 'Casey',
-      photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400',
-      isOnline: true
-    }
-  }
-
-  const conversation = mockConversations[conversationId as keyof typeof mockConversations] || {
-    username: 'Unknown',
-    photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400',
+  const [conversation, setConversation] = useState({
+    username: 'Loading...',
+    photo: '',
     isOnline: false
+  })
+
+  useEffect(() => {
+    if (conversationId) {
+      loadConversationData(conversationId)
+    }
+  }, [conversationId])
+
+  const loadConversationData = async (conversationId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Get conversation details
+      const { data: conversationData, error } = await supabase
+        .from('conversations')
+        .select(`
+          *,
+          profiles!conversations_user1_id_fkey (
+            id,
+            display_name,
+            photos,
+            online
+          ),
+          profiles!conversations_user2_id_fkey (
+            id,
+            display_name,
+            photos,
+            online
+          )
+        `)
+        .eq('id', conversationId)
+        .single()
+
+      if (error) {
+        console.error('Error loading conversation:', error)
+        return
+      }
+
+      // Find the other user
+      const otherUser = conversationData.user1_id === user.id 
+        ? conversationData.profiles?.[1] 
+        : conversationData.profiles?.[0]
+
+      if (otherUser) {
+        setConversation({
+          username: otherUser.display_name || 'Unknown',
+          photo: otherUser.photos?.[0] || '',
+          isOnline: otherUser.online || false
+        })
+      }
+    } catch (err) {
+      console.error('Error loading conversation data:', err)
+    }
   }
 
-  // Mock messages
-  const mockMessages: Message[] = [
-    {
-      id: '1',
-      senderId: conversationId || 'unknown',
-      text: 'Hey! How are you doing today?',
-      timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
-      isSent: false
-    },
-    {
-      id: '2',
-      senderId: 'me',
-      text: 'I\'m doing great! Thanks for asking. How about you?',
-      timestamp: new Date(Date.now() - 1000 * 60 * 25), // 25 minutes ago
-      isSent: true
-    },
-    {
-      id: '3',
-      senderId: conversationId || 'unknown',
-      text: 'Pretty good! Just working on some projects. What are you up to?',
-      timestamp: new Date(Date.now() - 1000 * 60 * 20), // 20 minutes ago
-      isSent: false
-    },
-    {
-      id: '4',
-      senderId: 'me',
-      text: 'Same here! Working on this new app. It\'s been really exciting!',
-      timestamp: new Date(Date.now() - 1000 * 60 * 15), // 15 minutes ago
-      isSent: true
-    },
-    {
-      id: '5',
-      senderId: conversationId || 'unknown',
-      text: 'That sounds amazing! I\'d love to hear more about it sometime.',
-      timestamp: new Date(Date.now() - 1000 * 60 * 10), // 10 minutes ago
-      isSent: false
-    },
-    {
-      id: '6',
-      senderId: 'me',
-      text: 'Absolutely! Maybe we could grab coffee and I can show you?',
-      timestamp: new Date(Date.now() - 1000 * 60 * 5), // 5 minutes ago
-      isSent: true
-    }
-  ]
 
 
   const handleSend = async () => {
-    if (!message.trim() || sending) return
+    if (!message.trim() || sending || !conversationId) return
     
     setSending(true)
     
-    // Add message to list
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      senderId: 'me',
-      text: message,
-      timestamp: new Date(),
-      isSent: true
-    }
-    
-    setMessages(prev => [...prev, newMessage])
-    setMessage('')
-    
-    // Simulate response after 1-3 seconds
-    setTimeout(() => {
-      const responses = [
-        'That sounds interesting!',
-        'I see what you mean.',
-        'Tell me more about that!',
-        'That\'s really cool!',
-        'I\'d love to hear more.',
-        'That makes sense.',
-        'I agree with you on that.',
-        'That\'s a great point!'
-      ]
-      
-      const responseMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        senderId: (conversationId || 'unknown') as string,
-        text: responses[Math.floor(Math.random() * responses.length)]!,
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Get the other user ID from conversation data
+      const { data: conversationData } = await supabase
+        .from('conversations')
+        .select('user1_id, user2_id')
+        .eq('id', conversationId)
+        .single()
+
+      if (!conversationData) return
+
+      const otherUserId = conversationData.user1_id === user.id 
+        ? conversationData.user2_id 
+        : conversationData.user1_id
+
+      // Send message to database
+      const { error } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          receiver_id: otherUserId,
+          content: message.trim()
+        })
+
+      if (error) {
+        console.error('Error sending message:', error)
+        return
+      }
+
+      // Add message to local state immediately for better UX
+      const newMessage: Message = {
+        id: Date.now().toString(),
+        senderId: user.id,
+        text: message.trim(),
         timestamp: new Date(),
-        isSent: false
+        isSent: true
       }
       
-      setMessages(prev => [...prev, responseMessage])
-    }, Math.random() * 2000 + 1000)
-    
-    setSending(false)
+      setMessages(prev => [...prev, newMessage])
+      setMessage('')
+      
+      // Reload messages to get the real message from database
+      loadMessages(conversationId)
+    } catch (error) {
+      console.error('Error sending message:', error)
+    } finally {
+      setSending(false)
+    }
   }
 
   const formatTime = (date: Date) => {

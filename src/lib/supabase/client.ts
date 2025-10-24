@@ -15,5 +15,9 @@ export function createClient() {
   }
   
   console.log('✅ Supabase configured:', supabaseUrl)
-  return createBrowserClient(supabaseUrl, supabaseKey)
+  return createBrowserClient(supabaseUrl, supabaseKey, {
+    auth: {
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'https://3musketeers.vercel.app'}/auth/callback`
+    }
+  })
 }
