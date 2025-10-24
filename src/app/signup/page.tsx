@@ -123,11 +123,11 @@ export default function SignupPage() {
       
       // Check if email confirmation is required
       if (data.user && !data.user.email_confirmed_at) {
-        // Email confirmation required - redirect to verify page
-        router.push('/verify-email')
+        // Email confirmation required - redirect to login with message
+        router.push('/login?message=Please check your email to confirm your account')
       } else {
-        // Email already confirmed or auto-confirmed - go to profile setup
-        router.push('/profile/setup')
+        // Email already confirmed or auto-confirmed - go to main app
+        router.push('/app')
       }
     }
   }
