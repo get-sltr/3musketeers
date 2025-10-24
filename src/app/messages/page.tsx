@@ -210,7 +210,7 @@ export default function MessagesPage() {
         const lastMessage = conv.messages?.[0]
         
         // Pick the first (or latest) message from the array
-        const message = Array.isArray(lastMessage) ? lastMessage[0] : lastMessage
+        const message = conv.messages?.[0]
         
         return {
           id: conv.id,
