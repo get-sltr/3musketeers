@@ -41,7 +41,16 @@ interface MapWithProfilesProps {
 
 // Custom marker component
 function UserMarker({ user, onClick }: { user: User, onClick: () => void }) {
-  const L = require('leaflet')
+  // Dynamically import leaflet to avoid SSR issues
+  const [L, setL] = useState<any>(null)
+  
+  useEffect(() => {
+    import('leaflet').then(leaflet => {
+      setL(leaflet.default)
+    })
+  }, [])
+  
+  if (!L) return null
   
   const createCustomIcon = (user: User) => {
     const iconHtml = `
