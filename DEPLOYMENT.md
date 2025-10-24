@@ -13,9 +13,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
 
 ### Optional Environment Variables
 
-```
-NEXT_PUBLIC_MAPBOX_TOKEN=your_mapbox_token_here
-```
+None currently needed.
 
 ## Railway Deployment (Backend)
 
