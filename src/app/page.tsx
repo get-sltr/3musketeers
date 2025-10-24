@@ -10,7 +10,7 @@ export default function LandingPage() {
   const [showCursor, setShowCursor] = useState(false)
   const [showMainContent, setShowMainContent] = useState(false)
 
-  const splashText = "When was the first time you did something for the first time?"
+  const splashText = "When was the last time you did something for the first time?"
 
   useEffect(() => {
     setMounted(true)
