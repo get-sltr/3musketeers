@@ -215,8 +215,8 @@ const transformedConversations: Conversation[] = conversationsData?.map(conv => 
     id: conv.id,
     other_user: {
       id: otherUserId,
-      display_name: message?.profiles?.[0]?.display_name ?? 'Unknown',
-      photo: message?.profiles?.[0]?.photos?.[0] ?? '',
+      display_name: message?.profiles?.display_name ?? 'Unknown',
+      photo: message?.profiles?.photos?.[0] ?? '',
       online: false // TODO: Implement online status
     },
     last_message: {
@@ -225,7 +225,7 @@ const transformedConversations: Conversation[] = conversationsData?.map(conv => 
       receiver_id: user.id,
       content: message?.content ?? '',
       created_at: message?.created_at ?? '',
-      sender_name: message?.profiles?.[0]?.display_name ?? 'Unknown'
+      sender_name: message?.profiles?.display_name ?? 'Unknown'
     },
     unread_count: 0 // TODO: Implement unread count
   }
@@ -266,8 +266,8 @@ setConversations(transformedConversations)
         content: msg.content,
         created_at: msg.created_at,
         read_at: msg.read_at,
-        sender_name: msg.profiles?.[0]?.display_name || 'Unknown',
-        sender_photo: msg.profiles?.[0]?.photos?.[0] || ''
+        sender_name: msg.profiles?.display_name || 'Unknown',
+        sender_photo: msg.profiles?.photos?.[0] || ''
       })) || []
 
       setMessages(transformedMessages)
