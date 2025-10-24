@@ -266,8 +266,8 @@ export default function MessagesPage() {
         content: msg.content,
         created_at: msg.created_at,
         read_at: msg.read_at,
-        sender_name: msg.profiles?.display_name || 'Unknown',
-        sender_photo: msg.profiles?.photos?.[0] || ''
+        sender_name: msg.profiles?.[0]?.display_name || 'Unknown',
+        sender_photo: msg.profiles?.[0]?.photos?.[0] || ''
       })) || []
 
       setMessages(transformedMessages)
