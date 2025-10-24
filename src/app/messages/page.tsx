@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useSocket } from '@/hooks/useSocket'
-// import VideoCall from '@/components/VideoCall'
+import VideoCall from '@/components/VideoCall'
+import FileUpload from '@/components/FileUpload'
 
 interface Message {
   id: string
@@ -41,6 +42,8 @@ export default function MessagesPage() {
   const [currentCallUser, setCurrentCallUser] = useState<{id: string, name: string} | null>(null)
   const [typingUsers, setTypingUsers] = useState<string[]>([])
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set())
+  const [showFileUpload, setShowFileUpload] = useState(false)
+  const [messageStatus, setMessageStatus] = useState<{[key: string]: 'sending' | 'delivered' | 'read'}>({})
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const router = useRouter()
@@ -107,12 +110,29 @@ export default function MessagesPage() {
       })
     }
 
+    // Handle message status updates
+    const handleMessageDelivered = (data: any) => {
+      setMessageStatus(prev => ({
+        ...prev,
+        [data.messageId]: 'delivered'
+      }))
+    }
+
+    const handleMessageRead = (data: any) => {
+      setMessageStatus(prev => ({
+        ...prev,
+        [data.messageId]: 'read'
+      }))
+    }
+
     // Add event listeners
     window.addEventListener('new_message', handleNewMessage)
     window.addEventListener('user_typing', handleUserTyping)
     window.addEventListener('user_stop_typing', handleUserStopTyping)
     window.addEventListener('user_online', handleUserOnline)
     window.addEventListener('user_offline', handleUserOffline)
+    window.addEventListener('message_delivered', handleMessageDelivered)
+    window.addEventListener('message_read', handleMessageRead)
 
     return () => {
       window.removeEventListener('new_message', handleNewMessage)
@@ -120,6 +140,8 @@ export default function MessagesPage() {
       window.removeEventListener('user_stop_typing', handleUserStopTyping)
       window.removeEventListener('user_online', handleUserOnline)
       window.removeEventListener('user_offline', handleUserOffline)
+      window.removeEventListener('message_delivered', handleMessageDelivered)
+      window.removeEventListener('message_read', handleMessageRead)
     }
   }, [socket, selectedConversation])
 
@@ -252,6 +274,8 @@ export default function MessagesPage() {
 
       // Send message via Socket.io for real-time delivery
       if (isConnected && socketSendMessage) {
+        const tempId = `temp_${Date.now()}`
+        setMessageStatus(prev => ({ ...prev, [tempId]: 'sending' }))
         socketSendMessage(selectedConversation, newMessage.trim(), 'text')
       } else {
         // Fallback to database-only if Socket.io not connected
@@ -349,6 +373,15 @@ export default function MessagesPage() {
     }
   }, [selectedConversation, isConnected, joinConversation, leaveConversation])
 
+  // Handle file upload
+  const handleFileUploaded = (fileUrl: string, fileName: string, fileType: string) => {
+    if (selectedConversation && isConnected) {
+      // Send file message via Socket.io
+      sendMessage(selectedConversation, `📎 ${fileName}`, 'file', fileUrl)
+    }
+    setShowFileUpload(false)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -357,16 +390,16 @@ export default function MessagesPage() {
     )
   }
 
-  // if (isVideoCallActive && currentCallUser && selectedConversation) {
-  //   return (
-  //     <VideoCall
-  //       conversationId={selectedConversation}
-  //       otherUserId={currentCallUser.id}
-  //       otherUserName={currentCallUser.name}
-  //       onEndCall={endVideoCall}
-  //     />
-  //   )
-  // }
+  if (isVideoCallActive && currentCallUser && selectedConversation) {
+    return (
+      <VideoCall
+        conversationId={selectedConversation}
+        otherUserId={currentCallUser.id}
+        otherUserName={currentCallUser.name}
+        onEndCall={endVideoCall}
+      />
+    )
+  }
 
   return (
     <div className="min-h-screen bg-black">
@@ -468,10 +501,44 @@ export default function MessagesPage() {
                         ? 'bg-white/10 text-white'
                         : 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white'
                     }`}>
-                      <p className="text-sm">{message.content}</p>
-                      <p className="text-xs opacity-70 mt-1">
-                        {formatTime(message.created_at)}
-                      </p>
+                      {/* File Message */}
+                      {message.content.startsWith('📎') && (
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="text-2xl">📎</div>
+                          <div>
+                            <p className="text-sm font-medium">{message.content.replace('📎 ', '')}</p>
+                            <p className="text-xs opacity-70">File shared</p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Regular Message */}
+                      {!message.content.startsWith('📎') && (
+                        <p className="text-sm">{message.content}</p>
+                      )}
+                      
+                      <div className="flex items-center justify-between mt-1">
+                        <p className="text-xs opacity-70">
+                          {formatTime(message.created_at)}
+                        </p>
+                        {/* Message Status Indicators */}
+                        {message.sender_id !== (conversations.find(c => c.id === selectedConversation)?.other_user.id) && (
+                          <div className="flex items-center gap-1">
+                            {messageStatus[message.id] === 'sending' && (
+                              <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+                            )}
+                            {messageStatus[message.id] === 'delivered' && (
+                              <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                            )}
+                            {messageStatus[message.id] === 'read' && (
+                              <div className="flex gap-1">
+                                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -514,7 +581,23 @@ export default function MessagesPage() {
                   >
                     📞 Voice Call
                   </button>
+                  <button
+                    onClick={() => setShowFileUpload(!showFileUpload)}
+                    className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-semibold hover:scale-105 transition-all duration-300 flex items-center gap-2"
+                  >
+                    📎 Attach File
+                  </button>
                 </div>
+                
+                {/* File Upload Component */}
+                {showFileUpload && selectedConversation && (
+                  <div className="mb-4">
+                    <FileUpload
+                      conversationId={selectedConversation}
+                      onFileUploaded={handleFileUploaded}
+                    />
+                  </div>
+                )}
                 <form onSubmit={sendMessage} className="flex gap-3">
                   <input
                     type="text"
