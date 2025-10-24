@@ -24,7 +24,7 @@
 - **WebRTC Video Calling** with crystal-clear quality
 - **File Sharing** with drag-and-drop simplicity
 - **Social Discovery** with location-based matching
-- **AI-Powered Features** with Perplexity integration
+- **AI-Powered Features** with Blaze AI (powered by Perplexity)
 - **Privacy-First Design** with user-controlled data
 
 ### 🏗️ Enterprise Infrastructure
@@ -68,13 +68,13 @@
 - ✅ **One-Click Migration** - Import from Telegram in 30 seconds
 - ✅ **Enhanced Groups** - Advanced group management features
 - ✅ **Real-Time Features** - Live typing, delivery status
-- ✅ **AI Integration** - Perplexity AI-powered features
+- ✅ **AI Integration** - Blaze AI (powered by Perplexity)
 
 ---
 
 ## 🤖 AI Integration Strategy
 
-### **Perplexity AI Partnership**
+### **Blaze AI Partnership (Powered by Perplexity)**
 - **Smart Conversations** - AI-powered chat assistance
 - **Content Generation** - Help users create better profiles
 - **Match Recommendations** - AI suggests compatible users
@@ -96,6 +96,8 @@
 - **User Retention** - AI features increase engagement
 - **Monetization** - Premium AI features for revenue
 - **Brand Differentiation** - "The AI-powered social platform"
+- **Blaze AI Branding** - "Blaze AI powered by Perplexity" creates premium feel
+- **Partnership Credibility** - Perplexity's AI expertise adds trust
 
 ---
 
