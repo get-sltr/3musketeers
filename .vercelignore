@@ -1,0 +1,6 @@
+backend/
+*.sql
+*.html
+*.md
+test-*.js
+run-migration.js
