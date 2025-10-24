@@ -69,7 +69,7 @@ export default function VideoCall({
       // Handle remote stream
       peerConnection.ontrack = (event) => {
         if (remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = event.streams[0]
+          remoteVideoRef.current.srcObject = event.streams[0] || null
         }
       }
       

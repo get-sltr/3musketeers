@@ -174,13 +174,7 @@ export default function AppPage() {
         {viewMode === 'grid' ? (
           <GridView />
         ) : (
-          <div className="h-96 flex items-center justify-center">
-            <div className="text-center">
-              <div className="text-6xl mb-4">🗺️</div>
-              <h3 className="text-white text-xl mb-2">Map Coming Soon</h3>
-              <p className="text-white/60">Map view is being optimized for deployment</p>
-            </div>
-          </div>
+          <MapWithProfiles onUserClick={(userId) => console.log('User clicked:', userId)} />
         )}
       </main>
 
