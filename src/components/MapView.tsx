@@ -1,11 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import dynamic from 'next/dynamic'
+import ScrollableProfileCard from './ScrollableProfileCard'
 
 // Dynamically import Leaflet components to avoid SSR issues
-const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { ssr: false })
+const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { 
+  ssr: false,
+  loading: () => <div className="h-full flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full"></div></div>
+})
 const TileLayer = dynamic(() => import('react-leaflet').then(mod => mod.TileLayer), { ssr: false })
 const Marker = dynamic(() => import('react-leaflet').then(mod => mod.Marker), { ssr: false })
 const Popup = dynamic(() => import('react-leaflet').then(mod => mod.Popup), { ssr: false })
@@ -25,6 +29,7 @@ interface User {
   dtfn?: boolean
   latitude: number
   longitude: number
+  isFavorited?: boolean
 }
 
 interface MapViewProps {
@@ -36,6 +41,9 @@ export default function MapView({ onMarkerClick, onUserClick }: MapViewProps) {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null)
+  const [mapCenter, setMapCenter] = useState<[number, number]>([-118.2437, 34.0522])
+  const [mapZoom, setMapZoom] = useState(12)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
   
   const supabase = createClient()
 
@@ -50,17 +58,21 @@ export default function MapView({ onMarkerClick, onUserClick }: MapViewProps) {
         (position) => {
           const { latitude, longitude } = position.coords
           setUserLocation({ lat: latitude, lng: longitude })
+          setMapCenter([longitude, latitude])
+          setMapZoom(12)
         },
         (error) => {
           console.error('Location error:', error)
           // Fallback to Los Angeles
           setUserLocation({ lat: 34.0522, lng: -118.2437 })
+          setMapCenter([-118.2437, 34.0522])
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       )
     } else {
       // Fallback to Los Angeles
       setUserLocation({ lat: 34.0522, lng: -118.2437 })
+      setMapCenter([-118.2437, 34.0522])
     }
   }
 
@@ -102,6 +114,27 @@ export default function MapView({ onMarkerClick, onUserClick }: MapViewProps) {
     }
   }
 
+  // Advanced user interaction handlers
+  const handleUserClick = useCallback((userId: string) => {
+    const user = users.find(u => u.id === userId)
+    if (user) {
+      setSelectedUser(user)
+      setMapCenter([user.longitude, user.latitude])
+      setMapZoom(15)
+    }
+    if (onUserClick) onUserClick(userId)
+  }, [users, onUserClick])
+
+  const handleMessage = useCallback((userId: string) => {
+    console.log('Message user:', userId)
+    // TODO: Implement messaging functionality
+  }, [])
+
+  const handleFavorite = useCallback((userId: string) => {
+    console.log('Favorite user:', userId)
+    // TODO: Implement favorite functionality
+  }, [])
+
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -114,12 +147,14 @@ export default function MapView({ onMarkerClick, onUserClick }: MapViewProps) {
   }
 
   return (
-    <div className="h-full relative">
+    <div className="h-full flex">
+      {/* Map Section */}
+      <div className="flex-1 relative">
       {/* Map Container */}
       {userLocation && (
         <MapContainer
-          center={[userLocation.lat, userLocation.lng]}
-          zoom={12}
+          center={mapCenter}
+          zoom={mapZoom}
           className="w-full h-full rounded-2xl overflow-hidden"
           style={{ minHeight: '500px' }}
         >
@@ -145,6 +180,9 @@ export default function MapView({ onMarkerClick, onUserClick }: MapViewProps) {
               position={[user.latitude, user.longitude]}
               eventHandlers={{
                 click: () => {
+                  setSelectedUser(user)
+                  setMapCenter([user.longitude, user.latitude])
+                  setMapZoom(15)
                   if (onMarkerClick) onMarkerClick(user)
                   if (onUserClick) onUserClick(user.id)
                 }
@@ -229,6 +267,37 @@ export default function MapView({ onMarkerClick, onUserClick }: MapViewProps) {
           z-index: 1000 !important;
         }
       `}</style>
+      </div>
+
+      {/* Profile Cards Section */}
+      <div className="w-80 bg-black/50 border-l border-white/10 p-4 overflow-y-auto">
+        <div className="mb-4">
+          <h3 className="text-white font-bold text-lg mb-2">Nearby Users</h3>
+          <p className="text-white/60 text-sm">Scroll to see more profiles</p>
+        </div>
+
+        <div className="space-y-4">
+          {users.map((user) => (
+            <ScrollableProfileCard
+              key={user.id}
+              user={user}
+              onUserClick={handleUserClick}
+              onMessage={handleMessage}
+              onFavorite={handleFavorite}
+              isFavorited={user.isFavorited || false}
+              variant="map"
+            />
+          ))}
+        </div>
+
+        {users.length === 0 && (
+          <div className="text-center py-8">
+            <div className="text-4xl mb-2">📍</div>
+            <p className="text-white/60">No users nearby</p>
+            <p className="text-white/40 text-sm">Check back later for new profiles</p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
