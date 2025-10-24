@@ -56,9 +56,9 @@ export default function BlazeAI({ conversationId, onAIMessage }: BlazeAIProps) {
       let aiResponse = ''
       
       if (aiMessage.toLowerCase().includes('profile')) {
-        aiResponse = profileSuggestions[Math.floor(Math.random() * profileSuggestions.length)]
+        aiResponse = profileSuggestions[Math.floor(Math.random() * profileSuggestions.length)] || "Here are some profile tips to help you stand out..."
       } else if (aiMessage.toLowerCase().includes('conversation') || aiMessage.toLowerCase().includes('message')) {
-        aiResponse = conversationStarters[Math.floor(Math.random() * conversationStarters.length)]
+        aiResponse = conversationStarters[Math.floor(Math.random() * conversationStarters.length)] || "Here's a great conversation starter..."
       } else if (aiMessage.toLowerCase().includes('match') || aiMessage.toLowerCase().includes('compatible')) {
         aiResponse = "Based on your profile and preferences, I'd suggest looking for people who share your interests in [activity] and have similar values. Try focusing on profiles that mention [interest] and seem to have a similar lifestyle."
       } else {

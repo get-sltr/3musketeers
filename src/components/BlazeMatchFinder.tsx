@@ -128,7 +128,7 @@ export default function BlazeMatchFinder({ userProfile, onFindMatches }: BlazeMa
                 </div>
                 <p className="text-white/70 text-sm mb-2">{match.reason}</p>
                 <div className="flex gap-1">
-                  {match.tags.map((tag, index) => (
+                  {match.tags.map((tag: string, index: number) => (
                     <span key={index} className="px-2 py-1 bg-white/10 text-white/80 text-xs rounded">
                       {tag}
                     </span>

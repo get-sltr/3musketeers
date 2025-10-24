@@ -187,5 +187,6 @@ export default function AppPage() {
       {/* Emergency Panic Button */}
       <PanicButton />
     </div>
+    </MobileLayout>
   )
 }
