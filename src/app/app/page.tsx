@@ -7,6 +7,8 @@ import GridView from '@/components/GridView'
 // import MapWithProfiles from '@/components/MapWithProfiles'
 import FilterBar from '@/components/FilterBar'
 import PanicButton from '@/components/PanicButton'
+import MobileLayout from '@/components/MobileLayout'
+import '@/styles/mobile-optimization.css'
 
 type ViewMode = 'grid' | 'map'
 
@@ -54,14 +56,17 @@ export default function AppPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white">Loading...</div>
-      </div>
+      <MobileLayout>
+        <div className="min-h-screen bg-black flex items-center justify-center">
+          <div className="text-white">Loading...</div>
+        </div>
+      </MobileLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <MobileLayout>
+      <div className="min-h-screen bg-black">
       {/* Header with logo and toggle */}
       <header 
         className="fixed top-0 left-0 right-0 z-50 h-20 flex items-center justify-between px-6"
