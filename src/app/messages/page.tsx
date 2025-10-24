@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { useSocket } from '@/hooks/useSocket'
 import VideoCall from '@/components/VideoCall'
 import FileUpload from '@/components/FileUpload'
+import BlazeAI from '@/components/BlazeAI'
 
 interface Message {
   id: string
@@ -628,6 +629,15 @@ export default function MessagesPage() {
           )}
         </div>
       </div>
+
+      {/* Blaze AI Assistant */}
+      <BlazeAI 
+        conversationId={selectedConversation || ''} 
+        onAIMessage={(message) => {
+          // Handle AI message - could send to conversation or show as suggestion
+          console.log('AI suggested message:', message)
+        }}
+      />
     </div>
   )
 }
