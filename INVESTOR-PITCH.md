@@ -1,4 +1,5 @@
 # SLTR - The Future of Real-Time Social Connection
+## "One of the things sparking ambition"
 
 ## 🚀 Executive Summary
 
