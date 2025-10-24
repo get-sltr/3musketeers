@@ -208,7 +208,10 @@ export default function MessagesPage() {
       const transformedConversations: Conversation[] = conversationsData?.map(conv => {
         const otherUserId = conv.user1_id === user.id ? conv.user2_id : conv.user1_id
         const lastMessage = conv.messages?.[0]
+        
+        // Pick the first (or latest) message from the array
         const message = Array.isArray(lastMessage) ? lastMessage[0] : lastMessage
+        
         return {
           id: conv.id,
           other_user: {
