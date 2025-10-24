@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLTR Founder's Invite - Kevin Minn</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #2a2a2a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 500px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, 
+                rgba(0, 212, 255, 0.05) 0%, 
+                rgba(255, 0, 255, 0.05) 50%, 
+                rgba(255, 165, 0, 0.05) 100%);
+            border-radius: 20px;
+            z-index: -1;
+        }
+
+        .sltr-logo {
+            font-size: 48px;
+            font-weight: 900;
+            color: #000000;
+            text-shadow: 
+                2px 2px 0px #111111,
+                -1px -1px 0px #222222,
+                1px -1px 0px #111111,
+                -1px 1px 0px #222222;
+            margin-bottom: 10px;
+            letter-spacing: 8px;
+            animation: subtleGlow 4s ease-in-out infinite;
+        }
+
+        @keyframes subtleGlow {
+            0%, 100% { 
+                text-shadow: 
+                    2px 2px 0px #111111,
+                    -1px -1px 0px #222222,
+                    1px -1px 0px #111111,
+                    -1px 1px 0px #222222;
+            }
+            50% { 
+                text-shadow: 
+                    2px 2px 0px #222222,
+                    -1px -1px 0px #333333,
+                    1px -1px 0px #222222,
+                    -1px 1px 0px #333333;
+            }
+        }
+
+        .rules-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: #000000;
+            text-shadow: 
+                1px 1px 0px #111111,
+                -1px -1px 0px #222222;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 40px;
+            opacity: 0.8;
+        }
+
+        .founder-badge {
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: inline-block;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+            animation: badgePulse 3s ease-in-out infinite;
+        }
+
+        @keyframes badgePulse {
+            0%, 100% { box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4); }
+            50% { box-shadow: 0 4px 25px rgba(255, 107, 53, 0.8); }
+        }
+
+        .message {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            position: relative;
+            animation: messageGlow 4s ease-in-out infinite;
+        }
+
+        @keyframes messageGlow {
+            0%, 100% { border-color: rgba(0, 212, 255, 0.3); }
+            50% { border-color: rgba(0, 212, 255, 0.8); }
+        }
+
+        .message h2 {
+            color: #00d4ff;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .message p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .message .highlight {
+            color: #00d4ff;
+            font-weight: 600;
+        }
+
+        .signature {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            font-style: italic;
+            margin-top: 20px;
+            text-align: right;
+        }
+
+        .lifetime-offer {
+            background: linear-gradient(45deg, #00d4ff, #ff00ff);
+            color: white;
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lifetime-offer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, 
+                rgba(255, 255, 255, 0.1) 0%, 
+                rgba(255, 255, 255, 0.05) 50%, 
+                rgba(255, 255, 255, 0.1) 100%);
+            animation: shimmer 2s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .lifetime-offer h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .lifetime-offer p {
+            font-size: 14px;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-button {
+            background: linear-gradient(45deg, #00d4ff, #ff00ff);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+            border: none;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 12px 35px rgba(0, 212, 255, 0.6);
+        }
+
+        .cta-button:active {
+            transform: translateY(0) scale(1);
+        }
+
+        .floating-elements {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .floating-elements::before {
+            content: '🔥';
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 20px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .floating-elements::after {
+            content: '⚡';
+            position: absolute;
+            bottom: 30px;
+            right: 20px;
+            font-size: 16px;
+            animation: float 2s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 480px) {
+            .container {
+                margin: 10px;
+                padding: 30px 20px;
+            }
+            
+            .sltr-logo {
+                font-size: 36px;
+                letter-spacing: 6px;
+            }
+            
+            .rules-text {
+                font-size: 12px;
+                letter-spacing: 1.5px;
+            }
+            
+            .message {
+                padding: 20px;
+            }
+            
+            .message h2 {
+                font-size: 20px;
+            }
+            
+            .message p {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="floating-elements"></div>
+        
+        <div class="sltr-logo">SLTR</div>
+        <div class="rules-text">RULES DON'T APPLY</div>
+        
+        <div class="founder-badge">FOUNDER'S INVITE</div>
+        
+        <div class="message">
+            <h2>🔥 A Personal Message</h2>
+            <p>Thank you for being the first.</p>
+            <p>Thank you for believing in me and your support.</p>
+            <p>As an appreciation, I want to offer you a <span class="highlight">lifetime membership</span>.</p>
+            <div class="signature">Sincerely,<br>Kevin Minn</div>
+        </div>
+        
+        <div class="lifetime-offer">
+            <h3>🎉 Lifetime Membership</h3>
+            <p>Get FREE lifetime access to all premium features, Blaze AI, and exclusive benefits!</p>
+        </div>
+        
+        <a href="https://getsltr.com/signup?ref=founder" class="cta-button">
+            Claim Your Lifetime Access
+        </a>
+    </div>
+
+    <script>
+        // Add some interactive effects
+        const container = document.querySelector('.container');
+        
+        container.addEventListener('touchstart', () => {
+            container.style.transform = 'translateY(-5px) scale(1.02)';
+        });
+        
+        container.addEventListener('touchend', () => {
+            container.style.transform = 'translateY(0) scale(1)';
+        });
+        
+        // Add vibration feedback on mobile
+        if (navigator.vibrate) {
+            container.addEventListener('click', () => {
+                navigator.vibrate(50);
+            });
+        }
+        
+        // Add entrance animation
+        window.addEventListener('load', () => {
+            container.style.opacity = '0';
+            container.style.transform = 'translateY(20px)';
+            container.style.transition = 'all 0.6s ease';
+            
+            setTimeout(() => {
+                container.style.opacity = '1';
+                container.style.transform = 'translateY(0)';
+            }, 100);
+        });
+    </script>
+</body>
+</html>
