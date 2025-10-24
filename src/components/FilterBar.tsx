@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { motion } from 'framer-motion'
+import MicroInteractions, { InteractiveButton } from './MicroInteractions'
 
 interface FilterBarProps {
   onFilterChange?: (filters: string[]) => void
@@ -27,20 +29,33 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
   }
 
   return (
-    <div className="flex gap-2 overflow-x-auto p-4 no-scrollbar">
-      {filters.map(filter => (
-        <button
+    <motion.div 
+      className="flex gap-2 overflow-x-auto p-4 no-scrollbar"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.2 }}
+    >
+      {filters.map((filter, index) => (
+        <motion.div
           key={filter.id}
-          onClick={() => toggleFilter(filter.id)}
-          className={`glass-bubble px-4 py-2 text-sm font-medium transition-all duration-300 ${
-            activeFilters.includes(filter.id) 
-              ? 'active' 
-              : 'hover:bg-white/10'
-          }`}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3, delay: index * 0.1 }}
         >
-          {filter.label}
-        </button>
+          <InteractiveButton
+            onClick={() => toggleFilter(filter.id)}
+            variant={activeFilters.includes(filter.id) ? 'primary' : 'secondary'}
+            size="small"
+            className={`whitespace-nowrap ${
+              activeFilters.includes(filter.id) 
+                ? 'shadow-lg shadow-cyan-500/25' 
+                : ''
+            }`}
+          >
+            {filter.label}
+          </InteractiveButton>
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   )
 }

@@ -4,11 +4,13 @@ import { useEffect, useState, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import FilterBar from '@/components/FilterBar'
-import PanicButton from '@/components/PanicButton'
 import MobileLayout from '@/components/MobileLayout'
-import UserMenu from '@/components/UserMenu'
 import LoadingSkeleton, { MapLoadingSkeleton } from '@/components/LoadingSkeleton'
 import LazyWrapper, { LazyMapWithProfiles, LazyGridView } from '@/components/LazyWrapper'
+import AnimatedHeader from '@/components/AnimatedHeader'
+import GradientBackground from '@/components/GradientBackground'
+import MicroInteractions, { InteractiveButton } from '@/components/MicroInteractions'
+import BlazeAIButton from '@/components/BlazeAIButton'
 import '@/styles/mobile-optimization.css'
 
 type ViewMode = 'grid' | 'map'
@@ -44,45 +46,12 @@ export default function AppPage() {
 
   return (
     <MobileLayout>
-      <div className="min-h-screen bg-black">
-      {/* Header with logo and toggle */}
-      <header 
-        className="fixed top-0 left-0 right-0 z-50 h-20 flex items-center justify-between px-6"
-        style={{
-          background: 'rgba(0, 0, 0, 0.95)',
-          backdropFilter: 'blur(20px)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-        }}
-      >
-        {/* SLTR Logo with User Menu */}
-        <UserMenu />
-
-        {/* View Toggle */}
-        <div className="flex items-center gap-4">
-          <div className="flex glass-bubble p-1">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
-                viewMode === 'grid' 
-                  ? 'bg-gradient-to-r from-[#00d4ff] to-[#ff00ff] text-white scale-105' 
-                  : 'text-white/60 hover:text-white'
-              }`}
-            >
-              Grid
-            </button>
-            <button
-              onClick={() => setViewMode('map')}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
-                viewMode === 'map' 
-                  ? 'bg-gradient-to-r from-[#00d4ff] to-[#ff00ff] text-white scale-105' 
-                  : 'text-white/60 hover:text-white'
-              }`}
-            >
-              Map
-            </button>
-          </div>
-        </div>
-      </header>
+      <GradientBackground variant="vignette">
+        {/* Animated Header with transparency */}
+        <AnimatedHeader 
+          viewMode={viewMode} 
+          onViewModeChange={setViewMode} 
+        />
 
       {/* Main Content */}
       <main className="pt-20">
@@ -99,9 +68,9 @@ export default function AppPage() {
         </LazyWrapper>
       </main>
 
-      {/* Emergency Panic Button */}
-      <PanicButton />
-    </div>
+      {/* Blaze AI Assistant Button */}
+      <BlazeAIButton />
+      </GradientBackground>
     </MobileLayout>
   )
 }
