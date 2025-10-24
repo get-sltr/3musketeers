@@ -56,7 +56,7 @@ export default function BlazeAIButton() {
                 </InteractiveButton>
               </div>
               
-              <div className="h-full">
+              <div className="flex-1 overflow-hidden">
                 <LazyWrapper variant="fullscreen">
                   <LazyBlazeAI 
                     conversationId="" 
