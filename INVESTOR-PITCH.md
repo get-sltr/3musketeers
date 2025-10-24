@@ -1,5 +1,5 @@
 # SLTR - The Future of Real-Time Social Connection
-## "Igniting the future of connection"
+## "RULES DON'T APPLY"
 
 ## 🚀 Executive Summary
 

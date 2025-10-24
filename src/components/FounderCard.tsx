@@ -45,7 +45,7 @@ export default function FounderCard({ onShare }: FounderCardProps) {
               </div>
               <div>
                 <h2 className="text-white text-2xl font-bold">Founder Card</h2>
-                <p className="text-white/70 text-sm">Igniting the future of connection</p>
+                <p className="text-white/70 text-sm">RULES DON'T APPLY</p>
               </div>
             </div>
 
