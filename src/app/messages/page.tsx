@@ -207,22 +207,23 @@ export default function MessagesPage() {
       // Transform data to our format
       const transformedConversations: Conversation[] = conversationsData?.map(conv => {
         const otherUserId = conv.user1_id === user.id ? conv.user2_id : conv.user1_id
-        const lastMessage = Array.isArray(conv.messages) ? conv.messages[0] : conv.messages
+        const lastMessage = conv.messages?.[0]
+        const message = Array.isArray(lastMessage) ? lastMessage[0] : lastMessage
         return {
           id: conv.id,
           other_user: {
             id: otherUserId,
-            display_name: lastMessage?.profiles?.[0]?.display_name || 'Unknown',
-            photo: lastMessage?.profiles?.[0]?.photos?.[0] || '',
+            display_name: message?.profiles?.[0]?.display_name || 'Unknown',
+            photo: message?.profiles?.[0]?.photos?.[0] || '',
             online: false // TODO: Implement online status
           },
           last_message: {
-            id: lastMessage?.id || '',
-            sender_id: lastMessage?.sender_id || '',
+            id: message?.id || '',
+            sender_id: message?.sender_id || '',
             receiver_id: user.id,
-            content: lastMessage?.content || '',
-            created_at: lastMessage?.created_at || '',
-            sender_name: lastMessage?.profiles?.[0]?.display_name || 'Unknown'
+            content: message?.content || '',
+            created_at: message?.created_at || '',
+            sender_name: message?.profiles?.[0]?.display_name || 'Unknown'
           },
           unread_count: 0 // TODO: Implement unread count
         }
