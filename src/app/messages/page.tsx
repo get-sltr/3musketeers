@@ -48,6 +48,12 @@ export default function MessagesPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const router = useRouter()
+
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
   const supabase = createClient()
   
   // Real-time Socket.io integration
@@ -61,11 +67,6 @@ export default function MessagesPage() {
     leaveConversation, 
     markMessageRead 
   } = useSocket()
-
-  // Scroll to bottom function
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
 
   useEffect(() => {
     loadConversations()
@@ -381,9 +382,9 @@ export default function MessagesPage() {
 
   // Handle file upload
   const handleFileUploaded = (fileUrl: string, fileName: string, fileType: string) => {
-    if (selectedConversation && isConnected) {
+    if (selectedConversation && isConnected && socketSendMessage) {
       // Send file message via Socket.io
-      socketSendMessage(selectedConversation, `📎 ${fileName}`, 'file', fileUrl)
+      socketSendMessage(selectedConversation, `📎 ${fileName}`, 'file')
     }
     setShowFileUpload(false)
   }
