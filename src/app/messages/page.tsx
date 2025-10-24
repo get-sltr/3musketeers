@@ -62,6 +62,11 @@ export default function MessagesPage() {
     markMessageRead 
   } = useSocket()
 
+  // Scroll to bottom function
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
   useEffect(() => {
     loadConversations()
     
@@ -378,7 +383,7 @@ export default function MessagesPage() {
   const handleFileUploaded = (fileUrl: string, fileName: string, fileType: string) => {
     if (selectedConversation && isConnected) {
       // Send file message via Socket.io
-      sendMessage(selectedConversation, `📎 ${fileName}`, 'file', fileUrl)
+      socketSendMessage(selectedConversation, `📎 ${fileName}`, 'file', fileUrl)
     }
     setShowFileUpload(false)
   }

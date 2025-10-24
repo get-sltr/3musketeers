@@ -82,7 +82,7 @@ export default function ReferralSystem({ userId }: ReferralSystemProps) {
         { milestone: 10, reward: 'Exclusive Founder Badge' },
         { milestone: 25, reward: 'Priority Support' },
         { milestone: 50, reward: 'Custom Profile Themes' },
-        { milestone: 100, reward: 'Founder's Circle Access' }
+        { milestone: 100, reward: "Founder's Circle Access" }
       ]
     } else {
       return [
