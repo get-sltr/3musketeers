@@ -204,12 +204,19 @@ export default function MessagesPage() {
         return
       }
 
+      // Debug: Log the data structure to understand the shape
+      console.log('Conversations data:', conversationsData)
+
      // Transform data to our format
 const transformedConversations: Conversation[] = conversationsData?.map(conv => {
   const otherUserId = conv.user1_id === user.id ? conv.user2_id : conv.user1_id
 
   // Safely get the first message if it exists
   const message = conv.messages && conv.messages.length > 0 ? conv.messages[0] : null
+
+  // Debug: Log the message structure to understand profiles
+  console.log('Message structure:', message)
+  console.log('Message profiles:', message?.profiles)
 
   return {
     id: conv.id,
@@ -258,6 +265,9 @@ setConversations(transformedConversations)
         console.error('Error loading messages:', error)
         return
       }
+
+      // Debug: Log the messages data structure
+      console.log('Messages data:', messagesData)
 
       const transformedMessages: Message[] = messagesData?.map((msg: any) => ({
         id: msg.id,
