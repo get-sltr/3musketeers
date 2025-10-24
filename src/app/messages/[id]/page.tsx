@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import LoadingSkeleton from '@/components/LoadingSkeleton'
 
 interface Message {
   id: string
@@ -66,8 +67,8 @@ export default function ConversationPage({
   
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+      <div className="min-h-screen bg-black">
+        <LoadingSkeleton variant="fullscreen" />
       </div>
     )
   }

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import dynamic from 'next/dynamic'
 import ScrollableProfileCard from './ScrollableProfileCard'
+import { MapLoadingSkeleton } from './LoadingSkeleton'
 
 // Dynamically import Leaflet components
 const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { 
@@ -302,14 +303,7 @@ export default function MapWithProfiles({ onUserClick }: MapWithProfilesProps) {
   }
 
   if (loading) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-white/60">Loading map...</p>
-        </div>
-      </div>
-    )
+    return <MapLoadingSkeleton />
   }
 
   return (

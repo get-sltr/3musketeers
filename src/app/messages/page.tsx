@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useSocket } from '@/hooks/useSocket'
-import VideoCall from '@/components/VideoCall'
-import FileUpload from '@/components/FileUpload'
-import BlazeAI from '@/components/BlazeAI'
+import { MessagesLoadingSkeleton } from '@/components/LoadingSkeleton'
+import LazyWrapper, { LazyVideoCall, LazyFileUpload, LazyBlazeAI } from '@/components/LazyWrapper'
 
 interface Message {
   id: string
@@ -391,20 +390,22 @@ export default function MessagesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white text-xl">Loading messages...</div>
+      <div className="min-h-screen bg-black">
+        <MessagesLoadingSkeleton />
       </div>
     )
   }
 
   if (isVideoCallActive && currentCallUser && selectedConversation) {
     return (
-      <VideoCall
-        conversationId={selectedConversation}
-        otherUserId={currentCallUser.id}
-        otherUserName={currentCallUser.name}
-        onEndCall={endVideoCall}
-      />
+      <LazyWrapper variant="fullscreen">
+        <LazyVideoCall
+          conversationId={selectedConversation}
+          otherUserId={currentCallUser.id}
+          otherUserName={currentCallUser.name}
+          onEndCall={endVideoCall}
+        />
+      </LazyWrapper>
     )
   }
 
@@ -599,10 +600,12 @@ export default function MessagesPage() {
                 {/* File Upload Component */}
                 {showFileUpload && selectedConversation && (
                   <div className="mb-4">
-                    <FileUpload
-                      conversationId={selectedConversation}
-                      onFileUploaded={handleFileUploaded}
-                    />
+                    <LazyWrapper variant="card">
+                      <LazyFileUpload
+                        conversationId={selectedConversation}
+                        onFileUploaded={handleFileUploaded}
+                      />
+                    </LazyWrapper>
                   </div>
                 )}
                 <form onSubmit={sendMessage} className="flex gap-3">
@@ -637,13 +640,15 @@ export default function MessagesPage() {
       </div>
 
       {/* Blaze AI Assistant */}
-      <BlazeAI 
-        conversationId={selectedConversation || ''} 
-        onAIMessage={(message) => {
-          // Handle AI message - could send to conversation or show as suggestion
-          console.log('AI suggested message:', message)
-        }}
-      />
+      <LazyWrapper variant="card">
+        <LazyBlazeAI 
+          conversationId={selectedConversation || ''} 
+          onAIMessage={(message) => {
+            // Handle AI message - could send to conversation or show as suggestion
+            console.log('AI suggested message:', message)
+          }}
+        />
+      </LazyWrapper>
     </div>
   )
 }
