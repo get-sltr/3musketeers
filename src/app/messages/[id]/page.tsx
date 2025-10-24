@@ -76,13 +76,35 @@ export default function ConversationPage({
         return
       }
 
-      const transformedMessages: Message[] = messagesData?.map((msg: any) => ({
-        id: msg.id,
-        senderId: msg.sender_id,
-        text: msg.content,
-        timestamp: new Date(msg.created_at),
-        isSent: msg.sender_id === (await supabase.auth.getUser()).data.user?.id
-      })) || []
+      // Option 3: Handle profiles data extraction for individual conversation
+      const transformedMessages: Message[] = messagesData?.map((msg: any) => {
+        // Handle both array and single object cases for profiles
+        let profileData = { display_name: 'Unknown', photo: '' }
+        
+        if (msg.profiles) {
+          if (Array.isArray(msg.profiles)) {
+            // If profiles is an array, get the first one
+            profileData = {
+              display_name: msg.profiles[0]?.display_name || 'Unknown',
+              photo: msg.profiles[0]?.photos?.[0] || ''
+            }
+          } else {
+            // If profiles is a single object
+            profileData = {
+              display_name: msg.profiles.display_name || 'Unknown',
+              photo: msg.profiles.photos?.[0] || ''
+            }
+          }
+        }
+
+        return {
+          id: msg.id,
+          senderId: msg.sender_id,
+          text: msg.content,
+          timestamp: new Date(msg.created_at),
+          isSent: msg.sender_id === (await supabase.auth.getUser()).data.user?.id
+        }
+      }) || []
 
       setMessages(transformedMessages)
     } catch (err) {
@@ -157,10 +179,20 @@ export default function ConversationPage({
         return
       }
 
-      // Find the other user
-      const otherUser = conversationData.user1_id === user.id 
-        ? conversationData.profiles?.[1] 
-        : conversationData.profiles?.[0]
+      // Option 1 & 2: Handle both array and single object cases for profiles
+      let otherUser = null
+      
+      if (conversationData.profiles) {
+        if (Array.isArray(conversationData.profiles)) {
+          // If profiles is an array, find the other user
+          otherUser = conversationData.user1_id === user.id 
+            ? conversationData.profiles[1] 
+            : conversationData.profiles[0]
+        } else {
+          // If profiles is a single object, use it directly
+          otherUser = conversationData.profiles
+        }
+      }
 
       if (otherUser) {
         setConversation({

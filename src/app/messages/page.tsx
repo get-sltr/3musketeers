@@ -211,19 +211,41 @@ export default function MessagesPage() {
 const transformedConversations: Conversation[] = conversationsData?.map(conv => {
   const otherUserId = conv.user1_id === user.id ? conv.user2_id : conv.user1_id
 
-  // Safely get the first message if it exists
-  const message = conv.messages && conv.messages.length > 0 ? conv.messages[0] : null
+  // Option 1: Safely get the last message if it's an array
+  let message = null
+  if (conv.messages && Array.isArray(conv.messages) && conv.messages.length > 0) {
+    message = conv.messages[conv.messages.length - 1] // Get last message
+  } else if (conv.messages && !Array.isArray(conv.messages)) {
+    message = conv.messages // Single message object
+  }
 
-  // Debug: Log the message structure to understand profiles
-  console.log('Message structure:', message)
-  console.log('Message profiles:', message?.profiles)
+  // Option 2: Handle both array and single object cases
+  const getProfileData = (msg: any) => {
+    if (!msg?.profiles) return { display_name: 'Unknown', photo: '' }
+    
+    // If profiles is an array, get the first one
+    if (Array.isArray(msg.profiles)) {
+      return {
+        display_name: msg.profiles[0]?.display_name || 'Unknown',
+        photo: msg.profiles[0]?.photos?.[0] || ''
+      }
+    }
+    
+    // If profiles is a single object
+    return {
+      display_name: msg.profiles.display_name || 'Unknown',
+      photo: msg.profiles.photos?.[0] || ''
+    }
+  }
+
+  const profileData = message ? getProfileData(message) : { display_name: 'Unknown', photo: '' }
 
   return {
     id: conv.id,
     other_user: {
       id: otherUserId,
-      display_name: message?.profiles?.display_name ?? 'Unknown',
-      photo: message?.profiles?.photos?.[0] ?? '',
+      display_name: profileData.display_name,
+      photo: profileData.photo,
       online: false // TODO: Implement online status
     },
     last_message: {
@@ -232,7 +254,7 @@ const transformedConversations: Conversation[] = conversationsData?.map(conv => 
       receiver_id: user.id,
       content: message?.content ?? '',
       created_at: message?.created_at ?? '',
-      sender_name: message?.profiles?.display_name ?? 'Unknown'
+      sender_name: profileData.display_name
     },
     unread_count: 0 // TODO: Implement unread count
   }
@@ -269,16 +291,38 @@ setConversations(transformedConversations)
       // Debug: Log the messages data structure
       console.log('Messages data:', messagesData)
 
-      const transformedMessages: Message[] = messagesData?.map((msg: any) => ({
-        id: msg.id,
-        sender_id: msg.sender_id,
-        receiver_id: msg.receiver_id,
-        content: msg.content,
-        created_at: msg.created_at,
-        read_at: msg.read_at,
-        sender_name: msg.profiles?.display_name || 'Unknown',
-        sender_photo: msg.profiles?.photos?.[0] || ''
-      })) || []
+      // Option 3: Handle profiles data extraction for message list
+      const transformedMessages: Message[] = messagesData?.map((msg: any) => {
+        // Handle both array and single object cases for profiles
+        let profileData = { display_name: 'Unknown', photo: '' }
+        
+        if (msg.profiles) {
+          if (Array.isArray(msg.profiles)) {
+            // If profiles is an array, get the first one
+            profileData = {
+              display_name: msg.profiles[0]?.display_name || 'Unknown',
+              photo: msg.profiles[0]?.photos?.[0] || ''
+            }
+          } else {
+            // If profiles is a single object
+            profileData = {
+              display_name: msg.profiles.display_name || 'Unknown',
+              photo: msg.profiles.photos?.[0] || ''
+            }
+          }
+        }
+
+        return {
+          id: msg.id,
+          sender_id: msg.sender_id,
+          receiver_id: msg.receiver_id,
+          content: msg.content,
+          created_at: msg.created_at,
+          read_at: msg.read_at,
+          sender_name: profileData.display_name,
+          sender_photo: profileData.photo
+        }
+      }) || []
 
       setMessages(transformedMessages)
     } catch (err) {
