@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLTR Founder Card - Minimalist</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000000;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 400px;
+            height: 250px;
+            background: #000000;
+            border: 1px solid #111111;
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7);
+        }
+
+        .card-content {
+            padding: 30px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Front of Card - Minimalist SLTR */
+        .front {
+            text-align: center;
+        }
+
+        .sltr-logo {
+            font-size: 48px;
+            font-weight: 900;
+            color: #000000;
+            text-shadow: 
+                2px 2px 0px #111111,
+                -1px -1px 0px #222222,
+                1px -1px 0px #111111,
+                -1px 1px 0px #222222;
+            margin-bottom: 20px;
+            letter-spacing: 8px;
+            animation: subtleGlow 4s ease-in-out infinite;
+        }
+
+        @keyframes subtleGlow {
+            0%, 100% { 
+                text-shadow: 
+                    2px 2px 0px #111111,
+                    -1px -1px 0px #222222,
+                    1px -1px 0px #111111,
+                    -1px 1px 0px #222222;
+            }
+            50% { 
+                text-shadow: 
+                    2px 2px 0px #222222,
+                    -1px -1px 0px #333333,
+                    1px -1px 0px #222222,
+                    -1px 1px 0px #333333;
+            }
+        }
+
+        .rules-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: #000000;
+            text-shadow: 
+                1px 1px 0px #111111,
+                -1px -1px 0px #222222;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.8;
+        }
+
+        /* Back of Card - QR Code */
+        .back {
+            display: none;
+            text-align: center;
+        }
+
+        .back.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .qr-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .qr-code {
+            width: 120px;
+            height: 120px;
+            background: #ffffff;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: #333333;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* SLTR colors running around QR code */
+        .qr-border {
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            border-radius: 16px;
+            background: linear-gradient(45deg, 
+                #00d4ff 0%, 
+                #ff00ff 25%, 
+                #ffa500 50%, 
+                #00d4ff 75%, 
+                #ff00ff 100%);
+            background-size: 400% 400%;
+            animation: colorFlow 3s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes colorFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .qr-code-inner {
+            width: 112px;
+            height: 112px;
+            background: #000000;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: #cccccc;
+        }
+
+        .founder-text {
+            font-size: 12px;
+            font-weight: 600;
+            color: #cccccc;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-top: 10px;
+            opacity: 0.9;
+        }
+
+        /* Flip animation */
+        .card.flipped .front {
+            display: none;
+        }
+
+        .card.flipped .back {
+            display: flex;
+        }
+
+        .card.flipped .back.active {
+            display: flex;
+        }
+
+        /* Touch feedback */
+        .card:active {
+            transform: scale(0.98);
+        }
+
+        /* Share button */
+        .share-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(45deg, #00d4ff, #ff00ff);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            border: none;
+        }
+
+        .share-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 35px rgba(0, 212, 255, 0.6);
+        }
+
+        .share-button:active {
+            transform: scale(0.95);
+        }
+
+        .copy-notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 212, 255, 0.9);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 600;
+            z-index: 1001;
+            opacity: 0;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .copy-notification.show {
+            opacity: 1;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 480px) {
+            .card {
+                margin: 10px;
+                height: 220px;
+            }
+            
+            .card-content {
+                padding: 20px;
+            }
+            
+            .sltr-logo {
+                font-size: 36px;
+                letter-spacing: 6px;
+            }
+            
+            .rules-text {
+                font-size: 12px;
+                letter-spacing: 1.5px;
+            }
+            
+            .qr-code {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .qr-code-inner {
+                width: 92px;
+                height: 92px;
+                font-size: 32px;
+            }
+        }
+
+        /* Ultra-minimalist hover effects */
+        .card:hover .sltr-logo {
+            animation-duration: 2s;
+        }
+
+        .card:hover .qr-border {
+            animation-duration: 1.5s;
+        }
+    </style>
+</head>
+<body>
+    <div class="card" onclick="flipCard()">
+        <!-- Front: Minimalist SLTR -->
+        <div class="front">
+            <div class="sltr-logo">SLTR</div>
+            <div class="rules-text">RULES DON'T APPLY</div>
+        </div>
+
+        <!-- Back: QR Code -->
+        <div class="back">
+            <div class="qr-container">
+                <div class="qr-border"></div>
+                <div class="qr-code">
+                    <div class="qr-code-inner">📱</div>
+                </div>
+            </div>
+            <div class="founder-text">FOUNDER'S INVITE</div>
+        </div>
+    </div>
+
+    <button class="share-button" onclick="shareCard()">
+        📤
+    </button>
+
+    <div class="copy-notification" id="copyNotification">
+        Link copied! 🔥
+    </div>
+
+    <script>
+        const founderLink = 'https://getsltr.com/founder?ref=founder';
+        let isFlipped = false;
+        
+        function flipCard() {
+            const card = document.querySelector('.card');
+            isFlipped = !isFlipped;
+            
+            if (isFlipped) {
+                card.classList.add('flipped');
+            } else {
+                card.classList.remove('flipped');
+            }
+        }
+        
+        function shareCard() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'SLTR Founder Card - RULES DON\'T APPLY',
+                    text: 'Get lifetime free access to SLTR with my founder link!',
+                    url: founderLink
+                }).catch(err => {
+                    console.log('Share failed:', err);
+                    copyToClipboard();
+                });
+            } else {
+                copyToClipboard();
+            }
+        }
+        
+        function copyToClipboard() {
+            navigator.clipboard.writeText(founderLink).then(() => {
+                showNotification();
+            }).catch(err => {
+                console.error('Copy failed:', err);
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = founderLink;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showNotification();
+            });
+        }
+        
+        function showNotification() {
+            const notification = document.getElementById('copyNotification');
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 2000);
+        }
+        
+        // Add some interactive effects
+        const card = document.querySelector('.card');
+        
+        card.addEventListener('touchstart', () => {
+            card.style.transform = 'translateY(-10px) scale(1.02)';
+        });
+        
+        card.addEventListener('touchend', () => {
+            card.style.transform = 'translateY(0) scale(1)';
+        });
+        
+        // Add vibration feedback on mobile
+        if (navigator.vibrate) {
+            card.addEventListener('click', () => {
+                navigator.vibrate(50);
+            });
+        }
+    </script>
+</body>
+</html>
