@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useSocket } from '@/hooks/useSocket'
 // import VideoCall from '@/components/VideoCall'
 
 interface Message {
@@ -38,9 +39,24 @@ export default function MessagesPage() {
   const [sending, setSending] = useState(false)
   const [isVideoCallActive, setIsVideoCallActive] = useState(false)
   const [currentCallUser, setCurrentCallUser] = useState<{id: string, name: string} | null>(null)
+  const [typingUsers, setTypingUsers] = useState<string[]>([])
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set())
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const router = useRouter()
   const supabase = createClient()
+  
+  // Real-time Socket.io integration
+  const { 
+    socket, 
+    isConnected, 
+    sendMessage: socketSendMessage, 
+    startTyping, 
+    stopTyping, 
+    joinConversation, 
+    leaveConversation, 
+    markMessageRead 
+  } = useSocket()
 
   useEffect(() => {
     loadConversations()
@@ -52,6 +68,60 @@ export default function MessagesPage() {
       setSelectedConversation(conversationParam)
     }
   }, [])
+
+  // Real-time event listeners
+  useEffect(() => {
+    if (!socket) return
+
+    // Handle new messages
+    const handleNewMessage = (data: any) => {
+      if (data.conversationId === selectedConversation) {
+        setMessages(prev => [...prev, data])
+        scrollToBottom()
+      }
+    }
+
+    // Handle typing indicators
+    const handleUserTyping = (data: any) => {
+      if (data.conversationId === selectedConversation) {
+        setTypingUsers(prev => [...prev.filter(user => user !== data.username), data.username])
+      }
+    }
+
+    const handleUserStopTyping = (data: any) => {
+      if (data.conversationId === selectedConversation) {
+        setTypingUsers(prev => prev.filter(user => user !== data.username))
+      }
+    }
+
+    // Handle user presence
+    const handleUserOnline = (data: any) => {
+      setOnlineUsers(prev => new Set([...prev, data.userId]))
+    }
+
+    const handleUserOffline = (data: any) => {
+      setOnlineUsers(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(data.userId)
+        return newSet
+      })
+    }
+
+    // Add event listeners
+    window.addEventListener('new_message', handleNewMessage)
+    window.addEventListener('user_typing', handleUserTyping)
+    window.addEventListener('user_stop_typing', handleUserStopTyping)
+    window.addEventListener('user_online', handleUserOnline)
+    window.addEventListener('user_offline', handleUserOffline)
+
+    return () => {
+      window.removeEventListener('new_message', handleNewMessage)
+      window.removeEventListener('user_typing', handleUserTyping)
+      window.removeEventListener('user_stop_typing', handleUserStopTyping)
+      window.removeEventListener('user_online', handleUserOnline)
+      window.removeEventListener('user_offline', handleUserOffline)
+    }
+  }, [socket, selectedConversation])
 
   useEffect(() => {
     if (selectedConversation) {
@@ -177,29 +247,38 @@ export default function MessagesPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // Get the other user ID from the conversation
-      const conversation = conversations.find(c => c.id === selectedConversation)
-      if (!conversation) return
+      // Stop typing indicator
+      stopTyping(selectedConversation)
 
-      const otherUserId = conversation.other_user.id
+      // Send message via Socket.io for real-time delivery
+      if (isConnected && socketSendMessage) {
+        socketSendMessage(selectedConversation, newMessage.trim(), 'text')
+      } else {
+        // Fallback to database-only if Socket.io not connected
+        const conversation = conversations.find(c => c.id === selectedConversation)
+        if (!conversation) return
 
-      const { error } = await supabase
-        .from('messages')
-        .insert({
-          conversation_id: selectedConversation,
-          sender_id: user.id,
-          receiver_id: otherUserId,
-          content: newMessage.trim()
-        })
+        const otherUserId = conversation.other_user.id
 
-      if (error) {
-        console.error('Error sending message:', error)
-        return
+        const { error } = await supabase
+          .from('messages')
+          .insert({
+            conversation_id: selectedConversation,
+            sender_id: user.id,
+            receiver_id: otherUserId,
+            content: newMessage.trim()
+          })
+
+        if (error) {
+          console.error('Error sending message:', error)
+          return
+        }
+
+        // Reload messages to show the new one
+        loadMessages(selectedConversation)
       }
 
       setNewMessage('')
-      // Reload messages to show the new one
-      loadMessages(selectedConversation)
     } catch (err) {
       console.error('Error sending message:', err)
     } finally {
@@ -240,6 +319,36 @@ export default function MessagesPage() {
     setCurrentCallUser(null)
   }
 
+  // Handle typing indicators
+  const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewMessage(e.target.value)
+    
+    if (selectedConversation && isConnected) {
+      // Start typing indicator
+      startTyping(selectedConversation)
+      
+      // Clear existing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current)
+      }
+      
+      // Set timeout to stop typing indicator
+      typingTimeoutRef.current = setTimeout(() => {
+        stopTyping(selectedConversation)
+      }, 1000)
+    }
+  }
+
+  // Join/leave conversation when selected
+  useEffect(() => {
+    if (selectedConversation && isConnected) {
+      joinConversation(selectedConversation)
+      return () => {
+        leaveConversation(selectedConversation)
+      }
+    }
+  }, [selectedConversation, isConnected, joinConversation, leaveConversation])
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -269,7 +378,16 @@ export default function MessagesPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
-          <h1 className="text-2xl font-bold gradient-text">Messages</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold gradient-text">Messages</h1>
+            {/* Connection Status */}
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
+              <span className="text-xs text-white/60">
+                {isConnected ? 'Real-time' : 'Offline'}
+              </span>
+            </div>
+          </div>
           <div className="w-10"></div>
         </div>
       </div>
@@ -357,6 +475,28 @@ export default function MessagesPage() {
                     </div>
                   </div>
                 ))}
+                
+                {/* Typing Indicator */}
+                {typingUsers.length > 0 && (
+                  <div className="flex justify-start">
+                    <div className="bg-white/10 text-white px-4 py-2 rounded-2xl max-w-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm opacity-70">
+                          {typingUsers.length === 1 
+                            ? `${typingUsers[0]} is typing` 
+                            : `${typingUsers.length} people are typing`
+                          }
+                        </span>
+                        <div className="flex gap-1">
+                          <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
+                          <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
+                          <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <div ref={messagesEndRef} />
               </div>
 
@@ -379,7 +519,7 @@ export default function MessagesPage() {
                   <input
                     type="text"
                     value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
+                    onChange={handleTyping}
                     placeholder="Type a message..."
                     className="flex-1 bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300"
                     disabled={sending}
