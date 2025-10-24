@@ -1,0 +1,150 @@
+/* UV Effects for Dynamic Founder Card */
+
+.uv-mode {
+  position: relative;
+  overflow: hidden;
+}
+
+.uv-mode::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, 
+    rgba(0, 212, 255, 0.1) 0%, 
+    rgba(255, 0, 255, 0.1) 25%, 
+    rgba(255, 165, 0, 0.1) 50%, 
+    rgba(0, 212, 255, 0.1) 75%, 
+    rgba(255, 0, 255, 0.1) 100%);
+  background-size: 400% 400%;
+  animation: uvFlow 3s ease-in-out infinite;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.uv-mode::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 50% 50%, 
+    rgba(0, 212, 255, 0.2) 0%, 
+    rgba(255, 0, 255, 0.1) 30%, 
+    transparent 70%);
+  animation: uvPulse 2s ease-in-out infinite;
+  z-index: 2;
+  pointer-events: none;
+}
+
+@keyframes uvFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes uvPulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.1); }
+}
+
+/* Movement-based color transitions */
+.movement-glow {
+  transition: all 0.3s ease;
+  box-shadow: 0 0 20px currentColor;
+}
+
+.movement-glow:hover {
+  box-shadow: 0 0 40px currentColor;
+}
+
+/* Dynamic gradient based on movement */
+.dynamic-gradient {
+  background: linear-gradient(45deg, 
+    var(--movement-color-1, #00d4ff) 0%, 
+    var(--movement-color-2, #ff00ff) 50%, 
+    var(--movement-color-3, #ffa500) 100%);
+  background-size: 200% 200%;
+  animation: dynamicFlow 4s ease-in-out infinite;
+}
+
+@keyframes dynamicFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* QR Code UV effects */
+.qr-uv {
+  position: relative;
+  overflow: hidden;
+}
+
+.qr-uv::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, 
+    rgba(0, 212, 255, 0.3) 0%, 
+    rgba(255, 0, 255, 0.3) 50%, 
+    rgba(255, 165, 0, 0.3) 100%);
+  animation: qrUV 2s ease-in-out infinite;
+  z-index: 1;
+}
+
+@keyframes qrUV {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
+/* NFC Animation */
+.nfc-pulse {
+  animation: nfcPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes nfcPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+/* Phone movement responsive effects */
+@media (prefers-reduced-motion: no-preference) {
+  .movement-responsive {
+    transition: transform 0.1s ease;
+  }
+}
+
+/* UV Mode Toggle Animation */
+.uv-toggle {
+  transition: all 0.5s ease;
+}
+
+.uv-toggle.active {
+  background: linear-gradient(45deg, 
+    rgba(0, 212, 255, 0.2) 0%, 
+    rgba(255, 0, 255, 0.2) 50%, 
+    rgba(255, 165, 0, 0.2) 100%);
+  box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+}
+
+/* Dynamic text effects */
+.dynamic-text {
+  background: linear-gradient(45deg, #00d4ff, #ff00ff, #ffa500);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: textFlow 3s ease-in-out infinite;
+}
+
+@keyframes textFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
