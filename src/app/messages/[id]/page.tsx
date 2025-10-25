@@ -26,6 +26,11 @@ export default function ConversationPage({
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [sending, setSending] = useState(false)
+  const [conversation, setConversation] = useState({
+    username: 'Loading...',
+    photo: '',
+    isOnline: false
+  })
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const supabase = createClient()
@@ -139,12 +144,6 @@ export default function ConversationPage({
       </div>
     )
   }
-
-  const [conversation, setConversation] = useState({
-    username: 'Loading...',
-    photo: '',
-    isOnline: false
-  })
 
   useEffect(() => {
     if (conversationId) {
