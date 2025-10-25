@@ -1,6 +1,6 @@
 'use client'
 
-// Phase 3 fixed - await issue resolved - redeploy
+// Phase 3 fixed - await issue resolved - force vercel redeploy
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
