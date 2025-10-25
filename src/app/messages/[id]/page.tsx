@@ -76,6 +76,10 @@ export default function ConversationPage({
         return
       }
 
+      // Get current user ID first
+      const { data: { user } } = await supabase.auth.getUser()
+      const currentUserId = user?.id
+
       // Option 3: Handle profiles data extraction for individual conversation
       const transformedMessages: Message[] = messagesData?.map((msg: any) => {
         // Handle both array and single object cases for profiles
@@ -102,7 +106,7 @@ export default function ConversationPage({
           senderId: msg.sender_id,
           text: msg.content,
           timestamp: new Date(msg.created_at),
-          isSent: msg.sender_id === (await supabase.auth.getUser()).data.user?.id
+          isSent: msg.sender_id === currentUserId
         }
       }) || []
 
