@@ -18,6 +18,7 @@ type ViewMode = 'grid' | 'map'
 export default function AppPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [loading, setLoading] = useState(true)
+  const [activeFilters, setActiveFilters] = useState<string[]>([])
   const router = useRouter()
 
   useEffect(() => {
@@ -34,6 +35,11 @@ export default function AppPage() {
     }
     checkAuth()
   }, [router])
+
+  const handleFilterChange = (filters: string[]) => {
+    setActiveFilters(filters)
+    console.log('Active filters:', filters)
+  }
 
 
   if (loading) {
@@ -56,12 +62,12 @@ export default function AppPage() {
       {/* Main Content */}
       <main className="pt-20">
         {/* Filter Bar */}
-        <FilterBar />
+        <FilterBar onFilterChange={handleFilterChange} />
 
         {/* Grid or Map view based on viewMode */}
         <LazyWrapper variant="card">
           {viewMode === 'grid' ? (
-            <LazyGridView />
+            <LazyGridView activeFilters={activeFilters} />
           ) : (
             <LazyMapWithProfiles onUserClick={(userId) => console.log('User clicked:', userId)} />
           )}
