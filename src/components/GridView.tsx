@@ -32,12 +32,14 @@ interface User {
 
 interface GridViewProps {
   onUserClick?: (userId: string) => void
+  activeFilters?: string[]
 }
 
-export default function GridView({ onUserClick }: GridViewProps) {
+export default function GridView({ onUserClick, activeFilters = [] }: GridViewProps) {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [users, setUsers] = useState<User[]>([])
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const supabase = createClient()
@@ -99,6 +101,37 @@ export default function GridView({ onUserClick }: GridViewProps) {
 
     loadUsers()
   }, [])
+
+  // Filter users based on active filters
+  useEffect(() => {
+    let filtered = [...users]
+
+    // Apply filters
+    if (activeFilters.includes('online')) {
+      filtered = filtered.filter(user => user.isOnline)
+    }
+
+    if (activeFilters.includes('dtfn')) {
+      filtered = filtered.filter(user => user.dtfn)
+    }
+
+    if (activeFilters.includes('party')) {
+      filtered = filtered.filter(user => user.party_friendly)
+    }
+
+    if (activeFilters.includes('age')) {
+      // For now, filter users between 18-35 (you can make this more sophisticated)
+      filtered = filtered.filter(user => user.age >= 18 && user.age <= 35)
+    }
+
+    if (activeFilters.includes('position')) {
+      // Filter users with specific positions (you can customize this)
+      const validPositions = ['Top', 'Bottom', 'Versatile', 'Switch']
+      filtered = filtered.filter(user => user.position && validPositions.includes(user.position))
+    }
+
+    setFilteredUsers(filtered)
+  }, [users, activeFilters])
 
   if (loading) {
     return (
@@ -177,7 +210,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
   return (
     <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-            {users.length > 0 ? users.map(user => (
+            {filteredUsers.length > 0 ? filteredUsers.map(user => (
               <ScrollableProfileCard
                 key={user.id}
                 user={user}
@@ -189,8 +222,12 @@ export default function GridView({ onUserClick }: GridViewProps) {
               />
             )) : (
               <div className="col-span-full text-center py-12">
-                <div className="text-white/60 text-lg">No users found</div>
-                <div className="text-white/40 text-sm mt-2">Check back later for new profiles</div>
+                <div className="text-white/60 text-lg">
+                  {activeFilters.length > 0 ? 'No users match your filters' : 'No users found'}
+                </div>
+                <div className="text-white/40 text-sm mt-2">
+                  {activeFilters.length > 0 ? 'Try adjusting your filters' : 'Check back later for new profiles'}
+                </div>
               </div>
             )}
           </div>
