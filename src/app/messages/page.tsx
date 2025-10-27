@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useEffect, useRef, Suspense } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useSocket } from '@/hooks/useSocket'
-import { MessagesLoadingSkeleton } from '@/components/LoadingSkeleton'
-import LazyWrapper, { LazyVideoCall, LazyFileUpload, LazyBlazeAI } from '@/components/LazyWrapper'
+import { useSocket } from '../../hooks/useSocket'
+import { MessagesLoadingSkeleton } from '../../components/LoadingSkeleton'
+import LazyWrapper, { LazyVideoCall, LazyFileUpload, LazyBlazeAI } from '../../components/LazyWrapper'
 
 interface Profile {
   display_name: string

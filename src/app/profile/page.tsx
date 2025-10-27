@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import AlbumsManager from '@/components/AlbumsManager'
+import AlbumsManager from '../../components/AlbumsManager'
 
 interface Album {
   id: string
