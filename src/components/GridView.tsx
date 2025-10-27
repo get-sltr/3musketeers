@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '../lib/supabase/client'
 import UserProfileModal from './UserProfileModal'
 import ScrollableProfileCard from './ScrollableProfileCard'
 import { LazyAvatar } from './LazyImage'
@@ -153,7 +153,7 @@ export default function GridView({ onUserClick, activeFilters = [] }: GridViewPr
 
   const handleMessage = async (userId: string) => {
     try {
-      const { startConversation } = await import('@/utils/messaging')
+      const { startConversation } = await import('../utils/messaging')
       const conversationId = await startConversation(userId)
       
       if (conversationId) {
