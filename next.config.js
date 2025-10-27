@@ -5,6 +5,9 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   
+  // Force clean build
+  cleanDistDir: true,
+  
   // Enable experimental features for better performance
   experimental: {
     optimizePackageImports: ['react-leaflet', 'leaflet']
