@@ -3,9 +3,9 @@
 // Phase 3 fixed - await issue resolved - force vercel redeploy
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '../../../lib/supabase/client'
 import Link from 'next/link'
-import LoadingSkeleton from '@/components/LoadingSkeleton'
+import LoadingSkeleton from '../../../components/LoadingSkeleton'
 
 interface Message {
   id: string
