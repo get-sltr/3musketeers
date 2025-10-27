@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import FilterBar from '../../components/FilterBar'
 import MobileLayout from '../../components/MobileLayout'
