@@ -18,9 +18,9 @@
         "name": "next"
       }
     ],
-    "paths": {
-      "@/*": ["./src/*"]
-    },
+    // "paths": {
+    //   "@/*": ["./src/*"]
+    // },
     "strictNullChecks": true,
     "noUncheckedIndexedAccess": true
   },
