@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { io, Socket } from 'socket.io-client'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '../lib/supabase/client'
 
 interface UseSocketReturn {
   socket: Socket | null
@@ -30,29 +30,42 @@ export function useSocket(): UseSocketReturn {
     // Initialize socket connection
     const socketInstance = io('https://3musketeers-production.up.railway.app', {
       transports: ['websocket', 'polling'],
-      autoConnect: false
+      autoConnect: true, // Changed to true to auto-connect
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5
     })
 
     // Connection event handlers
     socketInstance.on('connect', () => {
-      console.log('Connected to real-time backend')
+      console.log('✅ Connected to real-time backend')
       setIsConnected(true)
     })
 
     socketInstance.on('disconnect', () => {
-      console.log('Disconnected from real-time backend')
+      console.log('⚠️ Disconnected from real-time backend')
       setIsConnected(false)
     })
 
     socketInstance.on('connect_error', (error) => {
-      console.error('Socket connection error:', error)
+      console.error('❌ Socket connection error:', error)
       setIsConnected(false)
+    })
+
+    socketInstance.on('reconnect', (attemptNumber) => {
+      console.log(`🔄 Reconnected after ${attemptNumber} attempts`)
+      setIsConnected(true)
+    })
+
+    socketInstance.on('reconnect_error', (error) => {
+      console.error('❌ Reconnection error:', error)
     })
 
     setSocket(socketInstance)
 
     // Cleanup on unmount
     return () => {
+      socketInstance.removeAllListeners()
       socketInstance.disconnect()
     }
   }, [])
@@ -81,76 +94,101 @@ export function useSocket(): UseSocketReturn {
   useEffect(() => {
     if (!socket) return
 
-    // Message handlers
+    // Message handlers - dispatch events without detail wrapper for compatibility
     socket.on('new_message', (data) => {
-      console.log('New message received:', data)
-      // Handle new message - you can emit a custom event or update state
-      window.dispatchEvent(new CustomEvent('new_message', { detail: data }))
+      console.log('📨 New message received:', data)
+      const event = new Event('new_message') as any
+      Object.assign(event, data)
+      window.dispatchEvent(event)
     })
 
     socket.on('message_delivered', (data) => {
-      console.log('Message delivered:', data)
-      window.dispatchEvent(new CustomEvent('message_delivered', { detail: data }))
+      console.log('✅ Message delivered:', data)
+      const event = new Event('message_delivered') as any
+      Object.assign(event, data)
+      window.dispatchEvent(event)
     })
 
     socket.on('message_read', (data) => {
-      console.log('Message read:', data)
-      window.dispatchEvent(new CustomEvent('message_read', { detail: data }))
+      console.log('👁️ Message read:', data)
+      const event = new Event('message_read') as any
+      Object.assign(event, data)
+      window.dispatchEvent(event)
     })
 
     // Typing indicators
     socket.on('user_typing', (data) => {
-      console.log('User typing:', data)
-      window.dispatchEvent(new CustomEvent('user_typing', { detail: data }))
+      console.log('⌨️ User typing:', data)
+      const event = new Event('user_typing') as any
+      Object.assign(event, data)
+      window.dispatchEvent(event)
     })
 
     socket.on('user_stop_typing', (data) => {
-      console.log('User stopped typing:', data)
-      window.dispatchEvent(new CustomEvent('user_stop_typing', { detail: data }))
+      console.log('🛑 User stopped typing:', data)
+      const event = new Event('user_stop_typing') as any
+      Object.assign(event, data)
+      window.dispatchEvent(event)
     })
 
     // User presence
     socket.on('user_online', (data) => {
-      console.log('User online:', data)
-      window.dispatchEvent(new CustomEvent('user_online', { detail: data }))
+      console.log('🟢 User online:', data)
+      const event = new Event('user_online') as any
+      Object.assign(event, data)
+      window.dispatchEvent(event)
     })
 
     socket.on('user_offline', (data) => {
-      console.log('User offline:', data)
-      window.dispatchEvent(new CustomEvent('user_offline', { detail: data }))
+      console.log('⚪ User offline:', data)
+      const event = new Event('user_offline') as any
+      Object.assign(event, data)
+      window.dispatchEvent(event)
     })
 
     // WebRTC signaling
     socket.on('call_offer', (data) => {
-      console.log('Call offer received:', data)
-      window.dispatchEvent(new CustomEvent('call_offer', { detail: data }))
+      console.log('📞 Call offer received:', data)
+      const event = new Event('call_offer') as any
+      Object.assign(event, data)
+      window.dispatchEvent(event)
     })
 
     socket.on('call_answer', (data) => {
-      console.log('Call answer received:', data)
-      window.dispatchEvent(new CustomEvent('call_answer', { detail: data }))
+      console.log('✅ Call answer received:', data)
+      const event = new Event('call_answer') as any
+      Object.assign(event, data)
+      window.dispatchEvent(event)
     })
 
     socket.on('call_ice_candidate', (data) => {
-      console.log('ICE candidate received:', data)
-      window.dispatchEvent(new CustomEvent('call_ice_candidate', { detail: data }))
+      console.log('🧊 ICE candidate received:', data)
+      const event = new Event('call_ice_candidate') as any
+      Object.assign(event, data)
+      window.dispatchEvent(event)
     })
 
     socket.on('call_end', (data) => {
-      console.log('Call ended:', data)
-      window.dispatchEvent(new CustomEvent('call_end', { detail: data }))
+      console.log('📴 Call ended:', data)
+      const event = new Event('call_end') as any
+      Object.assign(event, data)
+      window.dispatchEvent(event)
     })
 
     // Location updates
     socket.on('user_location_update', (data) => {
-      console.log('Location update:', data)
-      window.dispatchEvent(new CustomEvent('user_location_update', { detail: data }))
+      console.log('📍 Location update:', data)
+      const event = new Event('user_location_update') as any
+      Object.assign(event, data)
+      window.dispatchEvent(event)
     })
 
     // File sharing
     socket.on('file_shared', (data) => {
-      console.log('File shared:', data)
-      window.dispatchEvent(new CustomEvent('file_shared', { detail: data }))
+      console.log('📎 File shared:', data)
+      const event = new Event('file_shared') as any
+      Object.assign(event, data)
+      window.dispatchEvent(event)
     })
 
     return () => {
