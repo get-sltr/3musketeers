@@ -88,72 +88,115 @@ export default function MessagesPage() {
   useEffect(() => {
     if (!socket) return
 
-    // Handle new messages
-    const handleNewMessage = (data: any) => {
+    // Handle new messages - event data is directly on event object
+    const handleNewMessage = (event: any) => {
+      const data = event.detail || event
+      console.log('📨 Handling new message:', data)
       if (data.conversationId === selectedConversation) {
         setMessages(prev => [...prev, data])
         scrollToBottom()
+        // Reload messages to get proper formatting
+        loadMessages(selectedConversation!)
       }
     }
 
     // Handle typing indicators
-    const handleUserTyping = (data: any) => {
+    const handleUserTyping = (event: any) => {
+      const data = event.detail || event
+      console.log('⌨️ User typing:', data)
       if (data.conversationId === selectedConversation) {
-        setTypingUsers(prev => [...prev.filter(user => user !== data.username), data.username])
+        setTypingUsers(prev => {
+          const filtered = prev.filter(user => user !== data.username)
+          return [...filtered, data.username]
+        })
       }
     }
 
-    const handleUserStopTyping = (data: any) => {
+    const handleUserStopTyping = (event: any) => {
+      const data = event.detail || event
+      console.log('🛑 User stopped typing:', data)
       if (data.conversationId === selectedConversation) {
         setTypingUsers(prev => prev.filter(user => user !== data.username))
       }
     }
 
     // Handle user presence
-    const handleUserOnline = (data: any) => {
+    const handleUserOnline = (event: any) => {
+      const data = event.detail || event
+      console.log('🟢 User online:', data)
       setOnlineUsers(prev => new Set([...prev, data.userId]))
+      // Update conversation list to reflect online status
+      setConversations(prevConvs => 
+        prevConvs.map(conv => 
+          conv.other_user.id === data.userId 
+            ? { ...conv, other_user: { ...conv.other_user, online: true }}
+            : conv
+        )
+      )
     }
 
-    const handleUserOffline = (data: any) => {
+    const handleUserOffline = (event: any) => {
+      const data = event.detail || event
+      console.log('⚪ User offline:', data)
       setOnlineUsers(prev => {
         const newSet = new Set(prev)
         newSet.delete(data.userId)
         return newSet
       })
+      // Update conversation list to reflect offline status
+      setConversations(prevConvs => 
+        prevConvs.map(conv => 
+          conv.other_user.id === data.userId 
+            ? { ...conv, other_user: { ...conv.other_user, online: false }}
+            : conv
+        )
+      )
     }
 
     // Handle message status updates
-    const handleMessageDelivered = (data: any) => {
+    const handleMessageDelivered = (event: any) => {
+      const data = event.detail || event
+      console.log('✅ Message delivered:', data)
       setMessageStatus(prev => ({
         ...prev,
         [data.messageId]: 'delivered'
       }))
     }
 
-    const handleMessageRead = (data: any) => {
+    const handleMessageRead = (event: any) => {
+      const data = event.detail || event
+      console.log('👁️ Message read:', data)
       setMessageStatus(prev => ({
         ...prev,
         [data.messageId]: 'read'
       }))
+      // Update message in list
+      setMessages(prevMsgs =>
+        prevMsgs.map(msg =>
+          msg.id === data.messageId
+            ? { ...msg, read_at: new Date().toISOString() }
+            : msg
+        )
+      )
     }
 
     // Add event listeners
-    window.addEventListener('new_message', handleNewMessage)
-    window.addEventListener('user_typing', handleUserTyping)
-    window.addEventListener('user_stop_typing', handleUserStopTyping)
-    window.addEventListener('user_online', handleUserOnline)
-    window.addEventListener('user_offline', handleUserOffline)
-    window.addEventListener('message_delivered', handleMessageDelivered)
-    window.addEventListener('message_read', handleMessageRead)
+    window.addEventListener('new_message', handleNewMessage as EventListener)
+    window.addEventListener('user_typing', handleUserTyping as EventListener)
+    window.addEventListener('user_stop_typing', handleUserStopTyping as EventListener)
+    window.addEventListener('user_online', handleUserOnline as EventListener)
+    window.addEventListener('user_offline', handleUserOffline as EventListener)
+    window.addEventListener('message_delivered', handleMessageDelivered as EventListener)
+    window.addEventListener('message_read', handleMessageRead as EventListener)
 
     return () => {
-      window.removeEventListener('new_message', handleNewMessage)
-      window.removeEventListener('user_typing', handleUserTyping)
-      window.removeEventListener('user_stop_typing', handleUserStopTyping)
-      window.removeEventListener('user_online', handleUserOnline)
-      window.removeEventListener('user_offline', handleUserOffline)
-      window.removeEventListener('message_delivered', handleMessageDelivered)
-      window.removeEventListener('message_read', handleMessageRead)
+      window.removeEventListener('new_message', handleNewMessage as EventListener)
+      window.removeEventListener('user_typing', handleUserTyping as EventListener)
+      window.removeEventListener('user_stop_typing', handleUserStopTyping as EventListener)
+      window.removeEventListener('user_online', handleUserOnline as EventListener)
+      window.removeEventListener('user_offline', handleUserOffline as EventListener)
+      window.removeEventListener('message_delivered', handleMessageDelivered as EventListener)
+      window.removeEventListener('message_read', handleMessageRead as EventListener)
     }
   }, [socket, selectedConversation])
 
@@ -177,93 +220,87 @@ export default function MessagesPage() {
         return
       }
 
-      // Get conversations where user is either sender or receiver
-      const { data: conversationsData, error } = await supabase
+      // First, get all conversations for this user
+      const { data: conversationsData, error: convError } = await supabase
         .from('conversations')
-        .select(`
-          id,
-          user1_id,
-          user2_id,
-          last_message_id,
-          messages!conversations_last_message_id_fkey (
-            id,
-            content,
-            created_at,
-            sender_id,
-            profiles!messages_sender_id_fkey (
-              display_name,
-              photos
-            )
-          )
-        `)
+        .select('id, user1_id, user2_id, updated_at')
         .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
         .order('updated_at', { ascending: false })
 
-      if (error) {
-        console.error('Error loading conversations:', error)
+      if (convError) {
+        console.error('❌ Error loading conversations:', convError)
         return
       }
 
-      // Debug: Log the data structure to understand the shape
-      console.log('Conversations data:', conversationsData)
-
-     // Transform data to our format
-const transformedConversations: Conversation[] = conversationsData?.map(conv => {
-  const otherUserId = conv.user1_id === user.id ? conv.user2_id : conv.user1_id
-
-  // Option 1: Safely get the last message if it's an array
-  let message = null
-  if (conv.messages && Array.isArray(conv.messages) && conv.messages.length > 0) {
-    message = conv.messages[conv.messages.length - 1] // Get last message
-  } else if (conv.messages && !Array.isArray(conv.messages)) {
-    message = conv.messages // Single message object
-  }
-
-  // Option 2: Handle both array and single object cases
-  const getProfileData = (msg: any) => {
-    if (!msg?.profiles) return { display_name: 'Unknown', photo: '' }
-    
-    // If profiles is an array, get the first one
-    if (Array.isArray(msg.profiles)) {
-      return {
-        display_name: msg.profiles[0]?.display_name || 'Unknown',
-        photo: msg.profiles[0]?.photos?.[0] || ''
+      if (!conversationsData || conversationsData.length === 0) {
+        console.log('📭 No conversations found')
+        setConversations([])
+        return
       }
-    }
-    
-    // If profiles is a single object
-    return {
-      display_name: msg.profiles.display_name || 'Unknown',
-      photo: msg.profiles.photos?.[0] || ''
-    }
-  }
 
-  const profileData = message ? getProfileData(message) : { display_name: 'Unknown', photo: '' }
+      console.log(`📊 Found ${conversationsData.length} conversations`)
 
-  return {
-    id: conv.id,
-    other_user: {
-      id: otherUserId,
-      display_name: profileData.display_name,
-      photo: profileData.photo,
-      online: false // TODO: Implement online status
-    },
-    last_message: {
-      id: message?.id ?? '',
-      sender_id: message?.sender_id ?? '',
-      receiver_id: user.id,
-      content: message?.content ?? '',
-      created_at: message?.created_at ?? '',
-      sender_name: profileData.display_name
-    },
-    unread_count: 0 // TODO: Implement unread count
-  }
-}) || []
+      // Load data for each conversation
+      const conversationsWithData = await Promise.all(
+        conversationsData.map(async (conv) => {
+          const otherUserId = conv.user1_id === user.id ? conv.user2_id : conv.user1_id
 
-setConversations(transformedConversations)
- 
+          // Get other user's profile
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('id, display_name, photos, online')
+            .eq('id', otherUserId)
+            .single()
+
+          // Get last message
+          const { data: lastMessageData } = await supabase
+            .from('messages')
+            .select('id, content, created_at, sender_id')
+            .eq('conversation_id', conv.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single()
+
+          // Get unread count
+          const { count: unreadCount } = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('conversation_id', conv.id)
+            .eq('receiver_id', user.id)
+            .is('read_at', null)
+
+          return {
+            id: conv.id,
+            other_user: {
+              id: otherUserId,
+              display_name: profileData?.display_name || 'Unknown User',
+              photo: profileData?.photos?.[0] || 'https://via.placeholder.com/100',
+              online: profileData?.online || false
+            },
+            last_message: lastMessageData ? {
+              id: lastMessageData.id,
+              sender_id: lastMessageData.sender_id,
+              receiver_id: user.id,
+              content: lastMessageData.content,
+              created_at: lastMessageData.created_at,
+              sender_name: lastMessageData.sender_id === user.id ? 'You' : profileData?.display_name || 'Unknown'
+            } : {
+              id: '',
+              sender_id: '',
+              receiver_id: user.id,
+              content: 'No messages yet',
+              created_at: conv.updated_at,
+              sender_name: ''
+            },
+            unread_count: unreadCount || 0
+          }
+        })
+      )
+
+      console.log('✅ Loaded conversations with data:', conversationsWithData)
+      setConversations(conversationsWithData)
     } catch (err) {
-      console.error('Error loading conversations:', err)
+      console.error('❌ Error loading conversations:', err)
     } finally {
       setLoading(false)
     }
@@ -271,47 +308,40 @@ setConversations(transformedConversations)
 
   const loadMessages = async (conversationId: string) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Load messages with basic data
       const { data: messagesData, error } = await supabase
         .from('messages')
-        .select(`
-          *,
-          profiles!messages_sender_id_fkey (
-            display_name,
-            photos
-          )
-        `)
+        .select('id, conversation_id, sender_id, receiver_id, content, created_at, read_at, message_type')
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true })
 
       if (error) {
-        console.error('Error loading messages:', error)
+        console.error('❌ Error loading messages:', error)
         return
       }
 
-      // Debug: Log the messages data structure
-      console.log('Messages data:', messagesData)
+      console.log(`📨 Loaded ${messagesData?.length || 0} messages`)
 
-      // Option 3: Handle profiles data extraction for message list
+      // Get unique sender IDs
+      const senderIds = [...new Set(messagesData?.map(msg => msg.sender_id) || [])]
+      
+      // Load all sender profiles in one query
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, display_name, photos')
+        .in('id', senderIds)
+
+      // Create a map of profiles for quick lookup
+      const profileMap = new Map(
+        profiles?.map(p => [p.id, p]) || []
+      )
+
+      // Transform messages with profile data
       const transformedMessages: Message[] = messagesData?.map((msg: any) => {
-        // Handle both array and single object cases for profiles
-        let profileData = { display_name: 'Unknown', photo: '' }
-        
-        if (msg.profiles) {
-          if (Array.isArray(msg.profiles)) {
-            // If profiles is an array, get the first one
-            profileData = {
-              display_name: msg.profiles[0]?.display_name || 'Unknown',
-              photo: msg.profiles[0]?.photos?.[0] || ''
-            }
-          } else {
-            // If profiles is a single object
-            profileData = {
-              display_name: msg.profiles.display_name || 'Unknown',
-              photo: msg.profiles.photos?.[0] || ''
-            }
-          }
-        }
-
+        const profile = profileMap.get(msg.sender_id)
         return {
           id: msg.id,
           sender_id: msg.sender_id,
@@ -319,14 +349,23 @@ setConversations(transformedConversations)
           content: msg.content,
           created_at: msg.created_at,
           read_at: msg.read_at,
-          sender_name: profileData.display_name,
-          sender_photo: profileData.photo
+          sender_name: msg.sender_id === user.id ? 'You' : (profile?.display_name || 'Unknown'),
+          sender_photo: profile?.photos?.[0] || 'https://via.placeholder.com/50'
         }
       }) || []
 
       setMessages(transformedMessages)
+
+      // Mark messages as read
+      if (isConnected && markMessageRead) {
+        messagesData
+          ?.filter(msg => msg.receiver_id === user.id && !msg.read_at)
+          .forEach(msg => {
+            markMessageRead(msg.id, conversationId)
+          })
+      }
     } catch (err) {
-      console.error('Error loading messages:', err)
+      console.error('❌ Error loading messages:', err)
     }
   }
 
@@ -337,44 +376,60 @@ setConversations(transformedConversations)
     setSending(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      // Stop typing indicator
-      stopTyping(selectedConversation)
-
-      // Send message via Socket.io for real-time delivery
-      if (isConnected && socketSendMessage) {
-        const tempId = `temp_${Date.now()}`
-        setMessageStatus(prev => ({ ...prev, [tempId]: 'sending' }))
-        socketSendMessage(selectedConversation, newMessage.trim(), 'text')
-      } else {
-        // Fallback to database-only if Socket.io not connected
-        const conversation = conversations.find(c => c.id === selectedConversation)
-        if (!conversation) return
-
-        const otherUserId = conversation.other_user.id
-
-        const { error } = await supabase
-          .from('messages')
-          .insert({
-            conversation_id: selectedConversation,
-            sender_id: user.id,
-            receiver_id: otherUserId,
-            content: newMessage.trim()
-          })
-
-        if (error) {
-          console.error('Error sending message:', error)
-          return
-        }
-
-        // Reload messages to show the new one
-        loadMessages(selectedConversation)
+      if (!user) {
+        console.error('❌ User not authenticated')
+        return
       }
 
+      // Stop typing indicator if connected
+      if (isConnected && stopTyping) {
+        stopTyping(selectedConversation)
+      }
+
+      const conversation = conversations.find(c => c.id === selectedConversation)
+      if (!conversation) {
+        console.error('❌ Conversation not found')
+        return
+      }
+
+      const otherUserId = conversation.other_user.id
+      const messageContent = newMessage.trim()
+
+      // Always save to database first
+      const { data: newMessageData, error: dbError } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id: selectedConversation,
+          sender_id: user.id,
+          receiver_id: otherUserId,
+          content: messageContent,
+          message_type: 'text'
+        })
+        .select()
+        .single()
+
+      if (dbError) {
+        console.error('❌ Error saving message to database:', dbError)
+        return
+      }
+
+      console.log('✅ Message saved to database:', newMessageData.id)
+
+      // Then send via Socket.io for real-time delivery if connected
+      if (isConnected && socketSendMessage) {
+        console.log('📡 Sending message via Socket.io')
+        setMessageStatus(prev => ({ ...prev, [newMessageData.id]: 'sending' }))
+        socketSendMessage(selectedConversation, messageContent, 'text')
+      } else {
+        console.log('⚠️ Socket.io not connected, message saved to database only')
+      }
+
+      // Reload messages to show the new one
+      await loadMessages(selectedConversation)
       setNewMessage('')
+      scrollToBottom()
     } catch (err) {
-      console.error('Error sending message:', err)
+      console.error('❌ Error sending message:', err)
     } finally {
       setSending(false)
     }

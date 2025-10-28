@@ -64,60 +64,36 @@ export default function ConversationPage({
 
   const loadMessages = async (conversationId: string) => {
     try {
+      // Get current user first
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Load messages with basic data
       const { data: messagesData, error } = await supabase
         .from('messages')
-        .select(`
-          *,
-          profiles!messages_sender_id_fkey (
-            display_name,
-            photos
-          )
-        `)
+        .select('id, sender_id, receiver_id, content, created_at, read_at')
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true })
 
       if (error) {
-        console.error('Error loading messages:', error)
+        console.error('❌ Error loading messages:', error)
         return
       }
 
-      // Get current user ID first
-      const { data: { user } } = await supabase.auth.getUser()
-      const currentUserId = user?.id
+      console.log(`📨 Loaded ${messagesData?.length || 0} messages for conversation`)
 
-      // Option 3: Handle profiles data extraction for individual conversation
-      const transformedMessages: Message[] = messagesData?.map((msg: any) => {
-        // Handle both array and single object cases for profiles
-        let profileData = { display_name: 'Unknown', photo: '' }
-        
-        if (msg.profiles) {
-          if (Array.isArray(msg.profiles)) {
-            // If profiles is an array, get the first one
-            profileData = {
-              display_name: msg.profiles[0]?.display_name || 'Unknown',
-              photo: msg.profiles[0]?.photos?.[0] || ''
-            }
-          } else {
-            // If profiles is a single object
-            profileData = {
-              display_name: msg.profiles.display_name || 'Unknown',
-              photo: msg.profiles.photos?.[0] || ''
-            }
-          }
-        }
-
-        return {
-          id: msg.id,
-          senderId: msg.sender_id,
-          text: msg.content,
-          timestamp: new Date(msg.created_at),
-          isSent: msg.sender_id === currentUserId
-        }
-      }) || []
+      // Transform to local format
+      const transformedMessages: Message[] = messagesData?.map((msg: any) => ({
+        id: msg.id,
+        senderId: msg.sender_id,
+        text: msg.content,
+        timestamp: new Date(msg.created_at),
+        isSent: msg.sender_id === user.id
+      })) || []
 
       setMessages(transformedMessages)
     } catch (err) {
-      console.error('Error loading messages:', err)
+      console.error('❌ Error loading messages:', err)
     }
   }
 
@@ -159,53 +135,42 @@ export default function ConversationPage({
       // Get conversation details
       const { data: conversationData, error } = await supabase
         .from('conversations')
-        .select(`
-          *,
-          profiles!conversations_user1_id_fkey (
-            id,
-            display_name,
-            photos,
-            online
-          ),
-          profiles!conversations_user2_id_fkey (
-            id,
-            display_name,
-            photos,
-            online
-          )
-        `)
+        .select('id, user1_id, user2_id')
         .eq('id', conversationId)
         .single()
 
       if (error) {
-        console.error('Error loading conversation:', error)
+        console.error('❌ Error loading conversation:', error)
         return
       }
 
-      // Option 1 & 2: Handle both array and single object cases for profiles
-      let otherUser = null
-      
-      if (conversationData.profiles) {
-        if (Array.isArray(conversationData.profiles)) {
-          // If profiles is an array, find the other user
-          otherUser = conversationData.user1_id === user.id 
-            ? conversationData.profiles[1] 
-            : conversationData.profiles[0]
-        } else {
-          // If profiles is a single object, use it directly
-          otherUser = conversationData.profiles
-        }
+      // Determine other user ID
+      const otherUserId = conversationData.user1_id === user.id 
+        ? conversationData.user2_id 
+        : conversationData.user1_id
+
+      // Get other user's profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, display_name, photos, online')
+        .eq('id', otherUserId)
+        .single()
+
+      if (profileError) {
+        console.error('❌ Error loading profile:', profileError)
+        return
       }
 
-      if (otherUser) {
+      if (profileData) {
+        console.log('✅ Loaded conversation with:', profileData.display_name)
         setConversation({
-          username: otherUser.display_name || 'Unknown',
-          photo: otherUser.photos?.[0] || '',
-          isOnline: otherUser.online || false
+          username: profileData.display_name || 'Unknown User',
+          photo: profileData.photos?.[0] || 'https://via.placeholder.com/100',
+          isOnline: profileData.online || false
         })
       }
     } catch (err) {
-      console.error('Error loading conversation data:', err)
+      console.error('❌ Error loading conversation data:', err)
     }
   }
 
