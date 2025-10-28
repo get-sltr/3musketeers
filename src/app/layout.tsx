@@ -1,10 +1,16 @@
+import * as Sentry from '@sentry/nextjs';
 import type { Metadata } from "next";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "SLTR",
-  description: "Rules Don't Apply",
-};
+export function generateMetadata(): Metadata {
+  return {
+    title: "SLTR",
+    description: "Rules Don't Apply",
+    other: {
+      ...Sentry.getTraceData()
+    }
+  };
+}
 
 export default function RootLayout({
   children,
