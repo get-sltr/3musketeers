@@ -46,3 +46,4 @@ npm run dev
 - ✅ Glass morphism design
 - ✅ Mobile responsive
 - ✅ TypeScript strict mode
+ 
