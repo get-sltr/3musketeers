@@ -3,181 +3,151 @@
 import Link from 'next/link'
 import { memo } from 'react'
 
-// Static data moved outside component for better performance
+// Static data
 const FEATURES = [
   {
-    title: 'Nearby Guys',
-    description: 'See who\'s around you right now. Real distance, real time.',
-    icon: '📍'
-  },
-  {
-    title: 'Instant Messages',
-    description: 'Chat immediately. No waiting, no games.',
+    title: 'Instant',
+    description: 'Real-time connections. Zero lag.',
     icon: '⚡'
   },
   {
-    title: 'Filter What Matters',
-    description: 'Find exactly what you\'re looking for. Be specific.',
+    title: 'Precise',
+    description: 'Find exactly who you\'re looking for.',
     icon: '🎯'
   },
   {
-    title: 'Save Favorites',
-    description: 'Keep the ones you like. Come back anytime.',
-    icon: '❤️'
-  },
-  {
-    title: 'Stay Safe',
-    description: 'Block, report, control who sees you.',
-    icon: '🔒'
-  },
-  {
-    title: 'Show Your Vibe',
-    description: 'Let people know what you\'re into. Be real.',
+    title: 'Raw',
+    description: 'No filters. No fake profiles.',
     icon: '🔥'
+  },
+  {
+    title: 'Fast',
+    description: 'Stop swiping. Start living.',
+    icon: '🚀'
   }
 ] as const
 
-const STEPS = [
-  {
-    step: 1,
-    title: "Create Profile",
-    description: "Add photos, set your position, what you're into. Takes 2 minutes.",
-    icon: "👤"
-  },
-  {
-    step: 2,
-    title: "Browse Nearby",
-    description: "See who's around. Filter by what matters. Check their vibe.",
-    icon: "🔍"
-  },
-  {
-    step: 3,
-    title: "Connect",
-    description: "Send a message. Make plans. Meet up. That's it.",
-    icon: "💬"
-  }
-] as const
-
-// Memoized components for better performance
 const FeatureCard = memo(({ feature }: { feature: typeof FEATURES[number] }) => (
-  <div className="bg-black/50 p-8 border border-gray-800 hover:border-gray-600 transition-colors">
-    <div className="text-4xl mb-4">{feature.icon}</div>
-    <h3 className="text-2xl font-bold text-white mb-4">{feature.title}</h3>
-    <p className="text-gray-300 text-lg">{feature.description}</p>
+  <div className="group p-10 bg-black/20 backdrop-blur-sm border border-cyan-500/20 hover:border-cyan-500/50 transition-all duration-300 hover:bg-black/30 relative overflow-hidden">
+    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-magenta-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-500/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+    <div className="relative z-10">
+      <div className="text-5xl mb-6">{feature.icon}</div>
+      <h3 className="text-2xl font-bold text-cyan-400 mb-4 uppercase tracking-wider">{feature.title}</h3>
+      <p className="text-gray-400 text-lg">{feature.description}</p>
+    </div>
   </div>
 ))
 FeatureCard.displayName = 'FeatureCard'
 
-const StepItem = memo(({ item }: { item: typeof STEPS[number] }) => (
-  <div className="flex items-center gap-8">
-    <div className="bg-white text-black w-16 h-16 flex items-center justify-center text-2xl font-bold">
-      {item.step}
-    </div>
-    <div className="flex-1">
-      <h3 className="text-3xl font-bold text-white mb-2">{item.title}</h3>
-      <p className="text-gray-300 text-xl">{item.description}</p>
-    </div>
-    <div className="text-4xl">{item.icon}</div>
-  </div>
-))
-StepItem.displayName = 'StepItem'
-
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-black relative">
-      {/* Dark purple gradient background */}
-      <div className="fixed inset-0 bg-gradient-to-br from-indigo-950 via-purple-950 to-black" />
-      
-      {/* Animated gradient orbs for depth */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" />
-        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-pink-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }} />
-        <div className="absolute bottom-1/4 left-1/3 w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '4s' }} />
+    <div className="min-h-screen bg-[#0a0a0f] relative overflow-hidden">
+      {/* Animated Cyber Grid Background */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div 
+          className="absolute inset-0 opacity-20"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255, 0, 255, 0.1) 1px, transparent 1px)
+            `,
+            backgroundSize: '40px 40px',
+            animation: 'gridMove 20s linear infinite'
+          }}
+        />
       </div>
 
+      {/* Neon Glow Orbs */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-200px] left-[-100px] w-[500px] h-[500px] bg-cyan-500/20 rounded-full blur-[120px] animate-neonPulse" />
+        <div className="absolute bottom-[-200px] right-[-100px] w-[600px] h-[600px] bg-magenta-500/20 rounded-full blur-[120px] animate-neonPulse" style={{ animationDelay: '3s' }} />
+      </div>
+
+      {/* Scanlines Effect */}
+      <div className="fixed inset-0 pointer-events-none opacity-30" style={{
+        backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 255, 0.03) 2px, rgba(0, 255, 255, 0.03) 4px)',
+        animation: 'scan 8s linear infinite'
+      }} />
+
       {/* Navigation */}
-      <nav className="relative z-50 p-6">
+      <nav className="relative z-50 p-6 backdrop-blur-sm">
         <div className="flex justify-between items-center max-w-7xl mx-auto">
-          <div className="text-white text-3xl font-black tracking-wider">
+          <div className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-magenta-500 text-4xl font-black tracking-wider">
             SLTR
           </div>
-          <div className="flex gap-4">
+          <div className="flex gap-4 items-center">
             <Link 
               href="/login"
-              className="px-6 py-2 text-white/80 hover:text-white transition-colors text-lg"
+              className="px-8 py-3 text-cyan-400 hover:text-cyan-300 transition-colors text-lg font-semibold border border-cyan-500/30 hover:border-cyan-500/60 backdrop-blur-sm"
             >
-              Login
+              Log In
             </Link>
             <Link 
               href="/signup"
-              className="px-6 py-2 bg-white text-black font-bold hover:bg-gray-200 transition-colors text-lg rounded"
+              className="px-8 py-3 bg-gradient-to-r from-cyan-500 to-magenta-500 text-black font-bold hover:scale-105 transition-transform text-lg shadow-[0_0_30px_rgba(0,255,255,0.5)]"
             >
-              Join Now
+              Get Started
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* Hero Section - Modern 3D Glassmorphic Design */}
-      <section className="relative z-10 min-h-screen flex items-center justify-center px-4 py-20">
-        <div className="w-full max-w-7xl mx-auto">
-          <div className="relative">
-            {/* Gradient glow effect behind card */}
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 opacity-30 blur-3xl rounded-3xl" />
-            
-            {/* Main glass card */}
-            <div className="relative bg-gradient-to-br from-purple-900/40 via-purple-800/30 to-pink-600/40 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl overflow-hidden">
-              {/* Glass reflection effect */}
-              <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/10 via-transparent to-transparent pointer-events-none" />
-              
-              {/* Content Container */}
-              <div className="relative z-10 px-8 py-16 md:px-16 md:py-24">
-                <div className="text-center max-w-4xl mx-auto">
-                  {/* Main headline */}
-                  <h1 className="text-7xl md:text-8xl lg:text-9xl font-black text-white mb-6 tracking-tight drop-shadow-2xl">
-                    SLTR
-                  </h1>
-                  
-                  {/* Tagline */}
-                  <p className="text-3xl md:text-4xl lg:text-5xl text-white mb-8 font-semibold">
-                    Rules Don&apos;t Apply
-                  </p>
+      {/* Hero Section */}
+      <section className="relative z-10 min-h-[80vh] flex items-center justify-center px-4 py-20">
+        <div className="w-full max-w-5xl mx-auto text-center">
+          {/* Logo */}
+          <h1 className="text-[clamp(90px,16vw,200px)] font-black leading-[0.9] mb-6 text-transparent bg-clip-text bg-gradient-to-b from-cyan-400 to-magenta-500 drop-shadow-[0_0_40px_rgba(0,255,255,0.5)] animate-logoGlow" style={{ letterSpacing: '-6px' }}>
+            SLTR
+          </h1>
+          
+          {/* Tagline */}
+          <p className="text-[clamp(26px,4.5vw,48px)] font-black mb-8 text-cyan-400 uppercase tracking-[6px]" style={{
+            textShadow: '0 0 10px rgba(0,255,255,0.8), 0 0 20px rgba(0,255,255,0.6), 0 0 30px rgba(0,255,255,0.4)'
+          }}>
+            NO RULES APPLY
+          </p>
 
-                  {/* Subheading */}
-                  <p className="text-lg md:text-xl text-white/90 mb-12 max-w-2xl mx-auto leading-relaxed">
-                    Meet real guys nearby. No games, just authentic connections.
-                  </p>
+          {/* Subtitle */}
+          <p className="text-[clamp(16px,2.5vw,22px)] text-gray-400 mb-12 max-w-2xl mx-auto leading-relaxed">
+            The future of connection. No games. No limits. Just real energy.
+          </p>
 
-                  {/* CTA Buttons */}
-                  <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-                    <Link
-                      href="/signup"
-                      className="group relative px-10 py-4 bg-gradient-to-r from-pink-500 via-purple-500 to-yellow-400 text-white font-bold text-lg rounded-full hover:scale-105 transition-all duration-300 shadow-xl hover:shadow-2xl overflow-hidden"
-                    >
-                      <span className="relative z-10">Get Started</span>
-                      <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    </Link>
-                    <Link
-                      href="/app"
-                      className="px-10 py-4 border-2 border-white/60 text-white font-bold text-lg rounded-full hover:bg-white/10 hover:border-white transition-all duration-300 backdrop-blur-sm"
-                    >
-                      Download App
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
+            <Link
+              href="/signup"
+              className="px-16 py-6 bg-gradient-to-r from-cyan-500 to-magenta-500 text-black font-bold text-xl hover:scale-105 transition-transform shadow-[0_0_50px_rgba(255,0,255,0.3)]"
+            >
+              GET STARTED
+            </Link>
+            <Link
+              href="/login"
+              className="px-16 py-6 border-2 border-cyan-500 text-cyan-400 font-bold text-xl hover:bg-cyan-500/10 transition-all shadow-[0_0_30px_rgba(0,255,255,0.3)]"
+            >
+              LOG IN
+            </Link>
+          </div>
+
+          {/* Forgot Password Link */}
+          <div className="text-center">
+            <Link 
+              href="/forgot-password"
+              className="text-gray-500 hover:text-cyan-400 transition-colors text-sm"
+            >
+              Forgot Password?
+            </Link>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="relative z-10 py-20 px-4 bg-gray-900/50">
+      <section className="relative z-10 py-20 px-4 bg-black/30 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-5xl md:text-6xl font-bold text-white text-center mb-16">
-            Why SLTR?
+          <h2 className="text-5xl md:text-6xl font-bold text-white text-center mb-16 uppercase tracking-wider">
+            Why SLTR
           </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {FEATURES.map((feature, index) => (
               <FeatureCard key={index} feature={feature} />
             ))}
@@ -185,70 +155,35 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* How it works Section */}
-      <section className="relative z-10 py-20 px-4">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-5xl md:text-6xl font-bold text-white text-center mb-16">
-            Get Started
-          </h2>
-          <div className="space-y-12">
-            {STEPS.map((item, index) => (
-              <StepItem key={index} item={item} />
-            ))}
-          </div>
-          <div className="text-center mt-16">
-            <Link
-              href="/signup"
-              className="inline-block px-12 py-4 bg-white text-black font-bold text-xl hover:bg-gray-200 transition-colors rounded"
-            >
-              START NOW
-            </Link>
-          </div>
-        </div>
-      </section>
-
       {/* Footer */}
-      <footer className="relative z-10 py-12 px-4 border-t border-gray-800">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <h4 className="text-white font-bold mb-4">Company</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/about" className="hover:text-white transition-colors">About</Link></li>
-                <li><Link href="/contact" className="hover:text-white transition-colors">Contact</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-white font-bold mb-4">Legal</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/terms" className="hover:text-white transition-colors">Terms</Link></li>
-                <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link></li>
-                <li><Link href="/guidelines" className="hover:text-white transition-colors">Guidelines</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-white font-bold mb-4">Support</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/help" className="hover:text-white transition-colors">Help</Link></li>
-                <li><Link href="/safety" className="hover:text-white transition-colors">Safety</Link></li>
-                <li><Link href="/report" className="hover:text-white transition-colors">Report</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-white font-bold mb-4">Follow</h4>
-              <div className="flex gap-4">
-                <a href="#" className="text-gray-400 hover:text-white transition-colors" aria-label="X (Twitter)">𝕏</a>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors" aria-label="Instagram">📷</a>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors" aria-label="Facebook">📘</a>
-              </div>
-            </div>
-          </div>
-          <div className="text-center text-gray-500 text-sm border-t border-gray-800 pt-8">
-            <p>© 2025 SLTR. All rights reserved.</p>
-            <p className="mt-1">18+ only. Be safe, be real.</p>
-          </div>
+      <footer className="relative z-10 py-12 px-4 border-t border-cyan-500/20">
+        <div className="max-w-6xl mx-auto text-center">
+          <p className="text-gray-500 text-sm">© 2025 SLTR. All rights reserved.</p>
+          <p className="text-gray-600 text-xs mt-2">18+ only. Be safe, be real.</p>
         </div>
       </footer>
+
+      <style jsx global>{`
+        @keyframes gridMove {
+          0% { background-position: 0 0; }
+          100% { background-position: 40px 40px; }
+        }
+
+        @keyframes neonPulse {
+          0%, 100% { opacity: 0.2; transform: scale(1); }
+          50% { opacity: 0.3; transform: scale(1.1); }
+        }
+
+        @keyframes logoGlow {
+          0%, 100% { filter: brightness(1); }
+          50% { filter: brightness(1.2); }
+        }
+
+        @keyframes scan {
+          0% { transform: translateY(0); }
+          100% { transform: translateY(10px); }
+        }
+      `}</style>
     </div>
   )
 }
