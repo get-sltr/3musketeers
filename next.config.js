@@ -13,7 +13,7 @@ const nextConfig = {
   // Enable experimental features for better performance
   experimental: {
     optimizePackageImports: ['react-leaflet', 'leaflet'],
-    instrumentationHook: true, // Required for Sentry instrumentation.ts
+    instrumentationHook: false, // Temporarily disabled for dev
   },
   
   // Configure webpack for Leaflet
