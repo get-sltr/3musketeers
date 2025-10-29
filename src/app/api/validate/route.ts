@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { checkRateLimit, getClientIdFromRequest } from '../../lib/rateLimit';
 
+// Force dynamic rendering - prevent static analysis during build
+export const dynamic = 'force-dynamic';
+
 // Schema kept small and copy-pasteable for future routes
 const RequestSchema = z.object({
   message: z.string().min(1).max(5000),

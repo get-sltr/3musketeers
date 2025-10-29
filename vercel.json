@@ -1,4 +1,13 @@
 {
+  "framework": "nextjs",
   "buildCommand": "npm run build",
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./"
+  "installCommand": "npm install",
+  "outputDirectory": ".next",
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./",
+  "rewrites": [
+    {
+      "source": "/monitoring/:path*",
+      "destination": "/api/monitoring/:path*"
+    }
+  ]
 }
