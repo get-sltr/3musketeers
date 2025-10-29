@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { checkRateLimit, getClientIdFromRequest } from '../../lib/rateLimit';
 
 // Force dynamic rendering - prevent static analysis during build
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs'; // Explicitly set runtime
+export const preferredRegion = 'auto';
+
+// Dynamic import to prevent build-time evaluation
+const getRateLimit = () => import('../../lib/rateLimit');
 
 // Schema kept small and copy-pasteable for future routes
 const RequestSchema = z.object({
@@ -14,6 +18,9 @@ const RequestSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    // Dynamic import to prevent build-time evaluation
+    const { checkRateLimit, getClientIdFromRequest } = await getRateLimit();
+    
     // Basic per-client rate limiting
     const clientId = getClientIdFromRequest(request);
     const rl = await checkRateLimit(`validate:${clientId}`, 100, 60_000);
