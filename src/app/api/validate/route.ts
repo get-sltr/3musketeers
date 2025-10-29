@@ -1,40 +1,43 @@
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
 
 // Force dynamic rendering - prevent static analysis during build
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs'; // Explicitly set runtime
 export const preferredRegion = 'auto';
 
-// Dynamic import to prevent build-time evaluation
-const getRateLimit = () => import('../../lib/rateLimit');
-
-// Schema kept small and copy-pasteable for future routes
-const RequestSchema = z.object({
-  message: z.string().min(1).max(5000),
-  conversationId: z.string().uuid(),
-  attachments: z.array(z.string().url()).max(10).optional()
-});
-
 export async function POST(request: Request) {
   try {
-    // Dynamic import to prevent build-time evaluation
-    const { checkRateLimit, getClientIdFromRequest } = await getRateLimit();
+    // Lazy load all dependencies at runtime to prevent build-time evaluation
+    const [{ z }, rateLimitModule] = await Promise.all([
+      import('zod'),
+      import('../../lib/rateLimit').catch(() => null)
+    ]);
     
-    // Basic per-client rate limiting
-    const clientId = getClientIdFromRequest(request);
-    const rl = await checkRateLimit(`validate:${clientId}`, 100, 60_000);
-    if (!rl.ok) {
-      return NextResponse.json(
-        { error: 'Rate limit exceeded' },
-        {
-          status: 429,
-          headers: {
-            'X-RateLimit-Remaining': String(rl.remaining),
-            'X-RateLimit-Reset': String(rl.resetMs)
+    // Schema kept small and copy-pasteable for future routes
+    // Created inside function to prevent build-time evaluation
+    const RequestSchema = z.object({
+      message: z.string().min(1).max(5000),
+      conversationId: z.string().uuid(),
+      attachments: z.array(z.string().url()).max(10).optional()
+    });
+    
+    // Basic per-client rate limiting (optional - skip if module unavailable)
+    if (rateLimitModule) {
+      const { checkRateLimit, getClientIdFromRequest } = rateLimitModule;
+      const clientId = getClientIdFromRequest(request);
+      const rl = await checkRateLimit(`validate:${clientId}`, 100, 60_000);
+      if (!rl.ok) {
+        return NextResponse.json(
+          { error: 'Rate limit exceeded' },
+          {
+            status: 429,
+            headers: {
+              'X-RateLimit-Remaining': String(rl.remaining),
+              'X-RateLimit-Reset': String(rl.resetMs)
+            }
           }
-        }
-      );
+        );
+      }
     }
 
     const json = await request.json().catch(() => null);
