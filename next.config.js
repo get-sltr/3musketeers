@@ -69,7 +69,12 @@ const nextConfig = {
   },
 }
 
-// Sentry configuration
+// Sentry configuration - only enable if all required env vars are present
+const shouldUseSentry = 
+  process.env.NEXT_PUBLIC_SENTRY_DSN && 
+  process.env.SENTRY_ORG && 
+  process.env.SENTRY_PROJECT;
+
 const sentryWebpackPluginOptions = {
   // Additional config options for the Sentry Webpack plugin
   org: process.env.SENTRY_ORG,
@@ -101,6 +106,7 @@ const sentryWebpackPluginOptions = {
 };
 
 // Make sure adding Sentry options is the last code to run before exporting
-module.exports = process.env.NEXT_PUBLIC_SENTRY_DSN
+// Only wrap with Sentry if all required environment variables are present
+module.exports = shouldUseSentry
   ? withSentryConfig(nextConfig, sentryWebpackPluginOptions)
   : nextConfig;
