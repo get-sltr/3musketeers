@@ -1,4 +1,4 @@
-import { redis } from './redis';
+import { getRedis } from './redis';
 
 const windowMs = 60_000; // 1 minute
 const maxPerWindow = 100; // default: 100 requests per minute per client
@@ -13,31 +13,48 @@ export function getClientIdFromRequest(request: Request): string {
   );
 }
 
+// In-memory fallback for local/dev or missing env during build
+type WindowRecord = { windowStartMs: number; tokensUsed: number };
+const memStore = new Map<string, WindowRecord>();
+
 export async function checkRateLimit(
   key: string,
   limit: number = maxPerWindow,
   windowInMs: number = windowMs
 ): Promise<{ ok: boolean; remaining: number; resetMs: number }> {
-  const windowKey = `rl:${key}`;
-  const ttlKey = `${windowKey}:ttl`;
-  // Increment counter and set expiry if new
-  const count = await redis.incr(windowKey);
-  if (count === 1) {
-    await redis.pexpire(windowKey, windowInMs);
-    const resetMs = Date.now() + windowInMs;
-    await redis.psetex(ttlKey, windowInMs, String(resetMs));
-    return { ok: true, remaining: limit - 1, resetMs };
+  const redis = getRedis();
+  if (redis) {
+    const windowKey = `rl:${key}`;
+    // Increment counter and set expiry if new
+    const count = await redis.incr(windowKey);
+    if (count === 1) {
+      await redis.pexpire(windowKey, windowInMs);
+      const resetMs = Date.now() + windowInMs;
+      return { ok: true, remaining: limit - 1, resetMs };
+    }
+
+    // Get remaining TTL to compute reset timestamp
+    const ttlMs = await redis.pttl(windowKey);
+    const resetMs = Date.now() + Math.max(0, ttlMs ?? 0);
+
+    if (count <= limit) {
+      return { ok: true, remaining: limit - count, resetMs };
+    }
+    return { ok: false, remaining: 0, resetMs };
   }
 
-  // Get remaining TTL to compute reset timestamp
-  const ttlMs = await redis.pttl(windowKey);
-  const resetMs = Date.now() + Math.max(0, ttlMs ?? 0);
-
-  if (count <= limit) {
-    return { ok: true, remaining: limit - count, resetMs };
+  // Fallback: simple in-memory window counter
+  const now = Date.now();
+  const current = memStore.get(key);
+  if (!current || now - current.windowStartMs >= windowInMs) {
+    memStore.set(key, { windowStartMs: now, tokensUsed: 1 });
+    return { ok: true, remaining: limit - 1, resetMs: now + windowInMs };
   }
-
-  return { ok: false, remaining: 0, resetMs };
+  if (current.tokensUsed < limit) {
+    current.tokensUsed += 1;
+    return { ok: true, remaining: limit - current.tokensUsed, resetMs: current.windowStartMs + windowInMs };
+  }
+  return { ok: false, remaining: 0, resetMs: current.windowStartMs + windowInMs };
 }
 
 
