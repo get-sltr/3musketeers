@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SLTR - NO RULES APPLY</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      background: #1a0600;
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    /* Fire Gradient Background */
+    .fire-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, 
+        #1a0600 0%, 
+        #330d00 20%, 
+        #4d1400 40%, 
+        #661a00 60%, 
+        #802000 80%, 
+        #ff4400 100%
+      );
+      background-size: 400% 400%;
+      animation: fireFlow 20s ease infinite;
+    }
+
+    @keyframes fireFlow {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    /* Heat Wave Effects */
+    .heat-waves {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    .wave {
+      position: absolute;
+      width: 100%;
+      height: 200px;
+      background: linear-gradient(180deg, 
+        transparent 0%, 
+        rgba(255, 68, 0, 0.2) 50%, 
+        transparent 100%
+      );
+      animation: waveMove 8s ease-in-out infinite;
+    }
+
+    .wave-1 {
+      top: 20%;
+      animation-delay: 0s;
+    }
+
+    .wave-2 {
+      top: 40%;
+      animation-delay: 2s;
+    }
+
+    .wave-3 {
+      top: 60%;
+      animation-delay: 4s;
+    }
+
+    @keyframes waveMove {
+      0%, 100% { transform: translateY(0) scaleY(1); opacity: 0.3; }
+      50% { transform: translateY(-30px) scaleY(1.2); opacity: 0.6; }
+    }
+
+    /* Ember Particles */
+    .embers {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      background-image: 
+        radial-gradient(2px 2px at 10% 20%, rgba(255, 140, 0, 0.8), transparent),
+        radial-gradient(3px 3px at 80% 40%, rgba(255, 68, 0, 0.6), transparent),
+        radial-gradient(2px 2px at 30% 70%, rgba(255, 180, 0, 0.7), transparent),
+        radial-gradient(3px 3px at 90% 80%, rgba(255, 100, 0, 0.5), transparent),
+        radial-gradient(2px 2px at 50% 50%, rgba(255, 160, 0, 0.6), transparent);
+      background-size: 300% 300%;
+      animation: embersRise 15s linear infinite;
+    }
+
+    @keyframes embersRise {
+      0% { background-position: 0% 100%; opacity: 0; }
+      50% { opacity: 1; }
+      100% { background-position: 0% 0%; opacity: 0; }
+    }
+
+    /* Hero Section */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Background Images */
+    .bg-images {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+      opacity: 0.18;
+      filter: saturate(1.8) contrast(1.4) sepia(0.3) hue-rotate(-10deg);
+      pointer-events: none;
+      mix-blend-mode: screen;
+    }
+
+    .bg-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Content */
+    .content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 40px 20px;
+      max-width: 950px;
+    }
+
+    /* Logo */
+    .logo {
+      font-size: clamp(105px, 18vw, 230px);
+      font-weight: 900;
+      letter-spacing: -10px;
+      margin-bottom: 20px;
+      background: linear-gradient(180deg, 
+        #fff 0%, 
+        #ffcc00 30%, 
+        #ff8800 60%, 
+        #ff4400 100%
+      );
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-transform: uppercase;
+      line-height: 0.9;
+      filter: drop-shadow(0 0 40px rgba(255, 100, 0, 0.8));
+      animation: heatShimmer 3s ease-in-out infinite;
+    }
+
+    @keyframes heatShimmer {
+      0%, 100% { filter: drop-shadow(0 0 40px rgba(255, 100, 0, 0.8)); }
+      50% { filter: drop-shadow(0 0 60px rgba(255, 140, 0, 1)); }
+    }
+
+    /* Tagline */
+    .tagline {
+      font-size: clamp(30px, 5vw, 56px);
+      font-weight: 900;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      margin-bottom: 30px;
+      color: #ffaa00;
+      text-shadow: 
+        0 0 20px rgba(255, 170, 0, 0.8),
+        0 0 40px rgba(255, 100, 0, 0.6);
+    }
+
+    /* Subtitle */
+    .subtitle {
+      font-size: clamp(18px, 3vw, 26px);
+      color: #ffcc88;
+      margin-bottom: 60px;
+      font-weight: 400;
+      line-height: 1.6;
+    }
+
+    /* CTA Buttons */
+    .cta-group {
+      display: flex;
+      gap: 25px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 70px;
+    }
+
+    .cta-btn {
+      padding: 25px 70px;
+      font-size: 19px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.4s ease;
+      text-decoration: none;
+      display: inline-block;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .cta-btn:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    .cta-primary {
+      background: linear-gradient(135deg, #ff6600 0%, #ff3300 100%);
+      color: #fff;
+      box-shadow: 0 10px 40px rgba(255, 68, 0, 0.5);
+      position: relative;
+    }
+
+    .cta-primary:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 60px rgba(255, 68, 0, 0.8);
+    }
+
+    .cta-secondary {
+      background: transparent;
+      color: #ffaa00;
+      border: 3px solid #ff8800;
+      box-shadow: 0 10px 40px rgba(255, 136, 0, 0.3);
+    }
+
+    .cta-secondary:hover {
+      background: rgba(255, 136, 0, 0.2);
+      border-color: #ffaa00;
+      box-shadow: 0 15px 60px rgba(255, 170, 0, 0.5);
+      transform: translateY(-5px);
+    }
+
+    /* Features */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 35px;
+      margin-top: 50px;
+    }
+
+    .feature {
+      padding: 45px 35px;
+      background: rgba(255, 68, 0, 0.1);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 136, 0, 0.3);
+      border-radius: 15px;
+      transition: all 0.4s ease;
+    }
+
+    .feature:hover {
+      background: rgba(255, 68, 0, 0.2);
+      border-color: rgba(255, 136, 0, 0.7);
+      transform: translateY(-10px);
+      box-shadow: 0 20px 50px rgba(255, 68, 0, 0.4);
+    }
+
+    .feature-icon {
+      font-size: 44px;
+      margin-bottom: 18px;
+    }
+
+    .feature-title {
+      font-size: 21px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #ffaa00;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .feature-text {
+      font-size: 15px;
+      color: #ffcc88;
+      line-height: 1.6;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .bg-images {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .cta-group {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0 20px;
+      }
+
+      .cta-btn {
+        width: 100%;
+      }
+
+      .features {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="fire-bg"></div>
+
+  <div class="hero">
+    <!-- Heat Effects -->
+    <div class="heat-waves">
+      <div class="wave wave-1"></div>
+      <div class="wave wave-2"></div>
+      <div class="wave wave-3"></div>
+    </div>
+
+    <div class="embers"></div>
+
+    <!-- Background Images -->
+    <div class="bg-images">
+      <img src="https://images.unsplash.com/photo-1583500557349-fb5238f8d946?w=800&q=80" alt="" class="bg-img">
+      <img src="https://images.unsplash.com/photo-1534367507873-d2d7e24c797f?w=800&q=80" alt="" class="bg-img">
+      <img src="https://images.unsplash.com/photo-1605296867304-46d5465a13f1?w=800&q=80" alt="" class="bg-img">
+      <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=800&q=80" alt="" class="bg-img">
+      <img src="https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=800&q=80" alt="" class="bg-img">
+      <img src="https://images.unsplash.com/photo-1583500557349-fb5238f8d946?w=800&q=80" alt="" class="bg-img">
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+      <h1 class="logo">SLTR</h1>
+      <p class="tagline">NO RULES APPLY</p>
+      <p class="subtitle">
+        Too hot to handle. Impossible to ignore.
+      </p>
+
+      <div class="cta-group">
+        <a href="/signup" class="cta-btn cta-primary">Get Started</a>
+        <a href="/login" class="cta-btn cta-secondary">Log In</a>
+      </div>
+
+      <div class="features">
+        <div class="feature">
+          <div class="feature-icon">🔥</div>
+          <div class="feature-title">Burning</div>
+          <div class="feature-text">Connections that ignite instantly.</div>
+        </div>
+
+        <div class="feature">
+          <div class="feature-icon">⚡</div>
+          <div class="feature-title">Intense</div>
+          <div class="feature-text">Energy you can't fake. Heat you can't hide.</div>
+        </div>
+
+        <div class="feature">
+          <div class="feature-icon">💥</div>
+          <div class="feature-title">Explosive</div>
+          <div class="feature-text">Chemistry that can't be contained.</div>
+        </div>
+
+        <div class="feature">
+          <div class="feature-icon">🌡️</div>
+          <div class="feature-title">Scorching</div>
+          <div class="feature-text">Turn up the heat. No limits.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

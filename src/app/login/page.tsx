@@ -1,178 +1,157 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
-function LoginForm() {
+export default function LoginPage() {
+  const router = useRouter()
+  const supabase = createClientComponentClient()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [checkingAuth, setCheckingAuth] = useState(true)
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const message = searchParams.get('message')
-
-  // Check if user is already logged in
-  useEffect(() => {
-    const checkAuth = async () => {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (user) {
-        // User is already logged in, redirect to app
-        router.push('/app')
-      } else {
-        setCheckingAuth(false)
-      }
-    }
-    
-    checkAuth()
-  }, [router])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError('')
     setLoading(true)
-    setError(null)
 
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
 
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-    } else {
+      if (signInError) throw signInError
+
       router.push('/app')
+      router.refresh()
+    } catch (err: any) {
+      setError(err.message || 'Failed to log in')
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4">
-      <div 
-        className="w-full max-w-md p-8 rounded-3xl border border-white/10 backdrop-blur-xl"
-        style={{
-          background: 'rgba(255, 255, 255, 0.05)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          borderRadius: '24px',
-          backdropFilter: 'blur(20px)'
-        }}
-      >
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <h1 
-            className="text-4xl font-black tracking-wider"
-            style={{
-              background: 'linear-gradient(135deg, #00d4ff, #ff00ff)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
-            }}
+    <div className="min-h-screen bg-[#0a0a0f] relative overflow-hidden flex items-center justify-center px-4">
+      {/* Cyber Grid Background */}
+      <div className="fixed inset-0 pointer-events-none opacity-20" style={{
+        backgroundImage: `
+          linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 0, 255, 0.1) 1px, transparent 1px)
+        `,
+        backgroundSize: '40px 40px',
+        animation: 'gridMove 20s linear infinite'
+      }} />
+
+      {/* Neon Glows */}
+      <div className="fixed top-[-200px] left-[-100px] w-[500px] h-[500px] bg-cyan-500/20 rounded-full blur-[120px] animate-pulse" />
+      <div className="fixed bottom-[-200px] right-[-100px] w-[600px] h-[600px] bg-magenta-500/20 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '3s' }} />
+
+      {/* Login Card */}
+      <div className="relative z-10 w-full max-w-md">
+        {/* Back to Home */}
+        <div className="mb-8">
+          <Link 
+            href="/"
+            className="text-gray-400 hover:text-cyan-400 transition-colors text-sm flex items-center gap-2"
           >
-            SLTR
-          </h1>
-          <p className="text-white/60 text-sm tracking-widest uppercase mt-2">
-            RULES DON'T APPLY
-          </p>
+            ← Back to Home
+          </Link>
         </div>
 
-        {/* Login Form */}
-        <form onSubmit={handleLogin} className="space-y-6">
-          <div>
-            <label htmlFor="email" className="sr-only">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-200"
-              style={{
-                background: 'rgba(255, 255, 255, 0.1)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '16px'
-              }}
-              required
-            />
-          </div>
+        {/* Card */}
+        <div className="bg-black/40 backdrop-blur-xl border border-cyan-500/20 p-8 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-magenta-500/5" />
+          
+          <div className="relative z-10">
+            {/* Logo */}
+            <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-magenta-500 mb-2">
+              SLTR
+            </h1>
+            <p className="text-gray-400 mb-8">Welcome back</p>
 
-          <div>
-            <label htmlFor="password" className="sr-only">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-200"
-              style={{
-                background: 'rgba(255, 255, 255, 0.1)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '16px'
-              }}
-              required
-            />
-          </div>
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 text-red-400 text-sm">
+                {error}
+              </div>
+            )}
 
-          {message && (
-            <div className="text-green-400 text-sm text-center bg-green-500/10 border border-green-500/20 rounded-xl py-2 px-4">
-              {message}
+            {/* Login Form */}
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 focus:border-cyan-500 text-white placeholder-gray-500 outline-none transition-colors"
+                  placeholder="your@email.com"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 focus:border-cyan-500 text-white placeholder-gray-500 outline-none transition-colors"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              {/* Forgot Password Link */}
+              <div className="text-right">
+                <Link 
+                  href="/forgot-password"
+                  className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full px-6 py-4 bg-gradient-to-r from-cyan-500 to-magenta-500 text-black font-bold text-lg hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed transition-transform shadow-[0_0_30px_rgba(0,255,255,0.5)]"
+              >
+                {loading ? 'Logging in...' : 'Log In'}
+              </button>
+            </form>
+
+            {/* Sign Up Link */}
+            <div className="mt-8 text-center">
+              <p className="text-gray-400 text-sm">
+                Don't have an account?{' '}
+                <Link href="/signup" className="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors">
+                  Sign up
+                </Link>
+              </p>
             </div>
-          )}
-
-          {error && (
-            <div className="text-red-400 text-sm text-center bg-red-500/10 border border-red-500/20 rounded-xl py-2 px-4">
-              {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-2xl text-white font-semibold hover:opacity-90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{
-              background: 'linear-gradient(135deg, #00d4ff, #ff00ff)',
-              borderRadius: '16px'
-            }}
-          >
-            {loading ? 'Loading...' : 'Login'}
-          </button>
-        </form>
-
-        <div className="text-center mt-6">
-          <p className="text-white/60 text-sm">
-            Don't have an account?{' '}
-            <Link 
-              href="/signup" 
-              className="text-white hover:underline font-medium"
-              style={{
-                background: 'linear-gradient(135deg, #00d4ff, #ff00ff)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text'
-              }}
-            >
-              Sign Up
-            </Link>
-          </p>
+          </div>
         </div>
       </div>
-    </div>
-  )
-}
 
-export default function LoginPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><div className="text-white">Loading...</div></div>}>
-      <LoginForm />
-    </Suspense>
+      <style jsx global>{`
+        @keyframes gridMove {
+          0% { background-position: 0 0; }
+          100% { background-position: 40px 40px; }
+        }
+      `}</style>
+    </div>
   )
 }
