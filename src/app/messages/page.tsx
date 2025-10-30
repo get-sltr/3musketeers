@@ -248,7 +248,7 @@ function MessagesPageContent() {
       setConversations(transformedConversations)
 
       // Auto-select the most recent conversation if none selected
-      if (!selectedConversation && transformedConversations.length > 0) {
+      if (!selectedConversation && transformedConversations.length > 0 && transformedConversations[0]) {
         setSelectedConversation(transformedConversations[0].id)
       }
  

@@ -232,7 +232,7 @@ export default function AppPage() {
 
   return (
     <MobileLayout>
-      <GradientBackground variant="vignette">
+      <div className="min-h-screen bg-[#0a0a0f]">
         {/* Animated Header with transparency */}
         <AnimatedHeader 
           viewMode={viewMode} 
@@ -317,7 +317,7 @@ export default function AppPage() {
 
       {/* Blaze AI Assistant Button */}
       <BlazeAIButton />
-      </GradientBackground>
+      </div>
     </MobileLayout>
   )
 }
