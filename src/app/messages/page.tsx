@@ -19,7 +19,7 @@ interface Message {
   receiver_id: string
   content: string
   created_at: string
-  read_at?: string
+  read?: boolean
   sender_name?: string
   sender_photo?: string
   profiles?: Profile[]
@@ -290,7 +290,7 @@ function MessagesPageContent() {
           receiver_id: msg.receiver_id,
           content: msg.content,
           created_at: msg.created_at,
-          read_at: msg.read_at,
+          read: msg.read,
           sender_name: profileData.display_name,
           sender_photo: profileData.photo
         }

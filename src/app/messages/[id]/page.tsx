@@ -71,7 +71,7 @@ export default function ConversationPage({
       // Load messages with basic data
       const { data: messagesData, error } = await supabase
         .from('messages')
-        .select('id, sender_id, receiver_id, content, created_at, read_at')
+        .select('id, sender_id, receiver_id, content, created_at, read')
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true })
 
