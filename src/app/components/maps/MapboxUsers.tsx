@@ -12,6 +12,7 @@ type UserPin = {
   latitude: number
   longitude: number
   display_name?: string
+  isCurrentUser?: boolean
 }
 
 interface MapboxUsersProps {
@@ -83,14 +84,34 @@ export default function MapboxUsers({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [users])
 
+  // Re-center map when center prop changes
+  useEffect(() => {
+    if (!mapRef.current || !center) return
+    mapRef.current.flyTo({
+      center: center,
+      zoom: 14,
+      duration: 1500
+    })
+  }, [center])
+
   const addMarker = (u: UserPin) => {
     if (!mapRef.current) return
     const el = document.createElement('div')
-    el.className = 'rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/50 hover:scale-125 transition-transform'
-    el.style.width = '20px'
-    el.style.height = '20px'
-    el.style.border = '3px solid rgba(0, 0, 0, 0.8)'
-    el.style.boxShadow = '0 0 15px rgba(0, 212, 255, 0.6)'
+    
+    // Style differently for current user
+    if (u.isCurrentUser) {
+      el.className = 'rounded-full bg-white shadow-lg shadow-white/50 hover:scale-125 transition-transform'
+      el.style.width = '24px'
+      el.style.height = '24px'
+      el.style.border = '4px solid rgba(0, 212, 255, 0.9)'
+      el.style.boxShadow = '0 0 20px rgba(255, 255, 255, 0.8)'
+    } else {
+      el.className = 'rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/50 hover:scale-125 transition-transform'
+      el.style.width = '20px'
+      el.style.height = '20px'
+      el.style.border = '3px solid rgba(0, 0, 0, 0.8)'
+      el.style.boxShadow = '0 0 15px rgba(0, 212, 255, 0.6)'
+    }
 
     if (onUserClick) {
       el.style.cursor = 'pointer'

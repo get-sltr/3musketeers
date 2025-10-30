@@ -12,6 +12,7 @@ import AnimatedHeader from '../../components/AnimatedHeader'
 import GradientBackground from '../../components/GradientBackground'
 import BlazeAIButton from '../../components/BlazeAIButton'
 import UserProfileCard from '../components/UserProfileCard'
+import MapControls from '../components/MapControls'
 import '../../styles/mobile-optimization.css'
 
 type ViewMode = 'grid' | 'map'
@@ -31,6 +32,7 @@ interface UserWithLocation {
   online?: boolean
   latitude?: number
   longitude?: number
+  isYou?: boolean
 }
 
 export default function AppPage() {
@@ -40,6 +42,9 @@ export default function AppPage() {
   const [users, setUsers] = useState<UserWithLocation[]>([])
   const [selectedUser, setSelectedUser] = useState<UserWithLocation | null>(null)
   const [showProfileModal, setShowProfileModal] = useState(false)
+  const [isIncognito, setIsIncognito] = useState(false)
+  const [isRelocating, setIsRelocating] = useState(false)
+  const [mapCenter, setMapCenter] = useState<[number, number] | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -52,14 +57,14 @@ export default function AppPage() {
         return
       }
       
-      // Fetch users with location data
-      await fetchUsers()
+      // Fetch users with location data (including yourself)
+      await fetchUsers(session.user.id)
       setLoading(false)
     }
     checkAuth()
   }, [router])
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (currentUserId: string) => {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('profiles')
@@ -72,7 +77,13 @@ export default function AppPage() {
       return
     }
     
-    setUsers(data || [])
+    // Mark current user
+    const usersWithYou = (data || []).map(user => ({
+      ...user,
+      isYou: user.id === currentUserId
+    }))
+    
+    setUsers(usersWithYou)
   }
 
   const handleFilterChange = (filters: string[]) => {
@@ -90,6 +101,56 @@ export default function AppPage() {
 
   const handleMessage = (userId: string) => {
     router.push(`/messages/${userId}`)
+  }
+
+  const handleCenterLocation = async () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setMapCenter([position.coords.longitude, position.coords.latitude])
+        },
+        (error) => {
+          console.error('Error getting location:', error)
+          alert('Unable to get your location. Please enable location services.')
+        }
+      )
+    }
+  }
+
+  const handleToggleIncognito = async (enabled: boolean) => {
+    setIsIncognito(enabled)
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    // Update online status in database
+    await supabase
+      .from('profiles')
+      .update({ online: !enabled })
+      .eq('id', user.id)
+  }
+
+  const handleMoveLocation = () => {
+    setIsRelocating(!isRelocating)
+    // Map click handler will be managed by MapboxUsers component
+  }
+
+  const handleMapClick = async (lng: number, lat: number) => {
+    if (!isRelocating) return
+    
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    // Update user location in database
+    await supabase
+      .from('profiles')
+      .update({ latitude: lat, longitude: lng })
+      .eq('id', user.id)
+
+    setIsRelocating(false)
+    // Refresh users
+    await fetchUsers(user.id)
   }
 
 
@@ -125,11 +186,22 @@ export default function AppPage() {
                 id: u.id,
                 latitude: u.latitude!,
                 longitude: u.longitude!,
-                display_name: u.display_name
+                display_name: u.isYou ? 'You' : u.display_name,
+                isCurrentUser: u.isYou
               }))}
               onUserClick={handleUserClick}
+              onMapClick={handleMapClick}
+              center={mapCenter}
               minZoom={2}
               maxZoom={18}
+            />
+            
+            {/* Map Controls */}
+            <MapControls
+              onCenterLocation={handleCenterLocation}
+              onToggleIncognito={handleToggleIncognito}
+              onMoveLocation={handleMoveLocation}
+              isIncognito={isIncognito}
             />
             
             {/* Users sidebar */}
