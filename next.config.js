@@ -16,7 +16,7 @@ const nextConfig = {
     instrumentationHook: false, // Temporarily disabled for dev
   },
   
-  // Configure webpack for Leaflet
+  // Configure webpack for Leaflet and path aliases
   webpack: (config, { isServer, webpack }) => {
     if (!isServer) {
       config.resolve.fallback = {
@@ -25,6 +25,12 @@ const nextConfig = {
         net: false,
         tls: false,
       }
+    }
+    
+    // Explicitly configure path aliases for webpack
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': require('path').resolve(__dirname, 'src'),
     }
     
     return config
