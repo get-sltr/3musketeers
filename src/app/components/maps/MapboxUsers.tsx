@@ -18,6 +18,7 @@ type UserPin = {
 interface MapboxUsersProps {
   users?: UserPin[]
   onUserClick?: (userId: string) => void
+  onMapClick?: (lng: number, lat: number) => void
   center?: [number, number] // [lng, lat]
   zoom?: number
   minZoom?: number
@@ -27,10 +28,11 @@ interface MapboxUsersProps {
 export default function MapboxUsers({
   users = [],
   onUserClick,
+  onMapClick,
   center,
   zoom = 12,
   minZoom = 2,
-  maxZoom = 16,
+  maxZoom = 18,
 }: MapboxUsersProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
@@ -61,6 +63,13 @@ export default function MapboxUsers({
       })
 
       mapRef.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
+
+      // Add click handler for map
+      if (onMapClick) {
+        mapRef.current.on('click', (e) => {
+          onMapClick(e.lngLat.lng, e.lngLat.lat)
+        })
+      }
 
       // Add existing user pins
       users.forEach((u) => addMarker(u))
