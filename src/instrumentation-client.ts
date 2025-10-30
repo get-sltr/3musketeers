@@ -5,6 +5,8 @@
 
 import * as Sentry from "@sentry/nextjs";
 
+// TEMPORARILY DISABLED FOR DEBUGGING - TOO MUCH CONSOLE NOISE
+if (false) {
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
@@ -62,5 +64,6 @@ Sentry.init({
     return event;
   },
 });
+}
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
