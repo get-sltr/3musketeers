@@ -115,7 +115,10 @@ function MessagesPageContent() {
 
     const handleUserStopTyping = (data: any) => {
       if (data.conversationId === selectedConversation) {
-        setTypingUsers(prev => prev.filter(user => user !== data.username))
+        setTypingUsers(prev => {
+          // Clear all typing users for this conversation
+          return []
+        })
       }
     }
 
@@ -341,10 +344,11 @@ function MessagesPageContent() {
         setMessageStatus(prev => ({ ...prev, [tempId]: 'sending' }))
         socketSendMessage(selectedConversation, newMessage.trim(), 'text')
         
-        // Reload messages after a short delay to show the sent message
+        // Reload messages after delay to show the sent message (backend needs time to save)
         setTimeout(() => {
+          console.log('🔄 Reloading messages after send...')
           loadMessages(selectedConversation)
-        }, 500)
+        }, 1500)
       } else {
         console.log('📤 Sending message via database (socket not connected)')
         // Fallback to database-only if Socket.io not connected
