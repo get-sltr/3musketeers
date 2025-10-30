@@ -1,3 +1,4 @@
+// Backend v1.1 - with receiver_id fix
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');

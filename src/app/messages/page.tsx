@@ -329,7 +329,7 @@ function MessagesPageContent() {
 
         const otherUserId = conversation.other_user.id
 
-        const { error } = await supabase
+        const { data: messageData, error } = await supabase
           .from('messages')
           .insert({
             conversation_id: selectedConversation,
@@ -337,11 +337,14 @@ function MessagesPageContent() {
             receiver_id: otherUserId,
             content: newMessage.trim()
           })
+          .select()
 
         if (error) {
-          console.error('Error sending message:', error)
+          console.error('❌ Error sending message:', error)
           return
         }
+        
+        console.log('✅ Message saved to database:', messageData)
 
         // Reload messages to show the new one
         loadMessages(selectedConversation)
