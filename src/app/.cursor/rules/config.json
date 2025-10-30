@@ -1,0 +1,23 @@
+{
+    "projectRules": [
+      "Agents and users are NOT allowed to delete, alter, or change any code without explicit permission from Kevin Minn (Project Owner).",
+      "Every change request must include a clear explanation of the issue, its cause, proposed plan, and solution before implementation.",
+      "All updates must follow the SLTR DIGITAL project rules defined in .cursor/rules.md.",
+      "Make sure to follow the rules and regulations of the project.",
+      "Make sure to follow the coding standards and best practices.",
+      "Make sure to follow the security best practices.",
+      "Make sure to follow the performance best practices.",
+      "Make sure to follow the accessibility best practices.",
+      "Make sure to follow the SEO best practices.",
+      "Make sure to follow the best practices for the project.",
+      "Thank you for your help and cooperation."
+    ],
+    "requireApprovalForChanges": true,
+    "owner": "Kevin Minn",
+    "company": "SLTR DIGITAL LLC",
+    "contact": "213-756-8086",
+    "enforcementMode": "strict",
+    "autoLog": true
+  }
+
+  

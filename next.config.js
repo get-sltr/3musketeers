@@ -17,7 +17,7 @@ const nextConfig = {
   },
   
   // Configure webpack for Leaflet
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, webpack }) => {
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -26,6 +26,7 @@ const nextConfig = {
         tls: false,
       }
     }
+    
     return config
   },
   
@@ -103,6 +104,18 @@ const sentryWebpackPluginOptions = {
   
   // Enables automatic instrumentation of Vercel Cron Monitors
   automaticVercelMonitors: true,
+  
+  // Suppress warnings about missing source map references
+  errorHandler: (err, invokeErr, compilation) => {
+    // Ignore source map warnings - they're not critical
+    if (err && err.message && err.message.includes('source map reference')) {
+      return;
+    }
+    // Log other errors
+    if (err) {
+      console.warn('Sentry webpack plugin warning:', err.message || err);
+    }
+  },
 };
 
 // Make sure adding Sentry options is the last code to run before exporting
