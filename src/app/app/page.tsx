@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation'
 import FilterBar from '../../components/FilterBar'
 import MobileLayout from '../../components/MobileLayout'
 import LoadingSkeleton, { MapLoadingSkeleton } from '../../components/LoadingSkeleton'
-import LazyWrapper, { LazyMapWithProfiles, LazyGridView } from '../../components/LazyWrapper'
+import LazyWrapper, { LazyGridView } from '../../components/LazyWrapper'
+import dynamic from 'next/dynamic'
 import AnimatedHeader from '../../components/AnimatedHeader'
 import GradientBackground from '../../components/GradientBackground'
 import MicroInteractions, { InteractiveButton } from '../../components/MicroInteractions'
@@ -69,7 +70,7 @@ export default function AppPage() {
           {viewMode === 'grid' ? (
             <LazyGridView activeFilters={activeFilters} />
           ) : (
-            <LazyMapWithProfiles onUserClick={(userId) => console.log('User clicked:', userId)} />
+            <MapboxUsers onUserClick={(userId) => console.log('User clicked:', userId)} minZoom={2} maxZoom={16} />
           )}
         </LazyWrapper>
       </main>
@@ -80,3 +81,13 @@ export default function AppPage() {
     </MobileLayout>
   )
 }
+
+// Lazy-load Mapbox (client-only)
+const MapboxUsers = dynamic(() => import('@/app/components/maps/MapboxUsers'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[500px] md:h-[600px] rounded-xl overflow-hidden flex items-center justify-center text-white/60">
+      Loading map...
+    </div>
+  )
+})
