@@ -89,10 +89,19 @@ function MessagesPageContent() {
   useEffect(() => {
     if (!socket) return
 
-    // Handle new messages
-    const handleNewMessage = (data: any) => {
+    // Handle new messages (normalize payload fields)
+    const handleNewMessage = (evt: any) => {
+      const data = evt as any
       if (data.conversationId === selectedConversation) {
-        setMessages(prev => [...prev, data])
+        const normalized = {
+          id: data.id || `tmp_${Date.now()}`,
+          sender_id: data.sender_id || data.senderId,
+          receiver_id: data.receiver_id || data.receiverId || '',
+          content: data.content,
+          created_at: data.created_at || data.createdAt || new Date().toISOString(),
+          read: false,
+        } as any
+        setMessages(prev => [...prev, normalized])
         scrollToBottom()
       }
     }
@@ -234,6 +243,11 @@ function MessagesPageContent() {
       )
 
       setConversations(transformedConversations)
+
+      // Auto-select the most recent conversation if none selected
+      if (!selectedConversation && transformedConversations.length > 0) {
+        setSelectedConversation(transformedConversations[0].id)
+      }
  
     } catch (err) {
       console.error('Error loading conversations:', err)
