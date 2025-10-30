@@ -99,8 +99,40 @@ export default function AppPage() {
     }
   }
 
-  const handleMessage = (userId: string) => {
-    router.push(`/messages/${userId}`)
+  const handleMessage = async (userId: string) => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    // Check if conversation already exists
+    const { data: existingConv } = await supabase
+      .from('conversations')
+      .select('id')
+      .or(`and(user1_id.eq.${user.id},user2_id.eq.${userId}),and(user1_id.eq.${userId},user2_id.eq.${user.id})`)
+      .single()
+
+    if (existingConv) {
+      // Conversation exists, navigate to it
+      router.push(`/messages/${existingConv.id}`)
+    } else {
+      // Create new conversation
+      const { data: newConv, error } = await supabase
+        .from('conversations')
+        .insert({
+          user1_id: user.id,
+          user2_id: userId
+        })
+        .select('id')
+        .single()
+
+      if (error) {
+        console.error('Error creating conversation:', error)
+        alert('Failed to start conversation')
+        return
+      }
+
+      router.push(`/messages/${newConv.id}`)
+    }
   }
 
   const handleCenterLocation = async () => {
