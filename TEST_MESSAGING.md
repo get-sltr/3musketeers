@@ -33,6 +33,9 @@
 ## Quick Fixes Applied:
 
 ✅ Fixed socket backend URL to use environment variable
+✅ Fixed backend to include receiver_id when sending messages
+✅ Added Mapbox token to .env.local
+✅ Added visual warning for missing Mapbox token
 ✅ Map component already exists in /app page
 ✅ User profile modal with "Send Message" button working
 ✅ Message sending saves to database properly
