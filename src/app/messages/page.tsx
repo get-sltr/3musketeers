@@ -203,13 +203,14 @@ function MessagesPageContent() {
             .single()
 
           // Fetch last message for this conversation
-          const { data: lastMsg } = await supabase
+          const { data: lastMsgArray } = await supabase
             .from('messages')
             .select('id, content, created_at, sender_id')
             .eq('conversation_id', conv.id)
             .order('created_at', { ascending: false })
             .limit(1)
-            .single()
+          
+          const lastMsg = lastMsgArray?.[0] || null
 
           return {
             id: conv.id,
