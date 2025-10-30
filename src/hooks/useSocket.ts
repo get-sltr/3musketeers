@@ -41,7 +41,7 @@ export function useSocket(): UseSocketReturn {
 
     // Connection event handlers
     socketInstance.on('connect', () => {
-      console.log('✅ Connected to real-time backend')
+      console.log('✅ Connected to real-time backend:', backendUrl)
       setIsConnected(true)
     })
 
