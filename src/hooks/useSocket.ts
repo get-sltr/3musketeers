@@ -28,7 +28,10 @@ export function useSocket(): UseSocketReturn {
 
   useEffect(() => {
     // Initialize socket connection
-    const socketInstance = io('https://backend.getsltr.com', {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_DEV_BACKEND_URL || 'https://sltr-backend.railway.app'
+    console.log('🔌 Connecting to backend:', backendUrl)
+    
+    const socketInstance = io(backendUrl, {
       transports: ['websocket', 'polling'],
       autoConnect: true,
       reconnection: true,

@@ -5,7 +5,14 @@ import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { getCurrentUserLocation } from '@/app/lib/maps/mapboxUtils'
 
-mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN as string
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+
+if (!MAPBOX_TOKEN) {
+  console.error('⚠️ MAPBOX TOKEN MISSING: Add NEXT_PUBLIC_MAPBOX_TOKEN to .env.local')
+  console.error('Get a free token at: https://account.mapbox.com/access-tokens/')
+}
+
+mapboxgl.accessToken = MAPBOX_TOKEN || ''
 
 type UserPin = {
   id: string
@@ -135,6 +142,29 @@ export default function MapboxUsers({
         )
       )
       .addTo(mapRef.current)
+  }
+
+  if (!MAPBOX_TOKEN) {
+    return (
+      <div className="w-full h-screen overflow-hidden bg-black flex items-center justify-center">
+        <div className="text-center p-8 glass-bubble max-w-md">
+          <div className="text-6xl mb-4">🗺️</div>
+          <h3 className="text-white text-xl font-bold mb-2">Mapbox Token Missing</h3>
+          <p className="text-white/60 mb-4">To use the map feature, add your Mapbox access token to .env.local:</p>
+          <code className="bg-black/50 text-cyan-400 px-3 py-2 rounded block mb-4 text-sm">
+            NEXT_PUBLIC_MAPBOX_TOKEN=your_token_here
+          </code>
+          <a 
+            href="https://account.mapbox.com/access-tokens/" 
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-cyan-400 hover:text-cyan-300 underline text-sm"
+          >
+            Get a free token from Mapbox →
+          </a>
+        </div>
+      </div>
+    )
   }
 
   return (
