@@ -503,9 +503,9 @@ function MessagesPageContent() {
         </div>
       </div>
 
-      <div className="pt-20 flex h-screen">
+      <div className="pt-20 flex flex-col md:flex-row h-screen">
         {/* Conversations List */}
-        <div className="w-1/3 border-r border-white/10 bg-black/50">
+        <div className="w-full md:w-1/3 md:border-r border-white/10 bg-black/50 md:h-full overflow-y-auto">
           <div className="p-4">
             <h2 className="text-white font-semibold mb-4">Conversations</h2>
             {conversations.length === 0 ? (
@@ -564,7 +564,7 @@ function MessagesPageContent() {
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0">
           {selectedConversation ? (
             <>
               {/* Messages */}
