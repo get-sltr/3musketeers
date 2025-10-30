@@ -28,9 +28,9 @@ export function useSocket(): UseSocketReturn {
 
   useEffect(() => {
     // Initialize socket connection
-    const socketInstance = io('https://3musketeers-production.up.railway.app', {
+    const socketInstance = io('https://backend.getsltr.com', {
       transports: ['websocket', 'polling'],
-      autoConnect: true, // Changed to true to auto-connect
+      autoConnect: true,
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionAttempts: 5
