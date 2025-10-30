@@ -4,6 +4,8 @@
 
 import * as Sentry from "@sentry/nextjs";
 
+// Temporarily disabled to debug login issues
+if (false) {
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
@@ -61,3 +63,4 @@ Sentry.init({
     return event;
   },
 });
+}
