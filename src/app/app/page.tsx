@@ -57,6 +57,42 @@ export default function AppPage() {
         return
       }
       
+      // Check if current user has location set
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('latitude, longitude')
+        .eq('id', session.user.id)
+        .single()
+      
+      // If no location, request it and save
+      if (!profile?.latitude || !profile?.longitude) {
+        console.log('📍 No location found, requesting permission...')
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            async (position) => {
+              console.log('✅ Location granted:', position.coords.latitude, position.coords.longitude)
+              // Save to database
+              await supabase
+                .from('profiles')
+                .update({
+                  latitude: position.coords.latitude,
+                  longitude: position.coords.longitude
+                })
+                .eq('id', session.user.id)
+              
+              // Fetch users after setting location
+              await fetchUsers(session.user.id)
+            },
+            (error) => {
+              console.warn('⚠️ Location denied or unavailable:', error)
+              alert('Please enable location to appear on the map and see other users nearby!')
+              // Still fetch users even if location denied
+              fetchUsers(session.user.id)
+            }
+          )
+        }
+      }
+      
       // Fetch users with location data (including yourself)
       await fetchUsers(session.user.id)
       setLoading(false)
