@@ -191,7 +191,7 @@ export default function AppPage() {
               }))}
               onUserClick={handleUserClick}
               onMapClick={handleMapClick}
-              center={mapCenter}
+              center={mapCenter || undefined}
               minZoom={2}
               maxZoom={18}
             />
