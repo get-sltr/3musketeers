@@ -101,6 +101,13 @@ export default function ConversationPage({
     scrollToBottom()
   }, [messages])
 
+  // This useEffect must be before any early returns
+  useEffect(() => {
+    if (conversationId) {
+      loadConversationData(conversationId)
+    }
+  }, [conversationId])
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
@@ -120,12 +127,6 @@ export default function ConversationPage({
       </div>
     )
   }
-
-  useEffect(() => {
-    if (conversationId) {
-      loadConversationData(conversationId)
-    }
-  }, [conversationId])
 
   const loadConversationData = async (conversationId: string) => {
     try {
