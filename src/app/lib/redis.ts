@@ -2,13 +2,14 @@
 let RedisClass: any = null;
 let redisInstance: any = null;
 
-// Lazily create the client to avoid build-time env evaluation
+// Lazily็ก create the client to avoid build-time env evaluation
 export function getRedis(): any {
   // Only import Redis at runtime, not during build
   if (typeof window !== 'undefined') return null; // Client-side safety check
   
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  // Safely access env vars with fallback - prevents build-time errors if not set
+  const url = typeof process !== 'undefined' && process.env ? process.env.UPSTASH_REDIS_REST_URL : undefined;
+  const token = typeof process !== 'undefined' && process.env ? process.env.UPSTASH_REDIS_REST_TOKEN : undefined;
   if (!url || !token) return null;
   
   // Return cached instance if already created

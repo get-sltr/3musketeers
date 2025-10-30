@@ -1,4 +1,5 @@
-import { getRedis } from './redis';
+// NO top-level imports to prevent build-time analysis
+// Redis is imported lazily inside the function
 
 const windowMs = 60_000; // 1 minute
 const maxPerWindow = 100; // default: 100 requests per minute per client
@@ -22,7 +23,15 @@ export async function checkRateLimit(
   limit: number = maxPerWindow,
   windowInMs: number = windowMs
 ): Promise<{ ok: boolean; remaining: number; resetMs: number }> {
-  const redis = getRedis();
+  // Lazy import Redis module only at runtime, not during build
+  let redis: any = null;
+  try {
+    const redisModule = await import('./redis');
+    redis = redisModule.getRedis();
+  } catch (error) {
+    // Redis module unavailable during build - use fallback
+    redis = null;
+  }
   if (redis) {
     const windowKey = `rl:${key}`;
     // Increment counter and set expiry if new

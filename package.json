@@ -13,8 +13,7 @@
   },
   "dependencies": {
     "@sentry/nextjs": "^10.22.0",
-    "@supabase/auth-helpers-nextjs": "^0.10.0",
-    "@supabase/ssr": "^0.1.0",
+    "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.77.0",
     "@types/leaflet": "^1.9.21",
     "@types/lodash": "^4.17.20",
@@ -52,6 +51,6 @@
     "typescript": "5.9.3"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": "18.x"
   }
 }

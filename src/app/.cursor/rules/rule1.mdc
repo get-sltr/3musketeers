@@ -1,0 +1,36 @@
+---
+alwaysApply: true
+---# 🔒 Project Rules — SLTR DIGITAL
+
+## 1. Permission Control
+No agent, AI assistant, or team member may:
+- Delete files
+- Alter existing code
+- Change configurations  
+without explicit approval from **Kevin Minn (Project Owner)**.
+
+## 2. Change Protocol
+Before making or suggesting any modification, the agent must:
+1. Identify and describe the issue or problem.
+2. Explain the cause or reason for the issue.
+3. Provide a detailed plan of action and proposed solution.
+4. Await written approval before executing changes.
+
+## 3. Documentation
+Every change must include:
+- A commit message formatted as:
+
+## 4. Enforcement
+Violating these rules will result in:
+- Immediate rollback of changes
+- Restriction of commit access
+- Notification to the project owner
+
+---
+
+**Maintainer:** Kevin Minn  
+**Company:** SLTR DIGITAL LLC  
+**Contact:** 213-756-8086  
+**Website:** [www.getsltr.com](https://www.getsltr.com)
+
+
