@@ -326,6 +326,11 @@ function MessagesPageContent() {
         const tempId = `temp_${Date.now()}`
         setMessageStatus(prev => ({ ...prev, [tempId]: 'sending' }))
         socketSendMessage(selectedConversation, newMessage.trim(), 'text')
+        
+        // Reload messages after a short delay to show the sent message
+        setTimeout(() => {
+          loadMessages(selectedConversation)
+        }, 500)
       } else {
         console.log('📤 Sending message via database (socket not connected)')
         // Fallback to database-only if Socket.io not connected
