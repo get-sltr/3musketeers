@@ -305,12 +305,17 @@ function MessagesPageContent() {
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('🎯 Send button clicked!', { newMessage, selectedConversation, sending, isConnected })
     if (!newMessage.trim() || !selectedConversation || sending) return
 
     setSending(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) {
+        console.error('❌ No user found')
+        return
+      }
+      console.log('✅ User found:', user.id)
 
       // Stop typing indicator
       stopTyping(selectedConversation)
