@@ -1,7 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { memo } from 'react'
+import { memo, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '../lib/supabase/client'
 
 // Static data
 const FEATURES = [
@@ -41,6 +43,33 @@ const FeatureCard = memo(({ feature }: { feature: typeof FEATURES[number] }) => 
 FeatureCard.displayName = 'FeatureCard'
 
 export default function LandingPage() {
+  const router = useRouter()
+  const [mounted, setMounted] = useState(false)
+
+  // Check if user is already logged in and redirect
+  useEffect(() => {
+    setMounted(true)
+    const checkAuth = async () => {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      // If user is logged in, redirect to app
+      if (session) {
+        router.push('/app')
+      }
+    }
+    checkAuth()
+  }, [router])
+
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+        <div className="text-cyan-400 text-xl">Loading...</div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0a0f] relative overflow-hidden">
       {/* Animated Cyber Grid Background */}
@@ -163,7 +192,7 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{__html: `
         @keyframes gridMove {
           0% { background-position: 0 0; }
           100% { background-position: 40px 40px; }
@@ -183,7 +212,7 @@ export default function LandingPage() {
           0% { transform: translateY(0); }
           100% { transform: translateY(10px); }
         }
-      `}</style>
+      `}} />
     </div>
   )
 }
