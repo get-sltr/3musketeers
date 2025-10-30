@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Modal from '@/components/ui/Modal'
+import Modal from '@/app/components/ui/Modal'
 
 interface PositionFilterModalProps {
   isOpen: boolean
