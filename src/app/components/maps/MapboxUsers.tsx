@@ -52,7 +52,7 @@ export default function MapboxUsers({
     initialCenterPromise.then((resolvedCenter) => {
       mapRef.current = new mapboxgl.Map({
         container: containerRef.current as HTMLDivElement,
-        style: 'mapbox://styles/mapbox/streets-v11',
+        style: 'mapbox://styles/mapbox/dark-v11',
         center: resolvedCenter,
         zoom,
         minZoom,
@@ -86,10 +86,11 @@ export default function MapboxUsers({
   const addMarker = (u: UserPin) => {
     if (!mapRef.current) return
     const el = document.createElement('div')
-    el.className = 'rounded-full bg-cyan-500 shadow-lg shadow-cyan-500/30'
-    el.style.width = '14px'
-    el.style.height = '14px'
-    el.style.border = '2px solid white'
+    el.className = 'rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/50 hover:scale-125 transition-transform'
+    el.style.width = '20px'
+    el.style.height = '20px'
+    el.style.border = '3px solid rgba(0, 0, 0, 0.8)'
+    el.style.boxShadow = '0 0 15px rgba(0, 212, 255, 0.6)'
 
     if (onUserClick) {
       el.style.cursor = 'pointer'
@@ -107,7 +108,7 @@ export default function MapboxUsers({
   }
 
   return (
-    <div className="w-full h-[500px] md:h-[600px] rounded-xl overflow-hidden">
+    <div className="w-full h-screen overflow-hidden">
       <div ref={containerRef} className="w-full h-full" />
     </div>
   )
