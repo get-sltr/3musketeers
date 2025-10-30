@@ -317,10 +317,12 @@ function MessagesPageContent() {
 
       // Send message via Socket.io for real-time delivery
       if (isConnected && socketSendMessage) {
+        console.log('📤 Sending message via Socket.io to:', selectedConversation)
         const tempId = `temp_${Date.now()}`
         setMessageStatus(prev => ({ ...prev, [tempId]: 'sending' }))
         socketSendMessage(selectedConversation, newMessage.trim(), 'text')
       } else {
+        console.log('📤 Sending message via database (socket not connected)')
         // Fallback to database-only if Socket.io not connected
         const conversation = conversations.find(c => c.id === selectedConversation)
         if (!conversation) return
