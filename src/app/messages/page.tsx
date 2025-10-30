@@ -179,89 +179,60 @@ function MessagesPageContent() {
       }
 
       // Get conversations where user is either sender or receiver
-      const { data: conversationsData, error } = await supabase
+      const { data: conversationsData, error} = await supabase
         .from('conversations')
-        .select(`
-          id,
-          user1_id,
-          user2_id,
-          last_message_id,
-          messages!conversations_last_message_id_fkey (
-            id,
-            content,
-            created_at,
-            sender_id,
-            profiles!messages_sender_id_fkey (
-              display_name,
-              photos
-            )
-          )
-        `)
+        .select('id, user1_id, user2_id, created_at')
         .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-        .order('updated_at', { ascending: false })
+        .order('created_at', { ascending: false })
 
       if (error) {
         console.error('Error loading conversations:', error)
         return
       }
 
-      // Debug: Log the data structure to understand the shape
-      console.log('Conversations data:', conversationsData)
+      // Transform data - fetch other user profiles and last messages
+      const transformedConversations: Conversation[] = await Promise.all(
+        (conversationsData || []).map(async (conv) => {
+          const otherUserId = conv.user1_id === user.id ? conv.user2_id : conv.user1_id
 
-     // Transform data to our format
-const transformedConversations: Conversation[] = conversationsData?.map(conv => {
-  const otherUserId = conv.user1_id === user.id ? conv.user2_id : conv.user1_id
+          // Fetch other user's profile
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('display_name, photos, online')
+            .eq('id', otherUserId)
+            .single()
 
-  // Option 1: Safely get the last message if it's an array
-  let message = null
-  if (conv.messages && Array.isArray(conv.messages) && conv.messages.length > 0) {
-    message = conv.messages[conv.messages.length - 1] // Get last message
-  } else if (conv.messages && !Array.isArray(conv.messages)) {
-    message = conv.messages // Single message object
-  }
+          // Fetch last message for this conversation
+          const { data: lastMsg } = await supabase
+            .from('messages')
+            .select('id, content, created_at, sender_id')
+            .eq('conversation_id', conv.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single()
 
-  // Option 2: Handle both array and single object cases
-  const getProfileData = (msg: any) => {
-    if (!msg?.profiles) return { display_name: 'Unknown', photo: '' }
-    
-    // If profiles is an array, get the first one
-    if (Array.isArray(msg.profiles)) {
-      return {
-        display_name: msg.profiles[0]?.display_name || 'Unknown',
-        photo: msg.profiles[0]?.photos?.[0] || ''
-      }
-    }
-    
-    // If profiles is a single object
-    return {
-      display_name: msg.profiles.display_name || 'Unknown',
-      photo: msg.profiles.photos?.[0] || ''
-    }
-  }
+          return {
+            id: conv.id,
+            other_user: {
+              id: otherUserId,
+              display_name: profileData?.display_name || 'Unknown User',
+              photo: profileData?.photos?.[0] || 'https://via.placeholder.com/50',
+              online: profileData?.online || false
+            },
+            last_message: {
+              id: lastMsg?.id || '',
+              sender_id: lastMsg?.sender_id || '',
+              receiver_id: user.id,
+              content: lastMsg?.content || 'No messages yet',
+              created_at: lastMsg?.created_at || conv.created_at,
+              sender_name: profileData?.display_name || 'Unknown'
+            },
+            unread_count: 0 // TODO: Implement unread count
+          }
+        })
+      )
 
-  const profileData = message ? getProfileData(message) : { display_name: 'Unknown', photo: '' }
-
-  return {
-    id: conv.id,
-    other_user: {
-      id: otherUserId,
-      display_name: profileData.display_name,
-      photo: profileData.photo,
-      online: false // TODO: Implement online status
-    },
-    last_message: {
-      id: message?.id ?? '',
-      sender_id: message?.sender_id ?? '',
-      receiver_id: user.id,
-      content: message?.content ?? '',
-      created_at: message?.created_at ?? '',
-      sender_name: profileData.display_name
-    },
-    unread_count: 0 // TODO: Implement unread count
-  }
-}) || []
-
-setConversations(transformedConversations)
+      setConversations(transformedConversations)
  
     } catch (err) {
       console.error('Error loading conversations:', err)
