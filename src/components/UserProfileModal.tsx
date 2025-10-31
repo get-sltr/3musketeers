@@ -16,6 +16,11 @@ interface User {
   position?: string
   party_friendly?: boolean
   dtfn?: boolean
+  kinks?: string[]
+  tags?: string[]
+  height?: string
+  body_type?: string
+  ethnicity?: string
 }
 
 interface UserProfileModalProps {
@@ -25,6 +30,8 @@ interface UserProfileModalProps {
   onMessage: (userId: string) => void
   onBlock?: (userId: string) => void
   onReport?: (userId: string) => void
+  onFavorite?: (userId: string) => void
+  isFavorited?: boolean
 }
 
 export default function UserProfileModal({
@@ -33,7 +40,9 @@ export default function UserProfileModal({
   onClose,
   onMessage,
   onBlock,
-  onReport
+  onReport,
+  onFavorite,
+  isFavorited = false
 }: UserProfileModalProps) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
   const [showReportModal, setShowReportModal] = useState(false)
@@ -41,6 +50,8 @@ export default function UserProfileModal({
   const router = useRouter()
 
   if (!isOpen || !user) return null
+
+  const photos = user.photos?.length > 0 ? user.photos : ['https://via.placeholder.com/400x500']
 
   const handleMessage = async () => {
     try {
@@ -74,32 +85,39 @@ export default function UserProfileModal({
     setShowReportModal(true)
   }
 
-  const nextPhoto = () => {
-    if (user.photos && user.photos.length > 0) {
-      setCurrentPhotoIndex((prev) => (prev + 1) % user.photos!.length)
-    }
-  }
-
-  const prevPhoto = () => {
-    if (user.photos && user.photos.length > 0) {
-      setCurrentPhotoIndex((prev) => (prev - 1 + user.photos!.length) % user.photos!.length)
-    }
-  }
-
   return (
     <div 
-      className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black"
       onClick={onClose}
     >
-      <div 
-        className="glass-card max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Close Button */}
-        <div className="flex justify-end p-4">
+      {/* Full-screen photo gallery */}
+      <div className="relative w-full h-full">
+        {/* Current Photo */}
+        <img
+          src={photos[currentPhotoIndex]}
+          alt={user.username}
+          className="w-full h-full object-contain"
+        />
+
+        {/* Top Right Actions */}
+        <div className="absolute top-6 right-6 z-20 flex items-center gap-2">
+          {/* Favorite */}
+          {onFavorite && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onFavorite(user.id)
+              }}
+              className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all text-2xl"
+            >
+              {isFavorited ? '✨' : '☆'}
+            </button>
+          )}
+          
+          {/* Close button */}
           <button
             onClick={onClose}
-            className="glass-bubble p-2 hover:bg-white/20 transition-all duration-300"
+            className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all"
           >
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -107,125 +125,195 @@ export default function UserProfileModal({
           </button>
         </div>
 
-        {/* Photo Gallery */}
-        <div className="relative">
-          <div className="w-full h-80 bg-gradient-to-br from-gray-800 to-gray-900 rounded-t-3xl overflow-hidden">
-            <img
-              src={user.photos?.[currentPhotoIndex] || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400'}
-              alt={`${user.username} photo ${currentPhotoIndex + 1}`}
-              className="w-full h-full object-cover"
-            />
-            
-            {/* Photo Navigation */}
-            {user.photos && user.photos.length > 1 && (
-              <>
-                <button
-                  onClick={prevPhoto}
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 glass-bubble p-2 hover:bg-white/20 transition-all duration-300"
-                >
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                <button
-                  onClick={nextPhoto}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 glass-bubble p-2 hover:bg-white/20 transition-all duration-300"
-                >
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </>
+        {/* Bottom Right Actions - Block & Report */}
+        {(onBlock || onReport) && (
+          <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
+            {onReport && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleReport()
+                }}
+                className="px-4 py-2 rounded-full bg-black/50 backdrop-blur-md text-white text-sm font-semibold hover:bg-red-500/30 hover:text-red-400 transition-all"
+              >
+                ⚠️ Report
+              </button>
             )}
-
-            {/* Online Indicator */}
-            {user.isOnline && (
-              <div className="absolute top-4 right-4">
-                <div className="w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-lg shadow-green-500/50"></div>
-              </div>
-            )}
-
-            {/* Photo Indicators */}
-            {user.photos && user.photos.length > 1 && (
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-                {user.photos.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentPhotoIndex(index)}
-                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                      index === currentPhotoIndex 
-                        ? 'bg-white' 
-                        : 'bg-white/40 hover:bg-white/60'
-                    }`}
-                  />
-                ))}
-              </div>
+            {onBlock && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleBlock()
+                }}
+                className="px-4 py-2 rounded-full bg-black/50 backdrop-blur-md text-white text-sm font-semibold hover:bg-red-500/30 hover:text-red-400 transition-all"
+              >
+                🚫 Block
+              </button>
             )}
           </div>
-        </div>
+        )}
 
-        {/* User Info */}
-        <div className="p-6 space-y-4">
-          {/* Name and Age */}
-          <div className="flex items-center justify-between">
+        {/* Top Overlay - Name, Age, Stats */}
+        <div className="absolute top-0 left-0 right-0 p-6 bg-gradient-to-b from-black/80 via-black/50 to-transparent">
+          <div className="flex items-start justify-between">
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <h2 className="text-3xl font-bold text-white">{user.username}</h2>
+              <h2 className="text-3xl font-bold text-white mb-1">
+                {user.username}
+                {user.age && <span className="text-2xl font-bold text-cyan-400 ml-2">{user.age}</span>}
+              </h2>
+              
+              {/* Stats - bold and bright */}
+              <div className="flex items-center gap-3 mt-2">
+                {user.isOnline && (
+                  <span className="px-3 py-1 bg-green-500/90 rounded-full text-white text-sm font-bold">
+                    ● Online
+                  </span>
+                )}
+                {user.position && (
+                  <span className="text-white font-bold text-lg">{user.position}</span>
+                )}
+                {user.height && (
+                  <span className="text-white/90 font-semibold">{user.height}</span>
+                )}
+                {user.distance && (
+                  <span className="text-cyan-400 font-bold">{user.distance}</span>
+                )}
                 {user.party_friendly && <span className="text-2xl">🥳</span>}
                 {user.dtfn && <span className="text-2xl">⚡</span>}
               </div>
-              <p className="text-white/60 text-lg">{user.age} years old</p>
-              {user.position && (
-                <p className="text-white/50 text-sm">{user.position}</p>
-              )}
             </div>
-            {user.distance && (
-              <div className="glass-bubble px-3 py-1">
-                <span className="text-sm text-white/80">{user.distance}</span>
-              </div>
-            )}
-          </div>
 
-          {/* Bio */}
-          {user.bio && (
-            <div className="glass-bubble p-4">
-              <p className="text-white/90 leading-relaxed">{user.bio}</p>
+            {/* Small Chat/Mail Emoji Button - like grid */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                handleMessage()
+              }}
+              className="w-12 h-12 rounded-full bg-cyan-500/80 backdrop-blur-md flex items-center justify-center hover:bg-cyan-500 transition-all shadow-lg text-2xl"
+            >
+              💬
+            </button>
+          </div>
+        </div>
+
+        {/* Bottom Overlay - All Info (simplified) */}
+        <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/95 via-black/70 to-transparent max-h-[50vh] overflow-y-auto custom-scrollbar">
+          {/* Stats Row - Compact */}
+          {(user.position || user.height || user.body_type || user.ethnicity) && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {user.position && (
+                <span className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm font-semibold">
+                  {user.position}
+                </span>
+              )}
+              {user.height && (
+                <span className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm font-semibold">
+                  {user.height}
+                </span>
+              )}
+              {user.body_type && (
+                <span className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm font-semibold">
+                  {user.body_type}
+                </span>
+              )}
+              {user.ethnicity && (
+                <span className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm font-semibold">
+                  {user.ethnicity}
+                </span>
+              )}
             </div>
           )}
 
+          {/* Bio */}
+          {user.bio && (
+            <div className="mb-4">
+              <p className="text-white/90 leading-relaxed text-sm font-medium">{user.bio}</p>
+            </div>
+          )}
+
+          {/* Kinks */}
+          {user.kinks && user.kinks.length > 0 && (
+            <div className="mb-3">
+              <p className="text-white/80 text-xs font-semibold mb-2">INTO</p>
+              <div className="flex flex-wrap gap-2">
+                {user.kinks.map((kink, idx) => (
+                  <span
+                    key={idx}
+                    className="px-3 py-1.5 bg-cyan-500/30 border border-cyan-400/50 rounded-full text-cyan-300 text-sm font-bold backdrop-blur-sm"
+                  >
+                    {kink}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tags */}
+          {user.tags && user.tags.length > 0 && (
+            <div>
+              <p className="text-white/80 text-xs font-semibold mb-2">TAGS</p>
+              <div className="flex flex-wrap gap-2">
+                {user.tags.map((tag, idx) => (
+                  <span
+                    key={idx}
+                    className="px-3 py-1.5 bg-white/20 border border-white/30 rounded-full text-white text-sm font-semibold backdrop-blur-sm"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="p-6 pt-0 space-y-3">
-          {/* Message Button */}
-          <button
-            onClick={handleMessage}
-            className="w-full gradient-button py-4 rounded-2xl text-white font-semibold text-lg hover:scale-105 transition-all duration-300 shadow-lg"
-            style={{
-              background: 'linear-gradient(135deg, #00d4ff, #ff00ff)',
-              boxShadow: '0 0 30px rgba(0, 212, 255, 0.3)'
-            }}
-          >
-            💬 Send Message
-          </button>
+        {/* Photo Navigation */}
+        {photos.length > 1 && (
+          <>
+            {/* Previous Photo */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setCurrentPhotoIndex((currentPhotoIndex - 1 + photos.length) % photos.length)
+              }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all"
+            >
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
 
-          {/* Secondary Actions */}
-          <div className="flex gap-3">
+            {/* Next Photo */}
             <button
-              onClick={handleBlock}
-              className="flex-1 glass-bubble py-3 rounded-2xl text-white/80 font-medium hover:bg-red-500/10 hover:text-red-400 transition-all duration-300"
-              disabled={blocked}
+              onClick={(e) => {
+                e.stopPropagation()
+                setCurrentPhotoIndex((currentPhotoIndex + 1) % photos.length)
+              }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all"
             >
-              {blocked ? 'Blocked' : '🚫 Block'}
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </button>
-            <button
-              onClick={handleReport}
-              className="flex-1 glass-bubble py-3 rounded-2xl text-white/80 font-medium hover:bg-red-500/10 hover:text-red-400 transition-all duration-300"
-            >
-              ⚠️ Report
-            </button>
-          </div>
-        </div>
+
+            {/* Photo Dots Indicator */}
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex gap-2">
+              {photos.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setCurrentPhotoIndex(idx)
+                  }}
+                  className={`transition-all ${
+                    idx === currentPhotoIndex 
+                      ? 'w-8 h-2 bg-cyan-400 rounded-full' 
+                      : 'w-2 h-2 bg-white/50 rounded-full hover:bg-white/70'
+                  }`}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Report Modal */}
@@ -238,6 +326,22 @@ export default function UserProfileModal({
           alert('Thank you for your report. Our team will review it shortly.')
         }}
       />
+
+      <style jsx>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(0, 212, 255, 0.3);
+          border-radius: 2px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(0, 212, 255, 0.5);
+        }
+      `}</style>
     </div>
   )
 }

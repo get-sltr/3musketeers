@@ -233,6 +233,8 @@ export default function GridView({ onUserClick, activeFilters = { filters: [], a
         onMessage={handleMessage}
         onBlock={handleBlock}
         onReport={handleReport}
+        onFavorite={handleToggleFavorite}
+        isFavorited={selectedUser ? users.find(u => u.id === selectedUser.id)?.isFavorited : false}
       />
 
       {/* Simple Messaging Modal - Opens on grid, doesn't navigate */}
