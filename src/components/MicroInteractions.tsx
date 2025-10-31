@@ -140,13 +140,13 @@ export function InteractiveButton({
   const getVariantStyles = () => {
     switch (variant) {
       case 'primary':
-        return 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-lg shadow-cyan-500/20'
+        return 'bg-white/15 backdrop-blur-xl border border-white/30 text-white shadow-lg shadow-white/10'
       case 'secondary':
-        return 'bg-white/5 backdrop-blur-xl border border-white/10 text-white/70 hover:text-white hover:bg-white/10'
+        return 'bg-white/5 backdrop-blur-xl border border-white/10 text-white/60 hover:text-white hover:bg-white/10'
       case 'ghost':
         return 'text-white/60 hover:text-white hover:bg-white/5'
       default:
-        return 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white'
+        return 'bg-white/15 text-white'
     }
   }
 
