@@ -4,15 +4,18 @@
 
 @layer components {
   .glass-bubble {
-    @apply bg-white/5 border border-white/10 backdrop-blur-xl rounded-xl transition-all duration-300 text-sm font-semibold;
+    @apply bg-transparent border-0 rounded-xl transition-all duration-300 text-sm font-bold;
+    color: rgba(255, 255, 255, 0.6);
   }
   
   .glass-bubble:hover {
-    @apply bg-white/10 scale-[1.02] shadow-[0_0_30px_rgba(0,212,255,0.2)];
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
   }
   
   .glass-bubble.active {
-    @apply bg-gradient-to-r from-[#00d4ff] to-[#ff00ff] border-0 scale-105 text-sm font-bold;
+    color: rgba(255, 255, 255, 1);
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 30px rgba(255, 255, 255, 0.5);
   }
   
   .glass-card {
@@ -36,20 +39,23 @@
   }
   
   .gradient-button {
-    background: linear-gradient(135deg, #00d4ff, #ff00ff);
-    border-radius: 12px;
+    background: transparent;
     border: none;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
-    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: -0.01em;
+    text-shadow: none;
   }
   
-  .gradient-button:hover {
-    transform: scale(1.03);
-    box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+  .gradient-button:hover,
+  .gradient-button:active,
+  .gradient-button.active {
+    color: rgba(255, 255, 255, 1);
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 30px rgba(255, 255, 255, 0.5);
+    transform: none;
   }
   
   .sent-bubble {
