@@ -90,7 +90,7 @@ export default function UserMenu({ className = '' }: UserMenuProps) {
       
       {/* User Menu Dropdown */}
       {showUserMenu && (
-        <div className="absolute top-full left-0 mt-2 w-48 glass-bubble border border-white/20 rounded-xl overflow-hidden z-50 animate-fadeIn">
+        <div className="absolute top-full left-0 mt-2 w-48 bg-black/60 backdrop-blur-2xl border border-white/20 rounded-xl overflow-hidden z-50 animate-fadeIn shadow-2xl">
           {menuItems.map((item, index) => (
             <button
               key={index}
