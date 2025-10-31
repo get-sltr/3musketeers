@@ -42,10 +42,23 @@ export default function UserProfileModal({
 
   if (!isOpen || !user) return null
 
-  const handleMessage = () => {
-    onMessage(user.id)
-    onClose()
-    router.push(`/messages/${user.id}`)
+  const handleMessage = async () => {
+    try {
+      const { startConversation } = await import('../utils/messaging')
+      const conversationId = await startConversation(user.id)
+      
+      if (conversationId) {
+        onMessage(user.id)
+        onClose()
+        router.push(`/messages/${conversationId}`)
+      } else {
+        console.error('Failed to create/get conversation')
+        alert('Unable to start conversation. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error starting conversation:', error)
+      alert('Unable to start conversation. Please try again.')
+    }
   }
 
   const handleBlock = () => {
