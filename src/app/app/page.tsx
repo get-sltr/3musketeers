@@ -34,6 +34,7 @@ interface UserWithLocation {
   latitude?: number
   longitude?: number
   isYou?: boolean
+  isFavorited?: boolean
 }
 
 export default function AppPage() {
