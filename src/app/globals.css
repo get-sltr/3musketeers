@@ -4,7 +4,7 @@
 
 @layer components {
   .glass-bubble {
-    @apply bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl transition-all duration-300;
+    @apply bg-white/5 border border-white/10 backdrop-blur-xl rounded-xl transition-all duration-300 text-sm font-semibold;
   }
   
   .glass-bubble:hover {
@@ -12,11 +12,11 @@
   }
   
   .glass-bubble.active {
-    @apply bg-gradient-to-r from-[#00d4ff] to-[#ff00ff] border-0 scale-105;
+    @apply bg-gradient-to-r from-[#00d4ff] to-[#ff00ff] border-0 scale-105 text-sm font-bold;
   }
   
   .glass-card {
-    @apply bg-black/95 border border-white/20 backdrop-blur-2xl rounded-3xl;
+    @apply bg-black/95 border border-white/20 backdrop-blur-2xl rounded-2xl;
   }
   
   .no-scrollbar::-webkit-scrollbar {
@@ -37,15 +37,18 @@
   
   .gradient-button {
     background: linear-gradient(135deg, #00d4ff, #ff00ff);
-    border-radius: 16px;
+    border-radius: 12px;
     border: none;
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
   }
   
   .gradient-button:hover {
-    transform: scale(1.05);
+    transform: scale(1.03);
     box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
   }
   
@@ -70,4 +73,30 @@
 body {
   background: #000000;
   color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Premium typography styles */
+h1, h2, h3 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+h1 { font-size: 1.75rem; }
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.25rem; }
+
+p {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+button {
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: -0.01em;
 }
