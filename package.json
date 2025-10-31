@@ -9,7 +9,20 @@
     "lint": "next lint",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "log:new": "node scripts/daily-log.js",
+    "log:check": "bash scripts/check-daily-log.sh",
+    "log:remind": "node scripts/daily-log.js remind",
+    "log:update": "node scripts/daily-log.js update",
+    "open:files": "node scripts/open-project-files.js",
+    "backup": "node scripts/backup-project.js",
+    "backup:full": "node scripts/backup-project.js",
+    "validate:pre": "node scripts/validate-project.js pre",
+    "validate:post": "node scripts/validate-project.js post",
+    "validate:full": "node scripts/validate-project.js full",
+    "validate:daily": "node scripts/validate-project.js daily",
+    "preflight": "node scripts/validate-project.js full",
+    "restore:last": "node scripts/restore-backup.js"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.22.0",

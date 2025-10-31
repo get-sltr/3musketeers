@@ -1,0 +1,22 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.autoOpenEditors": true,
+		"workbench.startupEditor": "welcomePage",
+		"workbench.editor.openPositioning": "right",
+		"workbench.editor.enablePreview": false,
+		"workbench.editor.pinnedTabSizing": "normal"
+	},
+	"extensions": {
+		"recommendations": []
+	},
+	"tasks": {
+		"version": "2.0.0",
+		"tasks": []
+	}
+}
+

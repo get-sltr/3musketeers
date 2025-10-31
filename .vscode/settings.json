@@ -1,0 +1,29 @@
+{
+  // Auto-open files when workspace loads
+  "workbench.startupEditor": "none",
+  "files.restoreCursor": true,
+  "workbench.editor.restoreViewState": true,
+  
+  // Always open these files in pinned tabs
+  "workbench.editor.enablePreview": false,
+  "workbench.editor.pinnedTabSizing": "normal",
+  
+  // Restore workspace state (will remember open files)
+  "window.restoreWindows": "all",
+  
+  // Recommended files to open (these will be suggested)
+  "files.exclude": {
+    "**/.git": true,
+    "**/node_modules": true,
+    "**/.next": true
+  },
+  
+  // Markdown settings for better viewing
+  "markdown.preview.breaks": true,
+  "markdown.preview.fontSize": 14,
+  
+  // Auto-save
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000
+}
+

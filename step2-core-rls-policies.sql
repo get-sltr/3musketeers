@@ -207,3 +207,5 @@ FROM information_schema.routines
 WHERE routine_schema = 'public'
 AND routine_name IN ('is_user_blocked', 'log_user_activity')
 ORDER BY routine_name;
+
+

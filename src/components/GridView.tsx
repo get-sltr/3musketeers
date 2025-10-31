@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '../lib/supabase/client'
 import UserProfileModal from './UserProfileModal'
 import ScrollableProfileCard from './ScrollableProfileCard'
+import MessagingModal from './MessagingModal'
 import { LazyAvatar } from './LazyImage'
 // import { useLocation } from '../hooks/useLocation'
 // import { useSocket } from '../hooks/useSocket'
@@ -38,6 +39,8 @@ interface GridViewProps {
 export default function GridView({ onUserClick, activeFilters = { filters: [], ageRange: { min: 18, max: 99 }, positions: [] } }: GridViewProps) {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isMessagingOpen, setIsMessagingOpen] = useState(false)
+  const [messagingUser, setMessagingUser] = useState<User | null>(null)
   const [users, setUsers] = useState<User[]>([])
   const [filteredUsers, setFilteredUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
@@ -152,22 +155,12 @@ export default function GridView({ onUserClick, activeFilters = { filters: [], a
   }
 
   const handleMessage = async (userId: string) => {
-    try {
-      const { startConversation } = await import('../utils/messaging')
-      const conversationId = await startConversation(userId)
-      
-      if (conversationId) {
-        // Redirect to messages page with the conversation
-        router.push(`/messages?conversation=${conversationId}`)
-      } else {
-        console.error('Failed to start conversation')
-        // Fallback to old behavior
-        router.push(`/messages/${userId}`)
-      }
-    } catch (error) {
-      console.error('Error starting conversation:', error)
-      // Fallback to old behavior
-      router.push(`/messages/${userId}`)
+    // Open messaging modal instead of navigating
+    const user = users.find(u => u.id === userId)
+    if (user) {
+      setMessagingUser(user)
+      setIsModalOpen(false) // Close profile modal if open
+      setIsMessagingOpen(true) // Open messaging modal
     }
   }
 
@@ -241,6 +234,18 @@ export default function GridView({ onUserClick, activeFilters = { filters: [], a
         onBlock={handleBlock}
         onReport={handleReport}
       />
+
+      {/* Simple Messaging Modal - Opens on grid, doesn't navigate */}
+      {isMessagingOpen && messagingUser && (
+        <MessagingModal
+          user={messagingUser}
+          isOpen={isMessagingOpen}
+          onClose={() => {
+            setIsMessagingOpen(false)
+            setMessagingUser(null)
+          }}
+        />
+      )}
     </>
   )
 }
