@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '../lib/supabase/client'
 import UserProfileModal from './UserProfileModal'
 import ScrollableProfileCard from './ScrollableProfileCard'
+import MessagingModal from './MessagingModal'
 import { LazyAvatar } from './LazyImage'
 // import { useLocation } from '../hooks/useLocation'
 // import { useSocket } from '../hooks/useSocket'
@@ -32,12 +33,14 @@ interface User {
 
 interface GridViewProps {
   onUserClick?: (userId: string) => void
-  activeFilters?: string[]
+  activeFilters?: any
 }
 
-export default function GridView({ onUserClick, activeFilters = [] }: GridViewProps) {
+export default function GridView({ onUserClick, activeFilters = { filters: [], ageRange: { min: 18, max: 99 }, positions: [] } }: GridViewProps) {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isMessagingOpen, setIsMessagingOpen] = useState(false)
+  const [messagingUser, setMessagingUser] = useState<User | null>(null)
   const [users, setUsers] = useState<User[]>([])
   const [filteredUsers, setFilteredUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
@@ -105,29 +108,29 @@ export default function GridView({ onUserClick, activeFilters = [] }: GridViewPr
   // Filter users based on active filters
   useEffect(() => {
     let filtered = [...users]
+    const filters = activeFilters.filters || []
+    const ageRange = activeFilters.ageRange || { min: 18, max: 99 }
+    const positions = activeFilters.positions || []
 
     // Apply filters
-    if (activeFilters.includes('online')) {
+    if (filters.includes('online')) {
       filtered = filtered.filter(user => user.isOnline)
     }
 
-    if (activeFilters.includes('dtfn')) {
+    if (filters.includes('dtfn')) {
       filtered = filtered.filter(user => user.dtfn)
     }
 
-    if (activeFilters.includes('party')) {
+    if (filters.includes('party')) {
       filtered = filtered.filter(user => user.party_friendly)
     }
 
-    if (activeFilters.includes('age')) {
-      // For now, filter users between 18-35 (you can make this more sophisticated)
-      filtered = filtered.filter(user => user.age >= 18 && user.age <= 35)
+    if (filters.includes('age')) {
+      filtered = filtered.filter(user => user.age >= ageRange.min && user.age <= ageRange.max)
     }
 
-    if (activeFilters.includes('position')) {
-      // Filter users with specific positions (you can customize this)
-      const validPositions = ['Top', 'Bottom', 'Versatile', 'Switch']
-      filtered = filtered.filter(user => user.position && validPositions.includes(user.position))
+    if (filters.includes('position') && positions.length > 0) {
+      filtered = filtered.filter(user => user.position && positions.includes(user.position))
     }
 
     setFilteredUsers(filtered)
@@ -152,22 +155,12 @@ export default function GridView({ onUserClick, activeFilters = [] }: GridViewPr
   }
 
   const handleMessage = async (userId: string) => {
-    try {
-      const { startConversation } = await import('../utils/messaging')
-      const conversationId = await startConversation(userId)
-      
-      if (conversationId) {
-        // Redirect to messages page with the conversation
-        router.push(`/messages?conversation=${conversationId}`)
-      } else {
-        console.error('Failed to start conversation')
-        // Fallback to old behavior
-        router.push(`/messages/${userId}`)
-      }
-    } catch (error) {
-      console.error('Error starting conversation:', error)
-      // Fallback to old behavior
-      router.push(`/messages/${userId}`)
+    // Open messaging modal instead of navigating
+    const user = users.find(u => u.id === userId)
+    if (user) {
+      setMessagingUser(user)
+      setIsModalOpen(false) // Close profile modal if open
+      setIsMessagingOpen(true) // Open messaging modal
     }
   }
 
@@ -209,7 +202,7 @@ export default function GridView({ onUserClick, activeFilters = [] }: GridViewPr
 
   return (
     <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 p-2">
             {filteredUsers.length > 0 ? filteredUsers.map(user => (
               <ScrollableProfileCard
                 key={user.id}
@@ -240,7 +233,21 @@ export default function GridView({ onUserClick, activeFilters = [] }: GridViewPr
         onMessage={handleMessage}
         onBlock={handleBlock}
         onReport={handleReport}
+        onFavorite={handleToggleFavorite}
+        isFavorited={selectedUser ? users.find(u => u.id === selectedUser.id)?.isFavorited : false}
       />
+
+      {/* Simple Messaging Modal - Opens on grid, doesn't navigate */}
+      {isMessagingOpen && messagingUser && (
+        <MessagingModal
+          user={messagingUser}
+          isOpen={isMessagingOpen}
+          onClose={() => {
+            setIsMessagingOpen(false)
+            setMessagingUser(null)
+          }}
+        />
+      )}
     </>
   )
 }

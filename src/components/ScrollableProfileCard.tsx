@@ -79,158 +79,63 @@ export default function ScrollableProfileCard({
 
   const cardClasses = variant === 'map' 
     ? 'w-80 h-96' 
-    : 'w-full h-80'
+    : 'w-full aspect-square'
 
   return (
     <div 
-      className={`glass-bubble rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105 ${cardClasses}`}
+      className={`glass-bubble rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105 ${cardClasses}`}
       onClick={handleCardClick}
     >
       {/* Main Photo */}
-      <div className="relative h-48 overflow-hidden">
+      <div className="relative h-full overflow-hidden">
         <img
           src={user.photo || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400'}
           alt={user.display_name || user.username}
           className="w-full h-full object-cover"
         />
         
-        {/* Status Indicators */}
-        <div className="absolute top-3 left-3 flex gap-2">
-          <div className={`w-3 h-3 rounded-full ${user.isOnline ? 'bg-green-500' : 'bg-gray-500'}`}></div>
-          {user.party_friendly && <span className="text-2xl">🥳</span>}
-          {user.dtfn && <span className="text-2xl">⚡</span>}
-        </div>
-
-        {/* Favorite Button */}
-        <button
-          onClick={handleFavoriteClick}
-          className="absolute top-3 right-3 w-8 h-8 bg-black/50 rounded-full flex items-center justify-center hover:bg-black/70 transition-all duration-300"
-        >
-          <span className="text-white text-lg">
-            {isFavorited ? '✨' : '☆'}
-          </span>
-        </button>
-
-        {/* Distance & ETA */}
-        <div className="absolute bottom-3 left-3 glass-bubble px-3 py-1">
-          <div className="text-white text-sm font-semibold">
-            {user.distance || '0.5 mi'}
-          </div>
-          <div className="text-white/80 text-xs">
-            {user.eta || '5 min'}
-          </div>
-        </div>
-      </div>
-
-      {/* Scrollable Content */}
-      <div 
-        ref={scrollRef}
-        className="p-4 max-h-48 overflow-y-auto scrollbar-hide"
-        onScroll={handleScroll}
-      >
-        {/* Basic Info */}
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-1">
-            <h3 className="text-xl font-bold text-white">
-              {user.display_name || user.username}
-            </h3>
-            <span className="text-white/60 text-sm">{user.age}</span>
-          </div>
-          
-          {user.position && (
-            <p className="text-white/80 text-sm mb-2">{user.position}</p>
-          )}
-        </div>
-
-        {/* Bio */}
-        {user.bio && (
-          <div className="mb-3">
-            <p className="text-white/90 text-sm leading-relaxed">{user.bio}</p>
-          </div>
-        )}
-
-        {/* Tags */}
-        {user.tags && user.tags.length > 0 && (
-          <div className="mb-3">
-            <div className="flex flex-wrap gap-1">
-              {user.tags.slice(0, 4).map((tag, index) => (
-                <span 
-                  key={index}
-                  className="px-2 py-1 bg-purple-500/20 text-purple-300 rounded-full text-xs"
-                >
-                  {tag}
-                </span>
-              ))}
-              {user.tags.length > 4 && (
-                <span className="text-white/60 text-xs">+{user.tags.length - 4} more</span>
-              )}
+        {/* Top Status Bar */}
+        <div className="absolute top-0 left-0 right-0 p-1.5 bg-gradient-to-b from-black/70 to-transparent">
+          <div className="flex items-center justify-between">
+            {/* Online indicator */}
+            <div className="flex items-center gap-1">
+              <div className={`w-2 h-2 rounded-full ${user.isOnline ? 'bg-green-500' : 'bg-gray-500'}`}></div>
+              {user.party_friendly && <span className="text-sm">🥳</span>}
+              {user.dtfn && <span className="text-sm">⚡</span>}
             </div>
-          </div>
-        )}
-
-        {/* Kinks */}
-        {user.kinks && user.kinks.length > 0 && (
-          <div className="mb-3">
-            <div className="flex flex-wrap gap-1">
-              {user.kinks.slice(0, 3).map((kink, index) => (
-                <span 
-                  key={index}
-                  className="px-2 py-1 bg-cyan-500/20 text-cyan-300 rounded-full text-xs"
-                >
-                  {kink}
-                </span>
-              ))}
-              {user.kinks.length > 3 && (
-                <span className="text-white/60 text-xs">+{user.kinks.length - 3} more</span>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Scroll Indicator */}
-        {scrollPosition < 80 && (
-          <div className="text-center">
-            <div className="text-white/40 text-xs mb-2">Scroll for more info</div>
-            <div className="w-full bg-white/20 rounded-full h-1">
-              <div 
-                className="bg-gradient-to-r from-cyan-500 to-purple-500 h-1 rounded-full transition-all duration-300"
-                style={{ width: `${scrollPosition}%` }}
-              ></div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Action Buttons */}
-      <div className="p-4 border-t border-white/10">
-        <div className="flex gap-2">
-          <button
-            onClick={handleMessageClick}
-            className="flex-1 px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-xl font-semibold hover:scale-105 transition-all duration-300"
-          >
-            💬 Message
-          </button>
-          <button
-            onClick={handleFavoriteClick}
-            className="px-4 py-2 glass-bubble hover:bg-white/10 transition-all duration-300"
-          >
-            <span className="text-white text-lg">
+            {/* Favorite */}
+            <button
+              onClick={handleFavoriteClick}
+              className="text-white text-sm"
+            >
               {isFavorited ? '✨' : '☆'}
-            </span>
-          </button>
+            </button>
+          </div>
+        </div>
+
+        {/* Bottom Info Overlay - Grindr style */}
+        <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
+          <div className="flex items-end justify-between">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-white text-sm font-bold truncate">
+                {user.display_name || user.username}
+              </h3>
+              <div className="flex items-center gap-1 text-xs text-white/80">
+                <span>{user.age}</span>
+                {user.position && (
+                  <>
+                    <span>•</span>
+                    <span className="truncate">{user.position}</span>
+                  </>
+                )}
+              </div>
+              {user.distance && (
+                <div className="text-xs text-white/60">{user.distance}</div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* Custom Scrollbar Styles */}
-      <style jsx>{`
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
     </div>
   )
 }

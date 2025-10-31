@@ -140,32 +140,32 @@ export function InteractiveButton({
   const getVariantStyles = () => {
     switch (variant) {
       case 'primary':
-        return 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white hover:from-cyan-600 hover:to-purple-600'
+        return 'bg-white/15 backdrop-blur-xl border border-white/30 text-white shadow-lg shadow-white/10'
       case 'secondary':
-        return 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
+        return 'bg-white/5 backdrop-blur-xl border border-white/10 text-white/60 hover:text-white hover:bg-white/10'
       case 'ghost':
-        return 'text-white/60 hover:text-white hover:bg-white/10'
+        return 'text-white/60 hover:text-white hover:bg-white/5'
       default:
-        return 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white'
+        return 'bg-white/15 text-white'
     }
   }
 
   const getSizeStyles = () => {
     switch (size) {
       case 'small':
-        return 'px-3 py-1.5 text-sm'
+        return 'px-4 py-1.5 text-sm'
       case 'medium':
-        return 'px-4 py-2 text-base'
+        return 'px-5 py-2 text-base'
       case 'large':
         return 'px-6 py-3 text-lg'
       default:
-        return 'px-4 py-2 text-base'
+        return 'px-5 py-2 text-base'
     }
   }
 
   return (
     <MicroInteractions
-      className={`rounded-lg font-medium transition-all duration-300 ${getVariantStyles()} ${getSizeStyles()} ${className} ${
+      className={`rounded-full font-bold transition-all duration-300 ${getVariantStyles()} ${getSizeStyles()} ${className} ${
         disabled ? 'opacity-50 cursor-not-allowed' : ''
       }`}
       onClick={disabled ? undefined : onClick}

@@ -19,7 +19,7 @@ interface Message {
   receiver_id: string
   content: string
   created_at: string
-  read_at?: string
+  read?: boolean
   sender_name?: string
   sender_photo?: string
   profiles?: Profile[]
@@ -77,6 +77,13 @@ function MessagesPageContent() {
   useEffect(() => {
     loadConversations()
     
+    // Request notification permission on mount
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(err => {
+        console.error('Error requesting notification permission:', err)
+      })
+    }
+    
     // Check for conversation parameter in URL
     const urlParams = new URLSearchParams(window.location.search)
     const conversationParam = urlParams.get('conversation')
@@ -85,15 +92,113 @@ function MessagesPageContent() {
     }
   }, [])
 
+  // Load unread messages when socket connects (for offline notifications)
+  useEffect(() => {
+    if (isConnected && socket) {
+      // Reload conversations to show unread messages from offline period
+      loadConversations()
+    }
+  }, [isConnected, socket])
+
   // Real-time event listeners
   useEffect(() => {
     if (!socket) return
 
-    // Handle new messages
-    const handleNewMessage = (data: any) => {
-      if (data.conversationId === selectedConversation) {
-        setMessages(prev => [...prev, data])
+    // Handle new messages (normalize payload fields)
+    const handleNewMessage = (evt: any) => {
+      const data = evt as any
+      const conversationId = data.conversationId || data.conversation_id
+      
+      if (!conversationId) return
+
+      // Normalize message data
+      const normalized = {
+        id: data.id || `tmp_${Date.now()}`,
+        sender_id: data.sender_id || data.senderId,
+        receiver_id: data.receiver_id || data.receiverId || '',
+        content: data.content,
+        created_at: data.created_at || data.createdAt || new Date().toISOString(),
+        read: false,
+        sender_name: data.senderName || data.sender_name,
+      } as any
+
+      // Update messages if this conversation is selected
+      if (conversationId === selectedConversation) {
+        setMessages(prev => {
+          // Avoid duplicates
+          if (prev.some(m => m.id === normalized.id)) {
+            return prev
+          }
+          return [...prev, normalized]
+        })
         scrollToBottom()
+      }
+
+      // Always update conversations list (so "envelope" shows new message)
+      setConversations(prev => {
+        const conversation = prev.find(c => c.id === conversationId)
+        if (conversation) {
+          // Update existing conversation with new last message
+          return prev.map(c => 
+            c.id === conversationId 
+              ? {
+                  ...c,
+                  last_message: {
+                    ...c.last_message,
+                    id: normalized.id,
+                    content: normalized.content,
+                    created_at: normalized.created_at,
+                    sender_id: normalized.sender_id,
+                  },
+                  unread_count: conversationId === selectedConversation 
+                    ? c.unread_count 
+                    : c.unread_count + 1
+                }
+              : c
+          )
+        }
+        return prev
+      })
+
+      // Show browser notification (even if conversation not selected)
+      if (conversationId !== selectedConversation) {
+        showBrowserNotification(
+          data.senderName || 'New message',
+          normalized.content,
+          conversationId
+        )
+      }
+    }
+
+    // Browser notification helper
+    const showBrowserNotification = async (title: string, body: string, conversationId: string) => {
+      // Request notification permission if not granted
+      if ('Notification' in window && Notification.permission === 'default') {
+        await Notification.requestPermission()
+      }
+
+      // Show notification if permission granted
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+          const notification = new Notification(title, {
+            body: body,
+            icon: '/favicon.ico',
+            tag: `message-${conversationId}`, // Prevent duplicate notifications
+            requireInteraction: false,
+          })
+
+          // Handle notification click - focus window and open conversation
+          notification.onclick = () => {
+            window.focus()
+            setSelectedConversation(conversationId)
+            notification.close()
+          }
+
+          // Auto-close after 5 seconds
+          setTimeout(() => notification.close(), 5000)
+        } catch (error) {
+          console.error('Error showing notification:', error)
+        }
       }
     }
 
@@ -106,7 +211,10 @@ function MessagesPageContent() {
 
     const handleUserStopTyping = (data: any) => {
       if (data.conversationId === selectedConversation) {
-        setTypingUsers(prev => prev.filter(user => user !== data.username))
+        setTypingUsers(prev => {
+          // Clear all typing users for this conversation
+          return []
+        })
       }
     }
 
@@ -161,6 +269,15 @@ function MessagesPageContent() {
   useEffect(() => {
     if (selectedConversation) {
       loadMessages(selectedConversation)
+      
+      // Mark conversation as read when opened
+      setConversations(prev => 
+        prev.map(c => 
+          c.id === selectedConversation 
+            ? { ...c, unread_count: 0 }
+            : c
+        )
+      )
     }
   }, [selectedConversation])
 
@@ -179,89 +296,66 @@ function MessagesPageContent() {
       }
 
       // Get conversations where user is either sender or receiver
-      const { data: conversationsData, error } = await supabase
+      const { data: conversationsData, error} = await supabase
         .from('conversations')
-        .select(`
-          id,
-          user1_id,
-          user2_id,
-          last_message_id,
-          messages!conversations_last_message_id_fkey (
-            id,
-            content,
-            created_at,
-            sender_id,
-            profiles!messages_sender_id_fkey (
-              display_name,
-              photos
-            )
-          )
-        `)
+        .select('id, user1_id, user2_id, created_at')
         .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-        .order('updated_at', { ascending: false })
+        .order('created_at', { ascending: false })
 
       if (error) {
         console.error('Error loading conversations:', error)
         return
       }
 
-      // Debug: Log the data structure to understand the shape
-      console.log('Conversations data:', conversationsData)
+      // Transform data - fetch other user profiles and last messages
+      const transformedConversations: Conversation[] = await Promise.all(
+        (conversationsData || []).map(async (conv) => {
+          const otherUserId = conv.user1_id === user.id ? conv.user2_id : conv.user1_id
 
-     // Transform data to our format
-const transformedConversations: Conversation[] = conversationsData?.map(conv => {
-  const otherUserId = conv.user1_id === user.id ? conv.user2_id : conv.user1_id
+          // Fetch other user's profile
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('display_name, photos, online')
+            .eq('id', otherUserId)
+            .single()
 
-  // Option 1: Safely get the last message if it's an array
-  let message = null
-  if (conv.messages && Array.isArray(conv.messages) && conv.messages.length > 0) {
-    message = conv.messages[conv.messages.length - 1] // Get last message
-  } else if (conv.messages && !Array.isArray(conv.messages)) {
-    message = conv.messages // Single message object
-  }
+          // Fetch last message for this conversation
+          const { data: lastMsgArray } = await supabase
+            .from('messages')
+            .select('id, content, created_at, sender_id')
+            .eq('conversation_id', conv.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+          
+          const lastMsg = lastMsgArray?.[0] || null
 
-  // Option 2: Handle both array and single object cases
-  const getProfileData = (msg: any) => {
-    if (!msg?.profiles) return { display_name: 'Unknown', photo: '' }
-    
-    // If profiles is an array, get the first one
-    if (Array.isArray(msg.profiles)) {
-      return {
-        display_name: msg.profiles[0]?.display_name || 'Unknown',
-        photo: msg.profiles[0]?.photos?.[0] || ''
+          return {
+            id: conv.id,
+            other_user: {
+              id: otherUserId,
+              display_name: profileData?.display_name || 'Unknown User',
+              photo: profileData?.photos?.[0] || 'https://via.placeholder.com/50',
+              online: profileData?.online || false
+            },
+            last_message: {
+              id: lastMsg?.id || '',
+              sender_id: lastMsg?.sender_id || '',
+              receiver_id: user.id,
+              content: lastMsg?.content || 'No messages yet',
+              created_at: lastMsg?.created_at || conv.created_at,
+              sender_name: profileData?.display_name || 'Unknown'
+            },
+            unread_count: 0 // TODO: Implement unread count
+          }
+        })
+      )
+
+      setConversations(transformedConversations)
+
+      // Auto-select the most recent conversation if none selected
+      if (!selectedConversation && transformedConversations.length > 0 && transformedConversations[0]) {
+        setSelectedConversation(transformedConversations[0].id)
       }
-    }
-    
-    // If profiles is a single object
-    return {
-      display_name: msg.profiles.display_name || 'Unknown',
-      photo: msg.profiles.photos?.[0] || ''
-    }
-  }
-
-  const profileData = message ? getProfileData(message) : { display_name: 'Unknown', photo: '' }
-
-  return {
-    id: conv.id,
-    other_user: {
-      id: otherUserId,
-      display_name: profileData.display_name,
-      photo: profileData.photo,
-      online: false // TODO: Implement online status
-    },
-    last_message: {
-      id: message?.id ?? '',
-      sender_id: message?.sender_id ?? '',
-      receiver_id: user.id,
-      content: message?.content ?? '',
-      created_at: message?.created_at ?? '',
-      sender_name: profileData.display_name
-    },
-    unread_count: 0 // TODO: Implement unread count
-  }
-}) || []
-
-setConversations(transformedConversations)
  
     } catch (err) {
       console.error('Error loading conversations:', err)
@@ -319,7 +413,7 @@ setConversations(transformedConversations)
           receiver_id: msg.receiver_id,
           content: msg.content,
           created_at: msg.created_at,
-          read_at: msg.read_at,
+          read: msg.read,
           sender_name: profileData.display_name,
           sender_photo: profileData.photo
         }
@@ -333,41 +427,75 @@ setConversations(transformedConversations)
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('🎯 Send button clicked!', { newMessage, selectedConversation, sending, isConnected })
     if (!newMessage.trim() || !selectedConversation || sending) return
 
     setSending(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) {
+        console.error('❌ No user found')
+        return
+      }
+      console.log('✅ User found:', user.id)
 
       // Stop typing indicator
       stopTyping(selectedConversation)
 
       // Send message via Socket.io for real-time delivery
       if (isConnected && socketSendMessage) {
+        console.log('📤 Sending message via Socket.io to:', selectedConversation)
         const tempId = `temp_${Date.now()}`
         setMessageStatus(prev => ({ ...prev, [tempId]: 'sending' }))
         socketSendMessage(selectedConversation, newMessage.trim(), 'text')
+        
+        // Reload messages after delay to show the sent message (backend needs time to save)
+        setTimeout(() => {
+          console.log('🔄 Reloading messages after send...')
+          loadMessages(selectedConversation)
+        }, 1500)
       } else {
+        console.log('📤 Sending message via database (socket not connected)')
         // Fallback to database-only if Socket.io not connected
         const conversation = conversations.find(c => c.id === selectedConversation)
         if (!conversation) return
 
         const otherUserId = conversation.other_user.id
 
-        const { error } = await supabase
+        // Prepare message data (handle different schema versions)
+        const messageDataToInsert: any = {
+          conversation_id: selectedConversation,
+          sender_id: user.id,
+          receiver_id: otherUserId,
+          content: newMessage.trim()
+        }
+
+        // Only add optional fields if they exist in schema
+        // message_type might not exist in all schema versions
+        const { data: messageData, error } = await supabase
           .from('messages')
-          .insert({
-            conversation_id: selectedConversation,
-            sender_id: user.id,
-            receiver_id: otherUserId,
-            content: newMessage.trim()
-          })
+          .insert(messageDataToInsert)
+          .select()
 
         if (error) {
-          console.error('Error sending message:', error)
+          console.error('❌ Error sending message:', error)
+          console.error('❌ Error code:', error.code)
+          console.error('❌ Error message:', error.message)
+          console.error('❌ Error details:', JSON.stringify(error, null, 2))
+          console.error('❌ Error hint:', error.hint)
+          console.error('❌ Full error object:', error)
+          
+          // More detailed error for debugging
+          const errorMsg = error.hint 
+            ? `${error.message}: ${error.hint}` 
+            : error.message || 'Unknown error'
+          
+          // Show user-friendly error
+          alert(`Failed to send message: ${errorMsg}. Check console for details.`)
           return
         }
+        
+        console.log('✅ Message saved to database:', messageData)
 
         // Reload messages to show the new one
         loadMessages(selectedConversation)
@@ -498,9 +626,9 @@ setConversations(transformedConversations)
         </div>
       </div>
 
-      <div className="pt-20 flex h-screen">
+      <div className="pt-20 flex flex-col md:flex-row h-screen">
         {/* Conversations List */}
-        <div className="w-1/3 border-r border-white/10 bg-black/50">
+        <div className="w-full md:w-1/3 md:border-r border-white/10 bg-black/50 md:h-full overflow-y-auto">
           <div className="p-4">
             <h2 className="text-white font-semibold mb-4">Conversations</h2>
             {conversations.length === 0 ? (
@@ -559,7 +687,7 @@ setConversations(transformedConversations)
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0">
           {selectedConversation ? (
             <>
               {/* Messages */}
@@ -642,37 +770,6 @@ setConversations(transformedConversations)
 
               {/* Message Input */}
               <div className="border-t border-white/10 p-4">
-                <div className="flex gap-3 mb-3">
-                  <button
-                    onClick={startVideoCall}
-                    className="px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-xl font-semibold hover:scale-105 transition-all duration-300 flex items-center gap-2"
-                  >
-                    📹 Video Call
-                  </button>
-                  <button
-                    className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold hover:scale-105 transition-all duration-300 flex items-center gap-2"
-                  >
-                    📞 Voice Call
-                  </button>
-                  <button
-                    onClick={() => setShowFileUpload(!showFileUpload)}
-                    className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-semibold hover:scale-105 transition-all duration-300 flex items-center gap-2"
-                  >
-                    📎 Attach File
-                  </button>
-                </div>
-                
-                {/* File Upload Component */}
-                {showFileUpload && selectedConversation && (
-                  <div className="mb-4">
-                    <Suspense fallback={<div className="text-white/60 p-4">Loading file upload...</div>}>
-                      <LazyFileUpload
-                        conversationId={selectedConversation}
-                        onFileUploaded={handleFileUploaded}
-                      />
-                    </Suspense>
-                  </div>
-                )}
                 <form onSubmit={sendMessage} className="flex gap-3">
                   <input
                     type="text"

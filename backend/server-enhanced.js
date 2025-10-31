@@ -309,12 +309,18 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Save message to database
+      // Determine receiver (the other user in conversation)
+      const receiverId = conversation.user1_id === user.userId 
+        ? conversation.user2_id 
+        : conversation.user1_id;
+
+      // Save message to database with receiver_id
       const { data: message, error } = await supabase
         .from('messages')
         .insert({
           conversation_id: conversationId,
           sender_id: user.userId,
+          receiver_id: receiverId,
           content: content,
           message_type: messageType,
           file_url: fileUrl,
@@ -329,17 +335,39 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Emit to conversation participants
-      io.to(`conversation_${conversationId}`).emit('new_message', {
+      // Message payload for real-time events
+      const messagePayload = {
         id: message.id,
         conversationId: conversationId,
         senderId: user.userId,
+        sender_id: user.userId,
+        receiverId: receiverId,
+        receiver_id: receiverId,
         content: content,
         messageType: messageType,
+        message_type: messageType,
         fileUrl: fileUrl,
+        file_url: fileUrl,
         createdAt: message.created_at,
+        created_at: message.created_at,
         senderName: user.username
-      });
+      };
+
+      // Emit to conversation participants (if they're in the conversation room)
+      io.to(`conversation_${conversationId}`).emit('new_message', messagePayload);
+
+      // ALSO emit to receiver's personal room (for notifications even if not in conversation)
+      io.to(`user_${receiverId}`).emit('new_message', messagePayload);
+
+      // Store notification in database for offline users
+      // Check if receiver is online
+      const receiverOnline = Array.from(activeUsers.values()).some(u => u.userId === receiverId);
+      
+      if (!receiverOnline) {
+        // Store notification for offline user (we can use messages table since receiver_id is set)
+        // The unread messages will serve as notifications when user comes online
+        console.log(`📬 Storing notification for offline user: ${receiverId}`);
+      }
 
       // Emit message delivered status
       socket.emit('message_delivered', { messageId: message.id });
@@ -680,3 +708,5 @@ server.listen(PORT, () => {
   console.log(`🌐 CORS enabled for: ${process.env.FRONTEND_URL || "https://getsltr.com"}`);
   console.log(`🛡️ Enhanced security features enabled`);
 });
+
+

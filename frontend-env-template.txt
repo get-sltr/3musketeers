@@ -30,3 +30,5 @@ NEXT_PUBLIC_ENABLE_REPORTING=true
 
 # Environment
 NODE_ENV=production
+
+

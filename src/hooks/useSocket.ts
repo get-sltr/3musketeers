@@ -28,9 +28,16 @@ export function useSocket(): UseSocketReturn {
 
   useEffect(() => {
     // Initialize socket connection
-    const socketInstance = io('https://3musketeers-production.up.railway.app', {
+    // For local development, use DEV_BACKEND_URL, otherwise use production URL
+    const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    const backendUrl = isLocal 
+      ? (process.env.NEXT_PUBLIC_DEV_BACKEND_URL || 'http://localhost:3001')
+      : (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://sltr-backend.railway.app')
+    console.log('🔌 Connecting to backend:', backendUrl, '(Local:', isLocal, ')')
+    
+    const socketInstance = io(backendUrl, {
       transports: ['websocket', 'polling'],
-      autoConnect: true, // Changed to true to auto-connect
+      autoConnect: true,
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionAttempts: 5
@@ -38,7 +45,7 @@ export function useSocket(): UseSocketReturn {
 
     // Connection event handlers
     socketInstance.on('connect', () => {
-      console.log('✅ Connected to real-time backend')
+      console.log('✅ Connected to real-time backend:', backendUrl)
       setIsConnected(true)
     })
 

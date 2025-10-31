@@ -71,7 +71,7 @@ export default function ConversationPage({
       // Load messages with basic data
       const { data: messagesData, error } = await supabase
         .from('messages')
-        .select('id, sender_id, receiver_id, content, created_at, read_at')
+        .select('id, sender_id, receiver_id, content, created_at, read')
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true })
 
@@ -101,6 +101,13 @@ export default function ConversationPage({
     scrollToBottom()
   }, [messages])
 
+  // This useEffect must be before any early returns
+  useEffect(() => {
+    if (conversationId) {
+      loadConversationData(conversationId)
+    }
+  }, [conversationId])
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
@@ -120,12 +127,6 @@ export default function ConversationPage({
       </div>
     )
   }
-
-  useEffect(() => {
-    if (conversationId) {
-      loadConversationData(conversationId)
-    }
-  }, [conversationId])
 
   const loadConversationData = async (conversationId: string) => {
     try {

@@ -1,3 +1,4 @@
+// Backend v1.1 - with receiver_id fix
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -127,12 +128,31 @@ io.on('connection', (socket) => {
         return;
       }
 
+      // Get conversation to determine receiver
+      const { data: conversation, error: convError } = await supabase
+        .from('conversations')
+        .select('user1_id, user2_id')
+        .eq('id', conversationId)
+        .single();
+
+      if (convError || !conversation) {
+        console.error('Conversation not found:', convError);
+        socket.emit('message_error', { message: 'Conversation not found' });
+        return;
+      }
+
+      // Determine receiver (the other user in conversation)
+      const receiverId = conversation.user1_id === user.userId 
+        ? conversation.user2_id 
+        : conversation.user1_id;
+
       // Save message to database
       const { data: message, error } = await supabase
         .from('messages')
         .insert({
           conversation_id: conversationId,
           sender_id: user.userId,
+          receiver_id: receiverId,
           content: content,
           message_type: messageType,
           file_url: fileUrl,
