@@ -647,37 +647,6 @@ function MessagesPageContent() {
 
               {/* Message Input */}
               <div className="border-t border-white/10 p-4">
-                <div className="flex gap-3 mb-3">
-                  <button
-                    onClick={startVideoCall}
-                    className="px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-xl font-semibold hover:scale-105 transition-all duration-300 flex items-center gap-2"
-                  >
-                    📹 Video Call
-                  </button>
-                  <button
-                    className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold hover:scale-105 transition-all duration-300 flex items-center gap-2"
-                  >
-                    📞 Voice Call
-                  </button>
-                  <button
-                    onClick={() => setShowFileUpload(!showFileUpload)}
-                    className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-semibold hover:scale-105 transition-all duration-300 flex items-center gap-2"
-                  >
-                    📎 Attach File
-                  </button>
-                </div>
-                
-                {/* File Upload Component */}
-                {showFileUpload && selectedConversation && (
-                  <div className="mb-4">
-                    <Suspense fallback={<div className="text-white/60 p-4">Loading file upload...</div>}>
-                      <LazyFileUpload
-                        conversationId={selectedConversation}
-                        onFileUploaded={handleFileUploaded}
-                      />
-                    </Suspense>
-                  </div>
-                )}
                 <form onSubmit={sendMessage} className="flex gap-3">
                   <input
                     type="text"
