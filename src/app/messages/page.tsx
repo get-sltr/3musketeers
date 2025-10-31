@@ -482,9 +482,16 @@ function MessagesPageContent() {
           console.error('❌ Error code:', error.code)
           console.error('❌ Error message:', error.message)
           console.error('❌ Error details:', JSON.stringify(error, null, 2))
+          console.error('❌ Error hint:', error.hint)
+          console.error('❌ Full error object:', error)
+          
+          // More detailed error for debugging
+          const errorMsg = error.hint 
+            ? `${error.message}: ${error.hint}` 
+            : error.message || 'Unknown error'
           
           // Show user-friendly error
-          alert(`Failed to send message: ${error.message || 'Unknown error'}. Check console for details.`)
+          alert(`Failed to send message: ${errorMsg}. Check console for details.`)
           return
         }
         
