@@ -6,7 +6,7 @@ import { useSocket } from '../hooks/useSocket'
 
 interface User {
   id: string
-  username: string
+  username?: string
   display_name?: string
   photo?: string
   photos?: string[]
@@ -251,9 +251,9 @@ export default function MessagingModal({
           />
           
           <div className="flex-1">
-            <h2 className="text-white font-bold text-lg">
-              {user.display_name || user.username}
-            </h2>
+          <h2 className="text-white font-bold text-lg">
+            {user.display_name || user.username || 'User'}
+          </h2>
             <p className="text-white/60 text-xs">
               {isConnected ? 'Real-time • Online' : 'Offline'}
             </p>
@@ -309,7 +309,7 @@ export default function MessagingModal({
               type="text"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              placeholder={`Message ${user.display_name || user.username}...`}
+              placeholder={`Message ${user.display_name || user.username || 'User'}...`}
               className="flex-1 bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300"
               disabled={sending || !conversationId}
             />
