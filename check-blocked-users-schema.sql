@@ -10,3 +10,5 @@ FROM information_schema.columns
 WHERE table_schema = 'public' 
 AND table_name = 'blocked_users'
 ORDER BY ordinal_position;
+
+

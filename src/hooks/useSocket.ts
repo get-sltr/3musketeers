@@ -28,8 +28,12 @@ export function useSocket(): UseSocketReturn {
 
   useEffect(() => {
     // Initialize socket connection
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_DEV_BACKEND_URL || 'https://sltr-backend.railway.app'
-    console.log('🔌 Connecting to backend:', backendUrl)
+    // For local development, use DEV_BACKEND_URL, otherwise use production URL
+    const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    const backendUrl = isLocal 
+      ? (process.env.NEXT_PUBLIC_DEV_BACKEND_URL || 'http://localhost:3001')
+      : (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://sltr-backend.railway.app')
+    console.log('🔌 Connecting to backend:', backendUrl, '(Local:', isLocal, ')')
     
     const socketInstance = io(backendUrl, {
       transports: ['websocket', 'polling'],

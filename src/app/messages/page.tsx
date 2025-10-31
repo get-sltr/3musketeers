@@ -77,6 +77,13 @@ function MessagesPageContent() {
   useEffect(() => {
     loadConversations()
     
+    // Request notification permission on mount
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(err => {
+        console.error('Error requesting notification permission:', err)
+      })
+    }
+    
     // Check for conversation parameter in URL
     const urlParams = new URLSearchParams(window.location.search)
     const conversationParam = urlParams.get('conversation')
@@ -85,6 +92,14 @@ function MessagesPageContent() {
     }
   }, [])
 
+  // Load unread messages when socket connects (for offline notifications)
+  useEffect(() => {
+    if (isConnected && socket) {
+      // Reload conversations to show unread messages from offline period
+      loadConversations()
+    }
+  }, [isConnected, socket])
+
   // Real-time event listeners
   useEffect(() => {
     if (!socket) return
@@ -92,17 +107,98 @@ function MessagesPageContent() {
     // Handle new messages (normalize payload fields)
     const handleNewMessage = (evt: any) => {
       const data = evt as any
-      if (data.conversationId === selectedConversation) {
-        const normalized = {
-          id: data.id || `tmp_${Date.now()}`,
-          sender_id: data.sender_id || data.senderId,
-          receiver_id: data.receiver_id || data.receiverId || '',
-          content: data.content,
-          created_at: data.created_at || data.createdAt || new Date().toISOString(),
-          read: false,
-        } as any
-        setMessages(prev => [...prev, normalized])
+      const conversationId = data.conversationId || data.conversation_id
+      
+      if (!conversationId) return
+
+      // Normalize message data
+      const normalized = {
+        id: data.id || `tmp_${Date.now()}`,
+        sender_id: data.sender_id || data.senderId,
+        receiver_id: data.receiver_id || data.receiverId || '',
+        content: data.content,
+        created_at: data.created_at || data.createdAt || new Date().toISOString(),
+        read: false,
+        sender_name: data.senderName || data.sender_name,
+      } as any
+
+      // Update messages if this conversation is selected
+      if (conversationId === selectedConversation) {
+        setMessages(prev => {
+          // Avoid duplicates
+          if (prev.some(m => m.id === normalized.id)) {
+            return prev
+          }
+          return [...prev, normalized]
+        })
         scrollToBottom()
+      }
+
+      // Always update conversations list (so "envelope" shows new message)
+      setConversations(prev => {
+        const conversation = prev.find(c => c.id === conversationId)
+        if (conversation) {
+          // Update existing conversation with new last message
+          return prev.map(c => 
+            c.id === conversationId 
+              ? {
+                  ...c,
+                  last_message: {
+                    ...c.last_message,
+                    id: normalized.id,
+                    content: normalized.content,
+                    created_at: normalized.created_at,
+                    sender_id: normalized.sender_id,
+                  },
+                  unread_count: conversationId === selectedConversation 
+                    ? c.unread_count 
+                    : c.unread_count + 1
+                }
+              : c
+          )
+        }
+        return prev
+      })
+
+      // Show browser notification (even if conversation not selected)
+      if (conversationId !== selectedConversation) {
+        showBrowserNotification(
+          data.senderName || 'New message',
+          normalized.content,
+          conversationId
+        )
+      }
+    }
+
+    // Browser notification helper
+    const showBrowserNotification = async (title: string, body: string, conversationId: string) => {
+      // Request notification permission if not granted
+      if ('Notification' in window && Notification.permission === 'default') {
+        await Notification.requestPermission()
+      }
+
+      // Show notification if permission granted
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+          const notification = new Notification(title, {
+            body: body,
+            icon: '/favicon.ico',
+            tag: `message-${conversationId}`, // Prevent duplicate notifications
+            requireInteraction: false,
+          })
+
+          // Handle notification click - focus window and open conversation
+          notification.onclick = () => {
+            window.focus()
+            setSelectedConversation(conversationId)
+            notification.close()
+          }
+
+          // Auto-close after 5 seconds
+          setTimeout(() => notification.close(), 5000)
+        } catch (error) {
+          console.error('Error showing notification:', error)
+        }
       }
     }
 
@@ -173,6 +269,15 @@ function MessagesPageContent() {
   useEffect(() => {
     if (selectedConversation) {
       loadMessages(selectedConversation)
+      
+      // Mark conversation as read when opened
+      setConversations(prev => 
+        prev.map(c => 
+          c.id === selectedConversation 
+            ? { ...c, unread_count: 0 }
+            : c
+        )
+      )
     }
   }, [selectedConversation])
 
@@ -357,18 +462,29 @@ function MessagesPageContent() {
 
         const otherUserId = conversation.other_user.id
 
+        // Prepare message data (handle different schema versions)
+        const messageDataToInsert: any = {
+          conversation_id: selectedConversation,
+          sender_id: user.id,
+          receiver_id: otherUserId,
+          content: newMessage.trim()
+        }
+
+        // Only add optional fields if they exist in schema
+        // message_type might not exist in all schema versions
         const { data: messageData, error } = await supabase
           .from('messages')
-          .insert({
-            conversation_id: selectedConversation,
-            sender_id: user.id,
-            receiver_id: otherUserId,
-            content: newMessage.trim()
-          })
+          .insert(messageDataToInsert)
           .select()
 
         if (error) {
           console.error('❌ Error sending message:', error)
+          console.error('❌ Error code:', error.code)
+          console.error('❌ Error message:', error.message)
+          console.error('❌ Error details:', JSON.stringify(error, null, 2))
+          
+          // Show user-friendly error
+          alert(`Failed to send message: ${error.message || 'Unknown error'}. Check console for details.`)
           return
         }
         

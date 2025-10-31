@@ -13,6 +13,7 @@ import GradientBackground from '../../components/GradientBackground'
 import BlazeAIButton from '../../components/BlazeAIButton'
 import UserProfileCard from '../components/UserProfileCard'
 import MapControls from '../components/MapControls'
+import MessagingModal from '../../components/MessagingModal'
 import '../../styles/mobile-optimization.css'
 
 type ViewMode = 'grid' | 'map'
@@ -42,6 +43,8 @@ export default function AppPage() {
   const [users, setUsers] = useState<UserWithLocation[]>([])
   const [selectedUser, setSelectedUser] = useState<UserWithLocation | null>(null)
   const [showProfileModal, setShowProfileModal] = useState(false)
+  const [messagingUser, setMessagingUser] = useState<UserWithLocation | null>(null)
+  const [showMessagingModal, setShowMessagingModal] = useState(false)
   const [isIncognito, setIsIncognito] = useState(false)
   const [isRelocating, setIsRelocating] = useState(false)
   const [mapCenter, setMapCenter] = useState<[number, number] | null>(null)
@@ -136,38 +139,108 @@ export default function AppPage() {
   }
 
   const handleMessage = async (userId: string) => {
+    // Open messaging modal instead of navigating
+    const userToMessage = users.find(u => u.id === userId)
+    if (userToMessage) {
+      setMessagingUser(userToMessage)
+      setShowProfileModal(false) // Close profile modal if open
+      setShowMessagingModal(true) // Open messaging modal
+    }
+  }
+
+  const handleBlock = async (userId: string) => {
+    if (confirm('Block this user? They won\'t be able to see your profile or message you.')) {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Add to blocked users
+      const { error } = await supabase
+        .from('blocked_users')
+        .insert({
+          user_id: user.id,
+          blocked_user_id: userId,
+          created_at: new Date().toISOString()
+        })
+
+      if (error) {
+        console.error('Error blocking user:', error)
+        alert('Failed to block user')
+      } else {
+        // Remove from users list
+        setUsers(prev => prev.filter(u => u.id !== userId))
+        setShowProfileModal(false)
+        alert('User blocked')
+      }
+    }
+  }
+
+  const handleReport = async (userId: string) => {
+    const reason = prompt('Why are you reporting this user?')
+    if (reason) {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { error } = await supabase
+        .from('reports')
+        .insert({
+          reporter_id: user.id,
+          reported_user_id: userId,
+          reason: reason,
+          created_at: new Date().toISOString()
+        })
+
+      if (error) {
+        console.error('Error reporting user:', error)
+        alert('Failed to report user')
+      } else {
+        alert('Thank you for your report. Our team will review it.')
+        setShowProfileModal(false)
+      }
+    }
+  }
+
+  const handleFavorite = async (userId: string) => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    // Check if conversation already exists
-    const { data: existingConv } = await supabase
-      .from('conversations')
+    // Check if already favorited
+    const { data: existing } = await supabase
+      .from('favorites')
       .select('id')
-      .or(`and(user1_id.eq.${user.id},user2_id.eq.${userId}),and(user1_id.eq.${userId},user2_id.eq.${user.id})`)
+      .eq('user_id', user.id)
+      .eq('favorite_user_id', userId)
       .single()
 
-    if (existingConv) {
-      // Conversation exists, navigate to it
-      router.push(`/messages/${existingConv.id}`)
-    } else {
-      // Create new conversation
-      const { data: newConv, error } = await supabase
-        .from('conversations')
-        .insert({
-          user1_id: user.id,
-          user2_id: userId
-        })
-        .select('id')
-        .single()
+    if (existing) {
+      // Remove favorite
+      const { error } = await supabase
+        .from('favorites')
+        .delete()
+        .eq('id', existing.id)
 
-      if (error) {
-        console.error('Error creating conversation:', error)
-        alert('Failed to start conversation')
-        return
+      if (!error) {
+        setUsers(prev => prev.map(u => 
+          u.id === userId ? { ...u, isFavorited: false } : u
+        ))
       }
+    } else {
+      // Add favorite
+      const { error } = await supabase
+        .from('favorites')
+        .insert({
+          user_id: user.id,
+          favorite_user_id: userId,
+          created_at: new Date().toISOString()
+        })
 
-      router.push(`/messages/${newConv.id}`)
+      if (!error) {
+        setUsers(prev => prev.map(u => 
+          u.id === userId ? { ...u, isFavorited: true } : u
+        ))
+      }
     }
   }
 
@@ -313,7 +386,23 @@ export default function AppPage() {
         isOpen={showProfileModal}
         onClose={() => setShowProfileModal(false)}
         onMessage={handleMessage}
+        onBlock={handleBlock}
+        onReport={handleReport}
+        onFavorite={handleFavorite}
+        isFavorited={selectedUser ? users.find(u => u.id === selectedUser.id)?.isFavorited : false}
       />
+
+      {/* Simple Messaging Modal - Opens on grid, doesn't navigate */}
+      {showMessagingModal && messagingUser && (
+        <MessagingModal
+          user={messagingUser}
+          isOpen={showMessagingModal}
+          onClose={() => {
+            setShowMessagingModal(false)
+            setMessagingUser(null)
+          }}
+        />
+      )}
 
       {/* Blaze AI Assistant Button */}
       <BlazeAIButton />

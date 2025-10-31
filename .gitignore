@@ -35,3 +35,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# backups
+.backups/
+*.backup
+backup-*.zip
+
+# incident logs
+INCIDENT_LOG.md

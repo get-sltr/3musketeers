@@ -52,3 +52,5 @@ ENABLE_AI_FEATURES=true
 # Database Configuration
 DB_POOL_SIZE=10
 DB_TIMEOUT=30000
+
+
