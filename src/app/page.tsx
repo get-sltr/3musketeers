@@ -70,25 +70,11 @@ export default function LandingPage() {
         animation: 'scan 8s linear infinite'
       }} />
 
-      {/* Navigation */}
+      {/* Navigation - Logo Only */}
       <nav className="relative z-50 p-6 backdrop-blur-sm">
-        <div className="flex justify-between items-center max-w-7xl mx-auto">
-          <div className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-magenta-500 text-4xl font-black tracking-wider">
+        <div className="flex justify-center items-center max-w-7xl mx-auto">
+          <div className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-magenta-500 text-6xl font-black tracking-wider">
             SLTR
-          </div>
-          <div className="flex gap-4 items-center">
-            <Link 
-              href="/login"
-              className="px-8 py-3 text-cyan-400 hover:text-cyan-300 transition-colors text-lg font-semibold border border-cyan-500/30 hover:border-cyan-500/60 backdrop-blur-sm"
-            >
-              Log In
-            </Link>
-            <Link 
-              href="/signup"
-              className="px-8 py-3 bg-gradient-to-r from-cyan-500 to-magenta-500 text-black font-bold hover:scale-105 transition-transform text-lg shadow-[0_0_30px_rgba(0,255,255,0.5)]"
-            >
-              Get Started
-            </Link>
           </div>
         </div>
       </nav>
