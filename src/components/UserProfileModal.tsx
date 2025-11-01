@@ -99,42 +99,35 @@ export default function UserProfileModal({
           className="w-full h-full object-contain"
         />
 
-        {/* Top Right Actions */}
-        <div className="absolute top-6 right-6 z-20 flex items-center gap-2">
-          {/* Favorite */}
-          {onFavorite && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                onFavorite(user.id)
-              }}
-              className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all text-2xl"
-            >
-              {isFavorited ? '✨' : '☆'}
-            </button>
-          )}
-          
-          {/* Close button */}
+        {/* Top Left - Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-6 left-6 z-20 w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all"
+        >
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        {/* Top Right Corner - Fire AI */}
+        <div className="absolute top-6 right-6 z-20">
           <button
-            onClick={onClose}
-            className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all"
+            className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all text-2xl"
           >
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            🔥
           </button>
         </div>
 
-        {/* Right Side Stack - Actions */}
+        {/* Right Side Stack - Report & Block (moved higher to not block arrows) */}
         {(onBlock || onReport) && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-3">
+          <div className="absolute right-3 top-24 z-20 flex flex-col gap-3">
             {onReport && (
               <button
                 onClick={(e) => {
                   e.stopPropagation()
                   handleReport()
                 }}
-                className="w-14 h-14 rounded-2xl bg-black/50 backdrop-blur-xl border border-white/10 flex flex-col items-center justify-center hover:bg-red-500/30 hover:border-red-400/50 transition-all text-2xl"
+                className="w-12 h-12 rounded-2xl bg-black/50 backdrop-blur-xl border border-white/10 flex flex-col items-center justify-center hover:bg-red-500/30 hover:border-red-400/50 transition-all text-xl"
               >
                 ⚠️
               </button>
@@ -145,7 +138,7 @@ export default function UserProfileModal({
                   e.stopPropagation()
                   handleBlock()
                 }}
-                className="w-14 h-14 rounded-2xl bg-black/50 backdrop-blur-xl border border-white/10 flex flex-col items-center justify-center hover:bg-red-500/30 hover:border-red-400/50 transition-all text-2xl"
+                className="w-12 h-12 rounded-2xl bg-black/50 backdrop-blur-xl border border-white/10 flex flex-col items-center justify-center hover:bg-red-500/30 hover:border-red-400/50 transition-all text-xl"
               >
                 🚫
               </button>
@@ -183,61 +176,76 @@ export default function UserProfileModal({
               </div>
             </div>
 
-            {/* Horn Message Button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                handleMessage()
-              }}
-              className="w-14 h-14 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all shadow-lg text-3xl animate-pulse-glow"
-              style={{ filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.8))' }}
-            >
-              📯
-            </button>
+            {/* Action Buttons - Favorite & Horn */}
+            <div className="flex items-center gap-2">
+              {onFavorite && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onFavorite(user.id)
+                  }}
+                  className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all text-2xl"
+                >
+                  {isFavorited ? '✨' : '☆'}
+                </button>
+              )}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleMessage()
+                }}
+                className="w-14 h-14 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all shadow-lg text-3xl animate-pulse-glow"
+                style={{ filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.8))' }}
+              >
+                📯
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Left Side Stack - Tags Preview */}
-        {user.tags && user.tags.length > 0 && (
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2 max-w-[80px]">
-            {user.tags.slice(0, 3).map((tag, idx) => (
-              <div
+
+        {/* Bottom Overlay - All Info */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 pb-20 bg-gradient-to-t from-black/95 via-black/70 to-transparent max-h-[45vh] overflow-y-auto custom-scrollbar">
+          {/* Position + Tags + Kinks Row */}
+          <div className="flex flex-wrap gap-2 mb-3">
+            {user.position && (
+              <span className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm font-bold">
+                {user.position}
+              </span>
+            )}
+            {user.tags && user.tags.slice(0, 3).map((tag, idx) => (
+              <span
                 key={idx}
-                className="px-3 py-2 rounded-2xl bg-black/50 backdrop-blur-xl border border-white/10 text-white text-xs font-semibold text-center"
+                className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs font-semibold"
               >
                 {tag}
-              </div>
+              </span>
             ))}
-            {user.tags.length > 3 && (
-              <div className="px-3 py-2 rounded-2xl bg-black/50 backdrop-blur-xl border border-white/10 text-white/60 text-xs font-semibold text-center">
-                +{user.tags.length - 3}
-              </div>
-            )}
+            {user.kinks && user.kinks.slice(0, 3).map((kink, idx) => (
+              <span
+                key={idx}
+                className="px-3 py-1.5 bg-cyan-500/30 border border-cyan-400/50 backdrop-blur-sm rounded-full text-cyan-300 text-xs font-bold"
+              >
+                {kink}
+              </span>
+            ))}
           </div>
-        )}
 
-        {/* Bottom Overlay - All Info (simplified) */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 pb-20 bg-gradient-to-t from-black/95 via-black/70 to-transparent max-h-[40vh] overflow-y-auto custom-scrollbar">
-          {/* Stats Row - Compact */}
-          {(user.position || user.height || user.body_type || user.ethnicity) && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              {user.position && (
-                <span className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm font-semibold">
-                  {user.position}
-                </span>
-              )}
+          {/* Stats Row */}
+          {(user.height || user.body_type || user.ethnicity) && (
+            <div className="flex flex-wrap gap-2 mb-3">
               {user.height && (
-                <span className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm font-semibold">
+                <span className="px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-full text-white/90 text-xs font-semibold">
                   {user.height}
                 </span>
               )}
               {user.body_type && (
-                <span className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm font-semibold">
+                <span className="px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-full text-white/90 text-xs font-semibold">
                   {user.body_type}
                 </span>
               )}
               {user.ethnicity && (
-                <span className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm font-semibold">
+                <span className="px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-full text-white/90 text-xs font-semibold">
                   {user.ethnicity}
                 </span>
               )}
@@ -251,22 +259,6 @@ export default function UserProfileModal({
             </div>
           )}
 
-          {/* Kinks */}
-          {user.kinks && user.kinks.length > 0 && (
-            <div className="mb-3">
-              <p className="text-white/80 text-xs font-semibold mb-2">INTO</p>
-              <div className="flex flex-wrap gap-2">
-                {user.kinks.map((kink, idx) => (
-                  <span
-                    key={idx}
-                    className="px-3 py-1.5 bg-cyan-500/30 border border-cyan-400/50 rounded-full text-cyan-300 text-sm font-bold backdrop-blur-sm"
-                  >
-                    {kink}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
 
         </div>
 
