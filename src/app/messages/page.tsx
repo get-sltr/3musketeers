@@ -5,6 +5,7 @@ import { createClient } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useSocket } from '../../hooks/useSocket'
+import { useNotifications } from '../../hooks/useNotifications'
 import { MessagesLoadingSkeleton } from '../../components/LoadingSkeleton'
 import LazyWrapper, { LazyVideoCall, LazyFileUpload, LazyBlazeAI } from '../../components/LazyWrapper'
 
@@ -73,6 +74,9 @@ function MessagesPageContent() {
     leaveConversation, 
     markMessageRead 
   } = useSocket()
+
+  // Push notifications
+  const { showMessageNotification, permission: notifPermission } = useNotifications()
 
   useEffect(() => {
     loadConversations()
@@ -160,10 +164,10 @@ function MessagesPageContent() {
         return prev
       })
 
-      // Show browser notification (even if conversation not selected)
+      // Show push notification (works even if tab is closed)
       if (conversationId !== selectedConversation) {
-        showBrowserNotification(
-          data.senderName || 'New message',
+        showMessageNotification(
+          data.senderName || 'Unknown',
           normalized.content,
           conversationId
         )
