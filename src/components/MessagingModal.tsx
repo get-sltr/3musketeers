@@ -245,7 +245,7 @@ export default function MessagingModal({
           </button>
           
           <img
-            src={user.photos?.[0] || user.photo || 'https://via.placeholder.com/50'}
+            src={user.photos?.[0] || user.photo || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23222" width="100" height="100"/%3E%3Ctext fill="%23aaa" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"%3E?%3C/text%3E%3C/svg%3E'}
             alt={user.display_name || user.username}
             className="w-10 h-10 rounded-full object-cover border-2 border-cyan-500/30"
           />
