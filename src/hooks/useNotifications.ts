@@ -71,9 +71,8 @@ export function useNotifications() {
         await registration.showNotification(title, {
           icon: '/icon-192.png',
           badge: '/badge-72.png',
-          ...options,
-          vibrate: [200, 100, 200] as any
-        } as any)
+          ...options
+        })
       } else {
         // Fallback to regular notification
         new Notification(title, {
