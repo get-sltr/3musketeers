@@ -85,7 +85,7 @@ These files should auto-open when you open the project:
   - Deployed: Yes (pushed to main)
 
 **In Progress:**
-- [ ] 
+- [ ] Debugging messaging and video call issues (socket connection)
 
 **Blocked/Issues:**
 - [ ] 
@@ -124,6 +124,9 @@ These files should auto-open when you open the project:
 
 ### Frontend Changes
 - [x] 2025-10-31: Fixed TypeScript error in UserProfileModal.tsx (photos type issue)
+- [x] 2025-10-31: Added blinking horn emoji (📯) message button to profile cards with pulse animation
+- [x] 2025-10-31: Replaced all via.placeholder.com URLs with data URI placeholders (fixed ERR_NAME_NOT_RESOLVED)
+- [x] 2025-10-31: Reorganized mobile profile layout - side-stacked actions/tags with frosted glass effect
 - [ ] Track UI/component changes here
 - [ ] Track page additions/modifications here
 
@@ -139,6 +142,8 @@ These files should auto-open when you open the project:
 
 ## 🐛 BUGS FIXED
 - [x] 2025-10-31: TypeScript compilation error in UserProfileModal - `user.photos.length` possibly undefined. Fixed with explicit type annotation and non-null assertion.
+- [x] 2025-10-31: Fixed ERR_NAME_NOT_RESOLVED errors from via.placeholder.com by replacing with inline SVG data URIs
+- [x] 2025-10-31: Fixed mobile profile layout overlapping issues - reorganized with side stacks
 - [ ] Track bugs fixed here with date and description
 
 ---
@@ -171,6 +176,9 @@ These files should auto-open when you open the project:
 
 ## 📦 DEPLOYMENT UPDATES
 - [x] 2025-10-31: Deployed TypeScript fix to production via Git push (commits 75c8af2, 4088029)
+- [x] 2025-10-31: Deployed horn emoji button feature (commit 5af1ff2)
+- [x] 2025-10-31: Deployed placeholder image fix (commit 4a9ed9d)
+- [x] 2025-10-31: Deployed mobile layout improvements (commit aa1ffdd)
 - [ ] Track deployment dates
 - [ ] Track deployment issues/resolutions
 - [ ] Track environment changes
