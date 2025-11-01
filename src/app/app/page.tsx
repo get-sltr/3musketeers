@@ -329,7 +329,11 @@ export default function AppPage() {
                 latitude: u.latitude!,
                 longitude: u.longitude!,
                 display_name: u.isYou ? 'You' : u.display_name,
-                isCurrentUser: u.isYou
+                isCurrentUser: u.isYou,
+                photo: u.photos?.[0],
+                online: u.online,
+                dtfn: u.dtfn,
+                party_friendly: u.party_friendly
               }))}
               onUserClick={handleUserClick}
               onMapClick={handleMapClick}

@@ -426,7 +426,7 @@ setInterval(() => {
   }
 }, 30000);
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000
 server.listen(PORT, () => {
   console.log(`🚀 SLTR Real-time Backend running on port ${PORT}`);
   console.log(`📡 Socket.io server ready for connections`);

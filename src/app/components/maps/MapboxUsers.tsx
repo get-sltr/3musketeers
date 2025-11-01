@@ -20,6 +20,10 @@ type UserPin = {
   longitude: number
   display_name?: string
   isCurrentUser?: boolean
+  photo?: string
+  online?: boolean
+  dtfn?: boolean
+  party_friendly?: boolean
 }
 
 interface MapboxUsersProps {
@@ -123,37 +127,94 @@ export default function MapboxUsers({
 
   const addMarker = (u: UserPin) => {
     if (!mapRef.current) return
-    const el = document.createElement('div')
     
-    // Larger pins on mobile for better touch targets
+    // Create container
+    const container = document.createElement('div')
+    container.style.position = 'relative'
+    
+    // Larger pins on mobile
     const isMobile = window.innerWidth < 768
+    const size = isMobile ? '56px' : '48px'
     
-    // Style differently for current user
+    // Create profile image circle
+    const img = document.createElement('img')
+    img.src = u.photo || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23111" width="100" height="100"/%3E%3Ctext fill="%23aaa" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="40"%3E👤%3C/text%3E%3C/svg%3E'
+    img.style.width = size
+    img.style.height = size
+    img.style.borderRadius = '50%'
+    img.style.objectFit = 'cover'
+    img.style.display = 'block'
+    
+    // Neon glow border style
     if (u.isCurrentUser) {
-      el.className = 'rounded-full bg-white shadow-lg shadow-white/50 active:scale-110 transition-transform'
-      el.style.width = isMobile ? '32px' : '24px'
-      el.style.height = isMobile ? '32px' : '24px'
-      el.style.border = isMobile ? '5px solid rgba(0, 212, 255, 0.9)' : '4px solid rgba(0, 212, 255, 0.9)'
-      el.style.boxShadow = '0 0 20px rgba(255, 255, 255, 0.8)'
+      // Your pin: white glow with cyan border + pulse animation
+      img.style.border = '4px solid rgba(255, 255, 255, 0.9)'
+      img.style.boxShadow = '0 0 20px rgba(255, 255, 255, 0.8), 0 0 40px rgba(0, 212, 255, 0.6), inset 0 0 20px rgba(0, 212, 255, 0.3)'
+      img.style.animation = 'pulse-glow 2s ease-in-out infinite'
+    } else if (u.online) {
+      // Online: bright cyan glow + pulse
+      img.style.border = '3px solid rgba(0, 212, 255, 0.9)'
+      img.style.boxShadow = '0 0 20px rgba(0, 212, 255, 0.8), 0 0 30px rgba(0, 212, 255, 0.5)'
+      img.style.animation = 'pulse-glow 3s ease-in-out infinite'
     } else {
-      el.className = 'rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/50 active:scale-110 transition-transform'
-      el.style.width = isMobile ? '28px' : '20px'
-      el.style.height = isMobile ? '28px' : '20px'
-      el.style.border = isMobile ? '4px solid rgba(0, 0, 0, 0.8)' : '3px solid rgba(0, 0, 0, 0.8)'
-      el.style.boxShadow = '0 0 15px rgba(0, 212, 255, 0.6)'
+      // Offline: dim cyan glow
+      img.style.border = '3px solid rgba(0, 212, 255, 0.4)'
+      img.style.boxShadow = '0 0 10px rgba(0, 212, 255, 0.3)'
+    }
+    
+    img.style.transition = 'transform 0.2s ease'
+    container.appendChild(img)
+    
+    // Activity icons
+    if (u.dtfn || u.party_friendly) {
+      const iconContainer = document.createElement('div')
+      iconContainer.style.position = 'absolute'
+      iconContainer.style.bottom = '-8px'
+      iconContainer.style.right = '-8px'
+      iconContainer.style.background = 'rgba(0, 0, 0, 0.8)'
+      iconContainer.style.borderRadius = '50%'
+      iconContainer.style.width = '24px'
+      iconContainer.style.height = '24px'
+      iconContainer.style.display = 'flex'
+      iconContainer.style.alignItems = 'center'
+      iconContainer.style.justifyContent = 'center'
+      iconContainer.style.border = '2px solid rgba(0, 212, 255, 0.6)'
+      iconContainer.style.fontSize = '14px'
+      iconContainer.textContent = u.dtfn ? '⚡' : '🥳'
+      container.appendChild(iconContainer)
     }
 
+    // Touch handling
     if (onUserClick) {
-      el.style.cursor = 'pointer'
-      // Better touch handling
-      el.style.touchAction = 'manipulation'
-      el.addEventListener('click', (e) => {
-        e.stopPropagation() // Prevent map click
+      container.style.cursor = 'pointer'
+      container.style.touchAction = 'manipulation'
+      container.addEventListener('click', (e) => {
+        e.stopPropagation()
         onUserClick(u.id)
+      })
+      // Scale on hover/active
+      container.addEventListener('mouseenter', () => {
+        img.style.transform = 'scale(1.1)'
+      })
+      container.addEventListener('mouseleave', () => {
+        img.style.transform = 'scale(1)'
       })
     }
 
-    new mapboxgl.Marker(el)
+    // Add global pulse animation styles
+    if (!document.getElementById('map-pin-styles')) {
+      const style = document.createElement('style')
+      style.id = 'map-pin-styles'
+      style.textContent = `
+        @keyframes pulse-glow {
+          0%, 100% { filter: brightness(1) drop-shadow(0 0 8px rgba(0, 212, 255, 0.8)); }
+          50% { filter: brightness(1.2) drop-shadow(0 0 16px rgba(0, 212, 255, 1)); }
+        }
+      `
+      document.head.appendChild(style)
+    }
+
+    new mapboxgl.Marker(container)
       .setLngLat([u.longitude, u.latitude])
       .setPopup(
         new mapboxgl.Popup({ offset: 12 }).setText(
