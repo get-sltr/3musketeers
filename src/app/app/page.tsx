@@ -360,7 +360,7 @@ export default function AppPage() {
                     className="w-full p-3 glass-bubble hover:bg-white/10 transition-all flex items-center gap-3 text-left"
                   >
                     <img
-                      src={user.photos?.[0] || 'https://via.placeholder.com/50'}
+                      src={user.photos?.[0] || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23222" width="100" height="100"/%3E%3Ctext fill="%23aaa" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"%3E?%3C/text%3E%3C/svg%3E'}
                       alt={user.display_name}
                       className="w-12 h-12 rounded-full object-cover"
                     />

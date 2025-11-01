@@ -334,7 +334,7 @@ function MessagesPageContent() {
             other_user: {
               id: otherUserId,
               display_name: profileData?.display_name || 'Unknown User',
-              photo: profileData?.photos?.[0] || 'https://via.placeholder.com/50',
+              photo: profileData?.photos?.[0] || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23222" width="100" height="100"/%3E%3Ctext fill="%23aaa" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"%3E?%3C/text%3E%3C/svg%3E',
               online: profileData?.online || false
             },
             last_message: {
@@ -650,7 +650,7 @@ function MessagesPageContent() {
                     <div className="flex items-center gap-3">
                       <div className="relative">
                         <img
-                          src={conversation.other_user.photo || 'https://via.placeholder.com/50'}
+                          src={conversation.other_user.photo || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23222" width="100" height="100"/%3E%3Ctext fill="%23aaa" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"%3E?%3C/text%3E%3C/svg%3E'}
                           alt={conversation.other_user.display_name}
                           className="w-12 h-12 rounded-full object-cover"
                         />

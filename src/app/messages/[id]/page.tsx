@@ -166,7 +166,7 @@ export default function ConversationPage({
         console.log('✅ Loaded conversation with:', profileData.display_name)
         setConversation({
           username: profileData.display_name || 'Unknown User',
-          photo: profileData.photos?.[0] || 'https://via.placeholder.com/100',
+          photo: profileData.photos?.[0] || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23222" width="100" height="100"/%3E%3Ctext fill="%23aaa" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"%3E?%3C/text%3E%3C/svg%3E',
           isOnline: profileData.online || false
         })
       }
