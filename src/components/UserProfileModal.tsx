@@ -109,14 +109,6 @@ export default function UserProfileModal({
           </svg>
         </button>
 
-        {/* Top Right Corner - Fire AI */}
-        <div className="absolute top-6 right-6 z-20">
-          <button
-            className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all text-2xl"
-          >
-            🔥
-          </button>
-        </div>
 
         {/* Right Side Stack - Report & Block (moved higher to not block arrows) */}
         {(onBlock || onReport) && (
@@ -149,11 +141,37 @@ export default function UserProfileModal({
         {/* Top Overlay - Name, Age, Stats */}
         <div className="absolute top-0 left-0 right-0 p-6 bg-gradient-to-b from-black/80 via-black/50 to-transparent">
           <div className="flex items-start justify-between">
-            <div>
-              <h2 className="text-3xl font-bold text-white mb-1">
-                {user.username}
-                {user.age && <span className="text-2xl font-bold text-cyan-400 ml-2">{user.age}</span>}
-              </h2>
+            <div className="flex-1">
+              {/* Name, Age, Action Buttons Row */}
+              <div className="flex items-center gap-3 mb-1">
+                <h2 className="text-3xl font-bold text-white">
+                  {user.username}
+                  {user.age && <span className="text-2xl font-bold text-cyan-400 ml-2">{user.age}</span>}
+                </h2>
+                
+                {/* Favorite & Horn Buttons */}
+                {onFavorite && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onFavorite(user.id)
+                    }}
+                    className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all text-xl"
+                  >
+                    {isFavorited ? '✨' : '☆'}
+                  </button>
+                )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleMessage()
+                  }}
+                  className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all shadow-lg text-2xl animate-pulse-glow"
+                  style={{ filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.8))' }}
+                >
+                  📯
+                </button>
+              </div>
               
               {/* Stats - bold and bright */}
               <div className="flex items-center gap-3 mt-2">
@@ -175,32 +193,16 @@ export default function UserProfileModal({
                 {user.dtfn && <span className="text-2xl">⚡</span>}
               </div>
             </div>
-
-            {/* Action Buttons - Favorite & Horn */}
-            <div className="flex items-center gap-2">
-              {onFavorite && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onFavorite(user.id)
-                  }}
-                  className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all text-2xl"
-                >
-                  {isFavorited ? '✨' : '☆'}
-                </button>
-              )}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleMessage()
-                }}
-                className="w-14 h-14 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all shadow-lg text-3xl animate-pulse-glow"
-                style={{ filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.8))' }}
-              >
-                📯
-              </button>
-            </div>
           </div>
+        </div>
+
+        {/* Bottom Right - Fire AI */}
+        <div className="absolute bottom-28 right-4 z-20">
+          <button
+            className="w-14 h-14 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-orange-500/30 transition-all text-3xl shadow-lg"
+          >
+            🔥
+          </button>
         </div>
 
 
