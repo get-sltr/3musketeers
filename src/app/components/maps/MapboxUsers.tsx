@@ -47,6 +47,7 @@ export default function MapboxUsers({
 }: MapboxUsersProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
+  const markersRef = useRef<mapboxgl.Marker[]>([])
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -92,9 +93,6 @@ export default function MapboxUsers({
           onMapClick(e.lngLat.lng, e.lngLat.lat)
         })
       }
-
-      // Add existing user pins
-      users.forEach((u) => addMarker(u))
     })
 
     return () => {
@@ -109,8 +107,12 @@ export default function MapboxUsers({
   // When users change, update markers
   useEffect(() => {
     if (!mapRef.current) return
-    // In a real implementation we'd diff markers. For now, simple clear-and-add by reloading style is heavy.
-    // Lightweight approach: add markers without tracking; acceptable for small sets in MVP.
+    
+    // Clear existing markers
+    markersRef.current.forEach(marker => marker.remove())
+    markersRef.current = []
+    
+    // Add new markers
     users.forEach((u) => addMarker(u))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [users])
@@ -164,25 +166,6 @@ export default function MapboxUsers({
     
     img.style.transition = 'transform 0.2s ease'
     container.appendChild(img)
-    
-    // Activity icons
-    if (u.dtfn || u.party_friendly) {
-      const iconContainer = document.createElement('div')
-      iconContainer.style.position = 'absolute'
-      iconContainer.style.bottom = '-8px'
-      iconContainer.style.right = '-8px'
-      iconContainer.style.background = 'rgba(0, 0, 0, 0.8)'
-      iconContainer.style.borderRadius = '50%'
-      iconContainer.style.width = '24px'
-      iconContainer.style.height = '24px'
-      iconContainer.style.display = 'flex'
-      iconContainer.style.alignItems = 'center'
-      iconContainer.style.justifyContent = 'center'
-      iconContainer.style.border = '2px solid rgba(0, 212, 255, 0.6)'
-      iconContainer.style.fontSize = '14px'
-      iconContainer.textContent = u.dtfn ? '⚡' : '🥳'
-      container.appendChild(iconContainer)
-    }
 
     // Touch handling
     if (onUserClick) {
@@ -214,7 +197,7 @@ export default function MapboxUsers({
       document.head.appendChild(style)
     }
 
-    new mapboxgl.Marker(container)
+    const marker = new mapboxgl.Marker(container)
       .setLngLat([u.longitude, u.latitude])
       .setPopup(
         new mapboxgl.Popup({ offset: 12 }).setText(
@@ -222,6 +205,9 @@ export default function MapboxUsers({
         )
       )
       .addTo(mapRef.current)
+    
+    // Track marker for cleanup
+    markersRef.current.push(marker)
   }
 
   if (!MAPBOX_TOKEN) {

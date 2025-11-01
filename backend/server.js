@@ -14,9 +14,16 @@ const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const server = http.createServer(app);
+// Allow both production and local dev URLs
+const allowedOrigins = [
+  process.env.FRONTEND_URL || "https://getsltr.com",
+  process.env.DEV_FRONTEND_URL || "http://localhost:5000",
+  "http://localhost:5000" // Always allow localhost in dev
+];
+
 const io = socketIo(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || "https://getsltr.com",
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -25,7 +32,7 @@ const io = socketIo(server, {
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "https://getsltr.com",
+  origin: allowedOrigins,
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));

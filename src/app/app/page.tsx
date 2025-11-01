@@ -52,6 +52,7 @@ export default function AppPage() {
   const [isIncognito, setIsIncognito] = useState(false)
   const [isRelocating, setIsRelocating] = useState(false)
   const [mapCenter, setMapCenter] = useState<[number, number] | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -102,6 +103,7 @@ export default function AppPage() {
       
       // Fetch users with location data (including yourself)
       await fetchUsers(session.user.id)
+      setCurrentUserId(session.user.id)
       setLoading(false)
     }
     checkAuth()
@@ -127,6 +129,12 @@ export default function AppPage() {
     }))
     
     setUsers(usersWithYou)
+    
+    // Auto-set map center to current user's location
+    const currentUser = usersWithYou.find(u => u.id === currentUserId)
+    if (currentUser?.latitude && currentUser?.longitude && !mapCenter) {
+      setMapCenter([currentUser.longitude, currentUser.latitude])
+    }
   }
 
   const handleFilterChange = (filters: string[]) => {
