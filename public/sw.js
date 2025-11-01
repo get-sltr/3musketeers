@@ -24,7 +24,6 @@ self.addEventListener('push', (event) => {
       url: data.url || '/messages',
       conversationId: data.conversationId
     },
-    vibrate: [200, 100, 200],
     requireInteraction: false,
     actions: [
       {
