@@ -83,6 +83,16 @@ These files should auto-open when you open the project:
   - Files: src/components/UserProfileModal.tsx
   - Commits: 75c8af2, 4088029
   - Deployed: Yes (pushed to main)
+- [x] Added blinking horn emoji message button to all profile cards
+- [x] Fixed via.placeholder.com ERR_NAME_NOT_RESOLVED errors
+- [x] Complete mobile-first optimization (Sniffies-like experience)
+  - Touch-optimized interactions, no tap highlights
+  - Full viewport with dynamic height and safe areas
+  - Frosted glass effects throughout
+  - 2-column grid on mobile
+  - GPU-accelerated animations
+- [x] Reorganized profile modal layout (multiple iterations)
+  - Final: X top-left, Fire bottom-right, Star+Horn next to name, Report+Block stacked high, Position+Tags+Kinks at bottom
 
 **In Progress:**
 - [ ] Debugging messaging and video call issues (socket connection)
