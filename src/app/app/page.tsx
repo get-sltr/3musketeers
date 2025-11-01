@@ -35,6 +35,8 @@ interface UserWithLocation {
   longitude?: number
   isYou?: boolean
   isFavorited?: boolean
+  dtfn?: boolean
+  party_friendly?: boolean
 }
 
 export default function AppPage() {
@@ -108,7 +110,7 @@ export default function AppPage() {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, display_name, age, photos, bio, kinks, tags, position, height, body_type, ethnicity, online, latitude, longitude')
+      .select('id, display_name, age, photos, bio, kinks, tags, position, height, body_type, ethnicity, online, latitude, longitude, dtfn, party_friendly')
       .not('latitude', 'is', null)
       .not('longitude', 'is', null)
     
