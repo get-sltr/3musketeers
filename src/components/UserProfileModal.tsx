@@ -51,7 +51,7 @@ export default function UserProfileModal({
 
   if (!isOpen || !user) return null
 
-  const photos = (user.photos?.length ?? 0) > 0 ? user.photos : ['https://via.placeholder.com/400x500']
+  const photos: string[] = (user.photos?.length ?? 0) > 0 ? user.photos! : ['https://via.placeholder.com/400x500']
 
   const handleMessage = async () => {
     try {
