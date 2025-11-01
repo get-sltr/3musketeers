@@ -67,9 +67,20 @@ export default function MapboxUsers({
         zoom,
         minZoom,
         maxZoom,
+        // Mobile optimizations
+        touchZoomRotate: true,
+        touchPitch: false, // Disable tilt on mobile
+        dragRotate: false, // Disable rotation for simpler UX
+        pitchWithRotate: false,
+        doubleClickZoom: true,
+        cooperativeGestures: false // Allow immediate pan/zoom
       })
 
-      mapRef.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
+      // Add navigation controls (smaller on mobile)
+      mapRef.current.addControl(
+        new mapboxgl.NavigationControl({ showCompass: false }), 
+        'top-right'
+      )
 
       // Add click handler for map
       if (onMapClick) {
@@ -114,24 +125,32 @@ export default function MapboxUsers({
     if (!mapRef.current) return
     const el = document.createElement('div')
     
+    // Larger pins on mobile for better touch targets
+    const isMobile = window.innerWidth < 768
+    
     // Style differently for current user
     if (u.isCurrentUser) {
-      el.className = 'rounded-full bg-white shadow-lg shadow-white/50 hover:scale-125 transition-transform'
-      el.style.width = '24px'
-      el.style.height = '24px'
-      el.style.border = '4px solid rgba(0, 212, 255, 0.9)'
+      el.className = 'rounded-full bg-white shadow-lg shadow-white/50 active:scale-110 transition-transform'
+      el.style.width = isMobile ? '32px' : '24px'
+      el.style.height = isMobile ? '32px' : '24px'
+      el.style.border = isMobile ? '5px solid rgba(0, 212, 255, 0.9)' : '4px solid rgba(0, 212, 255, 0.9)'
       el.style.boxShadow = '0 0 20px rgba(255, 255, 255, 0.8)'
     } else {
-      el.className = 'rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/50 hover:scale-125 transition-transform'
-      el.style.width = '20px'
-      el.style.height = '20px'
-      el.style.border = '3px solid rgba(0, 0, 0, 0.8)'
+      el.className = 'rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/50 active:scale-110 transition-transform'
+      el.style.width = isMobile ? '28px' : '20px'
+      el.style.height = isMobile ? '28px' : '20px'
+      el.style.border = isMobile ? '4px solid rgba(0, 0, 0, 0.8)' : '3px solid rgba(0, 0, 0, 0.8)'
       el.style.boxShadow = '0 0 15px rgba(0, 212, 255, 0.6)'
     }
 
     if (onUserClick) {
       el.style.cursor = 'pointer'
-      el.addEventListener('click', () => onUserClick(u.id))
+      // Better touch handling
+      el.style.touchAction = 'manipulation'
+      el.addEventListener('click', (e) => {
+        e.stopPropagation() // Prevent map click
+        onUserClick(u.id)
+      })
     }
 
     new mapboxgl.Marker(el)
