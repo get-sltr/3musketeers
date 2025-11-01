@@ -100,6 +100,15 @@ io.on('connection', (socket) => {
         lastSeen: new Date()
       });
 
+      // Update user online status in database
+      await supabase
+        .from('profiles')
+        .update({ 
+          online: true,
+          last_seen: new Date().toISOString()
+        })
+        .eq('id', user.id);
+      
       // Join user to their personal room
       socket.join(`user_${user.id}`);
       
@@ -110,7 +119,7 @@ io.on('connection', (socket) => {
       });
 
       socket.emit('authenticated', { success: true });
-      console.log(`User authenticated: ${user.id}`);
+      console.log(`User authenticated: ${user.id} - set online in database`);
     } catch (error) {
       console.error('Authentication error:', error);
       socket.emit('auth_error', { message: 'Authentication failed' });
@@ -339,9 +348,18 @@ io.on('connection', (socket) => {
   });
 
   // Disconnect handling
-  socket.on('disconnect', () => {
+  socket.on('disconnect', async () => {
     const user = activeUsers.get(socket.id);
     if (user) {
+      // Update user offline status in database
+      await supabase
+        .from('profiles')
+        .update({ 
+          online: false,
+          last_seen: new Date().toISOString()
+        })
+        .eq('id', user.userId);
+      
       // Notify that user went offline
       socket.broadcast.emit('user_offline', {
         userId: user.userId,
@@ -356,8 +374,10 @@ io.on('connection', (socket) => {
       }
       
       activeUsers.delete(socket.id);
+      console.log(`User disconnected: ${socket.id} - set offline in database`);
+    } else {
+      console.log(`User disconnected: ${socket.id}`);
     }
-    console.log(`User disconnected: ${socket.id}`);
   });
 });
 
