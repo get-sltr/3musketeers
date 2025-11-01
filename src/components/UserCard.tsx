@@ -24,10 +24,11 @@ interface User {
 interface UserCardProps {
   user: User
   onClick?: (user: User) => void
+  onMessage?: (userId: string) => void
   className?: string
 }
 
-export default function UserCard({ user, onClick, className = '' }: UserCardProps) {
+export default function UserCard({ user, onClick, onMessage, className = '' }: UserCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [imageError, setImageError] = useState(false)
 
@@ -83,8 +84,22 @@ export default function UserCard({ user, onClick, className = '' }: UserCardProp
             </div>
           )}
 
+          {/* Message Horn Button */}
+          {onMessage && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onMessage(user.id)
+              }}
+              className="absolute top-3 right-3 z-10 text-3xl animate-pulse-glow"
+              style={{ filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.8))' }}
+            >
+              📯
+            </button>
+          )}
+
           {/* Status Badges */}
-          <div className="absolute top-3 right-3 flex flex-col gap-1">
+          <div className="absolute top-3 left-3 flex flex-col gap-1">
             {user.party_friendly && (
               <div className="glass-badge party-badge">
                 <span className="text-sm">🥳</span>
@@ -158,6 +173,21 @@ export default function UserCard({ user, onClick, className = '' }: UserCardProp
 
       {/* Custom Styles */}
       <style jsx>{`
+        @keyframes pulse-glow {
+          0%, 100% {
+            opacity: 1;
+            filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.8)) brightness(1);
+          }
+          50% {
+            opacity: 0.8;
+            filter: drop-shadow(0 0 16px rgba(34, 211, 238, 1)) brightness(1.3);
+          }
+        }
+        
+        .animate-pulse-glow {
+          animation: pulse-glow 2s ease-in-out infinite;
+        }
+        
         .glass-badge {
           background: rgba(255, 255, 255, 0.1);
           backdrop-filter: blur(10px);
