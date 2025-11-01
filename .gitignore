@@ -36,10 +36,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# backups
-.backups/
-*.backup
-backup-*.zip
-
-# incident logs
-INCIDENT_LOG.md
+# Private documentation (not for deployment or git tracking)
+/docs/private/
