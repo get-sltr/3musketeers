@@ -133,9 +133,31 @@ export default function ScrollableProfileCard({
                 <div className="text-xs text-white/60">{user.distance}</div>
               )}
             </div>
+            {onMessage && (
+              <button
+                onClick={handleMessageClick}
+                className="ml-2 text-2xl animate-pulse-glow"
+                style={{ filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.8))' }}
+              >
+                📯
+              </button>
+            )}
           </div>
         </div>
       </div>
+      
+      <style jsx>{`
+        @keyframes pulse-glow {
+          0%, 100% { opacity: 1; filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.8)) brightness(1); }
+          50% { opacity: 0.85; filter: drop-shadow(0 0 16px rgba(34, 211, 238, 1)) brightness(1.3); }
+        }
+        .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+        .glass-bubble {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+      `}</style>
     </div>
   )
 }
