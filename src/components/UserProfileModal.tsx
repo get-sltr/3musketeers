@@ -125,18 +125,18 @@ export default function UserProfileModal({
           </button>
         </div>
 
-        {/* Bottom Right Actions - Block & Report */}
+        {/* Right Side Stack - Actions */}
         {(onBlock || onReport) && (
-          <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-3">
             {onReport && (
               <button
                 onClick={(e) => {
                   e.stopPropagation()
                   handleReport()
                 }}
-                className="px-4 py-2 rounded-full bg-black/50 backdrop-blur-md text-white text-sm font-semibold hover:bg-red-500/30 hover:text-red-400 transition-all"
+                className="w-14 h-14 rounded-2xl bg-black/50 backdrop-blur-xl border border-white/10 flex flex-col items-center justify-center hover:bg-red-500/30 hover:border-red-400/50 transition-all text-2xl"
               >
-                ⚠️ Report
+                ⚠️
               </button>
             )}
             {onBlock && (
@@ -145,9 +145,9 @@ export default function UserProfileModal({
                   e.stopPropagation()
                   handleBlock()
                 }}
-                className="px-4 py-2 rounded-full bg-black/50 backdrop-blur-md text-white text-sm font-semibold hover:bg-red-500/30 hover:text-red-400 transition-all"
+                className="w-14 h-14 rounded-2xl bg-black/50 backdrop-blur-xl border border-white/10 flex flex-col items-center justify-center hover:bg-red-500/30 hover:border-red-400/50 transition-all text-2xl"
               >
-                🚫 Block
+                🚫
               </button>
             )}
           </div>
@@ -183,21 +183,41 @@ export default function UserProfileModal({
               </div>
             </div>
 
-            {/* Small Chat/Mail Emoji Button - like grid */}
+            {/* Horn Message Button */}
             <button
               onClick={(e) => {
                 e.stopPropagation()
                 handleMessage()
               }}
-              className="w-12 h-12 rounded-full bg-cyan-500/80 backdrop-blur-md flex items-center justify-center hover:bg-cyan-500 transition-all shadow-lg text-2xl"
+              className="w-14 h-14 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all shadow-lg text-3xl animate-pulse-glow"
+              style={{ filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.8))' }}
             >
-              💬
+              📯
             </button>
           </div>
         </div>
 
+        {/* Left Side Stack - Tags Preview */}
+        {user.tags && user.tags.length > 0 && (
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2 max-w-[80px]">
+            {user.tags.slice(0, 3).map((tag, idx) => (
+              <div
+                key={idx}
+                className="px-3 py-2 rounded-2xl bg-black/50 backdrop-blur-xl border border-white/10 text-white text-xs font-semibold text-center"
+              >
+                {tag}
+              </div>
+            ))}
+            {user.tags.length > 3 && (
+              <div className="px-3 py-2 rounded-2xl bg-black/50 backdrop-blur-xl border border-white/10 text-white/60 text-xs font-semibold text-center">
+                +{user.tags.length - 3}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Bottom Overlay - All Info (simplified) */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/95 via-black/70 to-transparent max-h-[50vh] overflow-y-auto custom-scrollbar">
+        <div className="absolute bottom-0 left-0 right-0 p-6 pb-20 bg-gradient-to-t from-black/95 via-black/70 to-transparent max-h-[40vh] overflow-y-auto custom-scrollbar">
           {/* Stats Row - Compact */}
           {(user.position || user.height || user.body_type || user.ethnicity) && (
             <div className="flex flex-wrap gap-2 mb-4">
@@ -248,22 +268,6 @@ export default function UserProfileModal({
             </div>
           )}
 
-          {/* Tags */}
-          {user.tags && user.tags.length > 0 && (
-            <div>
-              <p className="text-white/80 text-xs font-semibold mb-2">TAGS</p>
-              <div className="flex flex-wrap gap-2">
-                {user.tags.map((tag, idx) => (
-                  <span
-                    key={idx}
-                    className="px-3 py-1.5 bg-white/20 border border-white/30 rounded-full text-white text-sm font-semibold backdrop-blur-sm"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Photo Navigation */}
@@ -328,6 +332,21 @@ export default function UserProfileModal({
       />
 
       <style jsx>{`
+        @keyframes pulse-glow {
+          0%, 100% {
+            opacity: 1;
+            filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.8)) brightness(1);
+          }
+          50% {
+            opacity: 0.8;
+            filter: drop-shadow(0 0 16px rgba(34, 211, 238, 1)) brightness(1.3);
+          }
+        }
+        
+        :global(.animate-pulse-glow) {
+          animation: pulse-glow 2s ease-in-out infinite;
+        }
+        
         .custom-scrollbar::-webkit-scrollbar {
           width: 4px;
         }
