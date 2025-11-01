@@ -8,6 +8,7 @@ import { useSocket } from '../../hooks/useSocket'
 import { useNotifications } from '../../hooks/useNotifications'
 import { MessagesLoadingSkeleton } from '../../components/LoadingSkeleton'
 import LazyWrapper, { LazyVideoCall, LazyFileUpload, LazyBlazeAI } from '../../components/LazyWrapper'
+import BottomNav from '../../components/BottomNav'
 
 interface Profile {
   display_name: string
@@ -607,7 +608,7 @@ function MessagesPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-black pb-20">
       {/* Header */}
       <div className="fixed top-0 w-full bg-black/95 backdrop-blur-xl border-b border-white/10 p-4 z-50">
         <div className="flex items-center justify-between">
@@ -815,6 +816,9 @@ function MessagesPageContent() {
           }}
         />
       </Suspense>
+      
+      {/* Bottom Navigation */}
+      <BottomNav />
     </div>
   )
 }

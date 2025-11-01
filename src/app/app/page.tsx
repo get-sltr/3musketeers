@@ -14,6 +14,7 @@ import BlazeAIButton from '../../components/BlazeAIButton'
 import UserProfileCard from '../components/UserProfileCard'
 import MapControls from '../components/MapControls'
 import MessagingModal from '../../components/MessagingModal'
+import BottomNav from '../../components/BottomNav'
 import '../../styles/mobile-optimization.css'
 
 type ViewMode = 'grid' | 'map'
@@ -308,7 +309,7 @@ export default function AppPage() {
 
   return (
     <MobileLayout>
-      <div className="min-h-screen bg-[#0a0a0f]">
+      <div className="min-h-screen bg-[#0a0a0f] pb-20">
         {/* Animated Header with transparency */}
         <AnimatedHeader 
           viewMode={viewMode} 
@@ -413,6 +414,9 @@ export default function AppPage() {
 
       {/* Blaze AI Assistant Button */}
       <BlazeAIButton />
+      
+      {/* Bottom Navigation */}
+      <BottomNav />
       </div>
     </MobileLayout>
   )
