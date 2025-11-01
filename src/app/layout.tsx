@@ -11,6 +11,18 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "SLTR",
   description: "Rules Don't Apply",
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
+  themeColor: '#000000',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'SLTR',
+  },
 };
 
 export default function RootLayout({
@@ -20,7 +32,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="antialiased font-sans">{children}</body>
+      <head>
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      </head>
+      <body className="antialiased font-sans touch-pan-y overscroll-none">{children}</body>
     </html>
   );
 }

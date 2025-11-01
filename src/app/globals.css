@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import '../styles/mobile-first.css';
+
 @layer components {
   .glass-bubble {
     @apply bg-transparent border-0 rounded-xl transition-all duration-300 text-sm font-bold;
