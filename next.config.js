@@ -26,6 +26,14 @@ const nextConfig = {
         tls: false,
       }
     }
+
+    // Silence known noisy warnings from OTEL/Prisma/Sentry server instrumentation
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings || []),
+      { module: /@prisma[\\/\\-]instrumentation[\\/].*instrumentation\.js/, message: /Critical dependency/ },
+      { module: /require-in-the-middle/, message: /Critical dependency/ },
+      { module: /@opentelemetry[\\/\\-]instrumentation/, message: /Critical dependency/ },
+    ]
     
     // Explicitly configure path aliases for webpack
     config.resolve.alias = {

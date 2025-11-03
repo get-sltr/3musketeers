@@ -1,12 +1,67 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { useSocket } from '@/hooks/useSocket'
 
 export default function BottomNav() {
   const pathname = usePathname()
+  // Ensure real-time connection is active app-wide
+  useSocket()
   const router = useRouter()
   const [unreadCount, setUnreadCount] = useState(0)
+  const pollingRef = useRef<NodeJS.Timeout | null>(null)
+  const supabase = createClient()
+  const audioCtxRef = useRef<AudioContext | null>(null)
+  const [notifySound, setNotifySound] = useState(true)
+  const [notifyVibrate, setNotifyVibrate] = useState(true)
+
+  // Load notification preferences
+  useEffect(() => {
+    try {
+      const s = localStorage.getItem('sltr_notify_sound')
+      const v = localStorage.getItem('sltr_notify_vibrate')
+      if (s !== null) setNotifySound(s === '1')
+      if (v !== null) setNotifyVibrate(v === '1')
+    } catch {}
+
+    const onSettings = () => {
+      try {
+        const s = localStorage.getItem('sltr_notify_sound')
+        const v = localStorage.getItem('sltr_notify_vibrate')
+        if (s !== null) setNotifySound(s === '1')
+        if (v !== null) setNotifyVibrate(v === '1')
+      } catch {}
+    }
+    window.addEventListener('sltr_settings_changed', onSettings as any)
+    window.addEventListener('storage', onSettings)
+    return () => {
+      window.removeEventListener('sltr_settings_changed', onSettings as any)
+      window.removeEventListener('storage', onSettings)
+    }
+  }, [])
+
+  const playPing = useCallback(() => {
+    try {
+      const AudioCtx: any = (window as any).AudioContext || (window as any).webkitAudioContext
+      if (!AudioCtx) return
+      if (!audioCtxRef.current) audioCtxRef.current = new AudioCtx()
+      const ctx = audioCtxRef.current!
+      if (ctx.state === 'suspended') ctx.resume()
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.type = 'sine'
+      osc.frequency.value = 1100
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime)
+      gain.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 0.01)
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.2)
+      osc.start()
+      osc.stop(ctx.currentTime + 0.21)
+    } catch {}
+  }, [])
 
   // Determine active tab based on pathname
   const activeTab = pathname === '/messages' ? 'messages' 
@@ -14,10 +69,69 @@ export default function BottomNav() {
     : pathname === '/groups' ? 'groups'
     : 'map'
 
-  // TODO: Fetch unread message count from Supabase
+  // Fetch unread count
   useEffect(() => {
-    // Will implement real-time unread count later
-  }, [])
+    let cancelled = false
+
+    const loadUnread = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          setUnreadCount(0)
+          return
+        }
+        const { count } = await supabase
+          .from('messages')
+          .select('id', { count: 'exact', head: true })
+          .eq('receiver_id', user.id)
+          .eq('read', false)
+        if (!cancelled) setUnreadCount(count || 0)
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    loadUnread()
+
+    // Poll while tab visible (fallback when socket not mounted)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        if (!pollingRef.current) {
+          pollingRef.current = setInterval(loadUnread, 10000)
+        }
+      } else if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
+      }
+    }
+
+    handleVisibility()
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    // Listen for real-time events dispatched by useSocket (if mounted elsewhere)
+    const onNewMessage = () => {
+      // Vibrate + ping on new message (respect settings)
+      if (notifyVibrate && 'vibrate' in navigator) {
+        try { (navigator as any).vibrate([80, 40, 80]) } catch {}
+      }
+      if (notifySound) playPing()
+      loadUnread()
+    }
+    const onMessageRead = loadUnread
+
+    window.addEventListener('new_message', onNewMessage as any)
+    window.addEventListener('message_read', onMessageRead as any)
+
+    return () => {
+      cancelled = true
+      document.removeEventListener('visibilitychange', handleVisibility)
+      if (pollingRef.current) clearInterval(pollingRef.current)
+      window.removeEventListener('new_message', onNewMessage as any)
+      window.removeEventListener('message_read', onMessageRead as any)
+      try { audioCtxRef.current?.close() } catch {}
+      audioCtxRef.current = null
+    }
+  }, [supabase, playPing])
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-cyan-500/20 bg-black/90 backdrop-blur-xl safe-area-bottom">
@@ -46,9 +160,14 @@ export default function BottomNav() {
               />
             </svg>
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
+              <>
+                {/* Blinking ring */}
+                <span className="absolute -top-1 -right-1 inline-flex h-4 w-4 rounded-full bg-red-500 opacity-75 animate-ping" />
+                {/* Count badge */}
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] leading-none rounded-full min-w-4 h-4 px-1 flex items-center justify-center font-bold shadow-lg">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              </>
             )}
           </div>
           <span className="text-xs mt-1 font-medium">Messages</span>
@@ -107,7 +226,7 @@ export default function BottomNav() {
               strokeLinejoin="round" 
               strokeWidth={2} 
               d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" 
-            />
+          />
           </svg>
           <span className="text-xs mt-1 font-medium">Groups</span>
           {activeTab === 'groups' && (

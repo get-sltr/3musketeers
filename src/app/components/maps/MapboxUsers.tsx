@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { getCurrentUserLocation } from '@/app/lib/maps/mapboxUtils'
+import { useSocket } from '@/hooks/useSocket'
+import Supercluster from 'supercluster'
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
 
@@ -34,6 +36,31 @@ interface MapboxUsersProps {
   zoom?: number
   minZoom?: number
   maxZoom?: number
+  incognito?: boolean
+  cluster?: boolean
+  styleId?: string
+  clusterRadius?: number
+  vanillaMode?: boolean
+}
+
+function hashPair(id: string): [number, number] {
+  let h1 = 0, h2 = 0
+  for (let i = 0; i < id.length; i++) {
+    h1 = (h1 * 31 + id.charCodeAt(i)) >>> 0
+    h2 = (h2 * 17 + id.charCodeAt(i)) >>> 0
+  }
+  // map to [-1,1]
+  const n1 = (h1 / 0xffffffff) * 2 - 1
+  const n2 = (h2 / 0xffffffff) * 2 - 1
+  return [n1, n2]
+}
+
+function jitter(lng: number, lat: number, meters: number, id: string): [number, number] {
+  if (!meters) return [lng, lat]
+  const [nx, ny] = hashPair(id)
+  const dLat = (meters / 111111) * ny
+  const dLng = (meters / (111111 * Math.cos((lat * Math.PI) / 180))) * nx
+  return [lng + dLng, lat + dLat]
 }
 
 export default function MapboxUsers({
@@ -44,10 +71,23 @@ export default function MapboxUsers({
   zoom = 12,
   minZoom = 2,
   maxZoom = 18,
-}: MapboxUsersProps) {
+  incognito = false,
+  cluster = true,
+  styleId = 'dark-v11',
+  clusterRadius = 60,
+  jitterMeters = 0,
+  vanillaMode = false,
+}: MapboxUsersProps & { jitterMeters?: number }) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const markersRef = useRef<mapboxgl.Marker[]>([])
+  const markerIndexRef = useRef<Record<string, mapboxgl.Marker>>({})
+  const [mapLoaded, setMapLoaded] = useState(false)
+  const { isConnected, joinConversation, leaveConversation, updateLocation } = useSocket() as any
+
+  // Clustering state
+  const clusterIndexRef = useRef<any | null>(null)
+  const pointsRef = useRef<any[]>([])
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -67,7 +107,7 @@ export default function MapboxUsers({
     initialCenterPromise.then((resolvedCenter) => {
       mapRef.current = new mapboxgl.Map({
         container: containerRef.current as HTMLDivElement,
-        style: 'mapbox://styles/mapbox/dark-v11',
+        style: `mapbox://styles/mapbox/${styleId}`,
         center: resolvedCenter,
         zoom,
         minZoom,
@@ -93,6 +133,11 @@ export default function MapboxUsers({
           onMapClick(e.lngLat.lng, e.lngLat.lat)
         })
       }
+      
+      // Wait for map to fully load before allowing markers
+      mapRef.current.on('load', () => {
+        setMapLoaded(true)
+      })
     })
 
     return () => {
@@ -104,31 +149,135 @@ export default function MapboxUsers({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // When users change, update markers
+  // Build cluster index and update markers when users or map are ready
   useEffect(() => {
-    if (!mapRef.current) return
-    
-    // Clear existing markers
-    markersRef.current.forEach(marker => marker.remove())
-    markersRef.current = []
-    
-    // Add new markers
-    users.forEach((u) => addMarker(u))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [users])
+    console.log('🗺️ Map loaded:', mapLoaded, 'Users:', users.length)
+    if (!mapRef.current || !mapLoaded) {
+      console.warn('⚠️ Skipping markers - map not ready or not loaded')
+      return
+    }
 
-  // Re-center map when center prop changes
-  useEffect(() => {
-    if (!mapRef.current || !center) return
-    mapRef.current.flyTo({
-      center: center,
-      zoom: 14,
-      duration: 1500
+    // Filter out current user's pin if incognito
+    const visibleUsers = users.filter(u => !(u.isCurrentUser && incognito))
+
+    // Prepare points for clustering
+    pointsRef.current = visibleUsers.map(u => {
+      const [jlng, jlat] = jitter(u.longitude, u.latitude, jitterMeters, u.id)
+      return ({
+        type: 'Feature',
+        properties: { userId: u.id, isUser: true },
+        geometry: { type: 'Point', coordinates: [jlng, jlat] }
+      })
     })
-  }, [center])
 
-  const addMarker = (u: UserPin) => {
-    if (!mapRef.current) return
+    if (cluster) {
+      clusterIndexRef.current = new (Supercluster as any)({ radius: clusterRadius, maxZoom: 18 })
+        .load(pointsRef.current)
+    } else {
+      clusterIndexRef.current = null
+    }
+
+    const update = () => {
+      // Clear existing markers
+      markersRef.current.forEach(marker => marker.remove())
+      markersRef.current = []
+      markerIndexRef.current = {}
+
+      if (!cluster || !clusterIndexRef.current) {
+        visibleUsers.forEach((u) => {
+          if (typeof u.latitude !== 'number' || typeof u.longitude !== 'number') return
+          const j = jitter(u.longitude, u.latitude, jitterMeters, u.id)
+          const marker = addMarker({ ...u, longitude: j[0], latitude: j[1], vanillaMode })
+          if (marker) markerIndexRef.current[u.id] = marker
+        })
+        return
+      }
+
+      const bounds = mapRef.current!.getBounds()
+      const zoom = Math.round(mapRef.current!.getZoom())
+      const clusters = clusterIndexRef.current.getClusters(
+        [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()],
+        zoom
+      )
+
+      clusters.forEach((feature: any) => {
+        const [lng, lat] = feature.geometry.coordinates
+        if (feature.properties.cluster) {
+          // Render cluster marker
+          const count = feature.properties.point_count
+          const clusterId = feature.properties.cluster_id
+          const clusterMarker = addClusterMarker(lng, lat, count, () => {
+            const expansionZoom = Math.min(
+              clusterIndexRef.current.getClusterExpansionZoom(clusterId),
+              18
+            )
+            mapRef.current!.easeTo({ center: [lng, lat], zoom: expansionZoom })
+          })
+          if (clusterMarker) markersRef.current.push(clusterMarker)
+        } else {
+          const userId = feature.properties.userId as string
+          const u = visibleUsers.find(x => x.id === userId)
+          if (u) {
+            const [jlng, jlat] = jitter(u.longitude, u.latitude, jitterMeters, u.id)
+            const marker = addMarker({ ...u, longitude: jlng, latitude: jlat, vanillaMode })
+            if (marker) markerIndexRef.current[userId] = marker
+          }
+        }
+      })
+    }
+
+    update()
+
+    const onMoveEnd = () => update()
+    mapRef.current.on('moveend', onMoveEnd)
+
+    return () => {
+      mapRef.current?.off('moveend', onMoveEnd)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [users, mapLoaded, incognito, cluster])
+
+  // Re-center map when center prop changes OR when first user loads
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return
+    
+    // If center prop is provided, use it
+    if (center) {
+      console.log('🎯 Flying to center:', center)
+      mapRef.current.flyTo({
+        center: center,
+        zoom: 14,
+        duration: 1500
+      })
+      return
+    }
+    
+    // Otherwise, if we have users and no center has been set yet, center on first user
+    if (users.length > 0 && markersRef.current.length === 0) {
+      const firstUser = users[0]
+      if (firstUser) {
+        console.log('🎯 Auto-centering on first user:', firstUser.display_name, [firstUser.longitude, firstUser.latitude])
+        mapRef.current.flyTo({
+          center: [firstUser.longitude, firstUser.latitude],
+          zoom: 14,
+          duration: 1500
+        })
+      }
+    }
+  }, [center, users, mapLoaded])
+
+  // Update style when styleId changes
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return
+    try {
+      const newStyle = `mapbox://styles/mapbox/${styleId}`
+      if ((mapRef.current as any).getStyle?.().sprite?.includes(styleId)) return
+      mapRef.current.setStyle(newStyle)
+    } catch {}
+  }, [styleId, mapLoaded])
+
+  const addMarker = (u: UserPin & { vanillaMode?: boolean }) => {
+    if (!mapRef.current) return null
     
     // Create container
     const container = document.createElement('div')
@@ -146,6 +295,7 @@ export default function MapboxUsers({
     img.style.borderRadius = '50%'
     img.style.objectFit = 'cover'
     img.style.display = 'block'
+    img.style.filter = u.vanillaMode ? 'blur(12px) brightness(0.7)' : ''
     
     // Neon glow border style
     if (u.isCurrentUser) {
@@ -200,15 +350,113 @@ export default function MapboxUsers({
     const marker = new mapboxgl.Marker(container)
       .setLngLat([u.longitude, u.latitude])
       .setPopup(
-        new mapboxgl.Popup({ offset: 12 }).setText(
-          u.display_name ? u.display_name : 'User'
-        )
+        new mapboxgl.Popup({ offset: 12 }).setDOMContent((() => {
+          const wrap = document.createElement('div')
+          wrap.className = 'p-2 min-w-[180px]'
+          const imgEl = document.createElement('img')
+          imgEl.src = u.photo || ''
+          imgEl.className = 'w-12 h-12 rounded-full object-cover mb-2'
+          imgEl.style.filter = u.vanillaMode ? 'blur(12px) brightness(0.7)' : ''
+          wrap.appendChild(imgEl)
+          const name = document.createElement('div')
+          name.className = 'text-sm font-semibold'
+          name.textContent = u.display_name || 'User'
+          wrap.appendChild(name)
+          return wrap
+        })())
       )
       .addTo(mapRef.current)
     
     // Track marker for cleanup
     markersRef.current.push(marker)
+    return marker
   }
+
+  const addClusterMarker = (lng: number, lat: number, count: number, onClick: () => void) => {
+    if (!mapRef.current) return null
+
+    const container = document.createElement('div')
+    container.style.width = '44px'
+    container.style.height = '44px'
+    container.style.borderRadius = '9999px'
+    container.style.background = 'radial-gradient(circle at 30% 30%, rgba(0,212,255,0.9), rgba(147,51,234,0.9))'
+    container.style.border = '3px solid rgba(255,255,255,0.9)'
+    container.style.boxShadow = '0 8px 24px rgba(0,0,0,0.4), 0 0 24px rgba(0,212,255,0.6)'
+    container.style.display = 'flex'
+    container.style.alignItems = 'center'
+    container.style.justifyContent = 'center'
+    container.style.color = 'white'
+    container.style.fontWeight = '800'
+    container.style.fontSize = '14px'
+    container.style.cursor = 'pointer'
+    container.style.backdropFilter = 'blur(6px)'
+    container.textContent = String(count)
+    container.addEventListener('click', (e) => {
+      e.stopPropagation()
+      onClick()
+    })
+
+    const marker = new mapboxgl.Marker(container)
+      .setLngLat([lng, lat])
+      .addTo(mapRef.current)
+
+    markersRef.current.push(marker)
+    return marker
+  }
+
+  // Live map session: join a shared room and stream location updates
+  useEffect(() => {
+    if (!mapLoaded || !isConnected) return
+
+    // Join a shared map session room
+    joinConversation?.('map')
+
+    // Handle incoming live location updates from other users
+    const onLocationUpdate = (e: any) => {
+      try {
+        const payload = e as any
+        const userId = (payload.userId || payload.user_id) as string
+        const lat = (payload.latitude ?? payload.lat) as number
+        const lng = (payload.longitude ?? payload.lng) as number
+        if (!userId || typeof lat !== 'number' || typeof lng !== 'number') return
+
+        const existing = markerIndexRef.current[userId]
+        const [jlng, jlat] = jitter(lng, lat, jitterMeters, userId)
+        if (existing) {
+          existing.setLngLat([jlng, jlat])
+        } else {
+          // Create a lightweight marker if user not in initial list
+          const marker = addMarker({ id: userId, latitude: jlat, longitude: jlng, vanillaMode })
+          if (marker) markerIndexRef.current[userId] = marker as mapboxgl.Marker
+        }
+      } catch (err) {
+        console.warn('Live location update handling failed', err)
+      }
+    }
+
+    window.addEventListener('user_location_update', onLocationUpdate as any)
+
+    // Start streaming the current user's location periodically
+    let watchId: number | null = null
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          if (!incognito) {
+            // Send to backend (room "map") so others receive updates
+            updateLocation?.('map', pos.coords.latitude, pos.coords.longitude)
+          }
+        },
+        () => {},
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+      )
+    }
+
+    return () => {
+      window.removeEventListener('user_location_update', onLocationUpdate as any)
+      if (watchId !== null) navigator.geolocation.clearWatch(watchId)
+      leaveConversation?.('map')
+    }
+  }, [mapLoaded, isConnected, joinConversation, leaveConversation, updateLocation, incognito])
 
   if (!MAPBOX_TOKEN) {
     return (

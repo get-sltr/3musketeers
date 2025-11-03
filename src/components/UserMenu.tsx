@@ -33,6 +33,22 @@ export default function UserMenu({ className = '' }: UserMenuProps) {
     router.push('/login')
   }
 
+  // Notification preferences (localStorage)
+  const [notifySound, setNotifySound] = useState<boolean>(() => {
+    try { return (localStorage.getItem('sltr_notify_sound') ?? '1') === '1' } catch { return true }
+  })
+  const [notifyVibrate, setNotifyVibrate] = useState<boolean>(() => {
+    try { return (localStorage.getItem('sltr_notify_vibrate') ?? '1') === '1' } catch { return true }
+  })
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('sltr_notify_sound', notifySound ? '1' : '0')
+      localStorage.setItem('sltr_notify_vibrate', notifyVibrate ? '1' : '0')
+      window.dispatchEvent(new Event('sltr_settings_changed'))
+    } catch {}
+  }, [notifySound, notifyVibrate])
+
   const menuItems = [
     {
       icon: (
@@ -91,6 +107,28 @@ export default function UserMenu({ className = '' }: UserMenuProps) {
       {/* User Menu Dropdown */}
       {showUserMenu && (
         <div className="absolute top-full left-0 mt-2 w-48 bg-black/60 backdrop-blur-2xl border border-white/20 rounded-xl overflow-hidden z-50 animate-fadeIn shadow-2xl">
+          {/* Quick Settings */}
+          <div className="px-4 py-3 border-b border-white/10">
+            <div className="flex items-center justify-between text-white text-sm mb-2">
+              <span>Sound alerts</span>
+              <label className="inline-flex items-center cursor-pointer">
+                <input type="checkbox" className="sr-only" checked={notifySound} onChange={(e) => setNotifySound(e.target.checked)} />
+                <span className="w-10 h-5 bg-white/20 rounded-full relative">
+                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-all ${notifySound ? 'translate-x-5 bg-cyan-400' : 'bg-white'}`}></span>
+                </span>
+              </label>
+            </div>
+            <div className="flex items-center justify-between text-white text-sm">
+              <span>Vibration</span>
+              <label className="inline-flex items-center cursor-pointer">
+                <input type="checkbox" className="sr-only" checked={notifyVibrate} onChange={(e) => setNotifyVibrate(e.target.checked)} />
+                <span className="w-10 h-5 bg-white/20 rounded-full relative">
+                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-all ${notifyVibrate ? 'translate-x-5 bg-cyan-400' : 'bg-white'}`}></span>
+                </span>
+              </label>
+            </div>
+          </div>
+
           {menuItems.map((item, index) => (
             <button
               key={index}

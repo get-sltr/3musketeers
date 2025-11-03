@@ -2,7 +2,7 @@
 
 **Purpose:** Track daily updates, completed work, and progress to avoid repeating tasks.
 
-**Last Updated:** Friday, October 31, 2025 at 05:23 PM
+**Last Updated:** Friday, November 1, 2025 at 05:11 AM
 
 ---
 
@@ -72,6 +72,35 @@ These files should auto-open when you open the project:
 
 ---
 
+
+### Friday, November 1, 2025
+**Session Start:** Friday, November 1, 2025 at 04:30 AM
+
+**Completed:**
+- [x] Fixed map marker issues
+  - Removed duplicate pins appearing on map
+  - Removed DTFN/party icon overlay from profile photos on map pins
+  - Fixed markers not appearing (added mapLoaded state)
+  - Added marker cleanup on component updates
+  - Files: src/app/components/maps/MapboxUsers.tsx, src/app/app/page.tsx
+  - Commit: 6c89105
+  - Deployed: Yes (pushed to main)
+- [x] Added debug logging for map and user location tracking
+- [x] Improved map centering logic
+
+**In Progress:**
+- [ ] Map auto-centering on user's actual location (geolocation permission issues)
+
+**Blocked/Issues:**
+- Browser geolocation permission blocked - preventing auto-center on real location
+- Users need to manually enable location in browser settings or use relocate button
+
+**Notes:**
+- Map markers now properly tracked in markersRef for cleanup
+- Added mapLoaded state to prevent race conditions
+- Console logging added for debugging location and marker issues
+
+---
 
 ### Friday, October 31, 2025
 **Session Start:** Friday, October 31, 2025 at 05:23 PM

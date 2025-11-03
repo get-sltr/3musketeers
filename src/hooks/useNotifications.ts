@@ -96,6 +96,10 @@ export function useNotifications() {
       },
       requireInteraction: false
     })
+    // Haptic feedback on supported devices
+    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+      try { (navigator as any).vibrate([80, 40, 80]) } catch {}
+    }
   }
 
   return {

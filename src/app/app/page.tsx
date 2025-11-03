@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import FilterBar from '../../components/FilterBar'
@@ -13,8 +13,12 @@ import GradientBackground from '../../components/GradientBackground'
 import BlazeAIButton from '../../components/BlazeAIButton'
 import UserProfileCard from '../components/UserProfileCard'
 import MapControls from '../components/MapControls'
+import MapSessionMenu from '../components/MapSessionMenu'
+import CornerButtons from '../components/CornerButtons'
 import MessagingModal from '../../components/MessagingModal'
 import BottomNav from '../../components/BottomNav'
+import PlaceModal from '../components/PlaceModal'
+import GroupModal from '../components/GroupModal'
 import '../../styles/mobile-optimization.css'
 
 type ViewMode = 'grid' | 'map'
@@ -53,6 +57,17 @@ export default function AppPage() {
   const [isRelocating, setIsRelocating] = useState(false)
   const [mapCenter, setMapCenter] = useState<[number, number] | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  // Map session UI state
+  const [radiusMiles, setRadiusMiles] = useState<number>(25)
+  const [clusterRadius, setClusterRadius] = useState<number>(60)
+  const [styleId, setStyleId] = useState<string>('dark-v11')
+  const [menuFilters, setMenuFilters] = useState({ online: false, hosting: false, looking: false })
+  const [clusterEnabled, setClusterEnabled] = useState<boolean>(true)
+  const [jitterMeters, setJitterMeters] = useState<number>(0)
+  const [vanillaMode, setVanillaMode] = useState<boolean>(false)
+  // Add/Host modals
+  const [isAddingPlace, setIsAddingPlace] = useState<boolean>(false)
+  const [isHostingGroup, setIsHostingGroup] = useState<boolean>(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -109,6 +124,13 @@ export default function AppPage() {
     checkAuth()
   }, [router])
 
+  // Listen to Location Randomizer slider
+  useEffect(() => {
+    const handler = (e: any) => setJitterMeters(e.detail as number)
+    window.addEventListener('map_randomizer_change', handler)
+    return () => window.removeEventListener('map_randomizer_change', handler)
+  }, [])
+
   const fetchUsers = async (currentUserId: string) => {
     const supabase = createClient()
     const { data, error } = await supabase
@@ -128,12 +150,20 @@ export default function AppPage() {
       isYou: user.id === currentUserId
     }))
     
+    console.log('📊 Fetched users:', usersWithYou.length)
+    const currentUser = usersWithYou.find(u => u.id === currentUserId)
+    console.log('👤 Current user location:', currentUser ? 
+      `lat: ${currentUser.latitude}, lng: ${currentUser.longitude}` : 
+      'NOT FOUND')
+    
     setUsers(usersWithYou)
     
     // Auto-set map center to current user's location
-    const currentUser = usersWithYou.find(u => u.id === currentUserId)
     if (currentUser?.latitude && currentUser?.longitude && !mapCenter) {
+      console.log('🎯 Setting map center to:', currentUser.longitude, currentUser.latitude)
       setMapCenter([currentUser.longitude, currentUser.latitude])
+    } else {
+      console.warn('⚠️ Cannot center map - missing location data')
     }
   }
 
@@ -335,25 +365,91 @@ export default function AppPage() {
         ) : (
           <div className="relative">
             <MapboxUsers 
-              users={users.map(u => ({
-                id: u.id,
-                latitude: u.latitude!,
-                longitude: u.longitude!,
-                display_name: u.isYou ? 'You' : u.display_name,
-                isCurrentUser: u.isYou,
-                photo: u.photos?.[0],
-                online: u.online,
-                dtfn: u.dtfn,
-                party_friendly: u.party_friendly
-              }))}
+              users={useMemo(() => {
+                // Apply radius + quick filters
+                const center = mapCenter
+                const inRadius = (lat?: number, lon?: number) => {
+                  if (!center || lat == null || lon == null) return true
+                  const [centerLon, centerLat] = center
+                  const R = 3959
+                  const dLat = ((lat - centerLat) * Math.PI) / 180
+                  const dLon = ((lon - centerLon) * Math.PI) / 180
+                  const a = Math.sin(dLat / 2) ** 2 + Math.cos(centerLat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) * Math.sin(dLon / 2) ** 2
+                  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+                  const dist = R * c
+                  return dist <= radiusMiles
+                }
+                return users
+                  .filter(u => inRadius(u.latitude, u.longitude))
+                  .filter(u => (menuFilters.online ? !!u.online : true))
+                  .filter(u => (menuFilters.hosting ? !!u.party_friendly : true))
+                  .filter(u => (menuFilters.looking ? !!u.dtfn : true))
+                  .map(u => ({
+                    id: u.id,
+                    latitude: u.latitude!,
+                    longitude: u.longitude!,
+                    display_name: u.isYou ? 'You' : u.display_name,
+                    isCurrentUser: u.isYou,
+                    photo: u.photos?.[0],
+                    online: u.online,
+                    dtfn: u.dtfn,
+                    party_friendly: u.party_friendly
+                  }))
+              }, [users, mapCenter, radiusMiles, menuFilters])}
               onUserClick={handleUserClick}
               onMapClick={handleMapClick}
               center={mapCenter || undefined}
               minZoom={2}
               maxZoom={18}
+              incognito={isIncognito}
+              cluster={clusterEnabled}
+              styleId={styleId}
+              clusterRadius={clusterRadius}
+              jitterMeters={jitterMeters}
+              vanillaMode={vanillaMode}
             />
-            
-            {/* Map Controls */}
+
+            {/* Map Session Menu */}
+            <MapSessionMenu
+              radiusMiles={radiusMiles}
+              setRadiusMiles={setRadiusMiles}
+              clusterRadius={clusterRadius}
+              setClusterRadius={setClusterRadius}
+              clusterEnabled={clusterEnabled}
+              setClusterEnabled={setClusterEnabled}
+              styleId={styleId}
+              setStyleId={setStyleId}
+              incognito={isIncognito}
+              onToggleIncognito={handleToggleIncognito}
+              vanillaMode={vanillaMode}
+              onToggleVanilla={setVanillaMode}
+              filters={menuFilters}
+              setFilters={setMenuFilters}
+              onCenter={handleCenterLocation}
+              onRelocate={handleMoveLocation}
+              onClear={() => {
+                setRadiusMiles(25)
+                setClusterRadius(60)
+                setStyleId('dark-v11')
+                setMenuFilters({ online: false, hosting: false, looking: false })
+                setVanillaMode(false)
+                window.dispatchEvent(new CustomEvent('map_randomizer_change', { detail: 0 }))
+              }}
+              onAddPlace={() => setIsAddingPlace(true)}
+              onHostGroup={() => setIsHostingGroup(true)}
+            />
+
+            {/* Corner Buttons */}
+            <CornerButtons
+              onToggleMenu={() => window.dispatchEvent(new Event('toggle_map_session_menu'))}
+              onToggleNight={() => setStyleId(prev => prev === 'dark-v11' ? 'streets-v12' : 'dark-v11')}
+              isNight={styleId === 'dark-v11'}
+              onCenter={handleCenterLocation}
+              onMessages={() => router.push('/messages')}
+              onGroups={() => router.push('/groups')}
+            />
+
+            {/* Map Controls (eye/incognito + relocate) */}
             <MapControls
               onCenterLocation={handleCenterLocation}
               onToggleIncognito={handleToggleIncognito}
@@ -395,6 +491,58 @@ export default function AppPage() {
           </div>
         )}
       </main>
+
+      {/* Add Place / Host Group Modals */}
+      <PlaceModal
+        isOpen={isAddingPlace}
+        onClose={() => setIsAddingPlace(false)}
+        onSave={async ({ name, type, notes }) => {
+          const supabase = createClient()
+          try {
+            const { data: { user } } = await supabase.auth.getUser()
+            const coords = mapCenter ? { latitude: mapCenter[1], longitude: mapCenter[0] } : { latitude: null, longitude: null }
+            const { data, error } = await supabase
+              .from('places')
+              .insert({
+                name,
+                type,
+                notes,
+                user_id: user?.id || null,
+                ...coords,
+                created_at: new Date().toISOString()
+              })
+              .select('id')
+              .single()
+            if (!error && data?.id) router.push(`/places/${data.id}`)
+          } catch (e) {
+            console.warn('Places table may be missing; skipping insert', e)
+          }
+        }}
+      />
+      <GroupModal
+        isOpen={isHostingGroup}
+        onClose={() => setIsHostingGroup(false)}
+        onSave={async ({ title, time, description }) => {
+          const supabase = createClient()
+          try {
+            const { data: { user } } = await supabase.auth.getUser()
+            const { data, error } = await supabase
+              .from('groups')
+              .insert({
+                title,
+                time,
+                description,
+                host_id: user?.id || null,
+                created_at: new Date().toISOString()
+              })
+              .select('id')
+              .single()
+            if (!error && data?.id) router.push(`/groups/${data.id}`)
+          } catch (e) {
+            console.warn('Groups table may be missing; skipping insert', e)
+          }
+        }}
+      />
 
       {/* User Profile Modal */}
       <UserProfileCard

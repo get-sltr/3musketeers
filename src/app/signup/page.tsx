@@ -16,6 +16,8 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
+  const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_FRONTEND_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://getsltr.com'
+
   const calculateAge = (dob: string): number => {
     const birthDate = new Date(dob)
     const today = new Date()
@@ -85,6 +87,7 @@ export default function SignupPage() {
       email,
       password,
       options: {
+        emailRedirectTo: `${BASE_URL}/auth/callback?next=/app`,
         data: { 
           username,
           age: age,
