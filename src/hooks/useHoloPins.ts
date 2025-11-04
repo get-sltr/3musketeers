@@ -48,7 +48,7 @@ export function useHoloPins(autoLoad: boolean = true) {
   }, [autoLoad, supabase])
 
   useEffect(() => {
-    // Daily settings refresh
+    // Daily settings refresh - gracefully handle missing settings table
     const now = Date.now()
     const key = 'holoPins:lastSettingsFetch'
     const last = Number(localStorage.getItem(key) || '0')
@@ -67,8 +67,14 @@ export function useHoloPins(autoLoad: boolean = true) {
             prideMonth: Number(data.pride_month || 0),
           })
           localStorage.setItem(key, String(now))
+        } else {
+          // Settings table doesn't exist or error - use defaults
+          setOptions({ partyMode: 0, prideMonth: 0 })
         }
-      } catch {}
+      } catch (err) {
+        // Settings table doesn't exist - use defaults silently
+        setOptions({ partyMode: 0, prideMonth: 0 })
+      }
     }
 
     if (shouldFetch) fetchSettings()
