@@ -49,6 +49,7 @@ interface MapboxUsersProps {
   onVideo?: (userId: string) => void
   onTap?: (userId: string) => void
   onNav?: (loc: { lat: number; lng: number }) => void
+  holoTheme?: boolean // apply neon/glass Mapbox theming (fog/sky/3D)
 }
 
 function hashPair(id: string): [number, number] {
@@ -91,6 +92,7 @@ export default function MapboxUsers({
   onTap,
   onNav,
   autoLoad = false,
+  holoTheme = true,
 }: MapboxUsersProps & { jitterMeters?: number; autoLoad?: boolean }) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
@@ -157,6 +159,10 @@ export default function MapboxUsers({
       // Wait for map to fully load before allowing markers
       mapRef.current.on('load', () => {
         setMapLoaded(true)
+        // Apply neon/glass theme
+        if (holoTheme) {
+          try { applyNeonTheme(mapRef.current!) } catch {}
+        }
         if (useAdvanced) {
           const srcUsers = autoLoad && autoPins.length ? autoPins.map(p => ({
             id: p.id,
@@ -204,7 +210,7 @@ export default function MapboxUsers({
     if (!mapRef.current || !mapLoaded) return
 
     if (useAdvanced) {
-      const pinBase: Pin[] = (autoLoad && autoPins.length
+      const basePins: Pin[] = (autoLoad && autoPins.length
         ? autoPins
         : users
           .filter(u => !(u.isCurrentUser && incognito))
@@ -220,14 +226,49 @@ export default function MapboxUsers({
             isCurrentUser: !!u.isCurrentUser,
           }))
       )
-      if (!holoLayerRef.current) return
-      holoLayerRef.current.setData(pinBase)
-      // LOD
-      const pinCount = pinBase.length
-      const zoom = mapRef.current.getZoom()
-      const lod = pinCount < 500 ? 'ULTRA' : pinCount < 1000 ? 'HIGH' : pinCount < 5000 ? 'MEDIUM' : 'LOW'
-      holoLayerRef.current.setLOD(lod as any)
-      return
+
+      // Build/refresh cluster index
+      const points = basePins.map(p => ({
+        type: 'Feature',
+        properties: { id: p.id },
+        geometry: { type: 'Point', coordinates: [p.lng, p.lat] }
+      }))
+      clusterIndexRef.current = new (Supercluster as any)({ radius: clusterRadius, maxZoom: 18 }).load(points)
+
+      const recompute = () => {
+        if (!mapRef.current || !holoLayerRef.current) return
+        const bounds = mapRef.current.getBounds()
+        const zoom = Math.round(mapRef.current.getZoom())
+        const features = clusterIndexRef.current.getClusters(
+          [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()],
+          zoom
+        )
+        const out: Pin[] = []
+        for (const f of features) {
+          const [lng, lat] = f.geometry.coordinates
+          if (f.properties.cluster) {
+            const count = f.properties.point_count as number
+            out.push({ id: `cluster_${f.properties.cluster_id}`, lng, lat, clusterSize: count, premiumTier: 0 })
+          } else {
+            const uid = f.properties.id as string
+            const p = basePins.find(x => x.id === uid)
+            if (p) out.push(p)
+          }
+        }
+        holoLayerRef.current.setData(out)
+        const pinCount = basePins.length
+        const lod = pinCount < 500 ? 'ULTRA' : pinCount < 1000 ? 'HIGH' : pinCount < 5000 ? 'MEDIUM' : 'LOW'
+        holoLayerRef.current.setLOD(lod as any)
+        // Pass global options
+        holoLayerRef.current.setOptions({ partyMode: holoOptions.partyMode, prideMonth: holoOptions.prideMonth })
+      }
+
+      recompute()
+      const onMoveEnd = () => recompute()
+      mapRef.current.on('moveend', onMoveEnd)
+      return () => {
+        mapRef.current?.off('moveend', onMoveEnd)
+      }
     }
 
     console.log('🗺️ Map loaded:', mapLoaded, 'Users:', users.length)
@@ -379,8 +420,14 @@ export default function MapboxUsers({
       const newStyle = `mapbox://styles/mapbox/${styleId}`
       if ((mapRef.current as any).getStyle?.().sprite?.includes(styleId)) return
       mapRef.current.setStyle(newStyle)
+      if (holoTheme) {
+        // Re-apply theme once the new style is ready
+        mapRef.current.once('styledata', () => {
+          try { applyNeonTheme(mapRef.current!) } catch {}
+        })
+      }
     } catch {}
-  }, [styleId, mapLoaded])
+  }, [styleId, mapLoaded, holoTheme])
 
   const addMarker = (u: UserPin & { vanillaMode?: boolean }) => {
     if (!mapRef.current) return null
@@ -620,6 +667,71 @@ export default function MapboxUsers({
       )}
     </div>
   )
+}
+
+function applyNeonTheme(map: mapboxgl.Map) {
+  // Atmosphere/fog
+  try {
+    (map as any).setFog?.({
+      range: [0.5, 10],
+      color: 'rgba(0, 10, 20, 0.6)',
+      'horizon-blend': 0.2,
+      'high-color': 'rgba(0, 212, 255, 0.2)',
+      'space-color': 'rgb(2, 4, 8)',
+      'star-intensity': 0.3,
+    })
+  } catch {}
+
+  // Light
+  try { (map as any).setLight?.({ anchor: 'viewport', color: '#0dd', intensity: 0.4 }) } catch {}
+
+  // Sky
+  if (!map.getLayer('sky')) {
+    try {
+      map.addLayer({
+        id: 'sky',
+        type: 'sky',
+        paint: {
+          'sky-type': 'atmosphere',
+          'sky-atmosphere-sun-intensity': 15,
+          'sky-atmosphere-halo-color': '#00d4ff',
+          'sky-atmosphere-color': '#02060a',
+        },
+      })
+    } catch {}
+  }
+
+  // 3D buildings
+  try {
+    const layers = map.getStyle().layers || []
+    let labelLayerId: string | undefined
+    for (const layer of layers) {
+      if (layer.type === 'symbol' && (layer.layout as any)['text-field']) { labelLayerId = layer.id; break }
+    }
+    if (!map.getLayer('3d-buildings')) {
+      map.addLayer(
+        {
+          id: '3d-buildings',
+          source: 'composite',
+          'source-layer': 'building',
+          filter: ['==', ['get', 'extrude'], 'true'],
+          type: 'fill-extrusion',
+          minzoom: 14,
+          paint: {
+            'fill-extrusion-color': '#0a2a33',
+            'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 14, 0, 16, ['get', 'height']],
+            'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 14, 0, 16, ['get', 'min_height']],
+            'fill-extrusion-opacity': 0.6,
+          },
+        },
+        labelLayerId
+      )
+    }
+  } catch {}
+
+  // Water/road accent (best-effort, may vary by style)
+  try { map.setPaintProperty('water', 'fill-color', '#05222a') } catch {}
+  try { map.setPaintProperty('road-primary', 'line-color', '#0dd') } catch {}
 }
 
 

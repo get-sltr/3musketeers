@@ -37,6 +37,13 @@ export class HoloPinsLayer {
     mat.uniforms.u_lod.value = this._lodToFloat(lod)
   }
 
+  setOptions(opts: { partyMode?: number; prideMonth?: number }) {
+    if (!this.material) return
+    const mat = this.material as any
+    if (typeof opts.partyMode === 'number') mat.uniforms.u_partyMode.value = opts.partyMode
+    if (typeof opts.prideMonth === 'number') mat.uniforms.u_prideMonth.value = opts.prideMonth
+  }
+
   onAdd(map: mapboxgl.Map, gl: WebGLRenderingContext) {
     this.map = map
     this.scene = new THREE.Scene()
@@ -54,6 +61,7 @@ attribute float instanceStatus; // 0=online,1=away,2=dtfn,3=offline
 attribute float instancePremium; // 0,1,2
 attribute float instanceBadge;   // 0 none,1 DTFN,2 NOW
 attribute float instanceSeed;    // 0..1
+attribute float instanceClusterSize; // 0 for user pin; >0 for clusters
 
 uniform mat4 u_matrix; // mapbox-provided camera * projection
 uniform float u_time;
@@ -63,6 +71,7 @@ varying float vStatus;
 varying float vPremium;
 varying float vBadge;
 varying float vSeed;
+varying float vClusterSize;
 
 void main() {
   vUv = uv;
@@ -70,9 +79,11 @@ void main() {
   vPremium = instancePremium;
   vBadge = instanceBadge;
   vSeed = instanceSeed;
+  vClusterSize = instanceClusterSize;
 
   // Billboard quad centered at instanceOffset
-  vec3 pos = position * instanceSize;
+  float clusterScale = 1.0 + clamp(log(1.0 + instanceClusterSize) / log(100.0), 0.0, 1.0) * 1.6;
+  vec3 pos = position * instanceSize * clusterScale;
   vec4 world = vec4(instanceOffset + pos, 1.0);
   gl_Position = u_matrix * world;
 }`
@@ -84,6 +95,7 @@ varying float vStatus;
 varying float vPremium;
 varying float vBadge;
 varying float vSeed;
+varying float vClusterSize;
 
 uniform float u_time;
 uniform float u_partyMode; // 0..1
@@ -119,7 +131,9 @@ void main(){
   float angle = atan(uv.y, uv.x) / 6.28318 + 0.5 + u_time*0.05;
   float hue = fract(angle + u_partyMode*0.2);
   float rim = smoothstep(0.95, 0.8, r) * (1.0 + u_prideMonth*0.5);
-  vec3 rimColor = hsv2rgb(vec3(hue, 0.8, 1.0));
+  // Cluster hue boost based on size
+  hue += clamp(log(1.0 + vClusterSize) / 8.0, 0.0, 0.25);
+  vec3 rimColor = hsv2rgb(vec3(hue, 0.8 + clamp(vClusterSize*0.01, 0.0, 0.2), 1.0));
 
   // Status coloring boost
   vec3 statusColor = vec3(0.6);
@@ -189,6 +203,7 @@ void main(){
     const premium = new Float32Array(count)
     const badge = new Float32Array(count)
     const seed = new Float32Array(count)
+    const clusterSize = new Float32Array(count)
 
     geometry.setAttribute('instanceOffset', new THREE.InstancedBufferAttribute(offsets, 3))
     geometry.setAttribute('instanceSize', new THREE.InstancedBufferAttribute(sizes, 1))
@@ -196,6 +211,7 @@ void main(){
     geometry.setAttribute('instancePremium', new THREE.InstancedBufferAttribute(premium, 1))
     geometry.setAttribute('instanceBadge', new THREE.InstancedBufferAttribute(badge, 1))
     geometry.setAttribute('instanceSeed', new THREE.InstancedBufferAttribute(seed, 1))
+    geometry.setAttribute('instanceClusterSize', new THREE.InstancedBufferAttribute(clusterSize, 1))
     geometry.instanceCount = count
 
     const mesh = new THREE.Mesh(geometry, this.material)
@@ -232,6 +248,7 @@ void main(){
     const premium: Float32Array = geom.getAttribute('instancePremium').array
     const badge: Float32Array = geom.getAttribute('instanceBadge').array
     const seed: Float32Array = geom.getAttribute('instanceSeed').array
+    const cluster: Float32Array = geom.getAttribute('instanceClusterSize').array
 
     const count = this.pins.length
     geom.instanceCount = Math.max(1, count)
@@ -251,6 +268,7 @@ void main(){
       premium[i] = p.premiumTier ?? 0
       badge[i] = this._badgeToFloat(p.badge)
       seed[i] = (i * 9301.0 + 49297.0) - Math.floor((i * 9301.0 + 49297.0))
+      cluster[i] = p.clusterSize ? Math.max(0, p.clusterSize) : 0
     }
 
     geom.getAttribute('instanceOffset').needsUpdate = true
