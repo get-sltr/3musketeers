@@ -637,12 +637,16 @@ function MessagesPageContent() {
 
   // Swipe gesture handlers
   const handleTouchStart = (e: React.TouchEvent, conversationId: string) => {
-    setTouchStart(e.targetTouches[0].clientX)
-    setTouchEnd(e.targetTouches[0].clientX)
+    if (e.targetTouches?.[0]) {
+      setTouchStart(e.targetTouches[0].clientX)
+      setTouchEnd(e.targetTouches[0].clientX)
+    }
   }
 
   const handleTouchMove = (e: React.TouchEvent, conversationId: string) => {
-    setTouchEnd(e.targetTouches[0].clientX)
+    if (e.targetTouches?.[0]) {
+      setTouchEnd(e.targetTouches[0].clientX)
+    }
   }
 
   const handleTouchEnd = (conversationId: string) => {
