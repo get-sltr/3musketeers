@@ -50,6 +50,7 @@ export default function AppPage() {
   const { isConnected } = useSocket() as any
   const [loading, setLoading] = useState(true)
   const [activeFilters, setActiveFilters] = useState<string[]>([])
+  const [selectedPositions, setSelectedPositions] = useState<string[]>([])
   const [users, setUsers] = useState<UserWithLocation[]>([])
   const [selectedUser, setSelectedUser] = useState<UserWithLocation | null>(null)
   const [showProfileModal, setShowProfileModal] = useState(false)
@@ -71,6 +72,18 @@ export default function AppPage() {
   const [isAddingPlace, setIsAddingPlace] = useState<boolean>(false)
   const [isHostingGroup, setIsHostingGroup] = useState<boolean>(false)
   const router = useRouter()
+
+  // Listen for bottom nav map button click
+  useEffect(() => {
+    const handleSwitchToMap = () => {
+      setViewMode('map')
+    }
+    
+    window.addEventListener('sltr_switch_to_map', handleSwitchToMap)
+    return () => {
+      window.removeEventListener('sltr_switch_to_map', handleSwitchToMap)
+    }
+  }, [])
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -169,9 +182,15 @@ export default function AppPage() {
     }
   }
 
-  const handleFilterChange = (filters: string[]) => {
-    setActiveFilters(filters)
-    console.log('Active filters:', filters)
+  const handleFilterChange = (filterData: { filters?: string[]; positions?: string[]; ageRange?: { min: number; max: number } }) => {
+    if (filterData.filters) {
+      setActiveFilters(filterData.filters)
+      console.log('Active filters:', filterData.filters)
+    }
+    if (filterData.positions) {
+      setSelectedPositions(filterData.positions)
+      console.log('Selected positions:', filterData.positions)
+    }
   }
 
   // Real-time presence updates: keep users[] in sync with socket events
@@ -266,43 +285,90 @@ export default function AppPage() {
   const handleFavorite = async (userId: string) => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    if (!user) {
+      console.error('User not authenticated')
+      return
+    }
 
-    // Check if already favorited
-    const { data: existing } = await supabase
-      .from('favorites')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('favorite_user_id', userId)
-      .single()
-
-    if (existing) {
-      // Remove favorite
-      const { error } = await supabase
+    try {
+      // Check if already favorited - try both column name variations
+      const { data: existing, error: checkError } = await supabase
         .from('favorites')
-        .delete()
-        .eq('id', existing.id)
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('favorite_user_id', userId)
+        .maybeSingle()
 
-      if (!error) {
-        setUsers(prev => prev.map(u => 
-          u.id === userId ? { ...u, isFavorited: false } : u
-        ))
+      // If that doesn't work, try alternative column name
+      let existingFavorite = existing
+      if (!existing && checkError) {
+        const { data: altExisting } = await supabase
+          .from('favorites')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('favorited_user_id', userId)
+          .maybeSingle()
+        existingFavorite = altExisting
       }
-    } else {
-      // Add favorite
-      const { error } = await supabase
-        .from('favorites')
-        .insert({
+
+      if (existingFavorite) {
+        // Remove favorite
+        const { error } = await supabase
+          .from('favorites')
+          .delete()
+          .eq('id', existingFavorite.id)
+
+        if (error) {
+          console.error('Error removing favorite:', error)
+          alert('Failed to remove favorite. Please try again.')
+        } else {
+          setUsers(prev => prev.map(u => 
+            u.id === userId ? { ...u, isFavorited: false } : u
+          ))
+        }
+      } else {
+        // Add favorite - try both column name variations
+        const insertData: any = {
           user_id: user.id,
-          favorite_user_id: userId,
           created_at: new Date().toISOString()
-        })
+        }
+        
+        // Try favorite_user_id first
+        insertData.favorite_user_id = userId
+        
+        const { error: insertError } = await supabase
+          .from('favorites')
+          .insert(insertData)
 
-      if (!error) {
-        setUsers(prev => prev.map(u => 
-          u.id === userId ? { ...u, isFavorited: true } : u
-        ))
+        if (insertError) {
+          // If that fails, try favorited_user_id
+          const altInsertData = {
+            user_id: user.id,
+            favorited_user_id: userId,
+            created_at: new Date().toISOString()
+          }
+          
+          const { error: altError } = await supabase
+            .from('favorites')
+            .insert(altInsertData)
+
+          if (altError) {
+            console.error('Error adding favorite:', altError)
+            alert(`Failed to add favorite: ${altError.message}. Please check if the favorites table exists.`)
+          } else {
+            setUsers(prev => prev.map(u => 
+              u.id === userId ? { ...u, isFavorited: true } : u
+            ))
+          }
+        } else {
+          setUsers(prev => prev.map(u => 
+            u.id === userId ? { ...u, isFavorited: true } : u
+          ))
+        }
       }
+    } catch (err) {
+      console.error('Error toggling favorite:', err)
+      alert('Failed to toggle favorite. Please try again.')
     }
   }
 
@@ -375,6 +441,22 @@ export default function AppPage() {
       .filter(u => (menuFilters.online ? !!u.online : true))
       .filter(u => (menuFilters.hosting ? !!u.party_friendly : true))
       .filter(u => (menuFilters.looking ? !!u.dtfn : true))
+      .filter(u => {
+        // Filter by position if positions are selected
+        if (selectedPositions.length === 0) return true
+        if (!u.position) return selectedPositions.includes('Not Specified')
+        // Handle position matching (exact match or contains)
+        const userPos = u.position
+        return selectedPositions.some((pos: string) => {
+          // Exact match
+          if (userPos === pos) return true
+          // Handle Vers/Top and Vers/Btm matching
+          if (pos === 'Vers/Top' && (userPos === 'Vers/Top' || userPos === 'Vers Top' || userPos?.includes('Vers') && userPos?.includes('Top'))) return true
+          if (pos === 'Vers/Btm' && (userPos === 'Vers/Btm' || userPos === 'Vers Bottom' || userPos?.includes('Vers') && userPos?.includes('Bottom'))) return true
+          // Case-insensitive partial match
+          return userPos?.toLowerCase().includes(pos.toLowerCase()) || pos.toLowerCase().includes(userPos?.toLowerCase() || '')
+        })
+      })
       .map(u => ({
         id: u.id,
         latitude: u.latitude!,
@@ -386,7 +468,7 @@ export default function AppPage() {
         dtfn: u.dtfn,
         party_friendly: u.party_friendly
       }))
-  }, [users, mapCenter, radiusMiles, menuFilters])
+  }, [users, mapCenter, radiusMiles, menuFilters, selectedPositions])
 
   if (loading) {
     return (

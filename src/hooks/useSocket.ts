@@ -29,23 +29,51 @@ export function useSocket(): UseSocketReturn {
   useEffect(() => {
     // Initialize socket connection
     // For local development, use DEV_BACKEND_URL, otherwise use production URL
-    const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     const backendUrl = isLocal 
       ? (process.env.NEXT_PUBLIC_DEV_BACKEND_URL || 'http://localhost:3001')
       : (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://sltr-backend.railway.app')
-    console.log('🔌 Connecting to backend:', backendUrl, '(Local:', isLocal, ')')
     
-    const socketInstance = io(backendUrl, {
+    // Ensure we're using the full URL with protocol and proper port
+    let fullBackendUrl = backendUrl.startsWith('http') ? backendUrl : `http://${backendUrl}`
+    
+    // Explicitly ensure we're not using the frontend port (3000/3001)
+    // If on localhost, force backend port 3001
+    if (isLocal && fullBackendUrl.includes('localhost')) {
+      // Replace any port with 3001 if it's the frontend port
+      fullBackendUrl = fullBackendUrl.replace(/localhost:\d+/, 'localhost:3001')
+      fullBackendUrl = fullBackendUrl.replace(/127\.0\.0\.1:\d+/, '127.0.0.1:3001')
+    }
+    
+    // Final validation - ensure we never use localhost:3000
+    if (fullBackendUrl.includes('localhost:3000') || fullBackendUrl.includes('127.0.0.1:3000')) {
+      console.warn('⚠️ Invalid backend URL detected, forcing to port 3001:', fullBackendUrl)
+      fullBackendUrl = fullBackendUrl.replace(/localhost:3000/, 'localhost:3001').replace(/127\.0\.0\.1:3000/, '127.0.0.1:3001')
+    }
+    
+    console.log('🔌 Connecting to backend:', fullBackendUrl, '(Local:', isLocal, ', Current page:', typeof window !== 'undefined' ? window.location.origin : 'N/A', ')')
+    
+    // Create socket with explicit URL - socket.io will use this URL directly
+    // Ensure we're passing a full URL, not a relative path
+    const socketInstance = io(fullBackendUrl, {
       transports: ['websocket', 'polling'],
       autoConnect: true,
       reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionAttempts: 5
+      reconnectionDelay: 2000,
+      reconnectionAttempts: 3,
+      reconnectionDelayMax: 5000,
+      timeout: 5000,
+      forceNew: true,
+      rejectUnauthorized: false,
+      path: '/socket.io/',
+      withCredentials: false,
+      upgrade: true,
+      rememberUpgrade: false
     })
 
     // Connection event handlers
     socketInstance.on('connect', () => {
-      console.log('✅ Connected to real-time backend:', backendUrl)
+      console.log('✅ Connected to real-time backend:', fullBackendUrl)
       setIsConnected(true)
     })
 
@@ -54,18 +82,26 @@ export function useSocket(): UseSocketReturn {
       setIsConnected(false)
     })
 
+    let hasLoggedError = false
     socketInstance.on('connect_error', (error) => {
-      console.error('❌ Socket connection error:', error)
+      // Only log once to reduce console spam
+      if (!hasLoggedError) {
+        console.warn('⚠️ Socket connection failed (backend may not be running):', fullBackendUrl)
+        console.log('💡 This is normal if the backend server is not running. Real-time features will be unavailable.')
+        hasLoggedError = true
+      }
       setIsConnected(false)
     })
 
     socketInstance.on('reconnect', (attemptNumber) => {
       console.log(`🔄 Reconnected after ${attemptNumber} attempts`)
+      hasLoggedError = false // Reset error flag on successful reconnect
       setIsConnected(true)
     })
 
     socketInstance.on('reconnect_error', (error) => {
-      console.error('❌ Reconnection error:', error)
+      // Silently handle reconnection errors to reduce console spam
+      setIsConnected(false)
     })
 
     setSocket(socketInstance)

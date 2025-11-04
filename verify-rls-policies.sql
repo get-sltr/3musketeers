@@ -124,3 +124,5 @@ LEFT JOIN actual_policies a ON e.table_name = a.tablename AND e.policy_name = a.
 ORDER BY e.table_name, e.cmd, e.policy_name;
 
 
+
+

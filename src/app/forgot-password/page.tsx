@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '../../lib/supabase/client'
 import Link from 'next/link'
+import { getAuthCallbackUrl } from '../../lib/utils/url'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -17,11 +18,12 @@ export default function ForgotPasswordPage() {
     setError('')
     setMessage('')
 
-    const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_FRONTEND_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://getsltr.com'
+    // Always use production URL (getsltr.com) for redirects
+    const redirectUrl = getAuthCallbackUrl('/reset-password')
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${BASE_URL}/auth/callback?next=/reset-password`,
+        redirectTo: redirectUrl,
       })
 
       if (error) throw error

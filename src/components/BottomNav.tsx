@@ -179,7 +179,19 @@ const activeTab = pathname === '/messages' ? 'messages'
 
         {/* Map Tab */}
         <button
-          onClick={() => router.push('/holo-map')}
+          onClick={() => {
+            // If on /app, toggle map view via custom event
+            if (pathname === '/app') {
+              window.dispatchEvent(new CustomEvent('sltr_switch_to_map'))
+            } else {
+              // Otherwise, route to app and show map
+              router.push('/app')
+              // Use setTimeout to ensure route completes before event
+              setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('sltr_switch_to_map'))
+              }, 100)
+            }
+          }}
           className={`flex flex-col items-center justify-center flex-1 h-full transition-all ${
             activeTab === 'map' 
               ? 'text-cyan-400' 

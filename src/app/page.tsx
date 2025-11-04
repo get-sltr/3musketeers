@@ -1,173 +1,167 @@
 'use client'
 
 import Link from 'next/link'
-import { memo } from 'react'
-
-// Static data
-const FEATURES = [
-  {
-    title: 'Instant',
-    description: 'Real-time connections. Zero lag.',
-    icon: '⚡'
-  },
-  {
-    title: 'Precise',
-    description: 'Find exactly who you\'re looking for.',
-    icon: '🎯'
-  },
-  {
-    title: 'Raw',
-    description: 'No filters. No fake profiles.',
-    icon: '🔥'
-  },
-  {
-    title: 'Fast',
-    description: 'Stop swiping. Start living.',
-    icon: '🚀'
-  }
-] as const
-
-const FeatureCard = memo(({ feature }: { feature: typeof FEATURES[number] }) => (
-  <div className="group p-10 bg-black/20 backdrop-blur-sm border border-cyan-500/20 hover:border-cyan-500/50 transition-all duration-300 hover:bg-black/30 relative overflow-hidden">
-    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-magenta-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-500/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-    <div className="relative z-10">
-      <div className="text-5xl mb-6">{feature.icon}</div>
-      <h3 className="text-2xl font-bold text-cyan-400 mb-4 uppercase tracking-wider">{feature.title}</h3>
-      <p className="text-gray-400 text-lg">{feature.description}</p>
-    </div>
-  </div>
-))
-FeatureCard.displayName = 'FeatureCard'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 export default function LandingPage() {
-  return (
-    <div className="min-h-screen bg-[#0a0a0f] relative overflow-hidden">
-      {/* Animated Cyber Grid Background */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div 
-          className="absolute inset-0 opacity-20"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255, 0, 255, 0.1) 1px, transparent 1px)
-            `,
-            backgroundSize: '40px 40px',
-            animation: 'gridMove 20s linear infinite'
-          }}
-        />
-      </div>
+  const router = useRouter()
 
-      {/* Neon Glow Orbs */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-200px] left-[-100px] w-[500px] h-[500px] bg-cyan-500/20 rounded-full blur-[120px] animate-neonPulse" />
-        <div className="absolute bottom-[-200px] right-[-100px] w-[600px] h-[600px] bg-magenta-500/20 rounded-full blur-[120px] animate-neonPulse" style={{ animationDelay: '3s' }} />
+  useEffect(() => {
+    // For localhost testing, always redirect to app
+    if (typeof window !== 'undefined') {
+      const isLocalhost = window.location.hostname === 'localhost' || 
+                         window.location.hostname === '127.0.0.1' ||
+                         window.location.hostname.includes('localhost')
+      
+      if (isLocalhost) {
+        router.replace('/app')
+        return
+      }
+    }
+
+    const checkAuth = async () => {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      // If user is logged in, redirect to app
+      if (session) {
+        router.replace('/app')
+      }
+    }
+    
+    checkAuth()
+  }, [router])
+
+  return (
+    <div className="min-h-screen bg-black relative overflow-hidden">
+      {/* Background Grid Pattern */}
+      <div 
+        className="fixed inset-0 pointer-events-none opacity-20"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(255, 0, 0, 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 0, 0, 0.1) 1px, transparent 1px)
+          `,
+          backgroundSize: '50px 50px'
+        }}
+      />
+
+      {/* Red Glow Orbs */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-200px] left-[-200px] w-[600px] h-[600px] bg-red-600 rounded-full blur-[100px] opacity-15 animate-pulse" />
+        <div className="absolute bottom-[-150px] right-[-150px] w-[500px] h-[500px] bg-red-800 rounded-full blur-[100px] opacity-15 animate-pulse" style={{ animationDelay: '3s' }} />
+        <div className="absolute top-1/2 left-1/2 w-[400px] h-[400px] bg-red-600 rounded-full blur-[100px] opacity-15 animate-pulse -translate-x-1/2 -translate-y-1/2" style={{ animationDelay: '6s' }} />
       </div>
 
       {/* Scanlines Effect */}
-      <div className="fixed inset-0 pointer-events-none opacity-30" style={{
-        backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 255, 0.03) 2px, rgba(0, 255, 255, 0.03) 4px)',
-        animation: 'scan 8s linear infinite'
-      }} />
+      <div 
+        className="fixed inset-0 pointer-events-none opacity-30"
+        style={{
+          background: `repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(0, 0, 0, 0.1) 2px,
+            rgba(0, 0, 0, 0.1) 4px
+          )`
+        }}
+      />
 
-      {/* Navigation - Logo Only */}
-      <nav className="relative z-50 p-6 backdrop-blur-sm">
-        <div className="flex justify-center items-center max-w-7xl mx-auto">
-          <div className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-magenta-500 text-6xl font-black tracking-wider">
-            SLTR
-          </div>
-        </div>
-      </nav>
+      {/* Vignette */}
+      <div className="fixed inset-0 pointer-events-none bg-gradient-radial from-transparent via-transparent to-black" />
 
-      {/* Hero Section */}
-      <section className="relative z-10 min-h-[80vh] flex items-center justify-center px-4 py-20">
-        <div className="w-full max-w-5xl mx-auto text-center">
+      {/* Main Content */}
+      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-20">
+        <div className="text-center max-w-4xl mx-auto">
           {/* Logo */}
-          <h1 className="text-[clamp(90px,16vw,200px)] font-black leading-[0.9] mb-6 text-transparent bg-clip-text bg-gradient-to-b from-cyan-400 to-magenta-500 drop-shadow-[0_0_40px_rgba(0,255,255,0.5)] animate-logoGlow" style={{ letterSpacing: '-6px' }}>
+          <h1 
+            className="text-[80px] md:text-[120px] lg:text-[180px] font-black mb-5 leading-none"
+            style={{
+              background: 'linear-gradient(180deg, #fff 0%, #ff0000 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              textTransform: 'uppercase',
+              letterSpacing: '-8px',
+              textShadow: '0 0 80px rgba(255, 0, 0, 0.5)'
+            }}
+          >
             SLTR
           </h1>
           
           {/* Tagline */}
-          <p className="text-[clamp(26px,4.5vw,48px)] font-black mb-8 text-cyan-400 uppercase tracking-[6px]" style={{
-            textShadow: '0 0 10px rgba(0,255,255,0.8), 0 0 20px rgba(0,255,255,0.6), 0 0 30px rgba(0,255,255,0.4)'
-          }}>
+          <p 
+            className="text-2xl md:text-3xl lg:text-[42px] font-black uppercase mb-8 tracking-[4px]"
+            style={{
+              color: '#ff0000',
+              textShadow: '0 0 30px rgba(255, 0, 0, 0.8)'
+            }}
+          >
             NO RULES APPLY
           </p>
 
           {/* Subtitle */}
-          <p className="text-[clamp(16px,2.5vw,22px)] text-gray-400 mb-12 max-w-2xl mx-auto leading-relaxed">
-            The future of connection. No games. No limits. Just real energy.
+          <p className="text-base md:text-lg lg:text-[22px] text-gray-400 mb-12 max-w-[600px] mx-auto leading-relaxed">
+            Raw. Direct. Unapologetic. The hookup app that doesn&apos;t play games.
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
+          <div className="flex flex-col sm:flex-row gap-5 justify-center items-center mb-16">
             <Link
               href="/signup"
-              className="px-16 py-6 bg-gradient-to-r from-cyan-500 to-magenta-500 text-black font-bold text-xl hover:scale-105 transition-transform shadow-[0_0_50px_rgba(255,0,255,0.3)]"
+              className="px-12 py-5 text-lg font-bold uppercase tracking-[2px] bg-red-600 text-black hover:bg-white hover:text-black transition-all duration-300 shadow-[0_0_40px_rgba(255,0,0,0.6)] hover:shadow-[0_0_60px_rgba(255,255,255,0.4)] hover:-translate-y-0.5"
             >
-              GET STARTED
+              Get Started
             </Link>
             <Link
               href="/login"
-              className="px-16 py-6 border-2 border-cyan-500 text-cyan-400 font-bold text-xl hover:bg-cyan-500/10 transition-all shadow-[0_0_30px_rgba(0,255,255,0.3)]"
+              className="px-12 py-5 text-lg font-bold uppercase tracking-[2px] bg-transparent text-white border-2 border-gray-700 hover:border-red-600 hover:text-red-600 transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,0,0,0.3)] hover:-translate-y-0.5"
             >
-              LOG IN
+              Log In
             </Link>
           </div>
 
-          {/* Forgot Password Link */}
-          <div className="text-center">
-            <Link 
-              href="/forgot-password"
-              className="text-gray-500 hover:text-cyan-400 transition-colors text-sm"
-            >
-              Forgot Password?
-            </Link>
+          {/* Features */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mt-12">
+            <div className="p-8 bg-red-500/5 border border-red-500/10 hover:bg-red-500/10 hover:border-red-500/30 transition-all duration-300 hover:-translate-y-1">
+              <div className="text-4xl mb-4">🔥</div>
+              <div className="text-lg font-bold mb-2 text-red-600 uppercase tracking-wide">No Filters</div>
+              <div className="text-sm text-gray-400 leading-relaxed">Say what you want. Get what you need.</div>
+            </div>
+
+            <div className="p-8 bg-red-500/5 border border-red-500/10 hover:bg-red-500/10 hover:border-red-500/30 transition-all duration-300 hover:-translate-y-1">
+              <div className="text-4xl mb-4">⚡</div>
+              <div className="text-lg font-bold mb-2 text-red-600 uppercase tracking-wide">Instant Connect</div>
+              <div className="text-sm text-gray-400 leading-relaxed">Stop swiping. Start meeting.</div>
+            </div>
+
+            <div className="p-8 bg-red-500/5 border border-red-500/10 hover:bg-red-500/10 hover:border-red-500/30 transition-all duration-300 hover:-translate-y-1">
+              <div className="text-4xl mb-4">🎯</div>
+              <div className="text-lg font-bold mb-2 text-red-600 uppercase tracking-wide">Real Proximity</div>
+              <div className="text-sm text-gray-400 leading-relaxed">See who&apos;s actually nearby.</div>
+            </div>
+
+            <div className="p-8 bg-red-500/5 border border-red-500/10 hover:bg-red-500/10 hover:border-red-500/30 transition-all duration-300 hover:-translate-y-1">
+              <div className="text-4xl mb-4">🚫</div>
+              <div className="text-lg font-bold mb-2 text-red-600 uppercase tracking-wide">Zero BS</div>
+              <div className="text-sm text-gray-400 leading-relaxed">No fake profiles. No fake promises.</div>
+            </div>
           </div>
         </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="relative z-10 py-20 px-4 bg-black/30 backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-5xl md:text-6xl font-bold text-white text-center mb-16 uppercase tracking-wider">
-            Why SLTR
-          </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {FEATURES.map((feature, index) => (
-              <FeatureCard key={index} feature={feature} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="relative z-10 py-12 px-4 border-t border-cyan-500/20">
-        <div className="max-w-6xl mx-auto text-center">
-          <p className="text-gray-500 text-sm">© 2025 SLTR. All rights reserved.</p>
-          <p className="text-gray-600 text-xs mt-2">18+ only. Be safe, be real.</p>
-        </div>
-      </footer>
+      </div>
 
       <style jsx global>{`
-        @keyframes gridMove {
-          0% { background-position: 0 0; }
-          100% { background-position: 40px 40px; }
-        }
-
-        @keyframes neonPulse {
-          0%, 100% { opacity: 0.2; transform: scale(1); }
-          50% { opacity: 0.3; transform: scale(1.1); }
-        }
-
-        @keyframes logoGlow {
-          0%, 100% { filter: brightness(1); }
-          50% { filter: brightness(1.2); }
-        }
-
-        @keyframes scan {
-          0% { transform: translateY(0); }
-          100% { transform: translateY(10px); }
+        @keyframes pulse {
+          0%, 100% { 
+            opacity: 0.15; 
+            transform: scale(1); 
+          }
+          50% { 
+            opacity: 0.25; 
+            transform: scale(1.1); 
+          }
         }
       `}</style>
     </div>

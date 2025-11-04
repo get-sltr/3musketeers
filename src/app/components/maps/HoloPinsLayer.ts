@@ -27,6 +27,7 @@ export class HoloPinsLayer {
 
   setData(pins: Pin[]) {
     this.pins = pins
+    console.log('🔄 HoloPinsLayer.setData called with', pins.length, 'pins')
     this._updateInstances()
   }
 
@@ -122,18 +123,57 @@ void main(){
   float r = length(uv);
   float mask = smoothstep(1.0, 0.9, r);
 
-  // Liquid wobble
-  float wobbleAmp = mix(0.12, 0.04, step(2.0, u_lod));
-  float wobble = (noise(uv*3.0 + vSeed*10.0 + u_time*0.8) - 0.5) * wobbleAmp;
-  float body = smoothstep(0.9+wobble, 0.2+wobble, r);
+  // Enhanced liquid morphing animation with multiple frequencies
+  float wobbleAmp = mix(0.15, 0.05, step(2.0, u_lod));
+  float wobble1 = (noise(uv*3.0 + vSeed*10.0 + u_time*0.8) - 0.5) * wobbleAmp;
+  float wobble2 = (noise(uv*5.0 + vSeed*7.0 + u_time*1.2) - 0.5) * wobbleAmp * 0.6;
+  float wobble3 = (noise(uv*7.0 + vSeed*3.0 + u_time*0.5) - 0.5) * wobbleAmp * 0.3;
+  float wobble = wobble1 + wobble2 + wobble3;
+  
+  // Morphing liquid shape with smooth transitions
+  float morph = smoothstep(0.88+wobble, 0.2+wobble, r);
+  float body = morph * (1.0 + sin(u_time*2.0 + vSeed*10.0) * 0.05);
 
-  // Holographic rim
-  float angle = atan(uv.y, uv.x) / 6.28318 + 0.5 + u_time*0.05;
-  float hue = fract(angle + u_partyMode*0.2);
-  float rim = smoothstep(0.95, 0.8, r) * (1.0 + u_prideMonth*0.5);
+  // Spinning rainbow holographic border with enhanced rotation
+  float angle = atan(uv.y, uv.x) / 6.28318 + 0.5 + u_time*0.15; // Faster spin
+  float hue = fract(angle + u_partyMode*0.2 + u_prideMonth*0.3);
+  float rim = smoothstep(0.98, 0.75, r) * (1.0 + u_prideMonth*0.5);
+  
+  // Enhanced rainbow effect with multiple bands
+  float rim2 = smoothstep(0.95, 0.85, r) * 0.6;
+  float rim3 = smoothstep(0.92, 0.82, r) * 0.4;
+  
   // Cluster hue boost based on size
   hue += clamp(log(1.0 + vClusterSize) / 8.0, 0.0, 0.25);
-  vec3 rimColor = hsv2rgb(vec3(hue, 0.8 + clamp(vClusterSize*0.01, 0.0, 0.2), 1.0));
+  vec3 rimColor = hsv2rgb(vec3(hue, 0.9 + clamp(vClusterSize*0.01, 0.0, 0.1), 1.0));
+  vec3 rimColor2 = hsv2rgb(vec3(hue + 0.1, 0.85, 1.0));
+  vec3 rimColor3 = hsv2rgb(vec3(hue + 0.2, 0.8, 1.0));
+
+  // Status dots (green/orange/red) - rendered as small dots at top
+  vec3 statusDotColor = vec3(0.0);
+  float statusDot = 0.0;
+  if (vStatus < 0.5) {
+    // Online - green
+    statusDotColor = vec3(0.0, 1.0, 0.4);
+    float dotPos = length(uv - vec2(0.0, 0.7));
+    statusDot = smoothstep(0.12, 0.08, dotPos) * smoothstep(0.06, 0.08, dotPos);
+  } else if (vStatus < 1.5) {
+    // Away - orange
+    statusDotColor = vec3(1.0, 0.5, 0.0);
+    float dotPos = length(uv - vec2(0.0, 0.7));
+    statusDot = smoothstep(0.12, 0.08, dotPos) * smoothstep(0.06, 0.08, dotPos);
+  } else if (vStatus < 2.5) {
+    // DTFN - red pulsing
+    statusDotColor = vec3(1.0, 0.1, 0.1);
+    float dotPos = length(uv - vec2(0.0, 0.7));
+    float pulse = sin(u_time * 6.0) * 0.5 + 0.5;
+    statusDot = smoothstep(0.12, 0.08, dotPos) * smoothstep(0.06, 0.08, dotPos) * (1.0 + pulse * 0.5);
+  } else {
+    // Offline - gray
+    statusDotColor = vec3(0.4, 0.4, 0.4);
+    float dotPos = length(uv - vec2(0.0, 0.7));
+    statusDot = smoothstep(0.12, 0.08, dotPos) * smoothstep(0.06, 0.08, dotPos) * 0.5;
+  }
 
   // Status coloring boost
   vec3 statusColor = vec3(0.6);
@@ -142,36 +182,57 @@ void main(){
   else if (vStatus < 2.5) statusColor = vec3(1.0, 0.1, 0.1);  // dtfn
   else statusColor = vec3(0.3, 0.5, 0.7);                     // offline
 
-  float rimGlow = rim;
+  float rimGlow = rim + rim2 * 0.6 + rim3 * 0.4;
 
   // DTFN urgency pulse
   if (vStatus > 1.5 && vStatus < 2.5) {
     float urgency = sin(u_time * 8.0) * 0.5 + 0.5;
-    rimGlow *= mix(1.0, 3.0, urgency);
-    rimColor = mix(rimColor, vec3(1.0, 0.0, 0.0), urgency);
+    rimGlow *= mix(1.0, 3.5, urgency);
+    rimColor = mix(rimColor, vec3(1.0, 0.0, 0.0), urgency * 0.7);
   }
 
-  // Base glass color
+  // Base glass color with enhanced glassmorphism
   vec3 glass = mix(vec3(0.08,0.1,0.12), statusColor*0.25, 0.3);
-  vec3 color = glass * body + rimColor * rimGlow;
+  vec3 glassInner = mix(glass, vec3(0.15, 0.18, 0.22), 0.4);
+  float glassFresnel = smoothstep(0.7, 0.3, r);
+  vec3 color = mix(glassInner, glass, glassFresnel) * body + rimColor * rimGlow + rimColor2 * rim2 + rimColor3 * rim3;
 
-  // Premium/founder sparkles
+  // Premium/founder golden effects with enhanced sparkles
   if (vPremium > 0.5 && u_lod < 2.5) {
     float tw = step(0.995, noise(uv*18.0 + u_time*1.5 + vSeed*5.0));
+    float tw2 = step(0.99, noise(uv*25.0 + u_time*2.0 + vSeed*3.0)) * 0.6;
     vec3 gold = vec3(1.0, 0.843, 0.0);
-    color += gold * tw * (vPremium > 1.5 ? 2.0 : 1.0);
+    vec3 goldGlow = vec3(1.0, 0.9, 0.5);
+    color += gold * tw * (vPremium > 1.5 ? 2.5 : 1.5);
+    color += goldGlow * tw2 * (vPremium > 1.5 ? 1.5 : 1.0);
+    
+    // Golden border for premium users
+    float goldRim = smoothstep(0.96, 0.92, r);
+    color += goldGlow * goldRim * (vPremium > 1.5 ? 1.2 : 0.8);
   }
 
-  // Badge underlay hint (simple strip)
-  if (vBadge > 0.5 && uv.y < -0.6 && abs(uv.x) < 0.6) {
-    float bmask = smoothstep(0.08, 0.0, abs(uv.y + 0.8));
+  // DTFN/NOW badges below pins (rendered at bottom)
+  if (vBadge > 0.5 && uv.y < -0.75 && abs(uv.x) < 0.5) {
+    float bmask = smoothstep(0.15, 0.0, abs(uv.y + 0.85));
+    float bmask2 = smoothstep(0.12, 0.0, abs(uv.x));
+    float badgeMask = bmask * bmask2;
     float bhue = vBadge < 1.5 ? 0.0 : 0.55; // DTFN red, NOW teal
-    color += hsv2rgb(vec3(bhue, 0.7, 1.0)) * bmask * 0.6;
+    vec3 badgeColor = hsv2rgb(vec3(bhue, 0.8, 1.0));
+    float badgeGlow = sin(u_time * 4.0 + vSeed * 5.0) * 0.3 + 0.7;
+    color += badgeColor * badgeMask * 0.8 * badgeGlow;
+    
+    // Badge text glow
+    if (abs(uv.x) < 0.3 && abs(uv.y + 0.85) < 0.05) {
+      color += badgeColor * 1.5 * badgeGlow;
+    }
   }
+
+  // Add status dot
+  color += statusDotColor * statusDot;
 
   color *= mask;
   if (mask < 0.01) discard;
-  gl_FragColor = vec4(color, 0.9);
+  gl_FragColor = vec4(color, 0.92 + vPremium * 0.08); // Slightly more opaque for premium
 }`
 
     this.material = new THREE.RawShaderMaterial({
@@ -228,6 +289,8 @@ void main(){
   }
 
   render(gl: WebGLRenderingContext, matrix: number[]) {
+    if (this.pins.length === 0) return // Skip rendering if no pins
+    
     const m = new THREE.Matrix4().fromArray(matrix)
     const mat = this.material as any
     mat.uniforms.u_matrix.value = m

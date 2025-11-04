@@ -130,7 +130,20 @@ export default function GridView({ onUserClick, activeFilters = { filters: [], a
     }
 
     if (filters.includes('position') && positions.length > 0) {
-      filtered = filtered.filter(user => user.position && positions.includes(user.position))
+      filtered = filtered.filter(user => {
+        if (!user.position) return positions.includes('Not Specified')
+        // Handle position matching (exact match or contains)
+        const userPos = user.position
+        return positions.some((pos: string) => {
+          // Exact match
+          if (userPos === pos) return true
+          // Handle Vers/Top and Vers/Btm matching
+          if (pos === 'Vers/Top' && (userPos === 'Vers/Top' || userPos === 'Vers Top' || (userPos?.includes('Vers') && userPos?.includes('Top')))) return true
+          if (pos === 'Vers/Btm' && (userPos === 'Vers/Btm' || userPos === 'Vers Bottom' || (userPos?.includes('Vers') && userPos?.includes('Bottom')))) return true
+          // Case-insensitive partial match
+          return userPos?.toLowerCase().includes(pos.toLowerCase()) || pos.toLowerCase().includes(userPos?.toLowerCase() || '')
+        })
+      })
     }
 
     setFilteredUsers(filtered)
@@ -177,26 +190,87 @@ export default function GridView({ onUserClick, activeFilters = { filters: [], a
   const handleToggleFavorite = async (userId: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) {
+        console.error('User not authenticated')
+        return
+      }
 
-      const { error } = await supabase
+      // Check if already favorited
+      const { data: existing } = await supabase
         .from('favorites')
-        .upsert({
-          user_id: user.id,
-          favorite_user_id: userId,
-          created_at: new Date().toISOString()
-        })
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('favorite_user_id', userId)
+        .maybeSingle()
 
-      if (error) {
-        console.error('Error toggling favorite:', error)
+      // If that doesn't work, try alternative column name
+      let existingFavorite = existing
+      if (!existing) {
+        const { data: altExisting } = await supabase
+          .from('favorites')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('favorited_user_id', userId)
+          .maybeSingle()
+        existingFavorite = altExisting
+      }
+
+      if (existingFavorite) {
+        // Remove favorite
+        const { error } = await supabase
+          .from('favorites')
+          .delete()
+          .eq('id', existingFavorite.id)
+
+        if (error) {
+          console.error('Error removing favorite:', error)
+          alert('Failed to remove favorite. Please try again.')
+        } else {
+          setUsers(prev => prev.map(u => 
+            u.id === userId ? { ...u, isFavorited: false } : u
+          ))
+        }
       } else {
-        // Update local state
-        setUsers(prev => prev.map(u => 
-          u.id === userId ? { ...u, isFavorited: !u.isFavorited } : u
-        ))
+        // Add favorite - try both column name variations
+        const insertData: any = {
+          user_id: user.id,
+          created_at: new Date().toISOString(),
+          favorite_user_id: userId
+        }
+        
+        const { error: insertError } = await supabase
+          .from('favorites')
+          .insert(insertData)
+
+        if (insertError) {
+          // If that fails, try favorited_user_id
+          const altInsertData = {
+            user_id: user.id,
+            favorited_user_id: userId,
+            created_at: new Date().toISOString()
+          }
+          
+          const { error: altError } = await supabase
+            .from('favorites')
+            .insert(altInsertData)
+
+          if (altError) {
+            console.error('Error adding favorite:', altError)
+            alert(`Failed to add favorite: ${altError.message}. Please check if the favorites table exists.`)
+          } else {
+            setUsers(prev => prev.map(u => 
+              u.id === userId ? { ...u, isFavorited: true } : u
+            ))
+          }
+        } else {
+          setUsers(prev => prev.map(u => 
+            u.id === userId ? { ...u, isFavorited: true } : u
+          ))
+        }
       }
     } catch (err) {
       console.error('Error toggling favorite:', err)
+      alert('Failed to toggle favorite. Please try again.')
     }
   }
 

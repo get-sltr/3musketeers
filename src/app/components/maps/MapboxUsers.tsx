@@ -86,7 +86,7 @@ export default function MapboxUsers({
   clusterRadius = 60,
   jitterMeters = 0,
   vanillaMode = false,
-  advancedPins = false,
+  advancedPins = true,
   onChat,
   onVideo,
   onTap,
@@ -102,9 +102,9 @@ export default function MapboxUsers({
   const { isConnected, joinConversation, leaveConversation, updateLocation } = useSocket() as any
   const { pins: autoPins, options: holoOptions } = useHoloPins(advancedPins && autoLoad)
 
-  // Holo layer state
+  // Holo layer state - always active when WebGL is supported
   const holoLayerRef = useRef<HoloPinsLayer | null>(null)
-  const useAdvanced = advancedPins && (mapboxgl as any).supported?.({ failIfMajorPerformanceCaveat: true })
+  const useAdvanced = (mapboxgl as any).supported?.({ failIfMajorPerformanceCaveat: true }) ?? false
   const [hovered, setHovered] = useState<{ user: UserPin; pt: { x: number; y: number } } | null>(null)
 
   // Clustering state
@@ -163,35 +163,57 @@ export default function MapboxUsers({
         if (holoTheme) {
           try { applyNeonTheme(mapRef.current!) } catch {}
         }
+        // Always try to use advanced HoloPinsLayer when WebGL is supported
         if (useAdvanced) {
-          const srcUsers = autoLoad && autoPins.length ? autoPins.map(p => ({
-            id: p.id,
-            lng: p.lng,
-            lat: p.lat,
-            name: p.name,
-            photo: p.photo,
-            status: p.status,
-            badge: p.badge,
-            premiumTier: p.premiumTier,
-            isCurrentUser: false,
-          })) : users.map(u => ({
-            id: u.id,
-            lng: u.longitude,
-            lat: u.latitude,
-            name: u.display_name,
-            photo: u.photo,
-            status: u.online ? 'online' : 'offline',
-            badge: u.dtfn ? 'DTFN' : null,
-            premiumTier: u.party_friendly ? 1 : 0,
-            isCurrentUser: !!u.isCurrentUser,
-          }))
-          const layer = new HoloPinsLayer(srcUsers as any)
+          // Check if layer already exists, remove it first
+          try {
+            if (mapRef.current!.getLayer('holo-pins-layer')) {
+              mapRef.current!.removeLayer('holo-pins-layer')
+              mapRef.current!.removeSource('holo-pins-layer')
+            }
+          } catch (e) {
+            // Layer doesn't exist yet, that's fine
+          }
+          
+          // Initialize layer with empty array first, will be updated when users arrive
+          const layer = new HoloPinsLayer([])
           try {
             mapRef.current!.addLayer(layer as any)
             holoLayerRef.current = layer
+            console.log('✅ HoloPinsLayer initialized and added to map')
+            
+            // If users are already available, update the layer immediately
+            if (users.length > 0 || (autoLoad && autoPins.length > 0)) {
+              const srcUsers = autoLoad && autoPins.length ? autoPins.map(p => ({
+                id: p.id,
+                lng: p.lng,
+                lat: p.lat,
+                name: p.name,
+                photo: p.photo,
+                status: p.status,
+                badge: p.badge,
+                premiumTier: p.premiumTier,
+                isCurrentUser: false,
+              })) : users.map(u => ({
+                id: u.id,
+                lng: u.longitude,
+                lat: u.latitude,
+                name: u.display_name,
+                photo: u.photo,
+                status: u.online ? 'online' : 'offline',
+                badge: u.dtfn ? 'DTFN' : null,
+                premiumTier: u.party_friendly ? 1 : 0,
+                isCurrentUser: !!u.isCurrentUser,
+              }))
+              layer.setData(srcUsers as any)
+              console.log('✅ HoloPinsLayer updated with', srcUsers.length, 'pins')
+            }
           } catch (e) {
-            console.warn('Failed to add holo pins layer, falling back to DOM markers', e)
+            console.error('Failed to add holo pins layer:', e)
+            console.warn('Falling back to DOM markers')
           }
+        } else {
+          console.warn('⚠️ WebGL not supported, using DOM markers instead of HoloPinsLayer')
         }
       })
     })
@@ -209,7 +231,14 @@ export default function MapboxUsers({
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return
 
+    // Always use advanced HoloPinsLayer when WebGL is supported
+    // If layer doesn't exist yet, try to create it
     if (useAdvanced) {
+      if (!holoLayerRef.current) {
+        // Layer not created yet, wait for it to be created in map load event
+        console.log('⏳ Waiting for HoloPinsLayer to be initialized...')
+        return
+      }
       const basePins: Pin[] = (autoLoad && autoPins.length
         ? autoPins
         : users
@@ -261,17 +290,27 @@ export default function MapboxUsers({
         holoLayerRef.current.setLOD(lod as any)
         // Pass global options
         holoLayerRef.current.setOptions({ partyMode: holoOptions.partyMode, prideMonth: holoOptions.prideMonth })
+        console.log('✅ HoloPinsLayer updated with', out.length, 'visible pins (from', basePins.length, 'total)')
       }
 
       recompute()
       const onMoveEnd = () => recompute()
+      const onZoomEnd = () => recompute()
       mapRef.current.on('moveend', onMoveEnd)
+      mapRef.current.on('zoomend', onZoomEnd)
       return () => {
         mapRef.current?.off('moveend', onMoveEnd)
+        mapRef.current?.off('zoomend', onZoomEnd)
       }
     }
 
-    console.log('🗺️ Map loaded:', mapLoaded, 'Users:', users.length)
+    // Only use DOM markers as fallback if advanced pins are not available
+    if (useAdvanced && holoLayerRef.current) {
+      console.log('🗺️ Using HoloPinsLayer for', users.length, 'users')
+      return
+    }
+
+    console.log('🗺️ Using DOM markers fallback for', users.length, 'users')
     // DOM markers fallback path (existing logic)
     // Filter out current user's pin if incognito
     const visibleUsers = users.filter(u => !(u.isCurrentUser && incognito))
@@ -743,5 +782,6 @@ function applyNeonTheme(map: mapboxgl.Map) {
     })
   } catch {}
 }
+
 
 

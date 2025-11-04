@@ -158,11 +158,79 @@ export function useNotifications() {
     }
   }
 
+  // Debug function to test notifications
+  const debugNotifications = async () => {
+    console.log('1. Checking support...')
+    
+    if (!('Notification' in window)) {
+      console.error('Browser doesn\'t support notifications')
+      return
+    }
+    
+    console.log('2. Current permission:', Notification.permission)
+    
+    console.log('3. Requesting permission...')
+    const permission = await Notification.requestPermission()
+    console.log('4. Permission result:', permission)
+    
+    if (permission === 'granted') {
+      console.log('5. Sending test notification...')
+      
+      // Vibrate if supported (do this before notification)
+      if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+        try {
+          (navigator as any).vibrate([200, 100, 200])
+        } catch (e) {
+          console.log('Vibration not supported')
+        }
+      }
+      
+      // Try to use service worker notification first
+      if (registration) {
+        try {
+          await registration.showNotification('SLTR Test 🔥', {
+            body: 'If you see this, notifications work!',
+            icon: '/icon-192.png',
+            badge: '/badge-72.png',
+            tag: 'test-notification'
+          })
+          console.log('✅ Service Worker notification sent')
+        } catch (error) {
+          console.error('Service Worker notification failed, trying regular notification:', error)
+          // Fallback to regular notification
+          const notification = new Notification('SLTR Test 🔥', {
+            body: 'If you see this, notifications work!',
+            icon: '/icon-192.png'
+          })
+        }
+      } else {
+        // Fallback to regular notification if no service worker
+        const notification = new Notification('SLTR Test 🔥', {
+          body: 'If you see this, notifications work!',
+          icon: '/icon-192.png'
+        })
+      }
+      
+      // Try to play sound
+      try {
+        const audio = new Audio('/sounds/sltr-notification.mp3')
+        await audio.play()
+        console.log('6. Sound played successfully')
+      } catch (e) {
+        console.error('6. Sound failed:', e)
+        console.log('💡 User needs to interact with page first for audio')
+      }
+    } else {
+      console.warn('Permission denied. User must grant notification permission.')
+    }
+  }
+
   return {
     isSupported,
     permission,
     requestPermission,
     showNotification,
-    showMessageNotification
+    showMessageNotification,
+    debugNotifications
   }
 }

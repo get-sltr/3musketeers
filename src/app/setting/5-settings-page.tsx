@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
+import { NotificationSettings } from '@/lib/notifications'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -222,6 +223,11 @@ export default function SettingsPage() {
               {emailLoading ? 'Updating...' : 'Update Email'}
             </button>
           </form>
+        </div>
+
+        {/* Notification Settings Section */}
+        <div className="mb-12">
+          <NotificationSettings />
         </div>
 
         {/* Change Password Section */}

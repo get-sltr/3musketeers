@@ -12,3 +12,5 @@ AND table_name = 'blocked_users'
 ORDER BY ordinal_position;
 
 
+
+

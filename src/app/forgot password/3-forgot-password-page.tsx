@@ -19,9 +19,13 @@ export default function ForgotPasswordPage() {
     setError('')
     setLoading(true)
 
+    // Always use production URL (getsltr.com) for redirects, never Vercel URLs
+    const { getAuthCallbackUrl } = await import('@/lib/utils/url')
+    const redirectUrl = getAuthCallbackUrl('/reset-password')
+
     try {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: redirectUrl,
       })
 
       if (resetError) throw resetError

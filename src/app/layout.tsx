@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from 'next/font/google';
 import "./globals.css";
+import { ErosAssistiveTouch } from '@/components/ErosAssistiveTouch';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -46,7 +47,10 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body className="antialiased font-sans touch-pan-y overscroll-none">{children}</body>
+      <body className="antialiased font-sans touch-pan-y overscroll-none">
+        {children}
+        <ErosAssistiveTouch />
+      </body>
     </html>
   );
 }

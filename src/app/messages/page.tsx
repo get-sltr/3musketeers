@@ -80,7 +80,7 @@ function MessagesPageContent() {
   } = useSocket()
 
   // Push notifications
-  const { showMessageNotification, permission: notifPermission } = useNotifications()
+  const { showMessageNotification, permission: notifPermission, debugNotifications } = useNotifications()
 
   useEffect(() => {
     loadConversations()
@@ -702,6 +702,16 @@ function MessagesPageContent() {
                 {isConnected ? 'Real-time' : 'Offline'}
               </span>
             </div>
+            {/* Debug Notification Button */}
+            <button
+              onClick={debugNotifications}
+              className="glass-bubble p-2 hover:bg-white/10 transition-all duration-300 rounded-lg"
+              title="Test Notifications"
+            >
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+            </button>
           </div>
           <div className="w-10"></div>
         </div>
@@ -795,6 +805,41 @@ function MessagesPageContent() {
         <div className="flex-1 flex flex-col min-h-0">
           {selectedConversation ? (
             <>
+              {/* Conversation Header with Video Call Button */}
+              <div className="border-b border-white/10 p-4 bg-black/50 backdrop-blur-sm sticky top-20 z-40">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {conversations.find(c => c.id === selectedConversation)?.other_user.photo && (
+                      <img
+                        src={conversations.find(c => c.id === selectedConversation)?.other_user.photo || ''}
+                        alt={conversations.find(c => c.id === selectedConversation)?.other_user.display_name || ''}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    )}
+                    <div>
+                      <h3 className="text-white font-semibold">
+                        {conversations.find(c => c.id === selectedConversation)?.other_user.display_name || 'Unknown'}
+                      </h3>
+                      {conversations.find(c => c.id === selectedConversation)?.other_user.online && (
+                        <p className="text-green-400 text-xs">Online</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={startVideoCall}
+                      disabled={!isConnected}
+                      className="p-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-xl hover:scale-110 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-cyan-500/30 flex items-center justify-center"
+                      title={isConnected ? "Start Video Call" : "Connect to start video calls"}
+                    >
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {messages.map((message) => (
@@ -884,6 +929,18 @@ function MessagesPageContent() {
                     className="flex-1 bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300"
                     disabled={sending}
                   />
+                  {/* Video Call Button */}
+                  <button
+                    type="button"
+                    onClick={startVideoCall}
+                    disabled={!isConnected}
+                    className="p-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-xl hover:scale-110 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-cyan-500/30 flex items-center justify-center"
+                    title="Start Video Call"
+                  >
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </button>
                   <button
                     type="submit"
                     disabled={!newMessage.trim() || sending}

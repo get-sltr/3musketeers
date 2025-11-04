@@ -28,3 +28,5 @@ USING (auth.uid() = receiver_id);
 
 -- Done! This restores the original working policies
 
+
+

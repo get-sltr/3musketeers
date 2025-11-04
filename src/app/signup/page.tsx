@@ -16,7 +16,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_FRONTEND_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://getsltr.com'
+  // Import URL utility - will be imported dynamically in the function
 
   const calculateAge = (dob: string): number => {
     const birthDate = new Date(dob)
@@ -82,12 +82,16 @@ export default function SignupPage() {
       return
     }
 
+    // Always use production URL (getsltr.com) for redirects
+    const { getAuthCallbackUrl } = await import('@/lib/utils/url')
+    const redirectUrl = getAuthCallbackUrl('/app')
+
     const supabase = createClient()
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${BASE_URL}/auth/callback?next=/app`,
+        emailRedirectTo: redirectUrl,
         data: { 
           username,
           age: age,

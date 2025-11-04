@@ -43,13 +43,15 @@ export default function VerifyEmail() {
     setResendLoading(true)
     setMessage('')
 
-    const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_FRONTEND_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://getsltr.com'
+    // Always use production URL (getsltr.com) for redirects
+    const { getAuthCallbackUrl } = await import('@/lib/utils/url')
+    const redirectUrl = getAuthCallbackUrl('/app')
 
     try {
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: email,
-        options: { emailRedirectTo: `${BASE_URL}/auth/callback?next=/app` }
+        options: { emailRedirectTo: redirectUrl }
       })
 
       if (error) {

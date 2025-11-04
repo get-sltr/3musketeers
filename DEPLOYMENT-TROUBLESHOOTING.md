@@ -22,7 +22,11 @@ NODE_ENV=production
 NEXT_PUBLIC_MAPBOX_TOKEN=pk.eyJ1Ijoic2x0ciIsImEiOiJjbWgwY3cxenUwMTMxMmtvZDFuYTdyN2xiIn0.HlQWna4dS1678IuOU4r8BA
 
 # Railway Backend (for real-time features)
-NEXT_PUBLIC_RAILWAY_URL=https://your-railway-url.up.railway.app
+NEXT_PUBLIC_BACKEND_URL=https://sltr-backend.railway.app
+
+# EROS Deep Learning (for AI features)
+GROQ_API_KEY=your_groq_api_key_here
+SUPABASE_SERVICE_KEY=your_supabase_service_key_here
 
 # Sentry (for error tracking) - Optional but recommended
 NEXT_PUBLIC_SENTRY_DSN=your_sentry_dsn_here
