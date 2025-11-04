@@ -20,6 +20,7 @@ import BottomNav from '../../components/BottomNav'
 import PlaceModal from '../components/PlaceModal'
 import GroupModal from '../components/GroupModal'
 import '../../styles/mobile-optimization.css'
+import { useSocket } from '../../hooks/useSocket'
 
 type ViewMode = 'grid' | 'map'
 
@@ -46,6 +47,8 @@ interface UserWithLocation {
 
 export default function AppPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
+  // Ensure realtime presence/auth is initialized regardless of view
+  const { isConnected } = useSocket() as any
   const [loading, setLoading] = useState(true)
   const [activeFilters, setActiveFilters] = useState<string[]>([])
   const [users, setUsers] = useState<UserWithLocation[]>([])
@@ -171,6 +174,18 @@ export default function AppPage() {
     setActiveFilters(filters)
     console.log('Active filters:', filters)
   }
+
+  // Real-time presence updates: keep users[] in sync with socket events
+  useEffect(() => {
+    const onOnline = (e: any) => setUsers(prev => prev.map(u => u.id === e.userId ? { ...u, online: true } : u))
+    const onOffline = (e: any) => setUsers(prev => prev.map(u => u.id === e.userId ? { ...u, online: false } : u))
+    window.addEventListener('user_online', onOnline as any)
+    window.addEventListener('user_offline', onOffline as any)
+    return () => {
+      window.removeEventListener('user_online', onOnline as any)
+      window.removeEventListener('user_offline', onOffline as any)
+    }
+  }, [])
 
   const handleUserClick = (userId: string) => {
     const user = users.find(u => u.id === userId)
@@ -345,6 +360,38 @@ export default function AppPage() {
     )
   }
 
+  // Compute map users once at top level to avoid calling hooks conditionally
+  const mapUsers = useMemo(() => {
+    const center = mapCenter
+    const inRadius = (lat?: number, lon?: number) => {
+      if (!center || lat == null || lon == null) return true
+      const [centerLon, centerLat] = center
+      const R = 3959
+      const dLat = ((lat - centerLat) * Math.PI) / 180
+      const dLon = ((lon - centerLon) * Math.PI) / 180
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(centerLat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) * Math.sin(dLon / 2) ** 2
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+      const dist = R * c
+      return dist <= radiusMiles
+    }
+    return users
+      .filter(u => inRadius(u.latitude, u.longitude))
+      .filter(u => (menuFilters.online ? !!u.online : true))
+      .filter(u => (menuFilters.hosting ? !!u.party_friendly : true))
+      .filter(u => (menuFilters.looking ? !!u.dtfn : true))
+      .map(u => ({
+        id: u.id,
+        latitude: u.latitude!,
+        longitude: u.longitude!,
+        display_name: u.isYou ? 'You' : u.display_name,
+        isCurrentUser: u.isYou,
+        photo: u.photos?.[0],
+        online: u.online,
+        dtfn: u.dtfn,
+        party_friendly: u.party_friendly
+      }))
+  }, [users, mapCenter, radiusMiles, menuFilters])
+
   return (
     <MobileLayout>
       <div className="min-h-screen bg-[#0a0a0f] pb-20">
@@ -365,37 +412,7 @@ export default function AppPage() {
         ) : (
           <div className="relative">
             <MapboxUsers 
-              users={useMemo(() => {
-                // Apply radius + quick filters
-                const center = mapCenter
-                const inRadius = (lat?: number, lon?: number) => {
-                  if (!center || lat == null || lon == null) return true
-                  const [centerLon, centerLat] = center
-                  const R = 3959
-                  const dLat = ((lat - centerLat) * Math.PI) / 180
-                  const dLon = ((lon - centerLon) * Math.PI) / 180
-                  const a = Math.sin(dLat / 2) ** 2 + Math.cos(centerLat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) * Math.sin(dLon / 2) ** 2
-                  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-                  const dist = R * c
-                  return dist <= radiusMiles
-                }
-                return users
-                  .filter(u => inRadius(u.latitude, u.longitude))
-                  .filter(u => (menuFilters.online ? !!u.online : true))
-                  .filter(u => (menuFilters.hosting ? !!u.party_friendly : true))
-                  .filter(u => (menuFilters.looking ? !!u.dtfn : true))
-                  .map(u => ({
-                    id: u.id,
-                    latitude: u.latitude!,
-                    longitude: u.longitude!,
-                    display_name: u.isYou ? 'You' : u.display_name,
-                    isCurrentUser: u.isYou,
-                    photo: u.photos?.[0],
-                    online: u.online,
-                    dtfn: u.dtfn,
-                    party_friendly: u.party_friendly
-                  }))
-              }, [users, mapCenter, radiusMiles, menuFilters])}
+              users={mapUsers}
               onUserClick={handleUserClick}
               onMapClick={handleMapClick}
               center={mapCenter || undefined}

@@ -51,16 +51,16 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
         .from('albums')
         .select(`
           *,
-          album_permissions!albums_album_permissions_album_id_fkey (
+          album_permissions (
             granted_to_user_id,
             granted_at,
             expires_at,
             is_active,
-            profiles!album_permissions_granted_to_user_id_fkey (
+            profiles (
               display_name
             )
           ),
-          album_photos!albums_album_photos_album_id_fkey (
+          album_photos (
             photo_url,
             photo_order
           )
@@ -210,7 +210,7 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-      <div className="glass-bubble max-w-4xl w-full max-h-[90vh] overflow-hidden rounded-2xl">
+      <div className="glass-bubble relative max-w-4xl w-full max-h-[90vh] overflow-hidden rounded-2xl">
         {/* Header */}
         <div className="p-6 border-b border-white/10">
           <div className="flex items-center justify-between">
@@ -324,8 +324,8 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
 
         {/* Create Album Form */}
         {showCreateForm && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
-            <div className="glass-bubble max-w-md w-full rounded-2xl p-6">
+          <div className="absolute inset-0 z-[110] flex items-center justify-center p-4 pointer-events-none">
+            <div className="glass-bubble max-w-md w-full rounded-2xl p-6 pointer-events-auto">
               <h3 className="text-xl font-bold text-white mb-4">Create New Album</h3>
               <form onSubmit={createAlbum} className="space-y-4">
                 <div>

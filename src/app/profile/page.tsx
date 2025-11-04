@@ -121,16 +121,16 @@ export default function ProfilePage() {
         .from('albums')
         .select(`
           *,
-          album_permissions!albums_album_permissions_album_id_fkey (
+          album_permissions (
             granted_to_user_id,
             granted_at,
             expires_at,
             is_active,
-            profiles!album_permissions_granted_to_user_id_fkey (
+            profiles (
               display_name
             )
           ),
-          album_photos!albums_album_photos_album_id_fkey (
+          album_photos (
             photo_url,
             photo_order
           )

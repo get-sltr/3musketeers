@@ -16,6 +16,14 @@ export const metadata: Metadata = {
     statusBarStyle: 'black-translucent',
     title: 'SLTR',
   },
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' }
+      // Add '/favicon.ico' here after you place a real ICO into public/
+    ],
+    // Add an Apple touch icon when you have a real PNG asset
+    // apple: [ { url: '/apple-touch-icon.png', sizes: '180x180' } ],
+  },
 };
 
 export const viewport: Viewport = {
