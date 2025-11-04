@@ -14,6 +14,47 @@ export default function BlazeAI({ conversationId, onAIMessage }: BlazeAIProps) {
   const [aiHistory, setAiHistory] = useState<string[]>([])
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
+  // Draggable mini button position (AssistiveTouch style)
+  const [pos, setPos] = useState<{x:number;y:number} | null>(null)
+  const draggingRef = useRef<{dx:number;dy:number} | null>(null)
+
+  useEffect(() => {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('blaze_pos') : null
+    const init = () => {
+      const size = 56
+      const x = window.innerWidth - size - 16
+      const y = window.innerHeight - size - 96 // keep above input bar
+      setPos(saved ? JSON.parse(saved) : { x, y })
+    }
+    init()
+    const onResize = () => init()
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  const onDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+    const touch = (e as any).touches?.[0]
+    const clientX = touch ? touch.clientX : (e as any).clientX
+    const clientY = touch ? touch.clientY : (e as any).clientY
+    if (!pos) return
+    draggingRef.current = { dx: clientX - pos.x, dy: clientY - pos.y }
+    e.preventDefault()
+  }
+  const onDragMove = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!draggingRef.current) return
+    const touch = (e as any).touches?.[0]
+    const clientX = touch ? touch.clientX : (e as any).clientX
+    const clientY = touch ? touch.clientY : (e as any).clientY
+    const size = 56
+    const x = Math.min(Math.max(8, clientX - draggingRef.current.dx), window.innerWidth - size - 8)
+    const y = Math.min(Math.max(8, clientY - draggingRef.current.dy), window.innerHeight - size - 8)
+    setPos({ x, y })
+  }
+  const onDragEnd = () => {
+    draggingRef.current = null
+    if (pos) localStorage.setItem('blaze_pos', JSON.stringify(pos))
+  }
+
   // AI-powered conversation starters
   const conversationStarters = [
     "Hey! I noticed we have similar interests. What's your favorite hobby?",
@@ -89,18 +130,31 @@ export default function BlazeAI({ conversationId, onAIMessage }: BlazeAIProps) {
 
   return (
     <>
-      {/* Blaze AI Toggle Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-20 right-4 z-40 p-4 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-full shadow-2xl hover:scale-110 transition-all duration-300 flex items-center gap-2"
-      >
-        <div className="text-2xl">🔥</div>
-        <span className="font-bold">Blaze AI</span>
-      </button>
+      {/* Blaze AI floating mini button (draggable) */}
+      {pos && (
+        <div
+          className="fixed z-40 select-none"
+          style={{ left: pos.x, top: pos.y, width: 56, height: 56 }}
+          onMouseDown={onDragStart}
+          onMouseMove={onDragMove}
+          onMouseUp={onDragEnd}
+          onTouchStart={onDragStart}
+          onTouchMove={onDragMove}
+          onTouchEnd={onDragEnd}
+        >
+          <button
+            aria-label="Open Blaze AI"
+            onClick={() => setIsOpen(!isOpen)}
+            className="w-14 h-14 rounded-full backdrop-blur-xl bg-white/10 border border-white/20 shadow-xl flex items-center justify-center text-2xl hover:bg-white/15 active:scale-95 transition"
+          >
+            🔥
+          </button>
+        </div>
+      )}
 
       {/* Blaze AI Chat Panel */}
       {isOpen && (
-        <div className="fixed bottom-20 right-4 z-50 w-96 h-96 bg-black/95 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl flex flex-col">
+        <div className="fixed bottom-24 right-4 z-50 w-96 h-96 bg-black/95 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl flex flex-col">
           {/* Header */}
           <div className="p-4 border-b border-white/10 flex items-center justify-between">
             <div className="flex items-center gap-2">

@@ -729,9 +729,19 @@ function applyNeonTheme(map: mapboxgl.Map) {
     }
   } catch {}
 
-  // Water/road accent (best-effort, may vary by style)
-  try { map.setPaintProperty('water', 'fill-color', '#05222a') } catch {}
-  try { map.setPaintProperty('road-primary', 'line-color', '#0dd') } catch {}
+  // Water/road accent (best-effort, check layer exists)
+  try {
+    const waterExists = !!map.getLayer('water')
+    if (waterExists) map.setPaintProperty('water', 'fill-color', '#05222a')
+  } catch {}
+  try {
+    const roadLayers = (map.getStyle().layers || [])
+      .filter(l => l.type === 'line' && (l.id.includes('road') || l.id.includes('street')))
+      .map(l => l.id)
+    roadLayers.forEach(id => {
+      try { map.setPaintProperty(id, 'line-color', '#0dd') } catch {}
+    })
+  } catch {}
 }
 
 

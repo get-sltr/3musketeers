@@ -63,11 +63,11 @@ export default function BottomNav() {
     } catch {}
   }, [])
 
-  // Determine active tab based on pathname
-  const activeTab = pathname === '/messages' ? 'messages' 
-    : pathname === '/app' ? 'map' 
-    : pathname === '/groups' ? 'groups'
-    : 'map'
+// Determine active tab based on pathname
+const activeTab = pathname === '/messages' ? 'messages' 
+  : (pathname === '/app' || pathname === '/holo-map') ? 'map' 
+  : pathname === '/groups' ? 'groups'
+  : 'map'
 
   // Fetch unread count
   useEffect(() => {
@@ -179,7 +179,7 @@ export default function BottomNav() {
 
         {/* Map Tab */}
         <button
-          onClick={() => router.push('/app')}
+          onClick={() => router.push('/holo-map')}
           className={`flex flex-col items-center justify-center flex-1 h-full transition-all ${
             activeTab === 'map' 
               ? 'text-cyan-400' 
