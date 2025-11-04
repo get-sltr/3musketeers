@@ -15,7 +15,13 @@ export function createClient() {
   }
   
   // Only log in development to reduce console spam
-  if (process.env.NODE_ENV === 'development') {
+  // Check both NODE_ENV and if we're running on localhost
+  const isDev = process.env.NODE_ENV === 'development' || 
+                (typeof window !== 'undefined' && 
+                 (window.location.hostname === 'localhost' || 
+                  window.location.hostname === '127.0.0.1'))
+  
+  if (isDev) {
     console.log('✅ Supabase configured:', supabaseUrl)
   }
   return createBrowserClient(supabaseUrl, supabaseKey)

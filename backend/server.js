@@ -15,27 +15,52 @@ const webpush = require('web-push');
 
 const app = express();
 const server = http.createServer(app);
-// Allow both production and local dev URLs
+// Allow both production and local dev URLs, plus Vercel preview deployments
 const allowedOrigins = [
   process.env.FRONTEND_URL || "https://getsltr.com",
   process.env.DEV_FRONTEND_URL || "http://localhost:5000",
-  "http://localhost:5000" // Always allow localhost in dev
+  "http://localhost:5000", // Always allow localhost in dev
+  "http://localhost:3000", // Frontend dev server
+  "https://www.getsltr.com", // With www
+  "https://getsltr.com" // Production domain
 ];
 
+// CORS function to allow Vercel preview URLs
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin is in allowed list
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // Allow all Vercel preview deployments (*.vercel.app)
+    if (origin.includes('.vercel.app')) {
+      return callback(null, true);
+    }
+    
+    // Allow Railway preview deployments if needed
+    if (origin.includes('.railway.app')) {
+      return callback(null, true);
+    }
+    
+    // Reject all other origins
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
+};
+
 const io = socketIo(server, {
-  cors: {
-    origin: allowedOrigins,
-    methods: ["GET", "POST"],
-    credentials: true
-  }
+  cors: corsOptions
 });
 
 // Middleware
 app.use(helmet());
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true
-}));
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
