@@ -6,6 +6,9 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 import { getCurrentUserLocation } from '@/app/lib/maps/mapboxUtils'
 import { useSocket } from '@/hooks/useSocket'
 import Supercluster from 'supercluster'
+import { HoloPinsLayer } from '@/app/components/maps/HoloPinsLayer'
+import type { Pin } from '@/types/pins'
+import { useHoloPins } from '@/hooks/useHoloPins'
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
 
@@ -41,6 +44,11 @@ interface MapboxUsersProps {
   styleId?: string
   clusterRadius?: number
   vanillaMode?: boolean
+  advancedPins?: boolean
+  onChat?: (userId: string) => void
+  onVideo?: (userId: string) => void
+  onTap?: (userId: string) => void
+  onNav?: (loc: { lat: number; lng: number }) => void
 }
 
 function hashPair(id: string): [number, number] {
@@ -77,13 +85,25 @@ export default function MapboxUsers({
   clusterRadius = 60,
   jitterMeters = 0,
   vanillaMode = false,
-}: MapboxUsersProps & { jitterMeters?: number }) {
+  advancedPins = false,
+  onChat,
+  onVideo,
+  onTap,
+  onNav,
+  autoLoad = false,
+}: MapboxUsersProps & { jitterMeters?: number; autoLoad?: boolean }) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const markersRef = useRef<mapboxgl.Marker[]>([])
   const markerIndexRef = useRef<Record<string, mapboxgl.Marker>>({})
   const [mapLoaded, setMapLoaded] = useState(false)
   const { isConnected, joinConversation, leaveConversation, updateLocation } = useSocket() as any
+  const { pins: autoPins, options: holoOptions } = useHoloPins(advancedPins && autoLoad)
+
+  // Holo layer state
+  const holoLayerRef = useRef<HoloPinsLayer | null>(null)
+  const useAdvanced = advancedPins && (mapboxgl as any).supported?.({ failIfMajorPerformanceCaveat: true })
+  const [hovered, setHovered] = useState<{ user: UserPin; pt: { x: number; y: number } } | null>(null)
 
   // Clustering state
   const clusterIndexRef = useRef<any | null>(null)
@@ -137,6 +157,36 @@ export default function MapboxUsers({
       // Wait for map to fully load before allowing markers
       mapRef.current.on('load', () => {
         setMapLoaded(true)
+        if (useAdvanced) {
+          const srcUsers = autoLoad && autoPins.length ? autoPins.map(p => ({
+            id: p.id,
+            lng: p.lng,
+            lat: p.lat,
+            name: p.name,
+            photo: p.photo,
+            status: p.status,
+            badge: p.badge,
+            premiumTier: p.premiumTier,
+            isCurrentUser: false,
+          })) : users.map(u => ({
+            id: u.id,
+            lng: u.longitude,
+            lat: u.latitude,
+            name: u.display_name,
+            photo: u.photo,
+            status: u.online ? 'online' : 'offline',
+            badge: u.dtfn ? 'DTFN' : null,
+            premiumTier: u.party_friendly ? 1 : 0,
+            isCurrentUser: !!u.isCurrentUser,
+          }))
+          const layer = new HoloPinsLayer(srcUsers as any)
+          try {
+            mapRef.current!.addLayer(layer as any)
+            holoLayerRef.current = layer
+          } catch (e) {
+            console.warn('Failed to add holo pins layer, falling back to DOM markers', e)
+          }
+        }
       })
     })
 
@@ -149,14 +199,39 @@ export default function MapboxUsers({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Build cluster index and update markers when users or map are ready
+  // Build/update layers or markers
   useEffect(() => {
-    console.log('🗺️ Map loaded:', mapLoaded, 'Users:', users.length)
-    if (!mapRef.current || !mapLoaded) {
-      console.warn('⚠️ Skipping markers - map not ready or not loaded')
+    if (!mapRef.current || !mapLoaded) return
+
+    if (useAdvanced) {
+      const pinBase: Pin[] = (autoLoad && autoPins.length
+        ? autoPins
+        : users
+          .filter(u => !(u.isCurrentUser && incognito))
+          .map(u => ({
+            id: u.id,
+            lng: u.longitude,
+            lat: u.latitude,
+            name: u.display_name,
+            photo: u.photo,
+            status: u.online ? 'online' : 'offline',
+            badge: u.dtfn ? 'DTFN' : null,
+            premiumTier: u.party_friendly ? 1 : 0,
+            isCurrentUser: !!u.isCurrentUser,
+          }))
+      )
+      if (!holoLayerRef.current) return
+      holoLayerRef.current.setData(pinBase)
+      // LOD
+      const pinCount = pinBase.length
+      const zoom = mapRef.current.getZoom()
+      const lod = pinCount < 500 ? 'ULTRA' : pinCount < 1000 ? 'HIGH' : pinCount < 5000 ? 'MEDIUM' : 'LOW'
+      holoLayerRef.current.setLOD(lod as any)
       return
     }
 
+    console.log('🗺️ Map loaded:', mapLoaded, 'Users:', users.length)
+    // DOM markers fallback path (existing logic)
     // Filter out current user's pin if incognito
     const visibleUsers = users.filter(u => !(u.isCurrentUser && incognito))
 
@@ -235,7 +310,38 @@ export default function MapboxUsers({
       mapRef.current?.off('moveend', onMoveEnd)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [users, mapLoaded, incognito, cluster])
+  }, [users, mapLoaded, incognito, cluster, advancedPins])
+
+  // Hover detection for advanced pins
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded || !useAdvanced) return
+    const map = mapRef.current
+    const container = map.getCanvasContainer()
+
+    const onMove = (e: MouseEvent) => {
+      const rect = container.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+      const vis = users.filter(u => !(u.isCurrentUser && incognito))
+      let best: { user: UserPin; d2: number; pt: { x: number; y: number } } | null = null
+      for (const u of vis) {
+        const p = map.project([u.longitude, u.latitude])
+        const dx = p.x - x
+        const dy = p.y - y
+        const d2 = dx*dx + dy*dy
+        if (!best || d2 < best.d2) best = { user: u, d2, pt: { x: p.x, y: p.y } }
+      }
+      if (best && best.d2 < 38*38) setHovered({ user: best.user, pt: best.pt })
+      else setHovered(null)
+    }
+
+    container.addEventListener('mousemove', onMove)
+    container.addEventListener('mouseleave', () => setHovered(null))
+    return () => {
+      container.removeEventListener('mousemove', onMove)
+      container.removeEventListener('mouseleave', () => setHovered(null))
+    }
+  }, [mapLoaded, useAdvanced, users, incognito])
 
   // Re-center map when center prop changes OR when first user loads
   useEffect(() => {
@@ -482,8 +588,36 @@ export default function MapboxUsers({
   }
 
   return (
-    <div className="w-full h-screen overflow-hidden">
+    <div className="w-full h-screen overflow-hidden relative">
       <div ref={containerRef} className="w-full h-full" />
+      {useAdvanced && hovered && (
+        <div
+          className="pointer-events-auto absolute z-50"
+          style={{ left: hovered.pt.x, top: hovered.pt.y }}
+        >
+          {/* Lightweight glass hover card */}
+          <div className="-translate-x-1/2 -translate-y-full">
+            <div className="rounded-2xl backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl p-3 w-64">
+              <div className="flex gap-3 items-center">
+                <img src={hovered.user.photo || ''} alt={hovered.user.display_name || ''} className="w-10 h-10 rounded-lg object-cover" />
+                <div className="flex-1">
+                  <div className="font-semibold text-white text-sm">{hovered.user.display_name || 'User'}</div>
+                  <div className="text-[11px] text-white/70">{hovered.user.online ? 'Online' : 'Offline'}</div>
+                </div>
+              </div>
+              <div className="mt-3 grid grid-cols-4 gap-2">
+                <button onClick={() => onChat?.(hovered.user.id)} className="px-2 py-1 text-[11px] rounded-md bg-cyan-500/20 text-cyan-200 border border-cyan-400/40">Chat</button>
+                <button onClick={() => onVideo?.(hovered.user.id)} className="px-2 py-1 text-[11px] rounded-md bg-fuchsia-500/20 text-fuchsia-200 border border-fuchsia-400/40">Video</button>
+                <button onClick={() => onTap?.(hovered.user.id)} className="px-2 py-1 text-[11px] rounded-md bg-amber-500/20 text-amber-200 border border-amber-400/40">Tap</button>
+                <button onClick={() => onNav?.({ lat: hovered.user.latitude, lng: hovered.user.longitude })} className="px-2 py-1 text-[11px] rounded-md bg-emerald-500/20 text-emerald-200 border border-emerald-400/40">Nav</button>
+              </div>
+              {hovered.user.dtfn && (
+                <div className="mt-2 text-[10px] uppercase tracking-widest text-red-300">DTFN</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

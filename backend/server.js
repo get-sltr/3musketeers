@@ -567,7 +567,15 @@ app.post('/api/push/send', async (req, res) => {
   }
 });
 
-// Health check endpoint
+// Health check endpoints (both root and /api/health for Railway)
+app.get('/', (req, res) => {
+  res.json({ 
+    status: 'OK',
+    service: 'SLTR Realtime Backend',
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
