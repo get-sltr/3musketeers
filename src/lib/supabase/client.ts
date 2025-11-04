@@ -14,6 +14,9 @@ export function createClient() {
     return createBrowserClient('https://demo.supabase.co', 'demo-key')
   }
   
-  console.log('✅ Supabase configured:', supabaseUrl)
+  // Only log in development to reduce console spam
+  if (process.env.NODE_ENV === 'development') {
+    console.log('✅ Supabase configured:', supabaseUrl)
+  }
   return createBrowserClient(supabaseUrl, supabaseKey)
 }

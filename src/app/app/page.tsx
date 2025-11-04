@@ -150,7 +150,7 @@ export default function AppPage() {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, display_name, age, photos, bio, kinks, tags, position, height, body_type, ethnicity, online, latitude, longitude, dtfn, party_friendly')
+      .select('id, display_name, age, photos, photo_url, about, kinks, tags, position, height, body_type, ethnicity, online, latitude, longitude, dtfn, party_friendly, founder')
       .not('latitude', 'is', null)
       .not('longitude', 'is', null)
     
@@ -498,8 +498,19 @@ export default function AppPage() {
         ) : (
           <div className="relative">
             <MapboxUsers 
+              users={mapUsers.map(u => ({
+                id: u.id,
+                latitude: u.latitude,
+                longitude: u.longitude,
+                display_name: u.display_name,
+                isCurrentUser: u.isYou,
+                photo: (u.photos && Array.isArray(u.photos) && u.photos[0]) || u.photo_url || undefined,
+                online: u.online,
+                dtfn: u.dtfn,
+                party_friendly: u.party_friendly
+              }))}
               advancedPins
-              autoLoad
+              autoLoad={false}
               onUserClick={handleUserClick}
               onMapClick={handleMapClick}
               center={mapCenter || undefined}
