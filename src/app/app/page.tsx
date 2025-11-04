@@ -351,16 +351,7 @@ export default function AppPage() {
     await fetchUsers(user.id)
   }
 
-
-  if (loading) {
-    return (
-      <MobileLayout>
-        <LoadingSkeleton variant="fullscreen" />
-      </MobileLayout>
-    )
-  }
-
-  // Compute map users once at top level to avoid calling hooks conditionally
+  // Compute map users once per render BEFORE any early return
   const mapUsers = useMemo(() => {
     const center = mapCenter
     const inRadius = (lat?: number, lon?: number) => {
@@ -391,6 +382,14 @@ export default function AppPage() {
         party_friendly: u.party_friendly
       }))
   }, [users, mapCenter, radiusMiles, menuFilters])
+
+  if (loading) {
+    return (
+      <MobileLayout>
+        <LoadingSkeleton variant="fullscreen" />
+      </MobileLayout>
+    )
+  }
 
   return (
     <MobileLayout>

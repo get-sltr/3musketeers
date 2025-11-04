@@ -2,7 +2,7 @@
 
 **Purpose:** Track daily updates, completed work, and progress to avoid repeating tasks.
 
-**Last Updated:** Friday, November 1, 2025 at 05:11 AM
+**Last Updated:** Tuesday, November 4, 2025 at 06:12 AM
 
 ---
 
@@ -71,6 +71,26 @@ These files should auto-open when you open the project:
 - Add any important notes or decisions here
 
 ---
+
+### Tuesday, November 4, 2025
+**Session Start:** Tuesday, November 4, 2025 at 06:12 AM
+
+**Completed:**
+- [x] Configured explicit icons in Next metadata (serving /icon.svg) and added src/app/icon.svg; favicon 404 resolved in dev.
+- [x] Fixed album queries by removing explicit FK hints; prepared SQL to add required FKs.
+- [x] Adjusted AlbumsManager nested modal to avoid double blur/overlay and overlapping UI.
+- [x] Fixed React error #310 (Rendered more hooks than previous render) by moving useMemo outside conditional; added socket presence sync for online indicator.
+
+**In Progress:**
+- [ ] Apply Supabase FK constraints and reload PostgREST schema; verify album select and sharing flows end-to-end.
+- [ ] Verify green-dot presence end-to-end (socket events + DB online flag + UI badges).
+
+**Blocked/Issues:**
+- Missing FK relationships between albums and album_permissions/album_photos caused 400 errors; needs constraints and schema reload.
+- Favicon caching in production may require cache-busting.
+
+**Notes:**
+- After running FK SQL, execute: select pg_notify('pgrst','reload schema'); then hard refresh.
 
 
 ### Friday, November 1, 2025
@@ -164,7 +184,7 @@ These files should auto-open when you open the project:
 - [ ] Track infrastructure changes here
 
 ### Database Changes
-- [ ] Track database schema changes here
+- [ ] 2025-11-04: Add FKs: album_permissions.album_id -> albums.id; album_permissions.granted_to_user_id -> profiles.id; album_photos.album_id -> albums.id; then reload PostgREST schema.
 - [ ] Track migrations applied here
 
 ### API & Backend Changes
@@ -172,6 +192,9 @@ These files should auto-open when you open the project:
 - [ ] Track API endpoints added/modified here
 
 ### Frontend Changes
+- [x] 2025-11-04: Configured metadata icons and added src/app/icon.svg; can switch to public/favicon.ico later.
+- [x] 2025-11-04: Fixed albums SELECT (removed FK hints) and adjusted AlbumsManager modal overlay to remove double blur.
+- [x] 2025-11-04: Resolved React hook order error (#310) by moving useMemo; added presence sync to update online dot.
 - [x] 2025-10-31: Fixed TypeScript error in UserProfileModal.tsx (photos type issue)
 - [x] 2025-10-31: Added blinking horn emoji (📯) message button to profile cards with pulse animation
 - [x] 2025-10-31: Replaced all via.placeholder.com URLs with data URI placeholders (fixed ERR_NAME_NOT_RESOLVED)
