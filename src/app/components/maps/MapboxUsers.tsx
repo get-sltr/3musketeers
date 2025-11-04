@@ -242,12 +242,12 @@ export default function MapboxUsers({
       const basePins: Pin[] = (autoLoad && autoPins.length
         ? autoPins
         : users
-          .filter(u => !(u.isCurrentUser && incognito))
+          .filter(u => !(u.isCurrentUser && incognito) && u.latitude != null && u.longitude != null)
           .map(u => ({
             id: u.id,
             lng: u.longitude,
             lat: u.latitude,
-            name: u.display_name,
+            name: u.display_name || 'Unknown',
             photo: u.photo,
             status: u.online ? 'online' : 'offline',
             badge: u.dtfn ? 'DTFN' : null,
