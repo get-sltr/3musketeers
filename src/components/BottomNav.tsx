@@ -131,7 +131,7 @@ export default function BottomNav() {
       try { audioCtxRef.current?.close() } catch {}
       audioCtxRef.current = null
     }
-  }, [supabase, playPing])
+  }, [supabase, playPing, notifySound, notifyVibrate])
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-cyan-500/20 bg-black/90 backdrop-blur-xl safe-area-bottom">

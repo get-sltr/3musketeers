@@ -11,6 +11,7 @@ require('dotenv').config();
 
 // Import Supabase client
 const { createClient } = require('@supabase/supabase-js');
+const webpush = require('web-push');
 
 const app = express();
 const server = http.createServer(app);
@@ -51,6 +52,13 @@ const supabase = createClient(
   process.env.SUPABASE_ANON_KEY
 );
 
+// Configure web-push
+webpush.setVapidDetails(
+  process.env.VAPID_SUBJECT || 'mailto:support@getsltr.com',
+  process.env.VAPID_PUBLIC_KEY,
+  process.env.VAPID_PRIVATE_KEY
+);
+
 // File upload configuration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -80,6 +88,58 @@ const upload = multer({
 // Store active users and typing status
 const activeUsers = new Map();
 const typingUsers = new Map();
+
+// Helper function to send push notifications
+async function sendPushNotification(userId, senderName, messageContent, conversationId) {
+  try {
+    // Get user's push subscriptions
+    const { data: subscriptions, error } = await supabase
+      .from('push_subscriptions')
+      .select('*')
+      .eq('user_id', userId);
+
+    if (error || !subscriptions || subscriptions.length === 0) {
+      return; // No subscriptions, skip silently
+    }
+
+    const payload = JSON.stringify({
+      title: `New message from ${senderName}`,
+      body: messageContent.length > 100 ? messageContent.substring(0, 100) + '...' : messageContent,
+      icon: '/icon-192.png',
+      badge: '/badge-72.png',
+      tag: `message-${conversationId}`,
+      data: {
+        url: `/messages/${conversationId}`,
+        conversationId: conversationId
+      }
+    });
+
+    // Send to all user's devices
+    const sendPromises = subscriptions.map(sub => {
+      const pushSubscription = {
+        endpoint: sub.endpoint,
+        keys: {
+          p256dh: sub.p256dh,
+          auth: sub.auth
+        }
+      };
+
+      return webpush.sendNotification(pushSubscription, payload)
+        .catch(err => {
+          console.error('Push notification error:', err.message);
+          // If subscription is invalid, remove it
+          if (err.statusCode === 410 || err.statusCode === 404) {
+            supabase.from('push_subscriptions').delete().eq('id', sub.id);
+          }
+        });
+    });
+
+    await Promise.all(sendPromises);
+    console.log(`📬 Push notification sent to user ${userId}`);
+  } catch (error) {
+    console.error('Failed to send push notification:', error);
+  }
+}
 
 // Socket.io connection handling
 io.on('connection', (socket) => {
@@ -194,6 +254,9 @@ io.on('connection', (socket) => {
         createdAt: message.created_at,
         senderName: user.username
       });
+
+      // Send push notification to receiver
+      sendPushNotification(receiverId, user.username, content, conversationId);
 
       // Emit message delivered status
       socket.emit('message_delivered', { messageId: message.id });
@@ -412,6 +475,97 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 
 // Serve uploaded files
 app.use('/uploads', express.static('uploads'));
+
+// Push notification endpoints
+app.get('/api/push/vapid-public-key', (req, res) => {
+  res.json({ publicKey: process.env.VAPID_PUBLIC_KEY });
+});
+
+app.post('/api/push/subscribe', async (req, res) => {
+  try {
+    const { userId, subscription } = req.body;
+    
+    if (!userId || !subscription) {
+      return res.status(400).json({ error: 'Missing userId or subscription' });
+    }
+
+    // Save subscription to Supabase
+    const { data, error } = await supabase
+      .from('push_subscriptions')
+      .upsert({
+        user_id: userId,
+        endpoint: subscription.endpoint,
+        p256dh: subscription.keys.p256dh,
+        auth: subscription.keys.auth
+      }, {
+        onConflict: 'user_id,endpoint'
+      });
+
+    if (error) {
+      console.error('Failed to save subscription:', error);
+      return res.status(500).json({ error: 'Failed to save subscription' });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Subscribe error:', error);
+    res.status(500).json({ error: 'Subscription failed' });
+  }
+});
+
+app.post('/api/push/send', async (req, res) => {
+  try {
+    const { userId, title, body, data } = req.body;
+    
+    if (!userId || !title) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Get user's push subscriptions
+    const { data: subscriptions, error } = await supabase
+      .from('push_subscriptions')
+      .select('*')
+      .eq('user_id', userId);
+
+    if (error || !subscriptions || subscriptions.length === 0) {
+      return res.status(404).json({ error: 'No subscriptions found' });
+    }
+
+    const payload = JSON.stringify({
+      title,
+      body,
+      icon: '/icon-192.png',
+      badge: '/badge-72.png',
+      data: data || {}
+    });
+
+    // Send to all user's devices
+    const sendPromises = subscriptions.map(sub => {
+      const pushSubscription = {
+        endpoint: sub.endpoint,
+        keys: {
+          p256dh: sub.p256dh,
+          auth: sub.auth
+        }
+      };
+
+      return webpush.sendNotification(pushSubscription, payload)
+        .catch(err => {
+          console.error('Push send error:', err);
+          // If subscription is invalid, remove it
+          if (err.statusCode === 410 || err.statusCode === 404) {
+            supabase.from('push_subscriptions').delete().eq('id', sub.id);
+          }
+        });
+    });
+
+    await Promise.all(sendPromises);
+    res.json({ success: true, sent: subscriptions.length });
+  } catch (error) {
+    console.error('Push send error:', error);
+    res.status(500).json({ error: 'Failed to send push notification' });
+  }
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

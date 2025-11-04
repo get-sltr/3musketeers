@@ -1,11 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 export function useNotifications() {
   const [permission, setPermission] = useState<NotificationPermission>('default')
   const [isSupported, setIsSupported] = useState(false)
   const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null)
+  const [subscription, setSubscription] = useState<PushSubscription | null>(null)
+  const supabase = createClient()
 
   useEffect(() => {
     // Check if notifications are supported
@@ -33,6 +36,11 @@ export function useNotifications() {
           setPermission(result)
           console.log('🔔 Notification permission:', result)
         }
+
+        // Subscribe to push notifications if permission granted
+        if (Notification.permission === 'granted') {
+          await subscribeToPush(reg)
+        }
       } catch (error) {
         console.error('❌ Service Worker registration failed:', error)
       }
@@ -40,6 +48,54 @@ export function useNotifications() {
 
     registerSW()
   }, [isSupported])
+
+  // Subscribe to push notifications
+  const subscribeToPush = async (reg: ServiceWorkerRegistration) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Get VAPID public key from backend
+      const backendUrl = process.env.NEXT_PUBLIC_DEV_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL
+      const response = await fetch(`${backendUrl}/api/push/vapid-public-key`)
+      const { publicKey } = await response.json()
+
+      // Subscribe to push
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey)
+      })
+
+      setSubscription(sub)
+
+      // Save subscription to backend
+      const subJson = sub.toJSON()
+      await fetch(`${backendUrl}/api/push/subscribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          subscription: subJson
+        })
+      })
+
+      console.log('✅ Push subscription saved')
+    } catch (error) {
+      console.error('❌ Push subscription failed:', error)
+    }
+  }
+
+  // Helper function to convert VAPID key
+  const urlBase64ToUint8Array = (base64String: string) => {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4)
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/')
+    const rawData = window.atob(base64)
+    const outputArray = new Uint8Array(rawData.length)
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i)
+    }
+    return outputArray
+  }
 
   // Request permission function
   const requestPermission = async () => {

@@ -53,6 +53,9 @@ function MessagesPageContent() {
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set())
   const [showFileUpload, setShowFileUpload] = useState(false)
   const [messageStatus, setMessageStatus] = useState<{[key: string]: 'sending' | 'delivered' | 'read'}>({})
+  const [swipedConversation, setSwipedConversation] = useState<string | null>(null)
+  const [touchStart, setTouchStart] = useState<number>(0)
+  const [touchEnd, setTouchEnd] = useState<number>(0)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const router = useRouter()
@@ -586,6 +589,75 @@ function MessagesPageContent() {
     setShowFileUpload(false)
   }
 
+  // Handle delete conversation
+  const handleDeleteConversation = async (conversationId: string) => {
+    if (!confirm('Delete this conversation? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      // Delete all messages in conversation
+      const { error: messagesError } = await supabase
+        .from('messages')
+        .delete()
+        .eq('conversation_id', conversationId)
+
+      if (messagesError) {
+        console.error('Error deleting messages:', messagesError)
+        return
+      }
+
+      // Delete conversation
+      const { error: conversationError } = await supabase
+        .from('conversations')
+        .delete()
+        .eq('id', conversationId)
+
+      if (conversationError) {
+        console.error('Error deleting conversation:', conversationError)
+        return
+      }
+
+      // Update local state
+      setConversations(prev => prev.filter(c => c.id !== conversationId))
+      
+      if (selectedConversation === conversationId) {
+        setSelectedConversation(null)
+        setMessages([])
+      }
+
+      // Trigger unread count update
+      window.dispatchEvent(new CustomEvent('message_read'))
+      
+      setSwipedConversation(null)
+    } catch (error) {
+      console.error('Error deleting conversation:', error)
+    }
+  }
+
+  // Swipe gesture handlers
+  const handleTouchStart = (e: React.TouchEvent, conversationId: string) => {
+    setTouchStart(e.targetTouches[0].clientX)
+    setTouchEnd(e.targetTouches[0].clientX)
+  }
+
+  const handleTouchMove = (e: React.TouchEvent, conversationId: string) => {
+    setTouchEnd(e.targetTouches[0].clientX)
+  }
+
+  const handleTouchEnd = (conversationId: string) => {
+    const swipeDistance = touchStart - touchEnd
+    const minSwipeDistance = 50
+
+    if (swipeDistance > minSwipeDistance) {
+      // Swiped left - show delete
+      setSwipedConversation(conversationId)
+    } else if (swipeDistance < -minSwipeDistance) {
+      // Swiped right - hide delete
+      setSwipedConversation(null)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black">
@@ -645,45 +717,69 @@ function MessagesPageContent() {
                 {conversations.map((conversation) => (
                   <div
                     key={conversation.id}
-                    onClick={() => setSelectedConversation(conversation.id)}
-                    className={`p-3 rounded-xl cursor-pointer transition-all duration-300 ${
-                      selectedConversation === conversation.id
-                        ? 'bg-cyan-500/20 border border-cyan-500/30'
-                        : 'bg-white/5 hover:bg-white/10'
-                    }`}
+                    className="relative overflow-hidden"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <img
-                          src={conversation.other_user.photo || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23222" width="100" height="100"/%3E%3Ctext fill="%23aaa" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"%3E?%3C/text%3E%3C/svg%3E'}
-                          alt={conversation.other_user.display_name}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                        {conversation.other_user.online && (
-                          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-black"></div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-white font-semibold truncate">
-                            {conversation.other_user.display_name}
-                          </h3>
-                          <span className="text-white/60 text-xs">
-                            {formatTime(conversation.last_message.created_at)}
-                          </span>
+                    {/* Swipeable conversation card */}
+                    <div
+                      onClick={() => setSelectedConversation(conversation.id)}
+                      onTouchStart={(e) => handleTouchStart(e, conversation.id)}
+                      onTouchMove={(e) => handleTouchMove(e, conversation.id)}
+                      onTouchEnd={() => handleTouchEnd(conversation.id)}
+                      className={`p-3 rounded-xl cursor-pointer transition-all duration-300 ${
+                        selectedConversation === conversation.id
+                          ? 'bg-cyan-500/20 border border-cyan-500/30'
+                          : 'bg-white/5 hover:bg-white/10'
+                      } ${
+                        swipedConversation === conversation.id ? 'translate-x-[-80px]' : 'translate-x-0'
+                      }`}
+                      style={{ transition: 'transform 0.3s ease' }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <img
+                            src={conversation.other_user.photo || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23222" width="100" height="100"/%3E%3Ctext fill="%23aaa" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"%3E?%3C/text%3E%3C/svg%3E'}
+                            alt={conversation.other_user.display_name}
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
+                          {conversation.other_user.online && (
+                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-black"></div>
+                          )}
                         </div>
-                        <p className="text-white/70 text-sm truncate">
-                          {conversation.last_message.content}
-                        </p>
-                        {conversation.unread_count > 0 && (
-                          <div className="flex justify-end">
-                            <span className="bg-cyan-500 text-white text-xs px-2 py-1 rounded-full">
-                              {conversation.unread_count}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-white font-semibold truncate">
+                              {conversation.other_user.display_name}
+                            </h3>
+                            <span className="text-white/60 text-xs">
+                              {formatTime(conversation.last_message.created_at)}
                             </span>
                           </div>
-                        )}
+                          <p className="text-white/70 text-sm truncate">
+                            {conversation.last_message.content}
+                          </p>
+                          {conversation.unread_count > 0 && (
+                            <div className="flex justify-end mt-1">
+                              <span className="bg-cyan-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
+                                {conversation.unread_count}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
+
+                    {/* Delete button revealed by swipe */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteConversation(conversation.id)
+                      }}
+                      className="absolute right-0 top-0 bottom-0 w-20 bg-red-500 flex items-center justify-center rounded-r-xl"
+                    >
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
                   </div>
                 ))}
               </div>

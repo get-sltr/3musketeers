@@ -92,6 +92,28 @@ export default function ConversationPage({
       })) || []
 
       setMessages(transformedMessages)
+
+      // Mark all unread messages in this conversation as read
+      const unreadMessages = messagesData?.filter(
+        (msg: any) => msg.receiver_id === user.id && !msg.read
+      )
+      
+      if (unreadMessages && unreadMessages.length > 0) {
+        const unreadIds = unreadMessages.map((msg: any) => msg.id)
+        const { error: updateError } = await supabase
+          .from('messages')
+          .update({ 
+            read: true,
+            read_at: new Date().toISOString()
+          })
+          .in('id', unreadIds)
+        
+        if (!updateError) {
+          console.log(`✅ Marked ${unreadIds.length} messages as read`)
+          // Dispatch event to update unread count
+          window.dispatchEvent(new CustomEvent('message_read'))
+        }
+      }
     } catch (err) {
       console.error('❌ Error loading messages:', err)
     }

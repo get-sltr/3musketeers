@@ -177,8 +177,14 @@ export default function AppPage() {
 
   // Real-time presence updates: keep users[] in sync with socket events
   useEffect(() => {
-    const onOnline = (e: any) => setUsers(prev => prev.map(u => u.id === e.userId ? { ...u, online: true } : u))
-    const onOffline = (e: any) => setUsers(prev => prev.map(u => u.id === e.userId ? { ...u, online: false } : u))
+    const onOnline = (e: any) => {
+      console.log('✅ User came online:', e.userId)
+      setUsers(prev => prev.map(u => u.id === e.userId ? { ...u, online: true } : u))
+    }
+    const onOffline = (e: any) => {
+      console.log('❌ User went offline:', e.userId)
+      setUsers(prev => prev.map(u => u.id === e.userId ? { ...u, online: false } : u))
+    }
     window.addEventListener('user_online', onOnline as any)
     window.addEventListener('user_offline', onOffline as any)
     return () => {
