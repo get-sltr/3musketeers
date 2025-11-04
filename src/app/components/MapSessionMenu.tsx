@@ -45,7 +45,7 @@ export default function MapSessionMenu({
   onAddPlace,
   onHostGroup,
 }: MapSessionMenuProps) {
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(false)
 
   // Allow external toggling (e.g., from corner button)
   if (typeof window !== 'undefined') {

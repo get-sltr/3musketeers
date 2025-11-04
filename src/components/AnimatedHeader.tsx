@@ -46,7 +46,17 @@ export default function AnimatedHeader({ viewMode, onViewModeChange }: AnimatedH
     >
       <div className="flex items-center justify-between p-4">
         {/* SLTR Logo with User Menu */}
-        <UserMenu />
+        <div className="flex items-center gap-2">
+          <UserMenu />
+          {/* Map session menu toggle */}
+          <button
+            onClick={() => window.dispatchEvent(new Event('toggle_map_session_menu'))}
+            className="w-10 h-10 rounded-lg bg-black/70 border border-white/10 flex items-center justify-center hover:border-cyan-400 transition"
+            title="Session Menu"
+          >
+            <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h12"/></svg>
+          </button>
+        </div>
 
         {/* View Toggle with Icons */}
         <div className="flex items-center gap-4">

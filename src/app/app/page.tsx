@@ -10,7 +10,6 @@ import { LazyGridView } from '../../components/LazyWrapper'
 import dynamic from 'next/dynamic'
 import AnimatedHeader from '../../components/AnimatedHeader'
 import GradientBackground from '../../components/GradientBackground'
-import BlazeAIButton from '../../components/BlazeAIButton'
 import UserProfileCard from '../components/UserProfileCard'
 import MapControls from '../components/MapControls'
 import MapSessionMenu from '../components/MapSessionMenu'
@@ -65,7 +64,7 @@ export default function AppPage() {
   const [clusterRadius, setClusterRadius] = useState<number>(60)
   const [styleId, setStyleId] = useState<string>('dark-v11')
   const [menuFilters, setMenuFilters] = useState({ online: false, hosting: false, looking: false })
-  const [clusterEnabled, setClusterEnabled] = useState<boolean>(true)
+  const [clusterEnabled, setClusterEnabled] = useState<boolean>(false)
   const [jitterMeters, setJitterMeters] = useState<number>(0)
   const [vanillaMode, setVanillaMode] = useState<boolean>(false)
   // Add/Host modals
@@ -417,7 +416,8 @@ export default function AppPage() {
         ) : (
           <div className="relative">
             <MapboxUsers 
-              users={mapUsers}
+              advancedPins
+              autoLoad
               onUserClick={handleUserClick}
               onMapClick={handleMapClick}
               center={mapCenter || undefined}
@@ -590,9 +590,6 @@ export default function AppPage() {
         />
       )}
 
-      {/* Blaze AI Assistant Button */}
-      <BlazeAIButton />
-      
       {/* Bottom Navigation */}
       <BottomNav />
       </div>

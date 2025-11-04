@@ -906,17 +906,6 @@ function MessagesPageContent() {
         </div>
       </div>
 
-      {/* Blaze AI Assistant */}
-      <Suspense fallback={<div className="fixed bottom-4 right-4 text-white/60">Loading AI...</div>}>
-        <LazyBlazeAI 
-          conversationId={selectedConversation || ''} 
-          onAIMessage={(message) => {
-            // Handle AI message - could send to conversation or show as suggestion
-            console.log('AI suggested message:', message)
-          }}
-        />
-      </Suspense>
-      
       {/* Bottom Navigation */}
       <BottomNav />
     </div>

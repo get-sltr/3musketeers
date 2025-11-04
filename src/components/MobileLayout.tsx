@@ -1,6 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
+
+const Blaze = dynamic(() => import('./BlazeAI'), { ssr: false })
 
 interface MobileLayoutProps {
   children: React.ReactNode
@@ -55,6 +58,9 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
       )}
       
       {children}
+
+      {/* Global Blaze AI draggable button */}
+      <Blaze conversationId="" onAIMessage={() => {}} />
       
       {/* Mobile-specific styles */}
       <style jsx>{`
