@@ -152,46 +152,65 @@
 
 .drawer-actions {
   display: flex;
-  gap: 6px;
+  gap: 8px;
 }
 
 .action-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 1px solid rgba(0, 255, 255, 0.3);
-  background: rgba(0, 255, 255, 0.1);
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 255, 255, 0.25);
+  background: rgba(0, 30, 40, 0.65);
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #e5f9ff;
+  letter-spacing: 0.01em;
+  box-shadow: 0 6px 14px rgba(0, 255, 255, 0.12);
 }
 
 .action-btn:hover {
-  background: rgba(0, 255, 255, 0.2);
-  border-color: rgba(0, 255, 255, 0.6);
-  transform: scale(1.1);
+  transform: translateY(-2px) scale(1.08);
 }
 
 .action-btn:active {
   transform: scale(0.95);
 }
 
+.action-btn .action-icon {
+  font-size: 18px;
+  display: inline-flex;
+}
+
+.action-btn .action-label {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.action-btn.chat {
+  border-color: rgba(100, 200, 255, 0.4);
+  background: rgba(40, 120, 200, 0.18);
+  font-size: 14px;
+}
+
 .action-btn.chat:hover {
-  background: rgba(0, 255, 255, 0.3);
-  box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+  background: rgba(100, 200, 255, 0.3);
+  box-shadow: 0 0 20px rgba(100, 200, 255, 0.6);
+  transform: translateY(-2px) scale(1.15);
 }
 
 .action-btn.video:hover {
-  background: rgba(255, 0, 255, 0.3);
-  box-shadow: 0 0 15px rgba(255, 0, 255, 0.5);
+  background: rgba(160, 100, 255, 0.3);
+  box-shadow: 0 0 18px rgba(160, 100, 255, 0.5);
 }
 
 .action-btn.tap:hover {
-  background: rgba(255, 100, 0, 0.3);
-  box-shadow: 0 0 15px rgba(255, 100, 0, 0.5);
+  background: rgba(255, 120, 80, 0.3);
+  box-shadow: 0 0 18px rgba(255, 120, 80, 0.55);
 }
 
 .mapbox-marker-container {
@@ -239,9 +258,9 @@
   }
 
   .action-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 14px;
+    padding: 8px 12px;
+    gap: 4px;
+    font-size: 13px;
   }
 
   .drawer-dtfn {

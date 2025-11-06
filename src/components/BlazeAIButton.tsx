@@ -61,7 +61,7 @@ export default function BlazeAIButton() {
                   <LazyErosAI 
                     conversationId="" 
                     onAIMessage={(message) => {
-              console.log('AI suggested message:', message)
+                      console.log('AI suggested message:', message)
                     }}
                   />
                 </LazyWrapper>

@@ -55,7 +55,7 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
       )}
       
       {children}
-
+      
       {/* Mobile-specific styles */}
       <style jsx>{`
         .app-container {

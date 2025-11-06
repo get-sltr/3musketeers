@@ -50,7 +50,12 @@ export default function VideoCall({
           throw new Error('Daily room URL missing from response')
         }
 
-        const callFrame = DailyIframe.createFrame(containerRef.current, {
+        const containerElement = containerRef.current
+        if (!containerElement) {
+          throw new Error('Video container unavailable')
+        }
+
+        const callFrame = DailyIframe.createFrame(containerElement as HTMLElement, {
           showLeaveButton: true,
           showFullscreenButton: true,
           iframeStyle: {

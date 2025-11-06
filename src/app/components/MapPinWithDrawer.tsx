@@ -89,9 +89,10 @@ export const MapPin: React.FC<MapPinProps> = ({
               e.stopPropagation();
               onChat(user.id);
             }}
-            title="Chat"
+            title="Message"
           >
-            💬
+            <span className="action-icon">🫧</span>
+            <span className="action-label">Chat</span>
           </button>
           <button
             className="action-btn video"
@@ -101,7 +102,8 @@ export const MapPin: React.FC<MapPinProps> = ({
             }}
             title="Video Call"
           >
-            📹
+            <span className="action-icon">📹</span>
+            <span className="action-label">Video</span>
           </button>
           <button
             className="action-btn tap"
@@ -111,7 +113,8 @@ export const MapPin: React.FC<MapPinProps> = ({
             }}
             title="Send Tap"
           >
-            😈
+            <span className="action-icon">😈</span>
+            <span className="action-label">Tap</span>
           </button>
         </div>
       </div>

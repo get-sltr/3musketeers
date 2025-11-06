@@ -31,6 +31,12 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
   const [newAlbumName, setNewAlbumName] = useState('')
   const [newAlbumDescription, setNewAlbumDescription] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [albumFormName, setAlbumFormName] = useState('')
+  const [albumFormDescription, setAlbumFormDescription] = useState('')
+  const [albumFormPublic, setAlbumFormPublic] = useState(false)
+  const [queuedPhotos, setQueuedPhotos] = useState<File[]>([])
+  const [albumSaving, setAlbumSaving] = useState(false)
+  const [photoUploading, setPhotoUploading] = useState(false)
   
   const supabase = createClient()
 
@@ -188,6 +194,85 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
     }
   }
 
+  const handleAlbumSelect = (album: Album) => {
+    setSelectedAlbum(album)
+    setAlbumFormName(album.name)
+    setAlbumFormDescription(album.description || '')
+    setAlbumFormPublic(album.is_public)
+    setQueuedPhotos([])
+  }
+
+  const handleAlbumSave = async () => {
+    if (!selectedAlbum) return
+
+    setAlbumSaving(true)
+    try {
+      const { error } = await supabase
+        .from('albums')
+        .update({
+          name: albumFormName.trim() || selectedAlbum.name,
+          description: albumFormDescription.trim() || null,
+          is_public: albumFormPublic,
+        })
+        .eq('id', selectedAlbum.id)
+
+      if (error) {
+        console.error('Error saving album:', error)
+      } else {
+        await loadAlbums()
+        setSelectedAlbum(prev =>
+          prev
+            ? {
+                ...prev,
+                name: albumFormName.trim() || prev.name,
+                description: albumFormDescription.trim(),
+                is_public: albumFormPublic,
+              }
+            : prev,
+        )
+      }
+    } catch (err) {
+      console.error('Error saving album:', err)
+    } finally {
+      setAlbumSaving(false)
+    }
+  }
+
+  const handleQueuedUpload = async () => {
+    if (!selectedAlbum || queuedPhotos.length === 0) return
+
+    setPhotoUploading(true)
+    try {
+      for (const file of queuedPhotos) {
+        await uploadPhotoToAlbum(selectedAlbum.id, file)
+      }
+      await loadAlbums()
+      setQueuedPhotos([])
+    } catch (err) {
+      console.error('Error uploading queued photos:', err)
+    } finally {
+      setPhotoUploading(false)
+    }
+  }
+
+  const handlePhotoRemove = async (albumId: string, photoUrl: string) => {
+    try {
+      const { error } = await supabase
+        .from('album_photos')
+        .delete()
+        .eq('album_id', albumId)
+        .eq('photo_url', photoUrl)
+
+      if (error) {
+        console.error('Error removing photo:', error)
+      } else {
+        await loadAlbums()
+      }
+    } catch (err) {
+      console.error('Error removing photo:', err)
+    }
+  }
+
   const revokeAccess = async (albumId: string, userId: string) => {
     try {
       const { error } = await supabase
@@ -268,7 +353,7 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
                         Share
                       </button>
                       <button
-                        onClick={() => setSelectedAlbum(album)}
+                        onClick={() => handleAlbumSelect(album)}
                         className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-lg text-sm hover:bg-blue-500/30 transition-all duration-300"
                       >
                         Manage
@@ -370,6 +455,193 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Manage Album Overlay */}
+        {selectedAlbum && (
+          <div className="absolute inset-0 z-[120] bg-black/40 backdrop-blur-xl flex items-center justify-center p-4">
+            <div className="relative w-full max-w-4xl rounded-3xl border border-white/15 bg-white/[0.08] backdrop-blur-3xl shadow-2xl overflow-hidden">
+              <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
+                <div>
+                  <h3 className="text-2xl font-bold text-white mb-1">Manage Album</h3>
+                  <p className="text-white/60 text-sm">
+                    Update details, upload photos, and control visibility.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setSelectedAlbum(null)}
+                    className="glass-bubble px-4 py-2 text-white hover:bg-white/10 transition-all duration-300"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-[320px,1fr] gap-0">
+                {/* Sidebar form */}
+                <div className="p-6 border-b lg:border-b-0 lg:border-r border-white/10 bg-white/[0.05]">
+                  <div className="space-y-5">
+                    <div>
+                      <label className="block text-white/70 text-sm font-semibold mb-2">
+                        Album Name
+                      </label>
+                      <input
+                        type="text"
+                        value={albumFormName}
+                        onChange={(e) => setAlbumFormName(e.target.value)}
+                        className="w-full bg-black/30 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition"
+                        placeholder="Album title"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-white/70 text-sm font-semibold mb-2">
+                        Description
+                      </label>
+                      <textarea
+                        value={albumFormDescription}
+                        onChange={(e) => setAlbumFormDescription(e.target.value)}
+                        rows={3}
+                        className="w-full bg-black/30 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition resize-none"
+                        placeholder="Describe this album..."
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between bg-black/30 border border-white/15 rounded-xl px-4 py-3">
+                      <div>
+                        <p className="text-white font-semibold text-sm">
+                          {albumFormPublic ? 'Public Album' : 'Private Album'}
+                        </p>
+                        <p className="text-white/60 text-xs">
+                          {albumFormPublic
+                            ? 'Anyone with access can view this album.'
+                            : 'Only you and invited members can view.'}
+                        </p>
+                      </div>
+                      <label className="inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="sr-only"
+                          checked={albumFormPublic}
+                          onChange={(e) => setAlbumFormPublic(e.target.checked)}
+                        />
+                        <div className={`w-12 h-6 rounded-full transition ${albumFormPublic ? 'bg-cyan-500' : 'bg-white/20'}`}>
+                          <div
+                            className={`h-6 w-6 bg-white rounded-full shadow transform transition ${
+                              albumFormPublic ? 'translate-x-6' : ''
+                            }`}
+                          />
+                        </div>
+                      </label>
+                    </div>
+
+                    <button
+                      onClick={handleAlbumSave}
+                      disabled={albumSaving}
+                      className="w-full px-4 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-xl text-white font-semibold hover:scale-[1.02] transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {albumSaving ? 'Saving...' : 'Save Changes'}
+                    </button>
+
+                    <div className="border-t border-white/10 pt-5">
+                      <label className="block text-white/70 text-sm font-semibold mb-3">
+                        Upload photos
+                      </label>
+                      <div className="rounded-2xl border border-dashed border-cyan-500/40 bg-black/20 px-4 py-6 text-center">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={(e) => {
+                            if (e.target.files) {
+                              setQueuedPhotos(Array.from(e.target.files))
+                            }
+                          }}
+                          className="block w-full text-sm text-white/70 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-500/20 file:text-cyan-200 hover:file:bg-cyan-500/30"
+                        />
+                        <p className="text-white/50 text-xs mt-3">You can select multiple files at once.</p>
+                        {queuedPhotos.length > 0 && (
+                          <div className="mt-4 space-y-2 text-left max-h-24 overflow-y-auto">
+                            {queuedPhotos.map((file, idx) => (
+                              <div key={idx} className="flex items-center justify-between text-xs text-white/70 bg-black/30 rounded-lg px-3 py-2">
+                                <span className="truncate">{file.name}</span>
+                                <span>{Math.round(file.size / 1024)} KB</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <button
+                          onClick={handleQueuedUpload}
+                          disabled={photoUploading || queuedPhotos.length === 0}
+                          className="mt-4 w-full px-4 py-2 rounded-xl bg-cyan-500 text-white font-semibold hover:bg-cyan-600 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                          {photoUploading ? 'Uploading...' : 'Upload Selected Photos'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Album photos grid */}
+                <div className="p-6 space-y-6">
+                  <div>
+                    <h4 className="text-lg font-semibold text-white mb-3">Photos</h4>
+                    {selectedAlbum.photos.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-10 bg-black/20 border border-white/10 rounded-2xl">
+                        <div className="text-4xl mb-2">🖼️</div>
+                        <p className="text-white/60 text-sm">No photos in this album yet.</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {selectedAlbum.photos.map((photo, index) => (
+                          <div key={index} className="relative group rounded-xl overflow-hidden border border-white/10 bg-black/30">
+                            <img src={photo} alt={`Album photo ${index + 1}`} className="w-full aspect-square object-cover" />
+                            <button
+                              onClick={() => handlePhotoRemove(selectedAlbum.id, photo)}
+                              className="absolute top-2 right-2 bg-black/60 hover:bg-red-500/80 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
+                              title="Remove photo"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <h4 className="text-lg font-semibold text-white mb-3">Sharing</h4>
+                    {selectedAlbum.permissions.length === 0 ? (
+                      <p className="text-white/60 text-sm">This album hasn’t been shared with anyone yet.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {selectedAlbum.permissions.map((permission) => (
+                          <div key={permission.granted_to_user_id} className="flex items-center justify-between bg-black/30 border border-white/10 rounded-xl px-4 py-3">
+                            <div>
+                              <p className="text-white text-sm font-semibold">{permission.granted_to_name}</p>
+                              <p className="text-white/50 text-xs">
+                                Shared {new Date(permission.granted_at).toLocaleDateString()}
+                                {permission.expires_at && ` • Expires ${new Date(permission.expires_at).toLocaleDateString()}`}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => revokeAccess(selectedAlbum.id, permission.granted_to_user_id)}
+                              className="px-3 py-1 rounded-lg bg-red-500/20 text-red-300 text-xs font-semibold hover:bg-red-500/30 transition"
+                            >
+                              Revoke
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
