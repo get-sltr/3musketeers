@@ -29,10 +29,6 @@ export default function VideoCall({
       setError(null)
 
       try {
-        if (!process.env.NEXT_PUBLIC_HAS_DAILY) {
-          throw new Error('Daily API key is not configured. Set DAILY_API_KEY in your environment.')
-        }
-
         const response = await fetch('/api/daily/create-room', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import { formatDistanceToNow } from 'date-fns'
+import { useRouter } from 'next/navigation'
 
 // Helper function to format relative time
 function formatTimeAgo(date: string): string {
@@ -33,11 +34,17 @@ interface UserAdvertisingPanelProps {
 }
 
 export default function UserAdvertisingPanel({ isOpen: controlledOpen, onToggle }: UserAdvertisingPanelProps) {
+  const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [updates, setUpdates] = useState<UserUpdate[]>([])
   const [loading, setLoading] = useState(true)
   const [sortBy, setSortBy] = useState<'time' | 'distance'>('time')
   const [showNewMessages, setShowNewMessages] = useState(false)
+  const [showComposer, setShowComposer] = useState(false)
+  const [composerText, setComposerText] = useState('')
+  const [composerSaving, setComposerSaving] = useState(false)
+  const [composerError, setComposerError] = useState('')
+  const [composerSuccess, setComposerSuccess] = useState('')
   const panelRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
@@ -50,110 +57,146 @@ export default function UserAdvertisingPanel({ isOpen: controlledOpen, onToggle 
     }
   }
 
-  // Fetch user updates/advertisements
-  useEffect(() => {
-    const fetchUpdates = async () => {
-      try {
-        setLoading(true)
-        
-        // Get current user's location
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
+  const fetchUpdates = useCallback(async () => {
+    try {
+      setLoading(true)
 
-        const { data: currentUser } = await supabase
-          .from('profiles')
-          .select('latitude, longitude')
-          .eq('id', user.id)
-          .single()
-
-        if (!currentUser?.latitude || !currentUser?.longitude) {
-          setLoading(false)
-          return
-        }
-
-        // Fetch recent user updates (using a status/update field or creating one)
-        // For now, we'll use profiles with a status_message field
-        // If it doesn't exist, we'll create a simple version
-        const { data: profiles, error } = await supabase
-          .from('profiles')
-          .select(`
-            id,
-            display_name,
-            photo_url,
-            about,
-            latitude,
-            longitude,
-            online,
-            position,
-            age,
-            updated_at
-          `)
-          .not('latitude', 'is', null)
-          .not('longitude', 'is', null)
-          .neq('id', user.id)
-          .limit(50)
-
-        if (error) {
-          console.error('Error fetching updates:', error)
-          setLoading(false)
-          return
-        }
-
-        // Transform to UserUpdate format
-        const updatesList: UserUpdate[] = (profiles || [])
-          .map(profile => {
-            const lat1 = currentUser.latitude
-            const lon1 = currentUser.longitude
-            const lat2 = profile.latitude
-            const lon2 = profile.longitude
-            
-            // Calculate distance (simple Haversine)
-            const R = 3959 // Earth radius in miles
-            const dLat = (lat2 - lat1) * Math.PI / 180
-            const dLon = (lon2 - lon1) * Math.PI / 180
-            const a = 
-              Math.sin(dLat/2) * Math.sin(dLat/2) +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLon/2) * Math.sin(dLon/2)
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
-            const distance = R * c
-
-            return {
-              id: profile.id,
-              user_id: profile.id,
-              display_name: profile.display_name || 'Anonymous',
-              photo_url: profile.photo_url,
-              update_text: profile.about || 'Looking to connect',
-              created_at: profile.updated_at || new Date().toISOString(),
-              distance: Math.round(distance * 10) / 10,
-              online: profile.online,
-              position: profile.position,
-              age: profile.age
-            }
-          })
-          .sort((a, b) => {
-            if (sortBy === 'time') {
-              return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-            } else {
-              return (a.distance || Infinity) - (b.distance || Infinity)
-            }
-          })
-
-        setUpdates(updatesList)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
         setLoading(false)
-      } catch (error) {
-        console.error('Error in fetchUpdates:', error)
-        setLoading(false)
+        return
       }
+
+      const { data: currentUser } = await supabase
+        .from('profiles')
+        .select('latitude, longitude')
+        .eq('id', user.id)
+        .single()
+
+      if (!currentUser?.latitude || !currentUser?.longitude) {
+        setLoading(false)
+        return
+      }
+
+      const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          display_name,
+          photo_url,
+          about,
+          latitude,
+          longitude,
+          online,
+          position,
+          age,
+          updated_at
+        `)
+        .not('latitude', 'is', null)
+        .not('longitude', 'is', null)
+        .neq('id', user.id)
+        .limit(50)
+
+      if (error) {
+        console.error('Error fetching updates:', error)
+        setLoading(false)
+        return
+      }
+
+      const updatesList: UserUpdate[] = (profiles || [])
+        .map(profile => {
+          const lat1 = currentUser.latitude
+          const lon1 = currentUser.longitude
+          const lat2 = profile.latitude
+          const lon2 = profile.longitude
+
+          const R = 3959
+          const dLat = (lat2 - lat1) * Math.PI / 180
+          const dLon = (lon2 - lon1) * Math.PI / 180
+          const a = 
+            Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2)
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+          const distance = R * c
+
+          return {
+            id: profile.id,
+            user_id: profile.id,
+            display_name: profile.display_name || 'Anonymous',
+            photo_url: profile.photo_url,
+            update_text: profile.about || 'Looking to connect',
+            created_at: profile.updated_at || new Date().toISOString(),
+            distance: Math.round(distance * 10) / 10,
+            online: profile.online,
+            position: profile.position,
+            age: profile.age
+          }
+        })
+        .sort((a, b) => {
+          if (sortBy === 'time') {
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          } else {
+            return (a.distance || Infinity) - (b.distance || Infinity)
+          }
+        })
+
+      setUpdates(updatesList)
+      setLoading(false)
+    } catch (error) {
+      console.error('Error in fetchUpdates:', error)
+      setLoading(false)
+    }
+  }, [sortBy, supabase])
+
+  useEffect(() => {
+    if (!actualIsOpen) return
+    fetchUpdates()
+    const interval = setInterval(fetchUpdates, 30000)
+    return () => clearInterval(interval)
+  }, [actualIsOpen, fetchUpdates])
+
+  const handleSubmitUpdate = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!composerText.trim()) {
+      setComposerError('Say something that represents your vibe.')
+      return
     }
 
-    if (actualIsOpen) {
+    setComposerSaving(true)
+    setComposerError('')
+    setComposerSuccess('')
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setComposerError('Please sign in to post an update.')
+        setComposerSaving(false)
+        return
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          about: composerText.trim(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id)
+
+      if (error) {
+        throw error
+      }
+
+      setComposerSuccess('Update posted! You’re in the feed.')
+      setComposerText('')
+      setShowComposer(false)
       fetchUpdates()
-      // Refresh every 30 seconds
-      const interval = setInterval(fetchUpdates, 30000)
-      return () => clearInterval(interval)
+    } catch (err: any) {
+      setComposerError(err.message || 'Failed to post update.')
+    } finally {
+      setComposerSaving(false)
     }
-  }, [actualIsOpen, sortBy, supabase])
+  }, [composerText, fetchUpdates, supabase])
 
   return (
     <>
@@ -260,6 +303,7 @@ export default function UserAdvertisingPanel({ isOpen: controlledOpen, onToggle 
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-3 transition-all cursor-pointer group"
+                      onClick={() => router.push(`/profile/${update.id}`)}
                     >
                       <div className="flex items-start gap-3">
                         {/* Profile Picture */}
@@ -317,12 +361,24 @@ export default function UserAdvertisingPanel({ isOpen: controlledOpen, onToggle 
 
                         {/* Action Icons */}
                         <div className="flex flex-col gap-2 flex-shrink-0">
-                          <button className="w-8 h-8 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 flex items-center justify-center transition opacity-0 group-hover:opacity-100">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              router.push(`/profile/${update.id}#share`)
+                            }}
+                            className="w-8 h-8 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 flex items-center justify-center transition opacity-0 group-hover:opacity-100"
+                          >
                             <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                             </svg>
                           </button>
-                          <button className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition opacity-0 group-hover:opacity-100">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              router.push(`/messages?user=${update.id}`)
+                            }}
+                            className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition opacity-0 group-hover:opacity-100"
+                          >
                             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                             </svg>
@@ -337,9 +393,70 @@ export default function UserAdvertisingPanel({ isOpen: controlledOpen, onToggle 
 
             {/* Post Update Input */}
             <div className="p-4 border-t border-cyan-500/20 bg-black/50">
-              <button className="w-full px-4 py-3 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 hover:from-cyan-500/30 hover:to-purple-500/30 border border-cyan-500/50 rounded-xl text-white text-sm font-medium transition-all">
+              <button
+                onClick={() => {
+                  setShowComposer(true)
+                  setComposerError('')
+                  setComposerSuccess('')
+                }}
+                className="w-full px-4 py-3 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 hover:from-cyan-500/30 hover:to-purple-500/30 border border-cyan-500/50 rounded-xl text-white text-sm font-medium transition-all"
+              >
                 Post an Update...
               </button>
+              <AnimatePresence>
+                {showComposer && (
+                  <motion.form
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    onSubmit={handleSubmitUpdate}
+                    className="mt-4 space-y-3 bg-black/60 border border-cyan-500/20 rounded-xl p-4"
+                  >
+                    <div>
+                      <label className="block text-xs uppercase tracking-[0.2em] text-cyan-200/70 mb-2">
+                        Broadcast to nearby members
+                      </label>
+                      <textarea
+                        value={composerText}
+                        onChange={(e) => setComposerText(e.target.value)}
+                        rows={3}
+                        className="w-full bg-black/40 border border-cyan-500/30 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/40 rounded-lg px-3 py-2 text-sm text-white placeholder-white/40 transition"
+                        placeholder="Let people know your vibe, where you are, or what you're into tonight."
+                      />
+                    </div>
+                    {composerError && (
+                      <div className="text-xs text-red-300 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+                        {composerError}
+                      </div>
+                    )}
+                    {composerSuccess && (
+                      <div className="text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2">
+                        {composerSuccess}
+                      </div>
+                    )}
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowComposer(false)
+                          setComposerError('')
+                          setComposerSuccess('')
+                        }}
+                        className="px-3 py-2 text-sm text-white/60 hover:text-white/90 transition"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={composerSaving}
+                        className="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-sm font-semibold hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {composerSaving ? 'Posting…' : 'Share Update'}
+                      </button>
+                    </div>
+                  </motion.form>
+                )}
+              </AnimatePresence>
             </div>
           </motion.div>
         )}

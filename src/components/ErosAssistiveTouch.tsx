@@ -32,7 +32,37 @@ export function ErosAssistiveTouch() {
   const offset = useRef<Position>({ x: 0, y: 0 });
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const dragTimeout = useRef<NodeJS.Timeout | null>(null);
-  const pointerDown = useRef(false)
+  const pointerDown = useRef(false);
+  const introTimeout = useRef<NodeJS.Timeout | null>(null);
+  const tapTimeout = useRef<NodeJS.Timeout | null>(null);
+  const [introOpen, setIntroOpen] = useState(false);
+  const closeIntro = useCallback(() => {
+    if (introTimeout.current) {
+      clearTimeout(introTimeout.current);
+      introTimeout.current = null;
+    }
+    setIntroOpen(false);
+  }, []);
+
+  const showIntro = useCallback(() => {
+    closeIntro();
+    setIntroOpen(true);
+    introTimeout.current = setTimeout(() => {
+      setIntroOpen(false);
+      introTimeout.current = null;
+    }, 4000);
+  }, [closeIntro]);
+
+  const showTapFeedback = useCallback((message: string) => {
+    if (tapTimeout.current) {
+      clearTimeout(tapTimeout.current);
+    }
+    setTapFeedback(message);
+    tapTimeout.current = setTimeout(() => {
+      setTapFeedback(null);
+      tapTimeout.current = null;
+    }, 3000);
+  }, []);
   
   // Load saved position
   useEffect(() => {
@@ -56,6 +86,12 @@ export function ErosAssistiveTouch() {
     }
   }, [position, isDragging]);
   
+  const handleTapAction = useCallback(() => {
+    router.push('/map')
+    showTapFeedback('Open any profile • tap the 😈 bubble to send your signal.')
+    closeIntro()
+  }, [router, showTapFeedback, closeIntro])
+
   const menuActions: MenuAction[] = [
     { 
       id: 'match', 
@@ -78,10 +114,7 @@ export function ErosAssistiveTouch() {
       id: 'tap', 
       icon: '😈', 
       label: 'Send Tap', 
-      action: () => {
-        // TODO: Implement tap functionality
-        console.log('Sending tap...');
-      }
+      action: handleTapAction
     },
     { 
       id: 'video', 
@@ -139,7 +172,7 @@ export function ErosAssistiveTouch() {
       id: 'settings', 
       icon: '⚙️', 
       label: 'Settings', 
-      action: () => router.push('/setting/5-settings-page')
+      action: () => router.push('/settings')
     },
     { 
       id: 'pricing', 
@@ -182,6 +215,7 @@ export function ErosAssistiveTouch() {
       // Long press detection (reduced to 400ms for better UX)
       longPressTimer.current = setTimeout(() => {
         setMenuOpen(true);
+        closeIntro();
         vibrate(50);
       }, 400);
     }
@@ -203,6 +237,7 @@ export function ErosAssistiveTouch() {
           longPressTimer.current = null
         }
         setMenuOpen(false)
+        closeIntro()
 
         if (!isDragging) {
           setIsDragging(true)
@@ -237,9 +272,8 @@ export function ErosAssistiveTouch() {
     }
     
     if (!isDragging && !menuOpen) {
-      // Single tap - quick action (open EROS menu)
       vibrate(30);
-      setMenuOpen(true);
+      showIntro();
       return;
     }
     
@@ -279,7 +313,7 @@ export function ErosAssistiveTouch() {
     }
     
     setIsDragging(false);
-  }, [isDragging, menuOpen, position]);
+  }, [isDragging, menuOpen, position, showIntro]);
   
   useEffect(() => {
     const handleGlobalMove = (event: TouchEvent | MouseEvent) => handleMove(event)
@@ -306,6 +340,12 @@ export function ErosAssistiveTouch() {
     }
   }, [handleMove, handleEnd]);
   
+  useEffect(() => {
+    if (menuOpen) {
+      closeIntro();
+    }
+  }, [menuOpen, closeIntro]);
+  
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -314,6 +354,12 @@ export function ErosAssistiveTouch() {
       }
       if (dragTimeout.current) {
         clearTimeout(dragTimeout.current);
+      }
+      if (introTimeout.current) {
+        clearTimeout(introTimeout.current);
+      }
+      if (tapTimeout.current) {
+        clearTimeout(tapTimeout.current);
       }
     };
   }, []);
@@ -352,7 +398,39 @@ export function ErosAssistiveTouch() {
             </button>
           ))}
         </div>
+
+        {introOpen && (
+          <div className="eros-intro-popover">
+            <div className="eros-intro-card">
+              <div className="intro-header">Hi, I’m EROS 🏹</div>
+              <p className="intro-copy">
+                Quick tap unlocks tips. Press and hold for the full neon command ring.
+              </p>
+              <div className="intro-actions">
+                <button
+                  onClick={() => {
+                    closeIntro();
+                    setMenuOpen(true);
+                    vibrate(20);
+                  }}
+                  className="intro-button primary"
+                >
+                  Open Commands
+                </button>
+                <button onClick={closeIntro} className="intro-button ghost">
+                  Not now
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
+      {tapFeedback && (
+        <div className="eros-toast">
+          {tapFeedback}
+        </div>
+      )}
       
       <style jsx>{`
         .eros-assistant {
@@ -529,6 +607,97 @@ export function ErosAssistiveTouch() {
           box-shadow: 0 0 25px rgba(0, 245, 255, 0.5);
         }
 
+        .eros-intro-popover {
+          position: absolute;
+          top: 50%;
+          left: 85px;
+          transform: translateY(-50%);
+          pointer-events: none;
+          width: 220px;
+        }
+
+        .eros-intro-card {
+          pointer-events: all;
+          background: rgba(6, 22, 32, 0.92);
+          border: 1px solid rgba(0, 245, 255, 0.3);
+          border-radius: 18px;
+          padding: 14px;
+          box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
+          backdrop-filter: blur(18px);
+        }
+
+        .intro-header {
+          font-size: 0.85rem;
+          font-weight: 700;
+          color: #e8fbff;
+          margin-bottom: 6px;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+        }
+
+        .intro-copy {
+          font-size: 0.78rem;
+          line-height: 1.3;
+          color: rgba(200, 249, 255, 0.85);
+          margin-bottom: 10px;
+        }
+
+        .intro-actions {
+          display: flex;
+          gap: 8px;
+          justify-content: flex-end;
+        }
+
+        .intro-button {
+          border-radius: 999px;
+          padding: 6px 12px;
+          font-size: 0.7rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.16em;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .intro-button.primary {
+          background: linear-gradient(120deg, rgba(0, 245, 255, 0.9), rgba(138, 99, 255, 0.9));
+          color: #021012;
+          border: none;
+          box-shadow: 0 8px 20px rgba(0, 200, 255, 0.25);
+        }
+
+        .intro-button.primary:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 12px 25px rgba(0, 200, 255, 0.35);
+        }
+
+        .intro-button.ghost {
+          background: rgba(0, 0, 0, 0.4);
+          color: rgba(200, 249, 255, 0.7);
+          border: 1px solid rgba(0, 245, 255, 0.2);
+        }
+
+        .intro-button.ghost:hover {
+          border-color: rgba(0, 245, 255, 0.35);
+          color: #e8fbff;
+        }
+
+        .eros-toast {
+          position: fixed;
+          bottom: 24px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: rgba(6, 22, 32, 0.92);
+          border: 1px solid rgba(0, 245, 255, 0.35);
+          color: #d9faff;
+          padding: 10px 18px;
+          border-radius: 999px;
+          font-size: 0.78rem;
+          letter-spacing: 0.08em;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+          backdrop-filter: blur(18px);
+          z-index: 9998;
+        }
+
         @media (max-width: 768px) {
           .eros-assistant {
             width: 60px;
@@ -548,6 +717,21 @@ export function ErosAssistiveTouch() {
             width: 40px;
             height: 40px;
             font-size: 20px;
+          }
+
+          .eros-intro-popover {
+            left: 70px;
+            width: 180px;
+          }
+
+          .intro-actions {
+            flex-direction: column;
+            align-items: flex-end;
+          }
+
+          .intro-button {
+            width: 100%;
+            text-align: center;
           }
         }
       `}</style>
