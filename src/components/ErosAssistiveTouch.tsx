@@ -280,37 +280,33 @@ export function ErosAssistiveTouch() {
   }, [isDragging, menuOpen, position]);
   
   useEffect(() => {
-    if (isDragging) {
-      const handleGlobalMove = (e: TouchEvent | MouseEvent) => {
+    const handleGlobalMove = (e: TouchEvent | MouseEvent) => {
+      handleMove(e);
+    };
+    const handleGlobalEnd = (e?: Event) => {
+      if (e) {
         e.preventDefault();
         e.stopPropagation();
-        handleMove(e);
-      };
-      const handleGlobalEnd = (e?: Event) => {
-        if (e) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-        handleEnd();
-      };
-      
-      document.addEventListener('touchmove', handleGlobalMove, { passive: false });
-      document.addEventListener('touchend', handleGlobalEnd, { passive: false });
-      document.addEventListener('touchcancel', handleGlobalEnd, { passive: false });
-      document.addEventListener('mousemove', handleGlobalMove);
-      document.addEventListener('mouseup', handleGlobalEnd);
-      document.addEventListener('mouseleave', handleGlobalEnd);
-      
-      return () => {
-        document.removeEventListener('touchmove', handleGlobalMove);
-        document.removeEventListener('touchend', handleGlobalEnd);
-        document.removeEventListener('touchcancel', handleGlobalEnd);
-        document.removeEventListener('mousemove', handleGlobalMove);
-        document.removeEventListener('mouseup', handleGlobalEnd);
-        document.removeEventListener('mouseleave', handleGlobalEnd);
-      };
-    }
-  }, [isDragging, handleMove, handleEnd]);
+      }
+      handleEnd();
+    };
+
+    document.addEventListener('touchmove', handleGlobalMove, { passive: false });
+    document.addEventListener('touchend', handleGlobalEnd, { passive: false });
+    document.addEventListener('touchcancel', handleGlobalEnd, { passive: false });
+    document.addEventListener('mousemove', handleGlobalMove);
+    document.addEventListener('mouseup', handleGlobalEnd);
+    document.addEventListener('mouseleave', handleGlobalEnd);
+
+    return () => {
+      document.removeEventListener('touchmove', handleGlobalMove);
+      document.removeEventListener('touchend', handleGlobalEnd);
+      document.removeEventListener('touchcancel', handleGlobalEnd);
+      document.removeEventListener('mousemove', handleGlobalMove);
+      document.removeEventListener('mouseup', handleGlobalEnd);
+      document.removeEventListener('mouseleave', handleGlobalEnd);
+    };
+  }, [handleMove, handleEnd]);
   
   // Cleanup on unmount
   useEffect(() => {

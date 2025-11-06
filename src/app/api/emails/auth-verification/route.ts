@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const resendApiKey = process.env.RESEND_API_KEY
+const resend = resendApiKey ? new Resend(resendApiKey) : null
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,6 +12,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Email and verification URL are required' },
         { status: 400 }
+      )
+    }
+
+    if (!resend) {
+      console.error('Resend API key is not configured')
+      return NextResponse.json(
+        { error: 'Email service unavailable. Please try again later.' },
+        { status: 503 }
       )
     }
 

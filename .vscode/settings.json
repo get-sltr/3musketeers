@@ -5,7 +5,7 @@
   "workbench.editor.restoreViewState": true,
   
   // Always open these files in pinned tabs
-  "workbench.editor.enablePreview": false,
+  "workbench.editor.enablePreview": true,
   "workbench.editor.pinnedTabSizing": "normal",
   
   // Restore workspace state (will remember open files)

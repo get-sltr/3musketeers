@@ -45,8 +45,9 @@ function AuthCallbackContent() {
         }
 
         // Decide where to go next
-        const next = searchParams?.get("next")
-        const type = searchParams?.get("type") || (typeof window !== 'undefined' ? new URL(window.location.href).searchParams.get('type') : null)
+        const params = searchParams ?? (typeof window !== 'undefined' ? new URL(window.location.href).searchParams : null)
+        const next = params?.get("next")
+        const type = params?.get("type") || (typeof window !== 'undefined' ? new URL(window.location.href).searchParams.get('type') : null)
 
         if ((type && type.toLowerCase() === 'recovery') || next === "/reset-password") {
           router.replace("/reset-password")
