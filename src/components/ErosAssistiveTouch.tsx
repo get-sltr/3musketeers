@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
 interface Position {
@@ -18,6 +18,22 @@ interface MenuAction {
 
 export function ErosAssistiveTouch() {
   const router = useRouter();
+  const pathname = usePathname();
+  const disabledPaths = new Set([
+    '/',
+    '/login',
+    '/signup',
+    '/pricing',
+    '/forgot-password',
+    '/reset-password',
+    '/coming-soon',
+    '/privacy',
+    '/terms',
+  ]);
+
+  if (disabledPaths.has(pathname || '')) {
+    return null;
+  }
   const supabase = createClient();
   const [position, setPosition] = useState<Position>({ 
     x: typeof window !== 'undefined' ? window.innerWidth - 90 : 0, 
