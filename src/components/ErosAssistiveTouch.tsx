@@ -32,6 +32,7 @@ export function ErosAssistiveTouch() {
   const offset = useRef<Position>({ x: 0, y: 0 });
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const dragTimeout = useRef<NodeJS.Timeout | null>(null);
+  const pointerDown = useRef(false)
   
   // Load saved position
   useEffect(() => {
@@ -158,6 +159,8 @@ export function ErosAssistiveTouch() {
     e.preventDefault();
     e.stopPropagation();
     
+    pointerDown.current = true
+
     const point = 'touches' in e ? (e as React.TouchEvent).touches[0] : (e as React.MouseEvent);
     if (!point) return;
     
@@ -184,50 +187,50 @@ export function ErosAssistiveTouch() {
     }
   }, []);
   
-  const handleMove = useCallback((e: TouchEvent | MouseEvent) => {
-    const point = 'touches' in e ? (e as TouchEvent).touches[0] : (e as MouseEvent);
-    if (!point) return;
-    
-    // Check if moved enough to be dragging (reduced threshold for better responsiveness)
-    const movedX = Math.abs(point.clientX - dragStartPos.current.x);
-    const movedY = Math.abs(point.clientY - dragStartPos.current.y);
-    
-    if (movedX > 5 || movedY > 5) {
-      if (longPressTimer.current) {
-        clearTimeout(longPressTimer.current);
-        longPressTimer.current = null;
-      }
-      setMenuOpen(false);
-      
-      if (!isDragging) {
-        setIsDragging(true);
-        vibrate(10); // Light haptic feedback when dragging starts
-      }
-      
-      // Prevent default to avoid scrolling
-      e.preventDefault();
-      e.stopPropagation();
-      
-      // Calculate new position
-      const rect = assistantRef.current?.getBoundingClientRect();
-      if (rect) {
-        const newX = point.clientX - offset.current.x;
-        const newY = point.clientY - offset.current.y;
-        
-        // Constrain to screen bounds
-        const buttonSize = 70;
-        const maxX = window.innerWidth - buttonSize;
-        const maxY = window.innerHeight - buttonSize;
-        
+  const handleMove = useCallback(
+    (e: TouchEvent | MouseEvent) => {
+      if (!pointerDown.current) return
+
+      const point = 'touches' in e ? (e as TouchEvent).touches[0] : (e as MouseEvent)
+      if (!point) return
+
+      const movedX = Math.abs(point.clientX - dragStartPos.current.x)
+      const movedY = Math.abs(point.clientY - dragStartPos.current.y)
+
+      if (movedX > 5 || movedY > 5) {
+        if (longPressTimer.current) {
+          clearTimeout(longPressTimer.current)
+          longPressTimer.current = null
+        }
+        setMenuOpen(false)
+
+        if (!isDragging) {
+          setIsDragging(true)
+          vibrate(10)
+        }
+
+        e.preventDefault()
+        e.stopPropagation()
+
+        const newX = point.clientX - offset.current.x
+        const newY = point.clientY - offset.current.y
+
+        const buttonSize = 70
+        const maxX = window.innerWidth - buttonSize
+        const maxY = window.innerHeight - buttonSize
+
         setPosition({
           x: Math.max(0, Math.min(newX, maxX)),
-          y: Math.max(0, Math.min(newY, maxY))
-        });
+          y: Math.max(0, Math.min(newY, maxY)),
+        })
       }
-    }
-  }, [isDragging]);
+    },
+    [isDragging]
+  )
   
   const handleEnd = useCallback(() => {
+    pointerDown.current = false
+
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
@@ -246,7 +249,6 @@ export function ErosAssistiveTouch() {
       const screenHeight = window.innerHeight;
       const buttonSize = 70;
       const midpoint = screenWidth / 2;
-      const verticalMidpoint = screenHeight / 2;
       
       setIsAnimating(true);
       
@@ -280,32 +282,28 @@ export function ErosAssistiveTouch() {
   }, [isDragging, menuOpen, position]);
   
   useEffect(() => {
-    const handleGlobalMove = (e: TouchEvent | MouseEvent) => {
-      handleMove(e);
-    };
-    const handleGlobalEnd = (e?: Event) => {
-      if (e) {
-        e.preventDefault();
-        e.stopPropagation();
+    const handleGlobalMove = (event: TouchEvent | MouseEvent) => handleMove(event)
+    const handleGlobalEnd = (event?: Event) => {
+      if (event) {
+        event.preventDefault()
+        event.stopPropagation()
       }
-      handleEnd();
-    };
+      handleEnd()
+    }
 
-    document.addEventListener('touchmove', handleGlobalMove, { passive: false });
-    document.addEventListener('touchend', handleGlobalEnd, { passive: false });
-    document.addEventListener('touchcancel', handleGlobalEnd, { passive: false });
-    document.addEventListener('mousemove', handleGlobalMove);
-    document.addEventListener('mouseup', handleGlobalEnd);
-    document.addEventListener('mouseleave', handleGlobalEnd);
+    document.addEventListener('touchmove', handleGlobalMove, { passive: false })
+    document.addEventListener('touchend', handleGlobalEnd, { passive: false })
+    document.addEventListener('touchcancel', handleGlobalEnd, { passive: false })
+    document.addEventListener('mousemove', handleGlobalMove)
+    document.addEventListener('mouseup', handleGlobalEnd)
 
     return () => {
-      document.removeEventListener('touchmove', handleGlobalMove);
-      document.removeEventListener('touchend', handleGlobalEnd);
-      document.removeEventListener('touchcancel', handleGlobalEnd);
-      document.removeEventListener('mousemove', handleGlobalMove);
-      document.removeEventListener('mouseup', handleGlobalEnd);
-      document.removeEventListener('mouseleave', handleGlobalEnd);
-    };
+      document.removeEventListener('touchmove', handleGlobalMove)
+      document.removeEventListener('touchend', handleGlobalEnd)
+      document.removeEventListener('touchcancel', handleGlobalEnd)
+      document.removeEventListener('mousemove', handleGlobalMove)
+      document.removeEventListener('mouseup', handleGlobalEnd)
+    }
   }, [handleMove, handleEnd]);
   
   // Cleanup on unmount

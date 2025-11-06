@@ -10,31 +10,29 @@ interface VideoCallProps {
   onEndCall: () => void
 }
 
-export default function VideoCall({ 
-  conversationId, 
-  otherUserId, 
-  otherUserName, 
-  onEndCall 
+export default function VideoCall({
+  conversationId,
+  otherUserId,
+  otherUserName,
+  onEndCall,
 }: VideoCallProps) {
   const [isCallActive, setIsCallActive] = useState(false)
-  const [isConnecting, setIsConnecting] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
   const [isVideoOff, setIsVideoOff] = useState(false)
-  const [callDuration, setCallDuration] = useState(0)
   const [error, setError] = useState<string | null>(null)
-  
+
   const callFrameRef = useRef<any>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const callStartTimeRef = useRef<number>(0)
 
-  // Initialize Daily.co call
   useEffect(() => {
     const initializeCall = async () => {
-      try {
-        setIsConnecting(true)
-        setError(null)
+      setError(null)
 
-        // Create/get Daily.co room
+      try {
+        if (!process.env.NEXT_PUBLIC_HAS_DAILY) {
+          throw new Error('Daily API key is not configured. Set DAILY_API_KEY in your environment.')
+        }
+
         const response = await fetch('/api/daily/create-room', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -42,63 +40,43 @@ export default function VideoCall({
         })
 
         if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.error || 'Failed to create Daily.co room')
+          const text = await response.text()
+          throw new Error(`Failed to create Daily room (${response.status}): ${text}`)
         }
 
         const { url } = await response.json()
 
-        if (!containerRef.current) {
-          throw new Error('Container ref not available')
+        if (!url) {
+          throw new Error('Daily room URL missing from response')
         }
 
-        // Create Daily.co call frame
         const callFrame = DailyIframe.createFrame(containerRef.current, {
-          showLeaveButton: false, // We'll use custom controls
+          showLeaveButton: true,
           showFullscreenButton: true,
-          showParticipantsBar: false,
-          showLocalVideo: true,
           iframeStyle: {
             position: 'absolute',
             width: '100%',
             height: '100%',
-            border: 'none',
-            borderRadius: '1rem',
           },
         })
 
         callFrameRef.current = callFrame
 
-        // Set up event listeners
-        callFrame
-          .on('joined-meeting', () => {
-            setIsCallActive(true)
-            setIsConnecting(false)
-            callStartTimeRef.current = Date.now()
-          })
-          .on('left-meeting', () => {
-            endCall()
-          })
-          .on('participant-left', () => {
-            endCall()
-          })
-          .on('error', (event: any) => {
-            console.error('Daily.co error:', event)
-            setError(event.error || 'Call error occurred')
-            setIsConnecting(false)
-          })
-          .on('participant-joined', () => {
-            setIsCallActive(true)
-            setIsConnecting(false)
-          })
-
-        // Join the call
         await callFrame.join({ url })
-        
-      } catch (err) {
-        console.error('Error initializing Daily.co call:', err)
-        setError(err instanceof Error ? err.message : 'Failed to start call')
-        setIsConnecting(false)
+        setIsCallActive(true)
+
+        callFrame.on('left-meeting', () => {
+          onEndCall()
+        })
+
+        callFrame.on('participant-left', () => {
+          onEndCall()
+        })
+      } catch (err: any) {
+        console.error('Daily video call error:', err)
+        setError(err.message || 'Unable to start video call. Please try again later.')
+        callFrameRef.current?.destroy()
+        callFrameRef.current = null
       }
     }
 
@@ -106,43 +84,11 @@ export default function VideoCall({
 
     return () => {
       if (callFrameRef.current) {
-        callFrameRef.current.leave().then(() => {
-          callFrameRef.current.destroy()
-        })
+        callFrameRef.current.destroy()
+        callFrameRef.current = null
       }
     }
-  }, [conversationId])
-
-  // Call duration timer
-  useEffect(() => {
-    if (!isCallActive) return
-
-    const timer = setInterval(() => {
-      if (callStartTimeRef.current) {
-        setCallDuration(Math.floor((Date.now() - callStartTimeRef.current) / 1000))
-      }
-    }, 1000)
-
-    return () => clearInterval(timer)
-  }, [isCallActive])
-
-  const endCall = () => {
-    if (callFrameRef.current) {
-      callFrameRef.current.leave().then(() => {
-        if (callFrameRef.current) {
-          callFrameRef.current.destroy()
-        }
-      })
-    }
-
-    setIsCallActive(false)
-    setIsConnecting(false)
-    setCallDuration(0)
-    callStartTimeRef.current = 0
-    setError(null)
-
-    onEndCall()
-  }
+  }, [conversationId, onEndCall])
 
   const toggleMute = () => {
     if (callFrameRef.current) {
@@ -158,85 +104,44 @@ export default function VideoCall({
     }
   }
 
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  const leaveCall = () => {
+    if (callFrameRef.current) {
+      callFrameRef.current.leave()
+      callFrameRef.current.destroy()
+      callFrameRef.current = null
+    }
+    onEndCall()
   }
 
   return (
-    <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
-      {/* Daily.co Container */}
-      <div ref={containerRef} className="relative w-full h-full max-w-6xl max-h-4xl" />
+    <div className="fixed inset-0 bg-black z-50">
+      <div ref={containerRef} className="w-full h-full" />
 
-      {/* Custom Controls Overlay */}
-      {isCallActive && (
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10">
-          <div className="glass-strong px-8 py-4 rounded-2xl flex items-center gap-4">
-            {/* User Info */}
-            <div className="glass-bubble px-4 py-2 mr-4">
-              <h3 className="text-white font-semibold text-sm">{otherUserName}</h3>
-              <p className="text-white/70 text-xs">{formatDuration(callDuration)}</p>
-            </div>
-
-            {/* Mute Button */}
-            <button
-              onClick={toggleMute}
-              className={`p-4 rounded-full transition-all duration-300 ${
-                isMuted 
-                  ? 'bg-red-500 hover:bg-red-600' 
-                  : 'bg-white/20 hover:bg-white/30'
-              }`}
-              title={isMuted ? 'Unmute' : 'Mute'}
-            >
-              {isMuted ? '🔇' : '🎤'}
-            </button>
-
-            {/* Video Toggle */}
-            <button
-              onClick={toggleVideo}
-              className={`p-4 rounded-full transition-all duration-300 ${
-                isVideoOff 
-                  ? 'bg-red-500 hover:bg-red-600' 
-                  : 'bg-white/20 hover:bg-white/30'
-              }`}
-              title={isVideoOff ? 'Turn on video' : 'Turn off video'}
-            >
-              {isVideoOff ? '📹' : '📷'}
-            </button>
-
-            {/* End Call Button */}
-            <button
-              onClick={endCall}
-              className="p-4 bg-red-500 hover:bg-red-600 rounded-full transition-all duration-300"
-              title="End call"
-            >
-              📞
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Connection Status */}
-      {isConnecting && (
-        <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
-          <div className="glass-strong p-8 rounded-2xl text-center">
-            <div className="w-16 h-16 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <h3 className="text-white text-xl font-semibold mb-2">Connecting...</h3>
-            <p className="text-white/70">Starting video call with {otherUserName}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Error Message */}
       {error && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 glass-strong px-6 py-4 rounded-xl">
-          <p className="text-red-400 font-semibold">⚠️ {error}</p>
-          <button
-            onClick={endCall}
-            className="mt-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all"
-          >
-            Close
+        <div className="absolute inset-0 flex items-center justify-center p-6">
+          <div className="max-w-md w-full bg-red-500/20 border border-red-500/40 rounded-2xl p-6 text-center">
+            <h2 className="text-2xl font-semibold text-white mb-2">Video call unavailable</h2>
+            <p className="text-red-200 text-sm mb-4">{error}</p>
+            <button
+              onClick={leaveCall}
+              className="px-6 py-3 rounded-full bg-red-500 text-white font-semibold"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!error && (
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-4">
+          <button onClick={toggleMute} className="glass-bubble px-6 py-3">
+            {isMuted ? '🔇' : '🎤'}
+          </button>
+          <button onClick={toggleVideo} className="glass-bubble px-6 py-3">
+            {isVideoOff ? '📹' : '📷'}
+          </button>
+          <button onClick={leaveCall} className="glass-bubble px-6 py-3 bg-red-500">
+            End Call
           </button>
         </div>
       )}
