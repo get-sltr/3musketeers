@@ -15,12 +15,38 @@ function AuthCallbackContent() {
     const run = async () => {
       try {
         // Exchange the code in the URL for a session
-        const { error } = await supabase.auth.exchangeCodeForSession(window.location.href)
+        const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href)
         if (error) throw error
 
+        // Check if this is email verification (first time email_confirmed_at is set)
+        if (data.session?.user && data.session.user.email_confirmed_at) {
+          // Get user profile to check if welcome email was already sent
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('display_name, email')
+            .eq('id', data.session.user.id)
+            .single()
+
+          // Send welcome email (if not already sent)
+          try {
+            await fetch('/api/emails/welcome', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email: data.session.user.email,
+                name: profile?.display_name || data.session.user.user_metadata?.username || 'there',
+                username: profile?.display_name || data.session.user.user_metadata?.username,
+              }),
+            })
+          } catch (emailError) {
+            console.error('Failed to send welcome email:', emailError)
+            // Don't fail auth if email fails
+          }
+        }
+
         // Decide where to go next
-        const next = searchParams.get("next")
-        const type = searchParams.get("type") || (typeof window !== 'undefined' ? new URL(window.location.href).searchParams.get('type') : null)
+        const next = searchParams?.get("next")
+        const type = searchParams?.get("type") || (typeof window !== 'undefined' ? new URL(window.location.href).searchParams.get('type') : null)
 
         if ((type && type.toLowerCase() === 'recovery') || next === "/reset-password") {
           router.replace("/reset-password")

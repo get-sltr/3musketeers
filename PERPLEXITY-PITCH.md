@@ -1,8 +1,8 @@
-# Partnership Proposal: Blaze AI Powered by Perplexity
+# Partnership Proposal: EROS AI Powered by Perplexity
 
 ## 🚀 Executive Summary
 
-**SLTR** is a revolutionary real-time social platform that's about to launch with **Blaze AI** - the first AI-powered messaging assistant in a social app. We're seeking a strategic partnership with Perplexity to power our AI features and create a groundbreaking user experience.
+**SLTR** is a revolutionary real-time social platform that's about to launch with **EROS AI** - the first AI-powered messaging assistant in a social app. We're seeking a strategic partnership with Perplexity to power our AI features and create a groundbreaking user experience.
 
 ---
 
@@ -16,7 +16,7 @@
 
 ### **Why SLTR + Perplexity = Game Changer**
 - **Your AI expertise** + **Our social platform** = Unbeatable combination
-- **"Blaze AI powered by Perplexity"** - Premium branding for both companies
+- **"EROS AI powered by Perplexity"** - Premium branding for both companies
 - **Massive user base** - Your AI gets exposure to millions of users
 - **Data insights** - Real-world AI usage patterns and feedback
 
@@ -32,7 +32,7 @@
 - ✅ **Enterprise infrastructure** - Vercel + Supabase + Railway + Cloudflare
 
 ### **AI Integration Ready**
-- ✅ **Blaze AI chat assistant** - Floating AI helper
+- ✅ **EROS AI chat assistant** - Floating AI helper
 - ✅ **Profile optimizer** - AI-powered profile improvements
 - ✅ **Match finder** - AI compatibility analysis
 - ✅ **Conversation starters** - AI-generated ice-breakers
@@ -40,7 +40,7 @@
 
 ---
 
-## 🤖 Blaze AI Features (Powered by Perplexity)
+## 🤖 EROS AI Features (Powered by Perplexity)
 
 ### **Smart Conversations**
 - **AI chat assistant** - Always-available AI helper
@@ -101,7 +101,7 @@
 - **User feedback** - Collect and implement user feedback
 
 ### **Phase 2: Launch (Month 2)**
-- **Public launch** - Launch Blaze AI to all users
+- **Public launch** - Launch EROS AI to all users
 - **Marketing campaign** - "First AI-powered social platform"
 - **User education** - Help users understand AI features
 - **Analytics tracking** - Monitor AI usage and performance
@@ -166,7 +166,7 @@
 
 **Together, we can create the first AI-powered social platform that revolutionizes how people connect, communicate, and build relationships.**
 
-**"Blaze AI powered by Perplexity" - The future of social connection starts here.**
+**"EROS AI powered by Perplexity" - The future of social connection starts here.**
 
 ---
 

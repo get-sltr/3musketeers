@@ -17,9 +17,9 @@ I'm the founder of **SLTR**, a revolutionary real-time social platform that's ab
 
 ## 🤖 The AI Opportunity
 
-We want to partner with Perplexity to power **"Blaze AI"** - the first AI assistant in a social messaging app.
+We want to partner with Perplexity to power **"EROS AI"** - the first AI assistant in a social messaging app.
 
-**Blaze AI Features:**
+**EROS AI Features:**
 - Smart conversation starters
 - Profile optimization suggestions
 - AI-powered match finding
@@ -46,14 +46,14 @@ We want to partner with Perplexity to power **"Blaze AI"** - the first AI assist
 
 **Together, we can create the first AI-powered social platform that revolutionizes how people connect, communicate, and build relationships.**
 
-**"Blaze AI powered by Perplexity" - The future of social connection starts here.**
+**"EROS AI powered by Perplexity" - The future of social connection starts here.**
 
 ## 📞 Next Steps
 
 I'd love to discuss:
 1. **Technical integration** - How to connect to your AI services
 2. **Partnership terms** - Revenue sharing and support structure
-3. **Launch timeline** - When we can go live with Blaze AI
+3. **Launch timeline** - When we can go live with EROS AI
 4. **Marketing collaboration** - Joint promotion of this breakthrough
 
 ## 🚀 Why Now?
@@ -76,6 +76,6 @@ Founder, SLTR
 
 ---
 
-**P.S.** We have a working prototype with Blaze AI already integrated. I can show you a live demo of the AI features in action!
+**P.S.** We have a working prototype with EROS AI already integrated. I can show you a live demo of the AI features in action!
 
 **P.P.S.** This partnership could generate significant revenue for both companies while revolutionizing how people connect online.

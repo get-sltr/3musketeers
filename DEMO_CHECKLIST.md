@@ -243,7 +243,7 @@ NEXT_PUBLIC_MAPBOX_TOKEN=<your-token>
 4. **Modern Tech Stack:** Next.js, Supabase, Vercel - scalable and fast
 5. **Mobile-First Design:** Responsive, touch-optimized for iOS/Android
 6. **Private Albums:** User-controlled photo sharing with permissions
-7. **AI-Ready:** Built with Blaze AI integration points for smart features
+7. **AI-Ready:** Built with EROS AI integration points for smart features
 
 ---
 

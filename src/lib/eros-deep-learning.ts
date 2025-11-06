@@ -4,6 +4,17 @@
 import Groq from 'groq-sdk';
 import { createClient } from '@supabase/supabase-js';
 
+/**
+ * GROQ vs OTHERS - Pricing & Limits Comparison:
+ * 
+ * Groq:    FREE - 14,400 requests/day - FAST ⚡
+ * OpenAI:  $0.002/1k tokens - Slower 🐢
+ * Claude:  $0.015/1k tokens - Expensive 💰
+ * Gemini:  Limited free tier - Restricted 🚫
+ * 
+ * GROQ is the clear winner: FREE + FAST + HIGH LIMITS
+ */
+
 // Lazy initialization to avoid build-time errors
 function getErosClient() {
   const apiKey = process.env.GROQ_API_KEY;
@@ -11,6 +22,37 @@ function getErosClient() {
     throw new Error('GROQ_API_KEY environment variable is required');
   }
   return new Groq({ apiKey });
+}
+
+// Helper function to handle rate limits with retry
+async function makeErosRequest(
+  requestFn: () => Promise<any>,
+  maxRetries: number = 3,
+  retryDelay: number = 1000
+): Promise<any> {
+  let lastError: any;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await requestFn();
+    } catch (error: any) {
+      lastError = error;
+      
+      // Rate limited - wait and retry
+      if (error?.status === 429 || error?.statusCode === 429) {
+        const delay = retryDelay * (attempt + 1); // Exponential backoff
+        console.warn(`⚠️ EROS rate limited (429), retrying in ${delay}ms... (attempt ${attempt + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      
+      // Other errors - throw immediately
+      throw error;
+    }
+  }
+  
+  // All retries failed
+  throw lastError || new Error('EROS request failed after retries');
 }
 
 function getSupabaseClient() {
@@ -188,13 +230,15 @@ export async function analyzeFavorites(
     `;
 
     const eros = getErosClient();
-    const response = await eros.chat.completions.create({
-      model: 'mixtral-8x7b-32768',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-      max_tokens: 800,
-      response_format: { type: 'json_object' }
-    });
+    const response = await makeErosRequest(() => 
+      eros.chat.completions.create({
+        model: 'mixtral-8x7b-32768',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: 800,
+        response_format: { type: 'json_object' }
+      })
+    );
 
     const content = response.choices[0]?.message?.content;
     if (!content) {
@@ -290,13 +334,15 @@ export async function analyzeCallHistory(
     `;
 
     const eros = getErosClient();
-    const response = await eros.chat.completions.create({
-      model: 'mixtral-8x7b-32768',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-      max_tokens: 800,
-      response_format: { type: 'json_object' }
-    });
+    const response = await makeErosRequest(() => 
+      eros.chat.completions.create({
+        model: 'mixtral-8x7b-32768',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: 800,
+        response_format: { type: 'json_object' }
+      })
+    );
 
     const content = response.choices[0]?.message?.content;
     if (!content) {
@@ -386,13 +432,15 @@ export async function analyzeBlockPatterns(
     `;
 
     const eros = getErosClient();
-    const response = await eros.chat.completions.create({
-      model: 'mixtral-8x7b-32768',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-      max_tokens: 800,
-      response_format: { type: 'json_object' }
-    });
+    const response = await makeErosRequest(() => 
+      eros.chat.completions.create({
+        model: 'mixtral-8x7b-32768',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: 800,
+        response_format: { type: 'json_object' }
+      })
+    );
 
     const content = response.choices[0]?.message?.content;
     if (!content) {
@@ -471,13 +519,15 @@ export async function learnUltimatePreferences(
     `;
 
     const eros = getErosClient();
-    const response = await eros.chat.completions.create({
-      model: 'mixtral-8x7b-32768',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-      max_tokens: 2000,
-      response_format: { type: 'json_object' }
-    });
+    const response = await makeErosRequest(() => 
+      eros.chat.completions.create({
+        model: 'mixtral-8x7b-32768',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: 2000,
+        response_format: { type: 'json_object' }
+      })
+    );
 
     const content = response.choices[0]?.message?.content;
     if (!content) {
@@ -559,13 +609,15 @@ export async function predictiveMatch(
     `;
 
     const eros = getErosClient();
-    const response = await eros.chat.completions.create({
-      model: 'mixtral-8x7b-32768',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.6,
-      max_tokens: 1000,
-      response_format: { type: 'json_object' }
-    });
+    const response = await makeErosRequest(() => 
+      eros.chat.completions.create({
+        model: 'mixtral-8x7b-32768',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.6,
+        max_tokens: 1000,
+        response_format: { type: 'json_object' }
+      })
+    );
 
     const content = response.choices[0]?.message?.content;
     if (!content) {
@@ -711,6 +763,228 @@ export async function autoPilotMode(
 }
 
 // ============================================
+// 7. 💬 ICEBREAKER GENERATOR (with caching)
+// ============================================
+
+// Cache similar requests based on interests
+const icebreakerCache = new Map<string, any>();
+
+export async function getIcebreaker(profile: {
+  interests?: string[];
+  id?: string;
+  display_name?: string;
+  about?: string;
+  tags?: string[];
+  kinks?: string[];
+}): Promise<string> {
+  // Create cache key from interests/tags/kinks
+  const interests = profile.interests || profile.tags || profile.kinks || [];
+  const cacheKey = interests.sort().join('-');
+  
+  // Check cache first
+  if (icebreakerCache.has(cacheKey)) {
+    return icebreakerCache.get(cacheKey);
+  }
+  
+  try {
+    const eros = getErosClient();
+    const prompt = `
+    Generate a perfect icebreaker message for this profile:
+    
+    Name: ${profile.display_name || 'Unknown'}
+    About: ${profile.about || 'No bio'}
+    Interests: ${interests.join(', ') || 'Not specified'}
+    Tags: ${(profile.tags || []).join(', ') || 'None'}
+    
+    Create a personalized, engaging icebreaker that:
+    1. References their interests naturally
+    2. Is friendly but not too forward
+    3. Shows genuine interest
+    4. Is conversation-starting (not just "hey")
+    5. Is appropriate for a hookup/dating app context
+    
+    Return ONLY the icebreaker message (no quotes, no explanation).
+    `;
+    
+    const response = await makeErosRequest(() => 
+      eros.chat.completions.create({
+        model: 'mixtral-8x7b-32768',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.8,
+        max_tokens: 150,
+        response_format: { type: 'text' }
+      })
+    );
+    
+    const result = response.choices[0]?.message?.content?.trim() || "Hey! I noticed we have similar interests. Want to chat?";
+    
+    // Store in cache
+    icebreakerCache.set(cacheKey, result);
+    
+    // Limit cache size (keep last 100 entries)
+    if (icebreakerCache.size > 100) {
+      const firstKey = icebreakerCache.keys().next().value;
+      icebreakerCache.delete(firstKey);
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Eros Icebreaker Error:', error);
+    // Fallback message
+    return "Hey! I noticed we have similar interests. Want to chat?";
+  }
+}
+
+// ============================================
+// 8. 🔄 BATCH MATCH ANALYSIS (process multiple at once)
+// ============================================
+
+export async function analyzeMatches(
+  matches: Array<{
+    id: string;
+    display_name?: string;
+    about?: string;
+    age?: number;
+    photos?: string[];
+    tags?: string[];
+    kinks?: string[];
+    position?: string;
+    height?: string;
+    body_type?: string;
+    ethnicity?: string;
+    online?: boolean;
+    dtfn?: boolean;
+    party_friendly?: boolean;
+    [key: string]: any;
+  }>
+): Promise<Array<{
+  profileId: string;
+  analysis: {
+    overallScore: number;
+    topTraits: string[];
+    matchPotential: 'high' | 'medium' | 'low';
+    suggestedIcebreaker?: string;
+    redFlags: string[];
+  };
+}>> {
+  if (!matches || matches.length === 0) {
+    return [];
+  }
+  
+  try {
+    const eros = getErosClient();
+    
+    // Prepare profiles for batch analysis
+    const profilesData = matches.map(match => ({
+      id: match.id,
+      display_name: match.display_name || 'Unknown',
+      about: match.about || 'No bio',
+      age: match.age,
+      tags: match.tags || [],
+      kinks: match.kinks || [],
+      position: match.position,
+      height: match.height,
+      body_type: match.body_type,
+      ethnicity: match.ethnicity,
+      online: match.online,
+      dtfn: match.dtfn,
+      party_friendly: match.party_friendly
+    }));
+    
+    const prompt = `
+    Analyze these ${matches.length} profiles in a single batch:
+    
+    ${JSON.stringify(profilesData, null, 2)}
+    
+    For EACH profile, provide:
+    1. Overall match score (0-100)
+    2. Top 3 most attractive traits
+    3. Match potential: 'high', 'medium', or 'low'
+    4. Suggested icebreaker message (1 sentence)
+    5. Any red flags or concerns
+    
+    Return as JSON array with this structure:
+    [
+      {
+        "profileId": "uuid",
+        "analysis": {
+          "overallScore": 85,
+          "topTraits": ["trait1", "trait2", "trait3"],
+          "matchPotential": "high",
+          "suggestedIcebreaker": "message here",
+          "redFlags": ["flag1", "flag2"]
+        }
+      },
+      ...
+    ]
+    `;
+    
+    const response = await makeErosRequest(() => 
+      eros.chat.completions.create({
+        model: 'mixtral-8x7b-32768',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: 4000, // More tokens for multiple profiles
+        response_format: { type: 'json_object' }
+      })
+    );
+    
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error('No response from EROS API');
+    }
+    
+    const parsed = JSON.parse(content);
+    
+    // Handle both array response and object with results array
+    let results: any[] = [];
+    if (Array.isArray(parsed)) {
+      results = parsed;
+    } else if (parsed.results && Array.isArray(parsed.results)) {
+      results = parsed.results;
+    } else if (parsed.analyses && Array.isArray(parsed.analyses)) {
+      results = parsed.analyses;
+    } else {
+      // Fallback: create results from individual keys
+      results = Object.values(parsed).filter((item: any) => item && item.profileId) as any[];
+    }
+    
+    // Ensure all matches have analyses (fill in missing ones)
+    const analyzedIds = new Set(results.map((r: any) => r.profileId));
+    for (const match of matches) {
+      if (!analyzedIds.has(match.id)) {
+        results.push({
+          profileId: match.id,
+          analysis: {
+            overallScore: 50,
+            topTraits: [],
+            matchPotential: 'medium' as const,
+            suggestedIcebreaker: "Hey! Want to chat?",
+            redFlags: []
+          }
+        });
+      }
+    }
+    
+    return results;
+  } catch (error) {
+    console.error('Eros Batch Analysis Error:', error);
+    
+    // Fallback: return basic analysis for all matches
+    return matches.map(match => ({
+      profileId: match.id,
+      analysis: {
+        overallScore: 50,
+        topTraits: match.tags?.slice(0, 3) || [],
+        matchPotential: 'medium' as const,
+        suggestedIcebreaker: `Hey ${match.display_name || 'there'}! Want to chat?`,
+        redFlags: []
+      }
+    }));
+  }
+}
+
+// ============================================
 // HELPER FUNCTIONS
 // ============================================
 
@@ -763,7 +1037,16 @@ async function generatePersonalizedOpener(
   matchProfile: any,
   pattern: UltimatePrefPattern
 ) {
-  // Implementation from previous eros-ai.ts
-  return { message: "Hey there!" };
+  // Use cached icebreaker generator
+  const message = await getIcebreaker({
+    interests: matchProfile.tags || matchProfile.kinks || [],
+    id: matchProfile.id,
+    display_name: matchProfile.display_name,
+    about: matchProfile.about,
+    tags: matchProfile.tags,
+    kinks: matchProfile.kinks
+  });
+  
+  return { message };
 }
 

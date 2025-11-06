@@ -14,15 +14,24 @@ export function createClient() {
     return createBrowserClient('https://demo.supabase.co', 'demo-key')
   }
   
-  // Only log in development to reduce console spam
-  // Check both NODE_ENV and if we're running on localhost
-  const isDev = process.env.NODE_ENV === 'development' || 
-                (typeof window !== 'undefined' && 
-                 (window.location.hostname === 'localhost' || 
-                  window.location.hostname === '127.0.0.1'))
+  // Only log in development to reduce console spam in production
+  // In production (getsltr.com), never log to reduce console noise
+  const isProduction = typeof window !== 'undefined' && 
+                       (window.location.hostname === 'getsltr.com' || 
+                        window.location.hostname === 'www.getsltr.com')
   
-  if (isDev) {
-    console.log('✅ Supabase configured:', supabaseUrl)
+  // Only log once per page load, not on every client creation
+  // Skip logging entirely in production
+  if (!isProduction && typeof window !== 'undefined' && !(window as any).__supabase_logged__) {
+    const isDev = process.env.NODE_ENV === 'development' || 
+                  window.location.hostname === 'localhost' || 
+                  window.location.hostname === '127.0.0.1' ||
+                  window.location.hostname.includes('.vercel.app')
+    
+    if (isDev) {
+      console.log('✅ Supabase configured:', supabaseUrl)
+      ;(window as any).__supabase_logged__ = true
+    }
   }
   return createBrowserClient(supabaseUrl, supabaseKey)
 }

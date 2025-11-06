@@ -110,7 +110,7 @@ async function runDiagnostic() {
   console.log('✅ Authentication: Supabase Auth');
   console.log('✅ File Storage: Supabase Storage');
   console.log('✅ Maps: Leaflet/Mapbox integration');
-  console.log('✅ AI Features: Blaze AI components');
+  console.log('✅ AI Features: EROS AI components');
 
   console.log('\n📋 6. SECURITY STATUS:');
   console.log('----------------------');

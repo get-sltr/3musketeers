@@ -85,9 +85,5 @@ async function syncMessages() {
   console.log('Syncing messages...');
 }
 
-// Cache strategy for offline support (optional)
-self.addEventListener('fetch', (event) => {
-  // Let the browser handle all fetches
-  // We're only using this SW for notifications
-  return;
-});
+// No fetch handler needed - we're only using this SW for notifications
+// The browser will handle all network requests normally

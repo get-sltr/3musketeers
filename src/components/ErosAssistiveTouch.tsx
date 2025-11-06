@@ -25,11 +25,13 @@ export function ErosAssistiveTouch() {
   });
   const [isDragging, setIsDragging] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
   
   const assistantRef = useRef<HTMLDivElement>(null);
   const dragStartPos = useRef<Position>({ x: 0, y: 0 });
   const offset = useRef<Position>({ x: 0, y: 0 });
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const dragTimeout = useRef<NodeJS.Timeout | null>(null);
   
   // Load saved position
   useEffect(() => {
@@ -84,9 +86,18 @@ export function ErosAssistiveTouch() {
       id: 'video', 
       icon: '📹', 
       label: 'Video Call', 
-      action: () => {
-        // TODO: Open video call interface
-        console.log('Starting video...');
+      action: async () => {
+        // Navigate to messages page - user can start video call from there
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          router.push('/messages');
+          // Dispatch event to open video call modal if conversation is selected
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('eros_start_video_call'));
+          }, 500);
+        } else {
+          router.push('/login');
+        }
       }
     },
     { 
@@ -129,6 +140,12 @@ export function ErosAssistiveTouch() {
       label: 'Settings', 
       action: () => router.push('/setting/5-settings-page')
     },
+    { 
+      id: 'pricing', 
+      icon: '💎', 
+      label: 'Member Services', 
+      action: () => router.push('/pricing')
+    },
   ];
   
   const vibrate = (duration: number) => {
@@ -138,6 +155,9 @@ export function ErosAssistiveTouch() {
   };
   
   const handleStart = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     const point = 'touches' in e ? (e as React.TouchEvent).touches[0] : (e as React.MouseEvent);
     if (!point) return;
     
@@ -150,11 +170,17 @@ export function ErosAssistiveTouch() {
         y: point.clientY - rect.top 
       };
       
-      // Long press detection
+      // Clear any existing animation
+      if (dragTimeout.current) {
+        clearTimeout(dragTimeout.current);
+      }
+      setIsAnimating(false);
+      
+      // Long press detection (reduced to 400ms for better UX)
       longPressTimer.current = setTimeout(() => {
         setMenuOpen(true);
         vibrate(50);
-      }, 500);
+      }, 400);
     }
   }, []);
   
@@ -162,11 +188,11 @@ export function ErosAssistiveTouch() {
     const point = 'touches' in e ? (e as TouchEvent).touches[0] : (e as MouseEvent);
     if (!point) return;
     
-    // Check if moved enough to be dragging
+    // Check if moved enough to be dragging (reduced threshold for better responsiveness)
     const movedX = Math.abs(point.clientX - dragStartPos.current.x);
     const movedY = Math.abs(point.clientY - dragStartPos.current.y);
     
-    if (movedX > 10 || movedY > 10) {
+    if (movedX > 5 || movedY > 5) {
       if (longPressTimer.current) {
         clearTimeout(longPressTimer.current);
         longPressTimer.current = null;
@@ -175,18 +201,29 @@ export function ErosAssistiveTouch() {
       
       if (!isDragging) {
         setIsDragging(true);
+        vibrate(10); // Light haptic feedback when dragging starts
       }
-    }
-    
-    if (isDragging) {
-      e.preventDefault();
-      const newX = point.clientX - offset.current.x;
-      const newY = point.clientY - offset.current.y;
       
-      setPosition({
-        x: Math.max(0, Math.min(newX, window.innerWidth - 70)),
-        y: Math.max(0, Math.min(newY, window.innerHeight - 70))
-      });
+      // Prevent default to avoid scrolling
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Calculate new position
+      const rect = assistantRef.current?.getBoundingClientRect();
+      if (rect) {
+        const newX = point.clientX - offset.current.x;
+        const newY = point.clientY - offset.current.y;
+        
+        // Constrain to screen bounds
+        const buttonSize = 70;
+        const maxX = window.innerWidth - buttonSize;
+        const maxY = window.innerHeight - buttonSize;
+        
+        setPosition({
+          x: Math.max(0, Math.min(newX, maxX)),
+          y: Math.max(0, Math.min(newY, maxY))
+        });
+      }
     }
   }, [isDragging]);
   
@@ -197,52 +234,105 @@ export function ErosAssistiveTouch() {
     }
     
     if (!isDragging && !menuOpen) {
-      // Single tap - quick action
+      // Single tap - quick action (open EROS menu)
       vibrate(30);
-      // TODO: Quick action (maybe open EROS chat or match finder)
+      setMenuOpen(true);
+      return;
     }
     
     if (isDragging) {
-      // Snap to edge
+      // Snap to nearest edge (like iPhone AssistiveTouch)
       const screenWidth = window.innerWidth;
+      const screenHeight = window.innerHeight;
+      const buttonSize = 70;
       const midpoint = screenWidth / 2;
+      const verticalMidpoint = screenHeight / 2;
       
-      setPosition(prev => ({
-        x: prev.x < midpoint ? 10 : screenWidth - 80,
-        y: Math.max(50, Math.min(prev.y, window.innerHeight - 120))
-      }));
+      setIsAnimating(true);
+      
+      // Determine which edge is closer
+      const currentX = position.x;
+      const currentY = position.y;
+      
+      let targetX: number;
+      let targetY: number;
+      
+      // Horizontal snap - always snap to left or right edge
+      if (currentX < midpoint) {
+        targetX = 10; // Snap to left
+      } else {
+        targetX = screenWidth - buttonSize - 10; // Snap to right
+      }
+      
+      // Vertical position - keep within bounds but allow more flexibility
+      targetY = Math.max(50, Math.min(currentY, screenHeight - buttonSize - 50));
+      
+      // Smooth animation to target position
+      setPosition({ x: targetX, y: targetY });
+      
+      // Reset animation flag after transition
+      dragTimeout.current = setTimeout(() => {
+        setIsAnimating(false);
+      }, 300);
     }
     
     setIsDragging(false);
-  }, [isDragging, menuOpen]);
+  }, [isDragging, menuOpen, position]);
   
   useEffect(() => {
     if (isDragging) {
-      const handleGlobalMove = (e: TouchEvent | MouseEvent) => handleMove(e);
-      const handleGlobalEnd = () => handleEnd();
+      const handleGlobalMove = (e: TouchEvent | MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        handleMove(e);
+      };
+      const handleGlobalEnd = (e?: Event) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        handleEnd();
+      };
       
       document.addEventListener('touchmove', handleGlobalMove, { passive: false });
-      document.addEventListener('touchend', handleGlobalEnd);
+      document.addEventListener('touchend', handleGlobalEnd, { passive: false });
+      document.addEventListener('touchcancel', handleGlobalEnd, { passive: false });
       document.addEventListener('mousemove', handleGlobalMove);
       document.addEventListener('mouseup', handleGlobalEnd);
+      document.addEventListener('mouseleave', handleGlobalEnd);
       
       return () => {
         document.removeEventListener('touchmove', handleGlobalMove);
         document.removeEventListener('touchend', handleGlobalEnd);
+        document.removeEventListener('touchcancel', handleGlobalEnd);
         document.removeEventListener('mousemove', handleGlobalMove);
         document.removeEventListener('mouseup', handleGlobalEnd);
+        document.removeEventListener('mouseleave', handleGlobalEnd);
       };
     }
   }, [isDragging, handleMove, handleEnd]);
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+      }
+      if (dragTimeout.current) {
+        clearTimeout(dragTimeout.current);
+      }
+    };
+  }, []);
   
   return (
     <>
       <div
         ref={assistantRef}
-        className={`eros-assistant ${isDragging ? 'dragging' : ''}`}
+        className={`eros-assistant ${isDragging ? 'dragging' : ''} ${isAnimating ? 'animating' : ''}`}
         style={{ 
           left: `${position.x}px`, 
-          top: `${position.y}px` 
+          top: `${position.y}px`,
+          transition: isDragging ? 'none' : isAnimating ? 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), top 0.3s cubic-bezier(0.4, 0, 0.2, 1)' : 'none'
         }}
         onTouchStart={handleStart}
         onMouseDown={handleStart}
@@ -278,13 +368,23 @@ export function ErosAssistiveTouch() {
           z-index: 9999;
           touch-action: none;
           user-select: none;
-          cursor: move;
-          transition: transform 0.2s ease, box-shadow 0.3s ease;
+          cursor: grab;
+          will-change: transform, left, top;
+        }
+
+        .eros-assistant:active {
+          cursor: grabbing;
         }
 
         .eros-assistant.dragging {
           transition: none !important;
           transform: scale(1.15) !important;
+          cursor: grabbing !important;
+        }
+
+        .eros-assistant.animating {
+          transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                      top 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
         }
 
         .eros-button {

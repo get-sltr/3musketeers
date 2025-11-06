@@ -129,7 +129,7 @@ export default function MapboxUsers({
     initialCenterPromise.then((resolvedCenter) => {
       mapRef.current = new mapboxgl.Map({
         container: containerRef.current as HTMLDivElement,
-        style: `mapbox://styles/mapbox/${styleId}`,
+        style: `mapbox://styles/mapbox/${styleId || 'dark-v11'}`,
         center: resolvedCenter,
         zoom,
         minZoom,
@@ -674,8 +674,8 @@ export default function MapboxUsers({
   }
 
   return (
-    <div className="w-full h-screen overflow-hidden relative">
-      <div ref={containerRef} className="w-full h-full" />
+    <div className="w-full h-full min-h-[400px] overflow-hidden relative touch-pan-y">
+      <div ref={containerRef} className="w-full h-full" style={{ touchAction: 'pan-x pan-y' }} />
       {useAdvanced && hovered && (
         <div
           className="pointer-events-auto absolute z-50"

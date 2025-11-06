@@ -26,7 +26,7 @@
 - **Real-Time:** Socket.io Client + Supabase Realtime
 - **Maps:** Mapbox GL JS + Leaflet
 - **Video:** WebRTC (Peer-to-Peer)
-- **AI:** Blaze AI (Perplexity Integration)
+- **AI:** EROS AI (Perplexity Integration)
 - **Deployment:** Vercel (Global CDN)
 
 ### Backend Stack
@@ -67,7 +67,7 @@
 │   │   ├── MessagingModal.tsx
 │   │   ├── GridView.tsx
 │   │   ├── MapView.tsx
-│   │   ├── BlazeAI.tsx
+│   │   ├── ErosAI.tsx
 │   │   └── [34 total components]
 │   ├── hooks/                  # Custom React hooks
 │   │   ├── useSocket.ts        # Socket.io integration
@@ -152,14 +152,14 @@
 ### AI Features ✅
 - **Status:** Functional
 - **Features:**
-  - Blaze AI integration (Perplexity)
+  - EROS AI integration (Perplexity)
   - Profile optimization
   - Match finder
   - AI-powered suggestions
 - **Files:**
-  - `src/components/BlazeAI.tsx`
-  - `src/components/BlazeMatchFinder.tsx`
-  - `src/components/BlazeProfileOptimizer.tsx`
+  - `src/components/ErosAI.tsx`
+  - `src/components/ErosMatchFinder.tsx`
+  - `src/components/ErosProfileOptimizer.tsx`
 
 ### Safety Features ✅
 - **Status:** Functional
@@ -256,7 +256,7 @@
 - `GridView.tsx` - User grid view
 - `MapView.tsx` - User map view
 - `FilterBar.tsx` - User filtering
-- `BlazeAI.tsx` - AI features
+- `ErosAI.tsx` - AI features
 - `PanicButton.tsx` - Safety feature
 - `ReportModal.tsx` - User reporting
 

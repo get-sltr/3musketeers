@@ -1,0 +1,106 @@
+import React, { useEffect, useRef } from 'react';
+import mapboxgl from 'mapbox-gl';
+import { createMapboxMarker } from './MapPinWithDrawer';
+
+mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
+
+interface User {
+  id: string;
+  display_name: string;
+  avatar_url: string | null;
+  age: number;
+  position: string;
+  dtfn: boolean;
+  latitude: number;
+  longitude: number;
+  distance?: string;
+}
+
+interface MapViewProps {
+  users: User[];
+  onChatUser: (userId: string) => void;
+  onVideoCallUser: (userId: string) => void;
+  onTapUser: (userId: string) => void;
+  onProfileClick: (userId: string) => void;
+  center?: [number, number];
+  zoom?: number;
+}
+
+export const MapView: React.FC<MapViewProps> = ({
+  users,
+  onChatUser,
+  onVideoCallUser,
+  onTapUser,
+  onProfileClick,
+  center = [-118.2437, 34.0522],
+  zoom = 12,
+}) => {
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
+  const markers = useRef<mapboxgl.Marker[]>([]);
+
+  useEffect(() => {
+    if (!mapContainer.current || map.current) return;
+
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/mapbox/dark-v11',
+      center,
+      zoom,
+      pitch: 0,
+      bearing: 0,
+    });
+
+    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    map.current.addControl(
+      new mapboxgl.GeolocateControl({
+        positionOptions: {
+          enableHighAccuracy: true,
+        },
+        trackUserLocation: true,
+        showUserHeading: true,
+      }),
+      'top-right',
+    );
+
+    return () => {
+      map.current?.remove();
+      map.current = null;
+    };
+  }, [center, zoom]);
+
+  useEffect(() => {
+    if (!map.current) return;
+
+    markers.current.forEach((marker) => marker.remove());
+    markers.current = [];
+
+    users.forEach((user) => {
+      const el = createMapboxMarker(
+        user,
+        onChatUser,
+        onVideoCallUser,
+        onTapUser,
+        onProfileClick,
+      );
+
+      const marker = new mapboxgl.Marker({
+        element: el,
+        anchor: 'center',
+      })
+        .setLngLat([user.longitude, user.latitude])
+        .addTo(map.current!);
+
+      markers.current.push(marker);
+    });
+  }, [users, onChatUser, onVideoCallUser, onTapUser, onProfileClick]);
+
+  return (
+    <div className="map-view-container">
+      <div ref={mapContainer} className="map-container" />
+    </div>
+  );
+};
+
+export default MapView;
+

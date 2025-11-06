@@ -60,7 +60,7 @@ export default function FounderCard({ onShare }: FounderCardProps) {
                 🔥 Lifetime Membership
               </h3>
               <p className="text-white/90 text-sm">
-                Join the founder's circle and get <strong>FREE lifetime access</strong> to all premium features, Blaze AI, and exclusive benefits!
+                Join the founder's circle and get <strong>FREE lifetime access</strong> to all premium features, EROS AI, and exclusive benefits!
               </p>
             </div>
 
@@ -123,7 +123,7 @@ export default function FounderCard({ onShare }: FounderCardProps) {
                 </div>
                 <div className="flex items-center gap-1">
                   <span>🤖</span>
-                  <span>Blaze AI</span>
+                  <span>EROS AI</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <span>💎</span>

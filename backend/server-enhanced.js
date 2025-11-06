@@ -23,7 +23,10 @@ const corsOptions = {
   origin: function (origin, callback) {
     const allowedOrigins = [
       process.env.FRONTEND_URL || "https://getsltr.com",
-      process.env.DEV_FRONTEND_URL || "http://localhost:3000"
+      process.env.DEV_FRONTEND_URL || "http://localhost:3001",
+      "http://localhost:3001",
+      "http://getsltr.com:3001",
+      "http://localhost:3000"
     ];
     
     // Allow requests with no origin (mobile apps, etc.)

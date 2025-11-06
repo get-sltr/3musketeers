@@ -78,7 +78,7 @@ export default function ReferralSystem({ userId }: ReferralSystemProps) {
   const getReferralRewards = () => {
     if (isFounder) {
       return [
-        { milestone: 5, reward: 'Blaze AI Premium Features' },
+        { milestone: 5, reward: 'EROS Premium Features' },
         { milestone: 10, reward: 'Exclusive Founder Badge' },
         { milestone: 25, reward: 'Priority Support' },
         { milestone: 50, reward: 'Custom Profile Themes' },

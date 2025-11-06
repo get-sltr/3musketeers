@@ -189,7 +189,7 @@
 ### 7. AI Features ✅
 **URL:** Via app interface
 
-- [ ] Blaze AI button accessible
+- [ ] EROS assistant button accessible
 - [ ] AI suggestions work
 - [ ] Profile optimizer works
 - [ ] Match finder works

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import MicroInteractions, { InteractiveButton } from './MicroInteractions'
-import LazyWrapper, { LazyBlazeAI } from './LazyWrapper'
+import LazyWrapper, { LazyErosAI } from './LazyWrapper'
 
 export default function BlazeAIButton() {
   const [showBlazeAI, setShowBlazeAI] = useState(false)
@@ -44,7 +44,7 @@ export default function BlazeAIButton() {
             >
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold text-orange-400 flex items-center gap-2">
-                  🔥 Blaze AI Assistant
+                  🏹 EROS Assistant
                 </h2>
                 <InteractiveButton
                   onClick={() => setShowBlazeAI(false)}
@@ -58,10 +58,10 @@ export default function BlazeAIButton() {
               
               <div className="flex-1 overflow-hidden">
                 <LazyWrapper variant="fullscreen">
-                  <LazyBlazeAI 
+                  <LazyErosAI 
                     conversationId="" 
                     onAIMessage={(message) => {
-                      console.log('AI suggested message:', message)
+              console.log('AI suggested message:', message)
                     }}
                   />
                 </LazyWrapper>

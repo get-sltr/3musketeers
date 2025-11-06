@@ -16,7 +16,7 @@ export default function VerifyEmail() {
   const supabase = createClient()
 
   useEffect(() => {
-    const emailParam = searchParams.get('email')
+    const emailParam = searchParams?.get('email')
     if (emailParam) {
       setEmail(emailParam)
     }

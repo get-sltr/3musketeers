@@ -2,7 +2,7 @@
 
 **Purpose:** Track daily updates, completed work, and progress to avoid repeating tasks.
 
-**Last Updated:** Tuesday, November 4, 2025 (Current Session - All Updates Complete)
+**Last Updated:** Tuesday, November 5, 2025 (Evening Session - Routing Fix & Email Configuration)
 
 ---
 
@@ -55,26 +55,87 @@ These files should auto-open when you open the project:
 
 ## 📅 SESSION LOGS
 
-### [Current Date]
-**Session Start:** [Date/Time]
+### Tuesday, November 5, 2025
+**Session Start:** Tuesday, November 5, 2025 (Evening Session - Email Configuration & Routing Fix)
 
 **Completed:**
-- [ ] Add completed tasks here
+- [x] **Next.js Routing Issue Fix** - Resolved critical routing detection issue
+  - **Root Cause:** Conflicting `/app/` and `/src/app/` directories caused Next.js to fail detecting routes
+  - **Solution:** Removed empty `/app/` directory, kept only `/src/app/` with all routes
+  - **Fix Steps:** 
+    1. Identified conflicting directories (`ls -d app src/app`)
+    2. Removed empty `/app/` directory (`rm -rf app/`)
+    3. Cleared build cache (`rm -rf .next`)
+    4. Killed zombie processes (`lsof -ti:3001 | xargs kill -9`)
+    5. Fresh dev server start (`npm run dev`)
+  - **Result:** All routes now working correctly (homepage, /signup, /app all load)
+  - **Documentation:** Created comprehensive fix report (`NEXTJS_ROUTING_FIX_REPORT.md`)
+- [x] **Resend Email Integration** - Complete email system setup with Resend
+  - Installed `resend` package
+  - Created `/api/emails/welcome` API route for welcome emails
+  - Created `/api/emails/password-reset` API route for password reset emails
+  - Created `/api/emails/auth-verification` API route for email verification
+  - Updated auth callback to trigger welcome email after email confirmation
+  - Updated environment templates with `RESEND_API_KEY`
+  - Created comprehensive Supabase email configuration guide (`SUPABASE_EMAIL_SETUP.md`)
+  - Updated `DEPLOYMENT.md` with Resend API key requirement
+- [x] **Email Templates** - Created beautiful HTML email templates
+  - Welcome email with gradient design and onboarding tips
+  - Password reset email with security notices
+  - Email verification template with verification link
+  - All templates use SLTR branding and glassmorphism design
+- [x] **Email Flow Configuration** - Configured email triggers
+  - Welcome email sent after email verification (auth callback)
+  - Password reset handled by Supabase with Resend SMTP
+  - Email verification handled by Supabase with Resend SMTP
+  - All emails use Resend for delivery
+
+### Tuesday, November 5, 2025
+**Session Start:** Tuesday, November 5, 2025 (Previous Session - Video Calling)
+
+**Completed:**
+- [x] **Daily.co Video Calling Integration** - Integrated Daily.co managed video calling service
+  - Installed `@daily-co/daily-js` package
+  - Created `/api/daily/create-room` API endpoint for room creation
+  - Updated `VideoCall.tsx` component to use Daily.co instead of WebRTC
+  - Added Daily.co API key to `.env.local`
+  - Updated environment template with `DAILY_API_KEY`
+- [x] **Port Configuration** - Changed app port from 5000 to 3001
+  - Updated `package.json` dev/start scripts
+  - Updated backend CORS to allow localhost:3001
+  - Updated `url.ts` to default to port 3001
+- [x] **Local Hostname Setup** - Created scripts for local hostname mapping (getsltr.com:3001)
+  - Created `setup-local-hostname.js` and `.sh` scripts
+  - Added npm script `setup:hostname`
+  - Updated backend CORS to allow `getsltr.com:3001`
 
 **In Progress:**
-- [ ] Add ongoing tasks here
+- [ ] **Resend Domain Verification** - Need to verify domain in Resend dashboard
+- [ ] **Supabase SMTP Configuration** - Need to configure Supabase to use Resend SMTP
+- [ ] **Vercel Environment Variables** - Need to add `RESEND_API_KEY` to Vercel dashboard
+- [ ] **Email Testing** - Need to test all email flows (signup, password reset, welcome)
+- [ ] **Testing Daily.co Integration** - Need to test video calls with Daily.co
+- [ ] **Vercel Environment Variables** - Need to add `DAILY_API_KEY` to Vercel dashboard
+- [ ] **Press Release Preparation** - Final testing and verification before press release
+
+**Files Created/Modified:**
+- NEXTJS_ROUTING_FIX_REPORT.md (new - comprehensive troubleshooting guide)
 
 **Blocked/Issues:**
-- [ ] Add any blockers or issues here
+- None currently
 
 **Notes:**
-- Add any important notes or decisions here
+- Daily.co integration replaces WebRTC peer-to-peer with managed infrastructure
+- Better reliability (works behind firewalls/NATs)
+- No Supabase changes needed - Daily.co is separate service
+- **Vercel Setup Required**: Add `DAILY_API_KEY` environment variable in Vercel dashboard for production
+- Video calls now use Daily.co rooms instead of direct WebRTC connections
 
 ---
 
 ### Tuesday, November 4, 2025
 **Session Start:** Tuesday, November 4, 2025 at 06:12 AM  
-**Session Update:** Tuesday, November 4, 2025 (Current Session)
+**Session Update:** Tuesday, November 4, 2025 (Current Session - Final Updates)
 
 **Completed:**
 - [x] Configured explicit icons in Next metadata (serving /icon.svg) and added src/app/icon.svg; favicon 404 resolved in dev.
@@ -97,6 +158,15 @@ These files should auto-open when you open the project:
 - [x] **Video Call Button** - Added visible video call buttons in conversation header and next to message input, properly connected to WebRTC functionality
 - [x] **Socket.io Configuration** - Fixed socket connection to use correct backend URL (localhost:3001 for dev, production URL for prod), reduced console spam
 - [x] **Build Cache Fix** - Cleared corrupted .next cache, fixed "Cannot find module" errors, verified build passes
+- [x] **EROS AssistiveTouch Improvements** - Made button fully draggable like iPhone AssistiveTouch with edge snapping, smooth animations, haptic feedback, and improved touch handling
+- [x] **Video Call Routing** - Fixed video call button routing from EROS AssistiveTouch to properly navigate to messages and trigger video calls
+- [x] **Console Logging Optimization** - Reduced Supabase logging spam (only logs once per page load, never in production)
+- [x] **Service Worker Fix** - Removed no-op fetch handler to eliminate console warnings
+- [x] **EROS Icebreaker Caching** - Added intelligent caching for icebreaker requests based on interests/tags/kinks to reduce API calls
+- [x] **EROS Batch Analysis** - Created batch match analysis function to process multiple profiles in single API request for efficiency
+- [x] **EROS Rate Limit Handling** - Added automatic retry logic with exponential backoff for 429 rate limit errors across all EROS functions
+- [x] **Stripe Payment Integration** - Complete Stripe integration with pricing page, checkout flow, webhook handling, and subscription management
+- [x] **Pricing Page** - Created beautiful pricing page with 3 tiers (Free, Member $12.99/mo, Founder's Circle $199 one-time) with animations and founder count display
 
 **In Progress:**
 - [ ] Apply Supabase FK constraints and reload PostgREST schema; verify album select and sharing flows end-to-end.
@@ -110,7 +180,7 @@ These files should auto-open when you open the project:
 
 **Major Accomplishments Today:**
 - ✅ Complete project review and documentation
-- ✅ Landing page updated with 3 Musketeers theme (later restored to original SLTR page)
+- ✅ Landing page updated with 3 Musketeers theme (currently active for public access)
 - ✅ Launch date updated across all documentation
 - ✅ Production deployment successful
 - ✅ Testing infrastructure ready
@@ -120,6 +190,11 @@ These files should auto-open when you open the project:
 - ✅ Video call functionality ready (WebRTC + Socket.io)
 - ✅ Favorites system fixed with robust error handling
 - ✅ All TypeScript errors fixed, build passes successfully
+- ✅ EROS AssistiveTouch fully functional with iPhone-like dragging
+- ✅ Console spam eliminated (production-ready logging)
+- ✅ EROS AI optimized with caching and batch processing
+- ✅ Rate limit handling with automatic retries
+- ✅ Complete Stripe payment integration ready for launch
 
 **Files Created/Modified:**
 - VIDEOCALL_DISABLED_REVIEW.md (new)
@@ -128,7 +203,7 @@ These files should auto-open when you open the project:
 - LAUNCH_SCHEDULE.md (new)
 - LAUNCH_DATE_UPDATE.md (new)
 - TESTING_GUIDE.md (new)
-- src/app/page.tsx (updated - restored to original SLTR landing page)
+- src/app/page.tsx (updated - restored to original SLTR landing page, then switched to 3 Musketeers page)
 - src/components/VideoCallLocalhost.tsx (new)
 - src/components/FilterBar.tsx (updated - modern UI, fixed age inputs, added Vers/Top and Vers/Btm)
 - src/app/components/filters/PositionFilterModal.tsx (updated - added Vers/Top and Vers/Btm labels)
@@ -136,9 +211,21 @@ These files should auto-open when you open the project:
 - src/components/GridView.tsx (updated - position filtering with Vers/Top and Vers/Btm support)
 - src/app/components/maps/MapboxUsers.tsx (updated - HoloPinsLayer enabled by default, fixed layer duplication)
 - src/app/components/maps/HoloPinsLayer.ts (updated - enhanced shader with all requested features)
-- src/app/messages/page.tsx (updated - added video call buttons)
+- src/app/messages/page.tsx (updated - added video call buttons, EROS video call event listener)
 - src/hooks/useSocket.ts (updated - fixed backend URL handling, reduced console spam)
 - src/components/BottomNav.tsx (updated - Map button now switches to map view on /app)
+- src/components/ErosAssistiveTouch.tsx (updated - iPhone-like dragging, edge snapping, video call routing)
+- src/lib/supabase/client.ts (updated - reduced console logging, only logs once per page load)
+- public/sw.js (updated - removed no-op fetch handler)
+- src/lib/eros-deep-learning.ts (updated - added icebreaker caching, batch analysis, rate limit retry logic, GROQ pricing comparison)
+- src/app/api/eros/icebreaker/route.ts (new - icebreaker API endpoint)
+- src/app/api/eros/analyze-batch/route.ts (new - batch analysis API endpoint)
+- src/app/pricing/page.tsx (new - complete pricing page with Stripe integration)
+- src/app/api/stripe/route.ts (new - Stripe checkout API)
+- src/app/api/webhooks/stripe/route.ts (new - Stripe webhook handler)
+- src/hooks/useUser.ts (new - user authentication hook)
+- stripe-setup.sh (new - Stripe CLI setup script)
+- frontend-env-template.txt (updated - added Stripe environment variables)
 - Multiple documentation files updated with new launch date
 
 **Deployment:**
@@ -152,11 +239,16 @@ These files should auto-open when you open the project:
 - Launch date confirmed: November 11, 2024 at 11:00 AM
 - Testing phase initiated on localhost:3001
 - All documentation synchronized with new launch date
+- **3 Musketeers Landing Page** - Currently active on root page to prevent public access until launch
+- **EROS AI Enhancements** - All functions now have rate limit retry logic, icebreaker caching, and batch processing
+- **Stripe Integration** - Ready for production, needs Stripe Dashboard setup (create products, get price IDs)
 - **Production Deployment Requirements:**
   - Set `NEXT_PUBLIC_BACKEND_URL=https://sltr-backend.railway.app` in Vercel environment variables
+  - Set `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_FOUNDER_PRICE_ID`, `STRIPE_MEMBER_PRICE_ID` in Vercel
   - Backend must be running on Railway for real-time features (Socket.io, WebRTC)
   - Favorites table needs to exist in Supabase with proper schema
   - Socket.io will automatically use production URL when not on localhost
+  - Run `./stripe-setup.sh` to get webhook secret for local development
 
 
 ### Friday, November 1, 2025

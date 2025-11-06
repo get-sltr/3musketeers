@@ -34,6 +34,12 @@ NEXT_PUBLIC_BACKEND_URL=https://sltr-backend.railway.app
 # EROS Deep Learning (REQUIRED for AI features)
 GROQ_API_KEY=your_groq_api_key_here
 SUPABASE_SERVICE_KEY=your_supabase_service_key_here
+
+# Daily.co Video Calling (REQUIRED for video calls)
+DAILY_API_KEY=your_daily_co_api_key_here
+
+# Resend Email Service (REQUIRED for emails)
+RESEND_API_KEY=re_your_resend_api_key_here
 ```
 
 ## Railway Deployment (Backend)

@@ -1,0 +1,273 @@
+/* Map Pin with Horizontal Drawer Styles */
+
+.pin-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 15px;
+  z-index: 10;
+}
+
+.map-pin {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 3px solid rgba(0, 255, 255, 0.6);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.4), 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.map-pin:hover {
+  transform: scale(1.1);
+  border-color: rgba(0, 255, 255, 1);
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.8), 0 6px 20px rgba(0, 0, 0, 0.7);
+  z-index: 100;
+}
+
+.map-pin.dtfn {
+  border-color: #ff00ff;
+  animation: dtfnPulse 2s ease-in-out infinite;
+}
+
+@keyframes dtfnPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(255, 0, 255, 0.6), 0 4px 12px rgba(0, 0, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(255, 0, 255, 1), 0 6px 20px rgba(255, 0, 255, 0.4);
+  }
+}
+
+.map-pin img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pin-badge {
+  position: absolute;
+  bottom: -5px;
+  right: -5px;
+  background: linear-gradient(135deg, #ff00ff, #ff0080);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  border: 2px solid #0a0e27;
+  z-index: 1;
+}
+
+.horizontal-drawer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 20, 35, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  border-radius: 30px;
+  padding: 8px 16px;
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+}
+
+.horizontal-drawer.visible {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: all;
+}
+
+.pin-wrapper:hover .horizontal-drawer {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: all;
+}
+
+.drawer-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-right: 12px;
+  border-right: 1px solid rgba(0, 255, 255, 0.2);
+}
+
+.drawer-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #00ffff;
+  white-space: nowrap;
+}
+
+.drawer-stats {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+  color: #888;
+}
+
+.drawer-stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.stat-icon {
+  font-size: 12px;
+}
+
+.drawer-dtfn {
+  background: linear-gradient(135deg, #ff00ff, #ff0080);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  animation: dtfnGlow 2s ease-in-out infinite;
+}
+
+@keyframes dtfnGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 10px rgba(255, 0, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 0, 255, 0.8);
+  }
+}
+
+.drawer-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.action-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  background: rgba(0, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 16px;
+}
+
+.action-btn:hover {
+  background: rgba(0, 255, 255, 0.2);
+  border-color: rgba(0, 255, 255, 0.6);
+  transform: scale(1.1);
+}
+
+.action-btn:active {
+  transform: scale(0.95);
+}
+
+.action-btn.chat:hover {
+  background: rgba(0, 255, 255, 0.3);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+}
+
+.action-btn.video:hover {
+  background: rgba(255, 0, 255, 0.3);
+  box-shadow: 0 0 15px rgba(255, 0, 255, 0.5);
+}
+
+.action-btn.tap:hover {
+  background: rgba(255, 100, 0, 0.3);
+  box-shadow: 0 0 15px rgba(255, 100, 0, 0.5);
+}
+
+.mapbox-marker-container {
+  position: relative;
+  z-index: 1;
+}
+
+.mapbox-marker-container .pin-wrapper:hover {
+  z-index: 1000;
+}
+
+@media (max-width: 768px) {
+  .map-pin {
+    width: 50px;
+    height: 50px;
+    border-width: 2px;
+  }
+
+  .pin-badge {
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+  }
+
+  .horizontal-drawer {
+    padding: 6px 12px;
+    gap: 6px;
+    border-radius: 25px;
+  }
+
+  .drawer-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding-right: 8px;
+  }
+
+  .drawer-name {
+    font-size: 14px;
+  }
+
+  .drawer-stats {
+    font-size: 11px;
+    gap: 6px;
+  }
+
+  .action-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .drawer-dtfn {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .map-pin {
+    width: 45px;
+    height: 45px;
+  }
+
+  .horizontal-drawer {
+    font-size: 12px;
+  }
+
+  .drawer-name {
+    font-size: 13px;
+  }
+
+  .action-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
+  }
+}
+

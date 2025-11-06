@@ -18,6 +18,7 @@ import MessagingModal from '../../components/MessagingModal'
 import BottomNav from '../../components/BottomNav'
 import PlaceModal from '../components/PlaceModal'
 import GroupModal from '../components/GroupModal'
+import UserAdvertisingPanel from '../components/UserAdvertisingPanel'
 import '../../styles/mobile-optimization.css'
 import { useSocket } from '../../hooks/useSocket'
 
@@ -26,9 +27,19 @@ type ViewMode = 'grid' | 'map'
 interface UserWithLocation {
   id: string
   display_name: string
+  latitude?: number
+  longitude?: number
+  isYou?: boolean
+  isFavorited?: boolean
+  dtfn?: boolean
+  party_friendly?: boolean
+  photo_url?: string
+  is_online?: boolean
+  founder_number?: number | null
+  // legacy optional fields referenced elsewhere
   age?: number
-  photos: string[]
-  bio?: string
+  photos?: string[]
+  about?: string
   kinks?: string[]
   tags?: string[]
   position?: string
@@ -36,12 +47,6 @@ interface UserWithLocation {
   body_type?: string
   ethnicity?: string
   online?: boolean
-  latitude?: number
-  longitude?: number
-  isYou?: boolean
-  isFavorited?: boolean
-  dtfn?: boolean
-  party_friendly?: boolean
 }
 
 export default function AppPage() {
@@ -71,6 +76,7 @@ export default function AppPage() {
   // Add/Host modals
   const [isAddingPlace, setIsAddingPlace] = useState<boolean>(false)
   const [isHostingGroup, setIsHostingGroup] = useState<boolean>(false)
+  const [showAdvertisingPanel, setShowAdvertisingPanel] = useState<boolean>(false)
   const router = useRouter()
 
   // Listen for bottom nav map button click
@@ -150,7 +156,7 @@ export default function AppPage() {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, display_name, age, photos, photo_url, about, kinks, tags, position, height, body_type, ethnicity, online, latitude, longitude, dtfn, party_friendly, founder')
+    .select('id, display_name, photo_url, is_online, dtfn, party_friendly, latitude, longitude, founder_number')
       .not('latitude', 'is', null)
       .not('longitude', 'is', null)
     
@@ -162,6 +168,7 @@ export default function AppPage() {
     // Mark current user
     const usersWithYou = (data || []).map(user => ({
       ...user,
+      online: user.is_online ?? null,
       isYou: user.id === currentUserId
     }))
     
@@ -438,7 +445,7 @@ export default function AppPage() {
     }
     return users
       .filter(u => inRadius(u.latitude, u.longitude))
-      .filter(u => (menuFilters.online ? !!u.online : true))
+      .filter(u => (menuFilters.online ? !!(u.is_online ?? u.online) : true))
       .filter(u => (menuFilters.hosting ? !!u.party_friendly : true))
       .filter(u => (menuFilters.looking ? !!u.dtfn : true))
       .filter(u => {
@@ -464,10 +471,10 @@ export default function AppPage() {
         display_name: u.isYou ? 'You' : u.display_name,
         isYou: u.isYou,
         isCurrentUser: u.isYou,
-        photo: u.photos?.[0],
-        photo_url: (u as any).photo_url,
+        photo: u.photo_url || (u.photos && u.photos[0]) || undefined,
+        photo_url: u.photo_url,
         photos: u.photos,
-        online: u.online,
+        online: u.is_online ?? u.online,
         dtfn: u.dtfn,
         party_friendly: u.party_friendly
       }))
@@ -499,7 +506,13 @@ export default function AppPage() {
         {viewMode === 'grid' ? (
           <LazyGridView activeFilters={activeFilters} />
         ) : (
-          <div className="relative">
+          <div className="relative w-full h-[calc(100vh-12rem)] sm:h-[calc(100vh-10rem)]">
+            {/* User Advertising Panel */}
+            <UserAdvertisingPanel 
+              isOpen={showAdvertisingPanel}
+              onToggle={() => setShowAdvertisingPanel(!showAdvertisingPanel)}
+            />
+            
             <MapboxUsers 
               users={mapUsers.map(u => ({
                 id: u.id,
@@ -507,8 +520,8 @@ export default function AppPage() {
                 longitude: u.longitude,
                 display_name: u.display_name,
                 isCurrentUser: !!u.isYou,
-                photo: (u.photos && Array.isArray(u.photos) && u.photos[0]) || u.photo_url || undefined,
-                online: u.online,
+                photo: u.photo_url || (u.photos && Array.isArray(u.photos) && u.photos[0]) || undefined,
+                online: !!(u.online),
                 dtfn: u.dtfn,
                 party_friendly: u.party_friendly
               }))}
@@ -589,7 +602,7 @@ export default function AppPage() {
                     className="w-full p-3 glass-bubble hover:bg-white/10 transition-all flex items-center gap-3 text-left"
                   >
                     <img
-                      src={user.photos?.[0] || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23222" width="100" height="100"/%3E%3Ctext fill="%23aaa" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"%3E?%3C/text%3E%3C/svg%3E'}
+                      src={user.photo_url || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23222" width="100" height="100"/%3E%3Ctext fill="%23aaa" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"%3E?%3C/text%3E%3C/svg%3E'}
                       alt={user.display_name}
                       className="w-12 h-12 rounded-full object-cover"
                     />
@@ -598,7 +611,7 @@ export default function AppPage() {
                         <p className="text-white font-semibold truncate">{user.display_name}</p>
                         {user.age && <span className="text-white/60 text-sm">{user.age}</span>}
                       </div>
-                      {user.online && (
+                      {(user.is_online ?? user.online) && (
                         <p className="text-green-400 text-xs">Online</p>
                       )}
                     </div>

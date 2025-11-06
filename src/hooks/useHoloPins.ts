@@ -20,7 +20,7 @@ export function useHoloPins(autoLoad: boolean = true) {
       try {
         const { data: profiles, error: err } = await supabase
           .from('profiles')
-          .select('id, display_name, username, photos, photo_url, online, is_online, dtfn, party_friendly, latitude, longitude, founder')
+          .select('id, display_name, photo_url, is_online, dtfn, party_friendly, latitude, longitude, founder_number')
           .not('latitude', 'is', null)
           .not('longitude', 'is', null)
 
@@ -30,11 +30,11 @@ export function useHoloPins(autoLoad: boolean = true) {
           id: p.id,
           lng: p.longitude,
           lat: p.latitude,
-          name: p.display_name || p.username,
-          photo: (p.photos && p.photos[0]) || p.photo_url || undefined,
-          status: (p.online || p.is_online) ? 'online' : 'offline',
+          name: p.display_name || 'Anonymous',
+          photo: p.photo_url || undefined,
+          status: p.is_online ? 'online' : 'offline',
           badge: p.dtfn ? 'DTFN' : null,
-          premiumTier: p.founder ? 2 : (p.party_friendly ? 1 : 0),
+          premiumTier: p.founder_number ? 2 : (p.party_friendly ? 1 : 0),
         }))
         setPins(mapped)
       } catch (e: any) {

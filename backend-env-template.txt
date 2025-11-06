@@ -37,7 +37,10 @@ REDIS_PASSWORD=your_redis_password
 SENTRY_DSN=your_sentry_dsn_here
 LOG_LEVEL=info
 
-# Email Configuration (for notifications)
+# Email Configuration (Resend)
+RESEND_API_KEY=re_your_resend_api_key_here
+
+# Legacy SMTP Configuration (optional, if not using Resend)
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your_email@gmail.com
@@ -52,6 +55,8 @@ ENABLE_AI_FEATURES=true
 # Database Configuration
 DB_POOL_SIZE=10
 DB_TIMEOUT=30000
+
+
 
 
 

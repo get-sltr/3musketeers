@@ -1,0 +1,193 @@
+/* MapView Container Styles */
+
+.map-view-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.map-container {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.mapboxgl-ctrl-bottom-left,
+.mapboxgl-ctrl-bottom-right {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .mapboxgl-ctrl-bottom-left,
+  .mapboxgl-ctrl-bottom-right {
+    display: block;
+  }
+}
+
+.mapboxgl-ctrl-group {
+  background: rgba(15, 20, 35, 0.95) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 255, 255, 0.2) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+.mapboxgl-ctrl-group button {
+  background-color: transparent !important;
+  color: #00ffff !important;
+}
+
+.mapboxgl-ctrl-group button:hover {
+  background-color: rgba(0, 255, 255, 0.1) !important;
+}
+
+.mapboxgl-ctrl-geolocate {
+  background: rgba(0, 255, 255, 0.1) !important;
+}
+
+.mapboxgl-ctrl-geolocate.mapboxgl-ctrl-geolocate-active {
+  background: rgba(0, 255, 255, 0.3) !important;
+}
+
+.mapboxgl-popup-content {
+  background: rgba(15, 20, 35, 0.95) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  color: #fff;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.mapboxgl-popup-tip {
+  border-top-color: rgba(15, 20, 35, 0.95) !important;
+}
+
+.mapboxgl-popup-close-button {
+  color: #00ffff;
+  font-size: 20px;
+  padding: 4px 8px;
+}
+
+.mapboxgl-popup-close-button:hover {
+  background-color: rgba(0, 255, 255, 0.2);
+}
+
+.mapboxgl-marker {
+  z-index: 10;
+}
+
+.mapboxgl-marker:hover {
+  z-index: 1000;
+}
+
+.map-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(15, 20, 35, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 24px 32px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #00ffff;
+  font-size: 16px;
+  z-index: 1000;
+}
+
+.map-loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(0, 255, 255, 0.2);
+  border-top-color: #00ffff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.map-filter-bar {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: rgba(15, 20, 35, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+}
+
+.map-filter-button {
+  padding: 8px 16px;
+  background: rgba(0, 255, 255, 0.2);
+  border: 1px solid rgba(0, 255, 255, 0.4);
+  border-radius: 8px;
+  color: #00ffff;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.map-filter-button:hover {
+  background: rgba(0, 255, 255, 0.3);
+  border-color: rgba(0, 255, 255, 0.6);
+  transform: translateY(-2px);
+}
+
+.map-filter-button.active {
+  background: rgba(0, 255, 255, 0.4);
+  border-color: #00ffff;
+}
+
+.map-legend {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  background: rgba(15, 20, 35, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+}
+
+@media (max-width: 768px) {
+  .map-filter-bar {
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    padding: 12px;
+  }
+
+  .map-legend {
+    bottom: 8px;
+    left: 8px;
+    padding: 12px;
+  }
+
+  .map-filter-button {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+}
+

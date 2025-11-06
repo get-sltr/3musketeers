@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { useSocket } from '../../hooks/useSocket'
 import { useNotifications } from '../../hooks/useNotifications'
 import { MessagesLoadingSkeleton } from '../../components/LoadingSkeleton'
-import LazyWrapper, { LazyVideoCall, LazyFileUpload, LazyBlazeAI } from '../../components/LazyWrapper'
+import LazyWrapper, { LazyVideoCall, LazyFileUpload, LazyErosAI } from '../../components/LazyWrapper'
 import BottomNav from '../../components/BottomNav'
 
 interface Profile {
@@ -288,6 +288,43 @@ function MessagesPageContent() {
       )
     }
   }, [selectedConversation])
+
+  // Listen for EROS video call trigger
+  useEffect(() => {
+    let shouldStartCall = false
+    
+    const handleErosVideoCall = () => {
+      if (selectedConversation) {
+        // Start call immediately
+        shouldStartCall = true
+        setTimeout(() => {
+          if (shouldStartCall && selectedConversation) {
+            const conversation = conversations.find(c => c.id === selectedConversation)
+            if (conversation) {
+              setCurrentCallUser({
+                id: conversation.other_user.id,
+                name: conversation.other_user.display_name
+              })
+              setIsVideoCallActive(true)
+            }
+          }
+          shouldStartCall = false
+        }, 100)
+      } else if (conversations.length > 0) {
+        // If no conversation selected, select the first one
+        const firstConversation = conversations[0]
+        if (firstConversation) {
+          shouldStartCall = true
+          setSelectedConversation(firstConversation.id)
+        }
+      }
+    }
+
+    window.addEventListener('eros_start_video_call', handleErosVideoCall)
+    return () => {
+      window.removeEventListener('eros_start_video_call', handleErosVideoCall)
+    }
+  }, [selectedConversation, conversations])
 
   useEffect(() => {
     if (messagesEndRef.current) {

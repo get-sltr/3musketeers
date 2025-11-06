@@ -230,6 +230,27 @@ export default function SettingsPage() {
           <NotificationSettings />
         </div>
 
+        {/* Member Services Section */}
+        <div className="mb-12 bg-gradient-to-br from-purple-500/20 to-pink-500/20 backdrop-blur-xl border border-purple-500/30 p-8">
+          <h2 className="text-2xl font-bold text-white mb-4">Member Services</h2>
+          <p className="text-gray-400 mb-6">Explore features and services to enhance your experience</p>
+          
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button
+              onClick={() => router.push('/pricing')}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold hover:scale-105 transition-transform rounded-xl"
+            >
+              View Services
+            </button>
+            <button
+              onClick={() => router.push('/pricing')}
+              className="flex-1 px-6 py-3 border-2 border-yellow-500/50 text-yellow-400 font-bold hover:bg-yellow-500/10 transition-all rounded-xl"
+            >
+              Founder's Circle
+            </button>
+          </div>
+        </div>
+
         {/* Change Password Section */}
         <div className="mb-12 bg-black/40 backdrop-blur-xl border border-cyan-500/20 p-8">
           <h2 className="text-2xl font-bold text-white mb-6">Change Password</h2>

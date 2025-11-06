@@ -18,8 +18,9 @@ const server = http.createServer(app);
 // Allow both production and local dev URLs, plus Vercel preview deployments
 const allowedOrigins = [
   process.env.FRONTEND_URL || "https://getsltr.com",
-  process.env.DEV_FRONTEND_URL || "http://localhost:5000",
-  "http://localhost:5000", // Always allow localhost in dev
+  process.env.DEV_FRONTEND_URL || "http://localhost:3001",
+  "http://localhost:3001", // Always allow localhost in dev
+  "http://getsltr.com:3001", // Local hostname mapping
   "http://localhost:3000", // Frontend dev server
   "https://www.getsltr.com", // With www
   "https://getsltr.com" // Production domain

@@ -8,3 +8,4 @@ CREATE POLICY "Users can update message read status" ON messages FOR UPDATE USIN
 
 
 
+
