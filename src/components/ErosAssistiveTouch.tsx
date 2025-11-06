@@ -36,6 +36,7 @@ export function ErosAssistiveTouch() {
   const introTimeout = useRef<NodeJS.Timeout | null>(null);
   const tapTimeout = useRef<NodeJS.Timeout | null>(null);
   const [introOpen, setIntroOpen] = useState(false);
+  const [tapToast, setTapToast] = useState<string | null>(null);
   const closeIntro = useCallback(() => {
     if (introTimeout.current) {
       clearTimeout(introTimeout.current);
@@ -57,9 +58,9 @@ export function ErosAssistiveTouch() {
     if (tapTimeout.current) {
       clearTimeout(tapTimeout.current);
     }
-    setTapFeedback(message);
+    setTapToast(message);
     tapTimeout.current = setTimeout(() => {
-      setTapFeedback(null);
+      setTapToast(null);
       tapTimeout.current = null;
     }, 3000);
   }, []);
@@ -426,9 +427,9 @@ export function ErosAssistiveTouch() {
         )}
       </div>
 
-      {tapFeedback && (
+      {tapToast && (
         <div className="eros-toast">
-          {tapFeedback}
+          {tapToast}
         </div>
       )}
       
