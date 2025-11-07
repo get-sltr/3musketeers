@@ -425,7 +425,7 @@ export function ErosAssistiveTouch() {
   useEffect(() => {
     const handleGlobalMove = (event: TouchEvent | MouseEvent) => handleMove(event)
     const handleGlobalEnd = (event?: Event) => {
-      if (event) {
+      if (pointerDown.current && event) {
         event.preventDefault()
         event.stopPropagation()
       }

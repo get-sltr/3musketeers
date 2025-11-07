@@ -47,7 +47,6 @@ export async function POST(request: NextRequest) {
           enable_prejoin_ui: false,
           start_video_off: false,
           start_audio_off: false,
-          eject_at_token_exp: true,
         },
       }),
     });
