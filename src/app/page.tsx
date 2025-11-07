@@ -572,6 +572,19 @@ export default function LandingPage() {
       </section>
 
       {/* Floating EROS Assistant handled globally in layout */}
+
+      <footer className="border-t border-white/10 bg-black/60 backdrop-blur-xl">
+        <div className="max-w-6xl mx-auto px-4 py-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-sm text-white/60">
+          <span>© {new Date().getFullYear()} SLTR DIGITAL LLC. All rights reserved.</span>
+          <div className="flex flex-wrap items-center gap-4">
+            <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+            <span className="hidden md:block text-white/20">•</span>
+            <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+            <span className="hidden md:block text-white/20">•</span>
+            <Link href="/security" className="hover:text-white transition-colors">Security & Trust</Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

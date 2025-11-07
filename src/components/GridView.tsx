@@ -19,6 +19,7 @@ interface User {
   photo?: string
   photos?: string[]
   distance: string
+  distanceMiles?: number | null
   isOnline: boolean
   bio?: string
   position?: string
@@ -34,6 +35,46 @@ interface User {
 interface GridViewProps {
   onUserClick?: (userId: string) => void
   activeFilters?: any
+}
+
+const MAX_GRID_DISTANCE_MILES = 10
+
+const haversineDistance = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+) => {
+  const toRad = (value: number) => (value * Math.PI) / 180
+  const R = 3958.8 // Miles
+
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2)
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
+
+const formatDistance = (distanceMiles: number | null | undefined) => {
+  if (distanceMiles == null || Number.isNaN(distanceMiles)) {
+    return ''
+  }
+
+  if (distanceMiles < 0.1) {
+    return '<0.1 mi'
+  }
+
+  if (distanceMiles < 10) {
+    return `${distanceMiles.toFixed(1)} mi`
+  }
+
+  return `${Math.round(distanceMiles)} mi`
 }
 
 export default function GridView({ onUserClick, activeFilters = { filters: [], ageRange: { min: 18, max: 99 }, positions: [] } }: GridViewProps) {
@@ -56,6 +97,8 @@ export default function GridView({ onUserClick, activeFilters = { filters: [], a
       try {
         // Get current user to put their profile first
         const { data: { user: currentUser } } = await supabase.auth.getUser()
+        let currentUserLat: number | null = null
+        let currentUserLon: number | null = null
         
         const { data: profiles, error } = await supabase
           .from('profiles')
@@ -68,28 +111,96 @@ export default function GridView({ onUserClick, activeFilters = { filters: [], a
         }
 
         // Convert profiles to User format
-        let userList: User[] = profiles?.map(profile => ({
-          id: profile.id,
-          username: profile.username || 'Unknown',
-          display_name: profile.display_name || 'Unknown',
-          age: profile.age || 18,
-          photo: profile.photos?.[0] || profile.photo_url, // Use first photo from photos array
-          photos: profile.photos || [],
-          distance: '0.5 mi', // TODO: Calculate real distance
-          isOnline: profile.online || false,
-          bio: profile.about || '',
-          position: profile.position,
-          party_friendly: profile.party_friendly || false,
-          dtfn: profile.dtfn || false,
-          tags: profile.tags || [],
-          eta: '5 min'
-        })) || []
+        const cleanedProfiles = (profiles || []).filter(profile => {
+          const username = profile.username?.trim()
+          const displayName = profile.display_name?.trim()
+          const looksAnonymous =
+            (!displayName || displayName.toLowerCase() === 'unknown') &&
+            (!username || username.toLowerCase().includes('unknown'))
+
+          const missingVisual =
+            !profile.photo_url &&
+            (!Array.isArray(profile.photos) || profile.photos.length === 0)
+
+          // Skip placeholder/anonymous profiles unless it's the current user
+          if (currentUser?.id === profile.id) {
+            return true
+          }
+
+          return !looksAnonymous && !missingVisual
+        })
+
+        const currentProfile = cleanedProfiles.find(
+          profile => profile.id === currentUser?.id
+        )
+
+        if (currentProfile?.latitude && currentProfile?.longitude) {
+          currentUserLat = currentProfile.latitude
+          currentUserLon = currentProfile.longitude
+        }
+
+        let userList: User[] =
+          cleanedProfiles?.map(profile => {
+            const hasCoords =
+              typeof profile.latitude === 'number' &&
+              typeof profile.longitude === 'number' &&
+              profile.latitude !== null &&
+              profile.longitude !== null
+
+            const distanceMiles =
+              hasCoords && currentUserLat != null && currentUserLon != null
+                ? haversineDistance(
+                    currentUserLat,
+                    currentUserLon,
+                    profile.latitude,
+                    profile.longitude
+                  )
+                : null
+
+            const isSelf = profile.id === currentUser?.id
+            return {
+              id: profile.id,
+              username: profile.username || profile.display_name || 'User',
+              display_name: profile.display_name || profile.username || 'User',
+              age: profile.age || 0,
+              photo: profile.photos?.[0] || profile.photo_url, // Use first photo from photos array
+              photos: profile.photos || [],
+              distance: isSelf ? 'You' : formatDistance(distanceMiles),
+              distanceMiles: isSelf ? 0 : distanceMiles,
+              isOnline: profile.online || profile.is_online || false,
+              bio: profile.about || '',
+              position: profile.position,
+              party_friendly: profile.party_friendly || false,
+              dtfn: profile.dtfn || false,
+              tags: profile.tags || [],
+              eta: profile.eta || '',
+              latitude: profile.latitude ?? undefined,
+              longitude: profile.longitude ?? undefined
+            }
+          }) || []
+
+        // Limit by distance if we can calculate it
+        userList = userList.filter(user => {
+          if (user.id === currentUser?.id) {
+            return true
+          }
+
+          if (user.distanceMiles == null) {
+            // Keep users without distance for now rather than showing inaccurate value
+            return false
+          }
+
+          return user.distanceMiles <= MAX_GRID_DISTANCE_MILES
+        })
 
         // Sort to put current user first
         if (currentUser) {
           userList = userList.sort((a, b) => {
             if (a.id === currentUser.id) return -1
             if (b.id === currentUser.id) return 1
+            if (a.distanceMiles != null && b.distanceMiles != null) {
+              return a.distanceMiles - b.distanceMiles
+            }
             return 0
           })
         }

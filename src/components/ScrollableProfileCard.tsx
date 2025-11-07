@@ -120,17 +120,10 @@ export default function ScrollableProfileCard({
               <h3 className="text-white text-sm font-bold truncate">
                 {user.display_name || user.username}
               </h3>
-              <div className="flex items-center gap-1 text-xs text-white/80">
-                <span>{user.age}</span>
-                {user.position && (
-                  <>
-                    <span>•</span>
-                    <span className="truncate">{user.position}</span>
-                  </>
-                )}
-              </div>
               {user.distance && (
-                <div className="text-xs text-white/60">{user.distance}</div>
+                <div className="text-xs text-white/70">
+                  {user.distance === 'You' ? 'You are here' : user.distance}
+                </div>
               )}
             </div>
             {onMessage && (
