@@ -169,7 +169,7 @@ export default function UserProfileModal({
                   className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all shadow-lg text-2xl animate-pulse-glow"
                   style={{ filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.8))' }}
                 >
-                  📯
+                  🫧
                 </button>
               </div>
               

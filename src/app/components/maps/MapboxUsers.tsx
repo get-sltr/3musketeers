@@ -3,13 +3,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
+import '../../styles/map-view.css'
+import '../../styles/map-pin-drawer.css'
 import { getCurrentUserLocation } from '@/app/lib/maps/mapboxUtils'
 import { useSocket } from '@/hooks/useSocket'
 import Supercluster from 'supercluster'
 import { HoloPinsLayer } from '@/app/components/maps/HoloPinsLayer'
 import type { Pin } from '@/types/pins'
 import { useHoloPins } from '@/hooks/useHoloPins'
-import { createMapboxMarker as createDrawerMarker } from '../MapPinWithDrawer'
+import { createMapboxMarker } from '../MapPinWithDrawer'
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
 
@@ -476,7 +478,7 @@ export default function MapboxUsers({
   const addMarker = (u: UserPin) => {
     if (!mapRef.current) return null
 
-    const markerEl = createDrawerMarker(
+    const markerEl = createMapboxMarker(
       {
         id: u.id,
         display_name: u.display_name || 'Anonymous',

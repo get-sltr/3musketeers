@@ -94,7 +94,7 @@ export default function UserCard({ user, onClick, onMessage, className = '' }: U
               className="absolute top-3 right-3 z-10 text-3xl animate-pulse-glow"
               style={{ filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.8))' }}
             >
-              📯
+              🫧
             </button>
           )}
 

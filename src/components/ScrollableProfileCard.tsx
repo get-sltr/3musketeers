@@ -132,7 +132,7 @@ export default function ScrollableProfileCard({
                 className="ml-2 text-2xl animate-pulse-glow"
                 style={{ filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.8))' }}
               >
-                📯
+                🫧
               </button>
             )}
           </div>
