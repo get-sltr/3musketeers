@@ -26,6 +26,7 @@ interface UserUpdate {
   online?: boolean
   position?: string
   age?: number
+  isCurrentUser?: boolean
 }
 
 interface UserAdvertisingPanelProps {
@@ -94,7 +95,6 @@ export default function UserAdvertisingPanel({ isOpen: controlledOpen, onToggle 
         `)
         .not('latitude', 'is', null)
         .not('longitude', 'is', null)
-        .neq('id', user.id)
         .limit(50)
 
       if (error) {
@@ -130,15 +130,19 @@ export default function UserAdvertisingPanel({ isOpen: controlledOpen, onToggle 
             distance: Math.round(distance * 10) / 10,
             online: profile.online,
             position: profile.position,
-            age: profile.age
+            age: profile.age,
+            isCurrentUser: profile.id === user.id
           }
         })
         .sort((a, b) => {
+          if (a.isCurrentUser && !b.isCurrentUser) return -1
+          if (!a.isCurrentUser && b.isCurrentUser) return 1
           if (sortBy === 'time') {
             return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          } else {
-            return (a.distance || Infinity) - (b.distance || Infinity)
           }
+          const aDist = a.distance ?? Infinity
+          const bDist = b.distance ?? Infinity
+          return aDist - bDist
         })
 
       setUpdates(updatesList)
@@ -325,7 +329,7 @@ export default function UserAdvertisingPanel({ isOpen: controlledOpen, onToggle 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-semibold text-white text-sm truncate">
-                              {update.display_name}
+                              {update.isCurrentUser ? 'You' : update.display_name}
                             </span>
                             {update.age && (
                               <span className="text-gray-400 text-xs">{update.age}</span>

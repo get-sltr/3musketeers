@@ -393,6 +393,29 @@ export default function AppPage() {
     }
   }
 
+  const handleMapVideo = (userId: string) => {
+    router.push(`/messages?user=${userId}&startVideo=1`)
+    window.dispatchEvent(new CustomEvent('eros_start_video_call', { detail: { userId } }))
+  }
+
+  const handleMapTap = async (userId: string) => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      alert('Sign in to send a tap.')
+      return
+    }
+
+    const { error } = await supabase
+      .from('taps')
+      .insert({ from_user_id: user.id, to_user_id: userId })
+
+    if (error) {
+      console.error('Failed to send tap:', error)
+      alert('Could not send tap. Try again later.')
+    }
+  }
+
   const handleToggleIncognito = async (enabled: boolean) => {
     setIsIncognito(enabled)
     const supabase = createClient()
@@ -476,7 +499,10 @@ export default function AppPage() {
         photos: u.photos,
         online: u.is_online ?? u.online,
         dtfn: u.dtfn,
-        party_friendly: u.party_friendly
+        party_friendly: u.party_friendly,
+        age: u.age,
+        position: u.position,
+        distance: u.isYou ? 'You' : undefined
       }))
   }, [users, mapCenter, radiusMiles, menuFilters, selectedPositions])
 
@@ -523,9 +549,12 @@ export default function AppPage() {
                 photo: u.photo_url || (u.photos && Array.isArray(u.photos) && u.photos[0]) || undefined,
                 online: !!(u.online),
                 dtfn: u.dtfn,
-                party_friendly: u.party_friendly
+                party_friendly: u.party_friendly,
+                age: u.age,
+                position: u.position,
+                distance: u.distance
               }))}
-              advancedPins
+              advancedPins={false}
               autoLoad={false}
               onUserClick={handleUserClick}
               onMapClick={handleMapClick}
@@ -538,6 +567,10 @@ export default function AppPage() {
               clusterRadius={clusterRadius}
               jitterMeters={jitterMeters}
               vanillaMode={vanillaMode}
+              holoTheme={false}
+              onChat={handleMessage}
+              onVideo={handleMapVideo}
+              onTap={handleMapTap}
             />
 
             {/* Map Session Menu */}

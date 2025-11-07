@@ -9,6 +9,7 @@ import Supercluster from 'supercluster'
 import { HoloPinsLayer } from '@/app/components/maps/HoloPinsLayer'
 import type { Pin } from '@/types/pins'
 import { useHoloPins } from '@/hooks/useHoloPins'
+import { createMapboxMarker as createDrawerMarker } from '../MapPinWithDrawer'
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
 
@@ -29,6 +30,9 @@ type UserPin = {
   online?: boolean
   dtfn?: boolean
   party_friendly?: boolean
+  position?: string
+  age?: number
+  distance?: string
 }
 
 interface MapboxUsersProps {
@@ -86,13 +90,13 @@ export default function MapboxUsers({
   clusterRadius = 60,
   jitterMeters = 0,
   vanillaMode = false,
-  advancedPins = true,
+  advancedPins = false,
   onChat,
   onVideo,
   onTap,
   onNav,
   autoLoad = false,
-  holoTheme = true,
+  holoTheme = false,
 }: MapboxUsersProps & { jitterMeters?: number; autoLoad?: boolean }) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
@@ -104,7 +108,8 @@ export default function MapboxUsers({
 
   // Holo layer state - always active when WebGL is supported
   const holoLayerRef = useRef<HoloPinsLayer | null>(null)
-  const useAdvanced = (mapboxgl as any).supported?.({ failIfMajorPerformanceCaveat: true }) ?? false
+  const supportsAdvanced = (mapboxgl as any).supported?.({ failIfMajorPerformanceCaveat: true }) ?? false
+  const useAdvanced = advancedPins && supportsAdvanced
   const [hovered, setHovered] = useState<{ user: UserPin; pt: { x: number; y: number } } | null>(null)
 
   // Clustering state
@@ -342,7 +347,7 @@ export default function MapboxUsers({
         visibleUsers.forEach((u) => {
           if (typeof u.latitude !== 'number' || typeof u.longitude !== 'number') return
           const j = jitter(u.longitude, u.latitude, jitterMeters, u.id)
-          const marker = addMarker({ ...u, longitude: j[0], latitude: j[1], vanillaMode })
+          const marker = addMarker({ ...u, longitude: j[0], latitude: j[1] })
           if (marker) markerIndexRef.current[u.id] = marker
         })
         return
@@ -374,7 +379,7 @@ export default function MapboxUsers({
           const u = visibleUsers.find(x => x.id === userId)
           if (u) {
             const [jlng, jlat] = jitter(u.longitude, u.latitude, jitterMeters, u.id)
-            const marker = addMarker({ ...u, longitude: jlng, latitude: jlat, vanillaMode })
+            const marker = addMarker({ ...u, longitude: jlng, latitude: jlat })
             if (marker) markerIndexRef.current[userId] = marker
           }
         }
@@ -468,98 +473,31 @@ export default function MapboxUsers({
     } catch {}
   }, [styleId, mapLoaded, holoTheme])
 
-  const addMarker = (u: UserPin & { vanillaMode?: boolean }) => {
+  const addMarker = (u: UserPin) => {
     if (!mapRef.current) return null
-    
-    // Create container
-    const container = document.createElement('div')
-    container.style.position = 'relative'
-    
-    // Larger pins on mobile
-    const isMobile = window.innerWidth < 768
-    const size = isMobile ? '56px' : '48px'
-    
-    // Create profile image circle
-    const img = document.createElement('img')
-    img.src = u.photo || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23111" width="100" height="100"/%3E%3Ctext fill="%23aaa" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="40"%3E👤%3C/text%3E%3C/svg%3E'
-    img.style.width = size
-    img.style.height = size
-    img.style.borderRadius = '50%'
-    img.style.objectFit = 'cover'
-    img.style.display = 'block'
-    img.style.filter = u.vanillaMode ? 'blur(12px) brightness(0.7)' : ''
-    
-    // Neon glow border style
-    if (u.isCurrentUser) {
-      // Your pin: white glow with cyan border + pulse animation
-      img.style.border = '4px solid rgba(255, 255, 255, 0.9)'
-      img.style.boxShadow = '0 0 20px rgba(255, 255, 255, 0.8), 0 0 40px rgba(0, 212, 255, 0.6), inset 0 0 20px rgba(0, 212, 255, 0.3)'
-      img.style.animation = 'pulse-glow 2s ease-in-out infinite'
-    } else if (u.online) {
-      // Online: bright cyan glow + pulse
-      img.style.border = '3px solid rgba(0, 212, 255, 0.9)'
-      img.style.boxShadow = '0 0 20px rgba(0, 212, 255, 0.8), 0 0 30px rgba(0, 212, 255, 0.5)'
-      img.style.animation = 'pulse-glow 3s ease-in-out infinite'
-    } else {
-      // Offline: dim cyan glow
-      img.style.border = '3px solid rgba(0, 212, 255, 0.4)'
-      img.style.boxShadow = '0 0 10px rgba(0, 212, 255, 0.3)'
-    }
-    
-    img.style.transition = 'transform 0.2s ease'
-    container.appendChild(img)
 
-    // Touch handling
-    if (onUserClick) {
-      container.style.cursor = 'pointer'
-      container.style.touchAction = 'manipulation'
-      container.addEventListener('click', (e) => {
-        e.stopPropagation()
-        onUserClick(u.id)
-      })
-      // Scale on hover/active
-      container.addEventListener('mouseenter', () => {
-        img.style.transform = 'scale(1.1)'
-      })
-      container.addEventListener('mouseleave', () => {
-        img.style.transform = 'scale(1)'
-      })
-    }
+    const markerEl = createDrawerMarker(
+      {
+        id: u.id,
+        display_name: u.display_name || 'Anonymous',
+        avatar_url: u.photo || null,
+        age: u.age ?? 0,
+        position: u.position || 'Unknown',
+        dtfn: !!u.dtfn,
+        latitude: u.latitude,
+        longitude: u.longitude,
+        distance: u.distance,
+      },
+      (id) => onChat?.(id),
+      (id) => onVideo?.(id),
+      (id) => onTap?.(id),
+      (id) => onUserClick?.(id)
+    )
 
-    // Add global pulse animation styles
-    if (!document.getElementById('map-pin-styles')) {
-      const style = document.createElement('style')
-      style.id = 'map-pin-styles'
-      style.textContent = `
-        @keyframes pulse-glow {
-          0%, 100% { filter: brightness(1) drop-shadow(0 0 8px rgba(0, 212, 255, 0.8)); }
-          50% { filter: brightness(1.2) drop-shadow(0 0 16px rgba(0, 212, 255, 1)); }
-        }
-      `
-      document.head.appendChild(style)
-    }
-
-    const marker = new mapboxgl.Marker(container)
+    const marker = new mapboxgl.Marker({ element: markerEl, anchor: 'bottom' })
       .setLngLat([u.longitude, u.latitude])
-      .setPopup(
-        new mapboxgl.Popup({ offset: 12 }).setDOMContent((() => {
-          const wrap = document.createElement('div')
-          wrap.className = 'p-2 min-w-[180px]'
-          const imgEl = document.createElement('img')
-          imgEl.src = u.photo || ''
-          imgEl.className = 'w-12 h-12 rounded-full object-cover mb-2'
-          imgEl.style.filter = u.vanillaMode ? 'blur(12px) brightness(0.7)' : ''
-          wrap.appendChild(imgEl)
-          const name = document.createElement('div')
-          name.className = 'text-sm font-semibold'
-          name.textContent = u.display_name || 'User'
-          wrap.appendChild(name)
-          return wrap
-        })())
-      )
       .addTo(mapRef.current)
-    
-    // Track marker for cleanup
+
     markersRef.current.push(marker)
     return marker
   }
@@ -618,7 +556,7 @@ export default function MapboxUsers({
           existing.setLngLat([jlng, jlat])
         } else {
           // Create a lightweight marker if user not in initial list
-          const marker = addMarker({ id: userId, latitude: jlat, longitude: jlng, vanillaMode })
+          const marker = addMarker({ id: userId, latitude: jlat, longitude: jlng })
           if (marker) markerIndexRef.current[userId] = marker as mapboxgl.Marker
         }
       } catch (err) {

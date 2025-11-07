@@ -29,6 +29,7 @@ type RawProfile = {
   dtfn: boolean | null;
   latitude: number;
   longitude: number;
+  incognito_mode?: boolean | null;
 };
 
 type MapUser = {
@@ -122,11 +123,11 @@ export default function MapPage() {
       const { data, error: fetchError } = await supabase
         .from('profiles')
         .select(
-          'id, display_name, photo_url, avatar_url, age, position, dtfn, latitude, longitude',
+          'id, display_name, photo_url, avatar_url, age, position, dtfn, latitude, longitude, incognito_mode',
         )
         .not('latitude', 'is', null)
         .not('longitude', 'is', null)
-        .eq('incognito_mode', false)
+        .or('incognito_mode.is.null,incognito_mode.eq.false')
         .limit(200);
 
       if (isCancelled) return;

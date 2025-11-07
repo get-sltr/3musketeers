@@ -55,25 +55,28 @@ export function useHoloPins(autoLoad: boolean = true) {
     const shouldFetch = now - last > 24 * 60 * 60 * 1000
 
     const fetchSettings = async () => {
+      const fallback = () => setOptions({ partyMode: 0, prideMonth: 0 })
       try {
-        const { data, error } = await supabase
-          .from('settings')
-          .select('party_mode, pride_month')
-          .limit(1)
-          .single()
-        if (!error && data) {
-          setOptions({
-            partyMode: Number(data.party_mode || 0),
-            prideMonth: Number(data.pride_month || 0),
-          })
-          localStorage.setItem(key, String(now))
-        } else {
-          // Settings table doesn't exist or error - use defaults
-          setOptions({ partyMode: 0, prideMonth: 0 })
+        const queryTables = ['settings', 'user_settings']
+        for (const table of queryTables) {
+          const { data, error } = await supabase
+            .from(table)
+            .select('party_mode, pride_month')
+            .limit(1)
+            .maybeSingle()
+
+          if (!error && data) {
+            setOptions({
+              partyMode: Number((data as any).party_mode || 0),
+              prideMonth: Number((data as any).pride_month || 0),
+            })
+            localStorage.setItem(key, String(now))
+            return
+          }
         }
+        fallback()
       } catch (err) {
-        // Settings table doesn't exist - use defaults silently
-        setOptions({ partyMode: 0, prideMonth: 0 })
+        fallback()
       }
     }
 

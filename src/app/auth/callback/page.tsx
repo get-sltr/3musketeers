@@ -57,7 +57,15 @@ function AuthCallbackContent() {
         router.replace(next || "/app")
       } catch (err: any) {
         console.error("Auth callback error:", err)
-        setError(err?.message || "Failed to sign you in. Try the link again or request a new one.")
+        const message = err?.message || ''
+        if (message.includes('auth code') && message.includes('code verifier')) {
+          setError('Your email is verified. Please sign in on this device to continue.')
+          setTimeout(() => {
+            router.replace('/login?message=Email verified! Sign in to continue.')
+          }, 3000)
+        } else {
+          setError(message || "Failed to sign you in. Try the link again or request a new one.")
+        }
       }
     }
     run()
