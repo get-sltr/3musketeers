@@ -36,13 +36,11 @@ export function ErosAssistiveTouch() {
     return null;
   }
   const supabase = createClient();
-  const [position, setPosition] = useState<Position>({ 
-    x: typeof window !== 'undefined' ? window.innerWidth - 90 : 0, 
-    y: typeof window !== 'undefined' ? window.innerHeight - 170 : 0 
-  });
+  const [position, setPosition] = useState<Position>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   
   const assistantRef = useRef<HTMLDivElement>(null);
   const dragStartPos = useRef<Position>({ x: 0, y: 0 });
@@ -52,8 +50,45 @@ export function ErosAssistiveTouch() {
   const pointerDown = useRef(false);
   const introTimeout = useRef<NodeJS.Timeout | null>(null);
   const tapTimeout = useRef<NodeJS.Timeout | null>(null);
+  const collapseTimeout = useRef<NodeJS.Timeout | null>(null);
   const [introOpen, setIntroOpen] = useState(false);
   const [tapToast, setTapToast] = useState<string | null>(null);
+  const getDefaultPosition = useCallback((): Position => {
+    if (typeof window === 'undefined') {
+      return { x: 0, y: 0 };
+    }
+
+    const buttonSize = window.innerWidth <= 768 ? 60 : 70;
+    const margin = 18;
+    const bottomReserve = window.innerWidth <= 768 ? 130 : 150;
+
+    const defaultX = Math.max(margin, window.innerWidth - buttonSize - margin);
+    const defaultY = Math.max(60, window.innerHeight - buttonSize - bottomReserve);
+
+    return { x: defaultX, y: defaultY };
+  }, []);
+
+  const clearCollapseTimer = useCallback(() => {
+    if (collapseTimeout.current) {
+      clearTimeout(collapseTimeout.current);
+      collapseTimeout.current = null;
+    }
+  }, []);
+
+  const keepAssistantVisible = useCallback(() => {
+    setIsCollapsed(false);
+    clearCollapseTimer();
+  }, [clearCollapseTimer]);
+
+  const scheduleCollapse = useCallback(() => {
+    clearCollapseTimer();
+    collapseTimeout.current = setTimeout(() => {
+      if (!pointerDown.current) {
+        setMenuOpen(false);
+        setIsCollapsed(true);
+      }
+    }, 5000);
+  }, [clearCollapseTimer]);
   const closeIntro = useCallback(() => {
     if (introTimeout.current) {
       clearTimeout(introTimeout.current);
@@ -90,12 +125,16 @@ export function ErosAssistiveTouch() {
         try {
           const pos = JSON.parse(saved);
           setPosition(pos);
+          return;
         } catch (e) {
           // Invalid saved position, use default
         }
       }
+
+      const defaults = getDefaultPosition();
+      setPosition(defaults);
     }
-  }, []);
+  }, [getDefaultPosition]);
   
   // Save position when changed
   useEffect(() => {
@@ -103,12 +142,38 @@ export function ErosAssistiveTouch() {
       localStorage.setItem('eros_position', JSON.stringify(position));
     }
   }, [position, isDragging]);
+
+  useEffect(() => {
+    if (isCollapsed) {
+      setIntroOpen(false);
+      setTapToast(null);
+    }
+  }, [isCollapsed]);
+
+  useEffect(() => {
+    if (isCollapsed) {
+      clearCollapseTimer();
+      return;
+    }
+
+    if (!menuOpen && !isDragging) {
+      scheduleCollapse();
+    } else {
+      clearCollapseTimer();
+    }
+
+    return () => {
+      clearCollapseTimer();
+    };
+  }, [menuOpen, isDragging, isCollapsed, scheduleCollapse, clearCollapseTimer]);
   
   const handleTapAction = useCallback(() => {
     router.push('/map')
     showTapFeedback('Open any profile • tap the 😈 bubble to send your signal.')
     closeIntro()
-  }, [router, showTapFeedback, closeIntro])
+    keepAssistantVisible()
+    scheduleCollapse()
+  }, [router, showTapFeedback, closeIntro, keepAssistantVisible, scheduleCollapse])
 
   const menuActions: MenuAction[] = [
     { 
@@ -209,39 +274,52 @@ export function ErosAssistiveTouch() {
   const handleStart = useCallback((e: React.TouchEvent | React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    pointerDown.current = true
+
+    keepAssistantVisible();
+
+    if (isCollapsed) {
+      pointerDown.current = false;
+      setIsCollapsed(false);
+      setMenuOpen(false);
+      scheduleCollapse();
+      return;
+    }
+
+    pointerDown.current = true;
 
     const point = 'touches' in e ? (e as React.TouchEvent).touches[0] : (e as React.MouseEvent);
     if (!point) return;
-    
+
     const rect = assistantRef.current?.getBoundingClientRect();
-    
+
     if (rect) {
       dragStartPos.current = { x: point.clientX, y: point.clientY };
-      offset.current = { 
-        x: point.clientX - rect.left, 
-        y: point.clientY - rect.top 
+      offset.current = {
+        x: point.clientX - rect.left,
+        y: point.clientY - rect.top
       };
-      
+
       // Clear any existing animation
       if (dragTimeout.current) {
         clearTimeout(dragTimeout.current);
       }
       setIsAnimating(false);
-      
+
       // Long press detection (reduced to 400ms for better UX)
       longPressTimer.current = setTimeout(() => {
         setMenuOpen(true);
         closeIntro();
         vibrate(50);
+        keepAssistantVisible();
       }, 400);
     }
-  }, []);
+  }, [closeIntro, isCollapsed, keepAssistantVisible, scheduleCollapse]);
   
   const handleMove = useCallback(
     (e: TouchEvent | MouseEvent) => {
       if (!pointerDown.current) return
+
+      keepAssistantVisible()
 
       const point = 'touches' in e ? (e as TouchEvent).touches[0] : (e as MouseEvent)
       if (!point) return
@@ -268,17 +346,22 @@ export function ErosAssistiveTouch() {
         const newX = point.clientX - offset.current.x
         const newY = point.clientY - offset.current.y
 
-        const buttonSize = 70
-        const maxX = window.innerWidth - buttonSize
-        const maxY = window.innerHeight - buttonSize
+        const isMobile = window.innerWidth <= 768
+        const buttonSize = isMobile ? 60 : 70
+        const margin = 12
+        const topGuard = 60
+        const bottomReserve = isMobile ? 110 : 90
+        const maxX = window.innerWidth - buttonSize - margin
+        const rawMaxY = window.innerHeight - buttonSize - bottomReserve
+        const maxY = Math.max(topGuard, rawMaxY)
 
         setPosition({
-          x: Math.max(0, Math.min(newX, maxX)),
-          y: Math.max(0, Math.min(newY, maxY)),
+          x: Math.max(margin, Math.min(newX, maxX)),
+          y: Math.max(topGuard, Math.min(newY, maxY)),
         })
       }
     },
-    [isDragging]
+    [isDragging, keepAssistantVisible]
   )
   
   const handleEnd = useCallback(() => {
@@ -299,8 +382,11 @@ export function ErosAssistiveTouch() {
       // Snap to nearest edge (like iPhone AssistiveTouch)
       const screenWidth = window.innerWidth;
       const screenHeight = window.innerHeight;
-      const buttonSize = 70;
+      const buttonSize = screenWidth <= 768 ? 60 : 70;
       const midpoint = screenWidth / 2;
+      const margin = 12;
+      const topGuard = 60;
+      const bottomReserve = screenWidth <= 768 ? 110 : 90;
       
       setIsAnimating(true);
       
@@ -313,13 +399,15 @@ export function ErosAssistiveTouch() {
       
       // Horizontal snap - always snap to left or right edge
       if (currentX < midpoint) {
-        targetX = 10; // Snap to left
+        targetX = margin; // Snap to left
       } else {
-        targetX = screenWidth - buttonSize - 10; // Snap to right
+        targetX = screenWidth - buttonSize - margin; // Snap to right
       }
       
       // Vertical position - keep within bounds but allow more flexibility
-      targetY = Math.max(50, Math.min(currentY, screenHeight - buttonSize - 50));
+      const rawMaxY = screenHeight - buttonSize - bottomReserve;
+      const maxY = Math.max(topGuard, rawMaxY);
+      targetY = Math.max(topGuard, Math.min(currentY, maxY));
       
       // Smooth animation to target position
       setPosition({ x: targetX, y: targetY });
@@ -331,7 +419,8 @@ export function ErosAssistiveTouch() {
     }
     
     setIsDragging(false);
-  }, [isDragging, menuOpen, position, showIntro]);
+    scheduleCollapse();
+  }, [isDragging, menuOpen, position, showIntro, scheduleCollapse]);
   
   useEffect(() => {
     const handleGlobalMove = (event: TouchEvent | MouseEvent) => handleMove(event)
@@ -361,8 +450,9 @@ export function ErosAssistiveTouch() {
   useEffect(() => {
     if (menuOpen) {
       closeIntro();
+      keepAssistantVisible();
     }
-  }, [menuOpen, closeIntro]);
+  }, [menuOpen, closeIntro, keepAssistantVisible]);
   
   // Cleanup on unmount
   useEffect(() => {
@@ -379,6 +469,9 @@ export function ErosAssistiveTouch() {
       if (tapTimeout.current) {
         clearTimeout(tapTimeout.current);
       }
+      if (collapseTimeout.current) {
+        clearTimeout(collapseTimeout.current);
+      }
     };
   }, []);
   
@@ -386,7 +479,7 @@ export function ErosAssistiveTouch() {
     <>
       <div
         ref={assistantRef}
-        className={`eros-assistant ${isDragging ? 'dragging' : ''} ${isAnimating ? 'animating' : ''}`}
+        className={`eros-assistant ${isDragging ? 'dragging' : ''} ${isAnimating ? 'animating' : ''} ${isCollapsed ? 'collapsed' : ''}`}
         style={{ 
           left: `${position.x}px`, 
           top: `${position.y}px`,
@@ -398,6 +491,12 @@ export function ErosAssistiveTouch() {
         <div className="eros-button">
           <span className="eros-arrow-icon">🏹</span>
         </div>
+
+        {isCollapsed && (
+          <div className="eros-collapsed-hint">
+            <span>EROS</span>
+          </div>
+        )}
         
         <div className={`eros-menu ${menuOpen ? 'active' : ''}`}>
           {menuActions.map((action, index) => (
@@ -409,6 +508,8 @@ export function ErosAssistiveTouch() {
                 action.action();
                 setMenuOpen(false);
                 vibrate(30);
+                keepAssistantVisible();
+                scheduleCollapse();
               }}
               title={action.label}
             >
@@ -430,12 +531,19 @@ export function ErosAssistiveTouch() {
                     closeIntro();
                     setMenuOpen(true);
                     vibrate(20);
+                    keepAssistantVisible();
                   }}
                   className="intro-button primary"
                 >
                   Open Commands
                 </button>
-                <button onClick={closeIntro} className="intro-button ghost">
+                <button
+                  onClick={() => {
+                    closeIntro();
+                    scheduleCollapse();
+                  }}
+                  className="intro-button ghost"
+                >
                   Not now
                 </button>
               </div>
@@ -460,6 +568,12 @@ export function ErosAssistiveTouch() {
           user-select: none;
           cursor: grab;
           will-change: transform, left, top;
+        }
+
+        .eros-assistant.collapsed {
+          width: 54px;
+          height: 54px;
+          opacity: 0.9;
         }
 
         .eros-assistant:active {
@@ -495,6 +609,22 @@ export function ErosAssistiveTouch() {
             0 0 40px rgba(0, 245, 255, 0.2),
             inset 0 0 20px rgba(0, 245, 255, 0.1);
           animation: float 3s ease-in-out infinite;
+        }
+
+        .eros-assistant.collapsed .eros-button {
+          transform: scale(0.75);
+          animation: none;
+          box-shadow:
+            0 0 14px rgba(0, 245, 255, 0.25),
+            inset 0 0 12px rgba(0, 245, 255, 0.1);
+        }
+
+        .eros-assistant.collapsed .eros-button::before {
+          opacity: 0.6;
+        }
+
+        .eros-assistant.collapsed .eros-button::after {
+          animation-duration: 4.5s;
         }
 
         @keyframes float {
@@ -573,6 +703,10 @@ export function ErosAssistiveTouch() {
           opacity: 1;
         }
 
+        .eros-assistant.collapsed .eros-menu {
+          display: none;
+        }
+
         .eros-menu-item {
           position: absolute;
           width: 50px;
@@ -623,6 +757,23 @@ export function ErosAssistiveTouch() {
           border-color: rgba(0, 245, 255, 0.6);
           transform: scale(1.1) !important;
           box-shadow: 0 0 25px rgba(0, 245, 255, 0.5);
+        }
+
+        .eros-collapsed-hint {
+          position: absolute;
+          right: -12px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: rgba(0, 245, 255, 0.25);
+          color: #03272a;
+          padding: 6px 12px 6px 16px;
+          border-radius: 999px 0 0 999px;
+          font-size: 0.62rem;
+          font-weight: 700;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          opacity: 0.85;
+          pointer-events: none;
         }
 
         .eros-intro-popover {
@@ -720,6 +871,11 @@ export function ErosAssistiveTouch() {
           .eros-assistant {
             width: 60px;
             height: 60px;
+          }
+
+          .eros-assistant.collapsed {
+            width: 50px;
+            height: 50px;
           }
           
           .eros-button {

@@ -21,6 +21,7 @@ import GroupModal from '../components/GroupModal'
 import UserAdvertisingPanel from '../components/UserAdvertisingPanel'
 import '../../styles/mobile-optimization.css'
 import { useSocket } from '../../hooks/useSocket'
+import { resolveProfilePhoto } from '@/lib/utils/profile'
 
 type ViewMode = 'grid' | 'map'
 
@@ -34,11 +35,11 @@ interface UserWithLocation {
   dtfn?: boolean
   party_friendly?: boolean
   photo_url?: string
+  photos?: string[]
   is_online?: boolean
   founder_number?: number | null
   // legacy optional fields referenced elsewhere
   age?: number
-  photos?: string[]
   about?: string
   kinks?: string[]
   tags?: string[]
@@ -77,6 +78,7 @@ export default function AppPage() {
   const [isAddingPlace, setIsAddingPlace] = useState<boolean>(false)
   const [isHostingGroup, setIsHostingGroup] = useState<boolean>(false)
   const [showAdvertisingPanel, setShowAdvertisingPanel] = useState<boolean>(false)
+  const [isLargeDesktop, setIsLargeDesktop] = useState<boolean>(false)
   const router = useRouter()
 
   // Listen for bottom nav map button click
@@ -89,6 +91,18 @@ export default function AppPage() {
     return () => {
       window.removeEventListener('sltr_switch_to_map', handleSwitchToMap)
     }
+  }, [])
+
+  useEffect(() => {
+    const updateBreakpoint = () => {
+      if (typeof window !== 'undefined') {
+        setIsLargeDesktop(window.innerWidth >= 1024)
+      }
+    }
+
+    updateBreakpoint()
+    window.addEventListener('resize', updateBreakpoint)
+    return () => window.removeEventListener('resize', updateBreakpoint)
   }, [])
 
   useEffect(() => {
@@ -156,7 +170,7 @@ export default function AppPage() {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('profiles')
-    .select('id, display_name, photo_url, is_online, dtfn, party_friendly, latitude, longitude, founder_number')
+      .select('id, display_name, photo_url, photos, is_online, dtfn, party_friendly, latitude, longitude, founder_number')
       .not('latitude', 'is', null)
       .not('longitude', 'is', null)
     
@@ -165,11 +179,23 @@ export default function AppPage() {
       return
     }
     
+    const { data: favoritesRows } = await supabase
+      .from('favorites')
+      .select('favorited_user_id')
+      .eq('user_id', currentUserId)
+
+    const favoriteIds = new Set<string>()
+    for (const row of favoritesRows || []) {
+      if (row?.favorited_user_id) favoriteIds.add(row.favorited_user_id)
+    }
+
     // Mark current user
     const usersWithYou = (data || []).map(user => ({
       ...user,
       online: user.is_online ?? null,
-      isYou: user.id === currentUserId
+      photos: Array.isArray(user.photos) ? user.photos.filter(Boolean) : undefined,
+      isYou: user.id === currentUserId,
+      isFavorited: favoriteIds.has(user.id)
     }))
     
     console.log('📊 Fetched users:', usersWithYou.length)
@@ -494,9 +520,8 @@ export default function AppPage() {
         display_name: u.isYou ? 'You' : u.display_name,
         isYou: u.isYou,
         isCurrentUser: u.isYou,
-        photo: u.photo_url || (u.photos && u.photos[0]) || undefined,
         photo_url: u.photo_url,
-        photos: u.photos,
+        photos: Array.isArray(u.photos) ? u.photos.filter(Boolean) : undefined,
         online: u.is_online ?? u.online,
         dtfn: u.dtfn,
         party_friendly: u.party_friendly,
@@ -546,7 +571,8 @@ export default function AppPage() {
                 longitude: u.longitude,
                 display_name: u.display_name,
                 isCurrentUser: !!u.isYou,
-                photo: u.photo_url || (u.photos && Array.isArray(u.photos) && u.photos[0]) || undefined,
+                photo: resolveProfilePhoto(u.photo_url, u.photos),
+                photos: Array.isArray(u.photos) ? u.photos : undefined,
                 online: !!(u.online),
                 dtfn: u.dtfn,
                 party_friendly: u.party_friendly,
@@ -611,6 +637,7 @@ export default function AppPage() {
               onCenter={handleCenterLocation}
               onMessages={() => router.push('/messages')}
               onGroups={() => router.push('/groups')}
+              rightOffset={isLargeDesktop && showAdvertisingPanel ? 384 + 32 : 16}
             />
 
             {/* Map Controls (eye/incognito + relocate) */}
@@ -619,6 +646,7 @@ export default function AppPage() {
               onToggleIncognito={handleToggleIncognito}
               onMoveLocation={handleMoveLocation}
               isIncognito={isIncognito}
+              rightOffset={isLargeDesktop && showAdvertisingPanel ? 384 + 32 : 16}
             />
             
             {/* Users sidebar */}
@@ -635,7 +663,7 @@ export default function AppPage() {
                     className="w-full p-3 glass-bubble hover:bg-white/10 transition-all flex items-center gap-3 text-left"
                   >
                     <img
-                      src={user.photo_url || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23222" width="100" height="100"/%3E%3Ctext fill="%23aaa" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"%3E?%3C/text%3E%3C/svg%3E'}
+                      src={resolveProfilePhoto(user.photo_url, user.photos ?? undefined)}
                       alt={user.display_name}
                       className="w-12 h-12 rounded-full object-cover"
                     />

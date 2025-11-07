@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { DEFAULT_PROFILE_IMAGE } from '@/lib/utils/profile'
 
 interface User {
   id: string
@@ -89,9 +90,15 @@ export default function ScrollableProfileCard({
       {/* Main Photo */}
       <div className="relative h-full overflow-hidden">
         <img
-          src={user.photo || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400'}
+          src={user.photo || DEFAULT_PROFILE_IMAGE}
           alt={user.display_name || user.username}
           className="w-full h-full object-cover"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement
+            if (target.src !== window.location.origin + DEFAULT_PROFILE_IMAGE) {
+              target.src = DEFAULT_PROFILE_IMAGE
+            }
+          }}
         />
         
         {/* Top Status Bar */}

@@ -7,13 +7,15 @@ interface MapControlsProps {
   onToggleIncognito: (enabled: boolean) => void
   onMoveLocation: () => void
   isIncognito: boolean
+  rightOffset?: number
 }
 
 export default function MapControls({ 
   onCenterLocation, 
   onToggleIncognito, 
   onMoveLocation,
-  isIncognito 
+  isIncognito,
+  rightOffset = 16,
 }: MapControlsProps) {
   const [movingLocation, setMovingLocation] = useState(false)
 
@@ -23,7 +25,10 @@ export default function MapControls({
   }
 
   return (
-    <div className="fixed bottom-24 right-4 flex flex-col gap-3 z-40">
+    <div
+      className="fixed top-1/2 flex flex-col gap-3 z-40 transform -translate-y-1/2"
+      style={{ right: rightOffset }}
+    >
       {/* Center to current location */}
       <button
         onClick={onCenterLocation}
@@ -68,14 +73,14 @@ export default function MapControls({
 
       {/* Status indicator when moving */}
       {movingLocation && (
-        <div className="absolute -top-16 right-0 bg-magenta-500/90 backdrop-blur-xl border border-magenta-400 px-4 py-2 rounded-full text-white text-sm font-semibold whitespace-nowrap shadow-lg">
+        <div className="absolute -top-16 right-1/2 translate-x-1/2 bg-magenta-500/90 backdrop-blur-xl border border-magenta-400 px-4 py-2 rounded-full text-white text-sm font-semibold whitespace-nowrap shadow-lg">
           Click map to relocate
         </div>
       )}
 
       {/* Incognito indicator */}
       {isIncognito && (
-        <div className="absolute -top-16 right-0 bg-purple-500/90 backdrop-blur-xl border border-purple-400 px-4 py-2 rounded-full text-white text-sm font-semibold whitespace-nowrap shadow-lg flex items-center gap-2">
+        <div className="absolute -top-16 right-1/2 translate-x-1/2 bg-purple-500/90 backdrop-blur-xl border border-purple-400 px-4 py-2 rounded-full text-white text-sm font-semibold whitespace-nowrap shadow-lg flex items-center gap-2">
           <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
           Incognito Mode
         </div>

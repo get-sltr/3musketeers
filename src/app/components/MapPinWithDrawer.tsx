@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { DEFAULT_PROFILE_IMAGE } from '@/lib/utils/profile';
 
 interface User {
   id: string;
@@ -53,8 +54,15 @@ export const MapPin: React.FC<MapPinProps> = ({
         onClick={() => onProfileClick(user.id)}
       >
         <img
-          src={user.avatar_url || '/default-avatar.png'}
+          src={user.avatar_url || DEFAULT_PROFILE_IMAGE}
           alt={user.display_name}
+          onError={(e) => {
+            const target = e.target as HTMLImageElement
+            if (!target.dataset.fallback) {
+              target.dataset.fallback = 'true'
+              target.src = DEFAULT_PROFILE_IMAGE
+            }
+          }}
         />
         {user.dtfn && <div className="pin-badge">⚡</div>}
       </div>

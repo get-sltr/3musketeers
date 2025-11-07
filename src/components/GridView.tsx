@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '../lib/supabase/client'
+import { resolveProfilePhoto } from '@/lib/utils/profile'
 import UserProfileModal from './UserProfileModal'
 import ScrollableProfileCard from './ScrollableProfileCard'
 import MessagingModal from './MessagingModal'
@@ -163,8 +164,8 @@ export default function GridView({ onUserClick, activeFilters = { filters: [], a
               username: profile.username || profile.display_name || 'User',
               display_name: profile.display_name || profile.username || 'User',
               age: profile.age || 0,
-              photo: profile.photos?.[0] || profile.photo_url, // Use first photo from photos array
-              photos: profile.photos || [],
+              photo: resolveProfilePhoto(profile.photo_url, profile.photos),
+              photos: Array.isArray(profile.photos) ? profile.photos.filter(Boolean) : [],
               distance: isSelf ? 'You' : formatDistance(distanceMiles),
               distanceMiles: isSelf ? 0 : distanceMiles,
               isOnline: profile.online || profile.is_online || false,
@@ -203,6 +204,23 @@ export default function GridView({ onUserClick, activeFilters = { filters: [], a
             }
             return 0
           })
+        }
+
+        if (currentUser) {
+          const { data: favoritesRows } = await supabase
+            .from('favorites')
+            .select('favorited_user_id')
+            .eq('user_id', currentUser.id)
+
+          const favoriteIds = new Set<string>()
+          for (const row of favoritesRows || []) {
+            if (row?.favorited_user_id) favoriteIds.add(row.favorited_user_id)
+          }
+
+          userList = userList.map(user => ({
+            ...user,
+            isFavorited: favoriteIds.has(user.id)
+          }))
         }
 
         setUsers(userList)
@@ -307,24 +325,12 @@ export default function GridView({ onUserClick, activeFilters = { filters: [], a
       }
 
       // Check if already favorited
-      const { data: existing } = await supabase
+      const { data: existingFavorite } = await supabase
         .from('favorites')
         .select('id')
         .eq('user_id', user.id)
-        .eq('favorite_user_id', userId)
+        .eq('favorited_user_id', userId)
         .maybeSingle()
-
-      // If that doesn't work, try alternative column name
-      let existingFavorite = existing
-      if (!existing) {
-        const { data: altExisting } = await supabase
-          .from('favorites')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('favorited_user_id', userId)
-          .maybeSingle()
-        existingFavorite = altExisting
-      }
 
       if (existingFavorite) {
         // Remove favorite
@@ -342,11 +348,11 @@ export default function GridView({ onUserClick, activeFilters = { filters: [], a
           ))
         }
       } else {
-        // Add favorite - try both column name variations
-        const insertData: any = {
+        // Add favorite
+        const insertData = {
           user_id: user.id,
           created_at: new Date().toISOString(),
-          favorite_user_id: userId
+          favorited_user_id: userId
         }
         
         const { error: insertError } = await supabase
@@ -354,25 +360,8 @@ export default function GridView({ onUserClick, activeFilters = { filters: [], a
           .insert(insertData)
 
         if (insertError) {
-          // If that fails, try favorited_user_id
-          const altInsertData = {
-            user_id: user.id,
-            favorited_user_id: userId,
-            created_at: new Date().toISOString()
-          }
-          
-          const { error: altError } = await supabase
-            .from('favorites')
-            .insert(altInsertData)
-
-          if (altError) {
-            console.error('Error adding favorite:', altError)
-            alert(`Failed to add favorite: ${altError.message}. Please check if the favorites table exists.`)
-          } else {
-            setUsers(prev => prev.map(u => 
-              u.id === userId ? { ...u, isFavorited: true } : u
-            ))
-          }
+          console.error('Error adding favorite:', insertError)
+          alert(`Failed to add favorite: ${insertError.message}. Please check if the favorites table exists.`)
         } else {
           setUsers(prev => prev.map(u => 
             u.id === userId ? { ...u, isFavorited: true } : u

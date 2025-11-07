@@ -12,6 +12,7 @@ import { HoloPinsLayer } from '@/app/components/maps/HoloPinsLayer'
 import type { Pin } from '@/types/pins'
 import { useHoloPins } from '@/hooks/useHoloPins'
 import { createMapboxMarker } from '../MapPinWithDrawer'
+import { resolveProfilePhoto } from '@/lib/utils/profile'
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
 
@@ -29,6 +30,7 @@ type UserPin = {
   display_name?: string
   isCurrentUser?: boolean
   photo?: string
+  photos?: string[]
   online?: boolean
   dtfn?: boolean
   party_friendly?: boolean
@@ -255,7 +257,7 @@ export default function MapboxUsers({
             lng: u.longitude,
             lat: u.latitude,
             name: u.display_name || 'Unknown',
-            photo: u.photo,
+            photo: resolveProfilePhoto(u.photo, u.photos),
             status: u.online ? 'online' : 'offline',
             badge: u.dtfn ? 'DTFN' : null,
             premiumTier: u.party_friendly ? 1 : 0,
@@ -381,7 +383,7 @@ export default function MapboxUsers({
           const u = visibleUsers.find(x => x.id === userId)
           if (u) {
             const [jlng, jlat] = jitter(u.longitude, u.latitude, jitterMeters, u.id)
-            const marker = addMarker({ ...u, longitude: jlng, latitude: jlat })
+          const marker = addMarker({ ...u, longitude: jlng, latitude: jlat })
             if (marker) markerIndexRef.current[userId] = marker
           }
         }
@@ -478,11 +480,13 @@ export default function MapboxUsers({
   const addMarker = (u: UserPin) => {
     if (!mapRef.current) return null
 
+    const primaryPhoto = resolveProfilePhoto(u.photo, u.photos)
+
     const markerEl = createMapboxMarker(
       {
         id: u.id,
         display_name: u.display_name || 'Anonymous',
-        avatar_url: u.photo || null,
+        avatar_url: primaryPhoto || null,
         age: u.age ?? 0,
         position: u.position || 'Unknown',
         dtfn: !!u.dtfn,

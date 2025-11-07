@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import { formatDistanceToNow } from 'date-fns'
 import { useRouter } from 'next/navigation'
+import { resolveProfilePhoto } from '@/lib/utils/profile'
 
 // Helper function to format relative time
 function formatTimeAgo(date: string): string {
@@ -85,6 +86,7 @@ export default function UserAdvertisingPanel({ isOpen: controlledOpen, onToggle 
           id,
           display_name,
           photo_url,
+          photos,
           about,
           latitude,
           longitude,
@@ -124,7 +126,7 @@ export default function UserAdvertisingPanel({ isOpen: controlledOpen, onToggle 
             id: profile.id,
             user_id: profile.id,
             display_name: profile.display_name || 'Anonymous',
-            photo_url: profile.photo_url,
+            photo_url: resolveProfilePhoto(profile.photo_url, profile.photos ?? undefined),
             update_text: profile.about || 'Looking to connect',
             created_at: profile.updated_at || new Date().toISOString(),
             distance: Math.round(distance * 10) / 10,

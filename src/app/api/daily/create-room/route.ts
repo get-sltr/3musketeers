@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         name: roomName,
         privacy: 'private',
-        config: {
+        properties: {
           max_participants: 2,
           enable_screenshare: true,
           enable_recording: false, // Set to true if you want recording
@@ -47,9 +47,7 @@ export async function POST(request: NextRequest) {
           enable_prejoin_ui: false,
           start_video_off: false,
           start_audio_off: false,
-        },
-        properties: {
-          custom_composite_key: conversationId,
+          eject_at_token_exp: true,
         },
       }),
     });
