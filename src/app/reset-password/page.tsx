@@ -15,13 +15,49 @@ export default function ResetPasswordPage() {
   const supabase = createClient()
 
   useEffect(() => {
-    // Check if user has a valid session from email link
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        setError('Invalid or expired reset link. Please request a new one.')
+    let isMounted = true
+
+    const init = async () => {
+      try {
+        if (typeof window !== 'undefined' && window.location.hash) {
+          const hashParams = new URLSearchParams(window.location.hash.substring(1))
+          const accessToken = hashParams.get('access_token')
+          const refreshToken = hashParams.get('refresh_token')
+          const tokenHash = hashParams.get('token_hash')
+          const typeParam = hashParams.get('type')
+          const emailParam = hashParams.get('email')
+
+          if (accessToken && refreshToken) {
+            await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+            window.history.replaceState({}, document.title, window.location.pathname + window.location.search)
+          } else if (tokenHash && emailParam && typeParam) {
+            await supabase.auth.verifyOtp({
+              type: typeParam as any,
+              token_hash: tokenHash,
+              email: emailParam,
+            })
+            window.history.replaceState({}, document.title, window.location.pathname + window.location.search)
+          }
+        }
+
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session && isMounted) {
+          setError('Invalid or expired reset link. Please request a new one.')
+        }
+      } catch (err: any) {
+        console.error('Reset password session error:', err)
+        if (isMounted) {
+          setError('Invalid or expired reset link. Please request a new one.')
+        }
       }
-    })
-  }, [supabase.auth])
+    }
+
+    init()
+
+    return () => {
+      isMounted = false
+    }
+  }, [supabase])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

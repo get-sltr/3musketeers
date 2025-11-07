@@ -14,17 +14,57 @@ function AuthCallbackContent() {
   useEffect(() => {
     const run = async () => {
       try {
-        // Exchange the code in the URL for a session
-        const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href)
-        if (error) throw error
+        let session = null
+        let user = null
+
+        // Handle hash fragments first (Supabase recovery flow often returns tokens in the hash)
+        if (typeof window !== 'undefined' && window.location.hash) {
+          const hashParams = new URLSearchParams(window.location.hash.substring(1))
+          const accessToken = hashParams.get('access_token')
+          const refreshToken = hashParams.get('refresh_token')
+          const tokenHash = hashParams.get('token_hash')
+          const typeParam = hashParams.get('type')
+          const emailParam = hashParams.get('email')
+
+          if (accessToken && refreshToken) {
+            const { error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            })
+            if (error) throw error
+            window.history.replaceState({}, document.title, window.location.pathname + window.location.search)
+          } else if (tokenHash && emailParam && typeParam) {
+            const { error } = await supabase.auth.verifyOtp({
+              type: typeParam as any,
+              token_hash: tokenHash,
+              email: emailParam,
+            })
+            if (error) throw error
+            window.history.replaceState({}, document.title, window.location.pathname + window.location.search)
+          }
+        }
+
+        // Attempt code exchange if the URL contains an auth code (PKCE)
+        const codeParam =
+          searchParams?.get('code') ??
+          (typeof window !== 'undefined' ? new URL(window.location.href).searchParams.get('code') : null)
+        if (codeParam) {
+          const { error } = await supabase.auth.exchangeCodeForSession(window.location.href)
+          if (error) throw error
+        }
+
+        // Retrieve the current session
+        const { data: sessionData } = await supabase.auth.getSession()
+        session = sessionData.session ?? null
+        user = session?.user ?? null
 
         // Check if this is email verification (first time email_confirmed_at is set)
-        if (data.session?.user && data.session.user.email_confirmed_at) {
+        if (user && user.email_confirmed_at) {
           // Get user profile to check if welcome email was already sent
           const { data: profile } = await supabase
             .from('profiles')
             .select('display_name, email')
-            .eq('id', data.session.user.id)
+            .eq('id', user.id)
             .single()
 
           // Send welcome email (if not already sent)
@@ -33,9 +73,9 @@ function AuthCallbackContent() {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                email: data.session.user.email,
-                name: profile?.display_name || data.session.user.user_metadata?.username || 'there',
-                username: profile?.display_name || data.session.user.user_metadata?.username,
+                email: user.email,
+                name: profile?.display_name || user.user_metadata?.username || 'there',
+                username: profile?.display_name || user.user_metadata?.username,
               }),
             })
           } catch (emailError) {
