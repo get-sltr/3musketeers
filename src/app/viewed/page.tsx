@@ -119,7 +119,7 @@ export default function ViewedPage() {
                 <div className="photo-container">
                   <Image
                     src={view.viewer.photo_url || '/default-avatar.png'}
-                    alt={view.viewer.username}
+                    alt={view.viewer.display_name}
                     fill
                     sizes="(max-width: 768px) 45vw, 200px"
                     className="object-cover"
@@ -134,8 +134,12 @@ export default function ViewedPage() {
                   </div>
                   <div className="stats">
                     {view.viewer.age
-                      ? `${view.viewer.age} • ${view.viewer.location || 'Unknown'}`
-                      : view.viewer.location || 'Unknown'}
+                      ? `${view.viewer.age}${
+                          view.viewer.location
+                            ? ` • ${view.viewer.location}`
+                            : ''
+                        }`
+                      : view.viewer.location || 'Unknown location'}
                   </div>
                   <div className="timestamp">
                     {formatTime(view.last_viewed)}
