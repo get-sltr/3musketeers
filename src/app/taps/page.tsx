@@ -69,10 +69,11 @@ export default function TapsPage() {
         return
       }
 
-      let query = supabase.from('taps')
+      let query: any
 
       if (activeTab === 'my_taps') {
-        query = query
+        query = supabase
+          .from('taps')
           .select(
             `
             id,
@@ -85,7 +86,8 @@ export default function TapsPage() {
           )
           .eq('tapper_id', user.id)
       } else if (activeTab === 'tapped_me') {
-        query = query
+        query = supabase
+          .from('taps')
           .select(
             `
             id,
@@ -98,7 +100,8 @@ export default function TapsPage() {
           )
           .eq('tapped_user_id', user.id)
       } else {
-        query = query
+        query = supabase
+          .from('taps')
           .select(
             `
             id,
