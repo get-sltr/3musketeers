@@ -8,15 +8,14 @@ import { createClient } from '@/lib/supabase/client'
 interface ProfileView {
   id: string
   viewer_id: string
-  viewed_at: string
+  last_viewed: string
   viewer: {
-    username: string
-    age: number
-    position: string
-    distance: number
+    id: string
+    display_name: string
     photo_url: string
+    age: number
+    location: string
     is_online: boolean
-    dtfn: boolean
   }
 }
 
@@ -45,23 +44,37 @@ export default function ViewedPage() {
         .select(`
           id,
           viewer_id,
-          viewed_at,
+          last_viewed,
           viewer:profiles!viewer_id (
-            username,
-            age,
-            position,
-            distance,
+            id,
+            display_name,
             photo_url,
-            is_online,
-            dtfn
+            age,
+            location,
+            is_online
           )
         `)
         .eq('viewed_user_id', user.id)
-        .order('viewed_at', { ascending: false })
+        .order('last_viewed', { ascending: false })
         .limit(100)
 
       if (error) throw error
-      setViews(data || [])
+
+      const typedViews: ProfileView[] = (data || []).map((row: any) => ({
+        id: row.id,
+        viewer_id: row.viewer_id,
+        last_viewed: row.last_viewed,
+        viewer: {
+          id: row.viewer?.id ?? '',
+          display_name: row.viewer?.display_name ?? 'Member',
+          photo_url: row.viewer?.photo_url ?? '',
+          age: row.viewer?.age ?? 0,
+          location: row.viewer?.location ?? '',
+          is_online: row.viewer?.is_online ?? false,
+        },
+      }))
+
+      setViews(typedViews)
     } catch (error) {
       console.error('Error fetching views:', error)
     } finally {
@@ -116,13 +129,16 @@ export default function ViewedPage() {
                   {view.viewer.is_online && <div className="online-dot" />}
                 </div>
                 <div className="view-info">
-                  <div className="username">{view.viewer.username}</div>
+                  <div className="username">
+                    {view.viewer.display_name || 'Member'}
+                  </div>
                   <div className="stats">
-                    {view.viewer.age} • {view.viewer.position} •{' '}
-                    {view.viewer.distance} mi
+                    {view.viewer.age
+                      ? `${view.viewer.age} • ${view.viewer.location || 'Unknown'}`
+                      : view.viewer.location || 'Unknown'}
                   </div>
                   <div className="timestamp">
-                    {formatTime(view.viewed_at)}
+                    {formatTime(view.last_viewed)}
                   </div>
                 </div>
               </div>
