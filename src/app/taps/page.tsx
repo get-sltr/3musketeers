@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase/client'
 import { removeTap } from '@/lib/profileTracking'
 
 type TabType = 'my_taps' | 'tapped_me' | 'mutual'
@@ -44,7 +44,7 @@ const profileFields = `
 
 export default function TapsPage() {
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
 
   const [activeTab, setActiveTab] = useState<TabType>('my_taps')
   const [taps, setTaps] = useState<TapRecord[]>([])

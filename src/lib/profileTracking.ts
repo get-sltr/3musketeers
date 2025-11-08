@@ -1,6 +1,6 @@
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase/client'
 
-const supabase = createClientComponentClient()
+const supabase = createClient()
 
 const viewCooldown = new Map<string, number>()
 const VIEW_COOLDOWN_MS = 30_000

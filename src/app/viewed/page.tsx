@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase/client'
 
 interface ProfileView {
   id: string
@@ -22,7 +22,7 @@ interface ProfileView {
 
 export default function ViewedPage() {
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
   const [views, setViews] = useState<ProfileView[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -115,6 +115,214 @@ export default function ViewedPage() {
                   {view.viewer.dtfn && <div className="dtfn-badge">⚡</div>}
                   {view.viewer.is_online && <div className="online-dot" />}
                 </div>
+                <div className="view-info">
+                  <div className="username">{view.viewer.username}</div>
+                  <div className="stats">
+                    {view.viewer.age} • {view.viewer.position} •{' '}
+                    {view.viewer.distance} mi
+                  </div>
+                  <div className="timestamp">
+                    {formatTime(view.viewed_at)}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
 
-          ... (truncated) ...``` Wait patch truncated due to char? Need include rest code. change approach: we should include entire file in one patch. start over carefully ensure style etc. Start new apply patch rewriting file content fully.
+      <style jsx>{`
+        .page-container {
+          background: #000;
+          min-height: 100vh;
+          color: white;
+        }
 
+        .page-header {
+          position: sticky;
+          top: 0;
+          height: 60px;
+          background: rgba(0, 0, 0, 0.6);
+          backdrop-filter: blur(20px) saturate(180%);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 20px;
+          z-index: 20;
+        }
+
+        .back-btn {
+          width: 40px;
+          height: 40px;
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          font-size: 1.2em;
+          color: white;
+          transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+          background: rgba(0, 217, 255, 0.3);
+          border-color: #00d9ff;
+        }
+
+        .page-header h1 {
+          font-size: 1.2em;
+          font-weight: 600;
+        }
+
+        .spacer {
+          width: 40px;
+        }
+
+        .page-content {
+          padding: 20px;
+        }
+
+        .loading {
+          text-align: center;
+          padding: 60px 20px;
+          color: #888;
+        }
+
+        .loading-spinner {
+          width: 40px;
+          height: 40px;
+          border: 3px solid rgba(0, 217, 255, 0.3);
+          border-top-color: #00d9ff;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
+        .empty-state {
+          text-align: center;
+          padding: 80px 20px;
+          max-width: 400px;
+          margin: 0 auto;
+        }
+
+        .empty-icon {
+          font-size: 5em;
+          margin-bottom: 24px;
+          opacity: 0.3;
+        }
+
+        .views-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+          gap: 12px;
+        }
+
+        .view-card {
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 12px;
+          overflow: hidden;
+          transition: all 0.3s ease;
+          cursor: pointer;
+        }
+
+        .view-card:hover {
+          transform: translateY(-4px);
+          border-color: rgba(0, 217, 255, 0.4);
+          box-shadow: 0 8px 24px rgba(0, 217, 255, 0.2);
+        }
+
+        .photo-container {
+          position: relative;
+          width: 100%;
+          aspect-ratio: 3 / 4;
+          overflow: hidden;
+          background: rgba(255, 255, 255, 0.05);
+        }
+
+        .dtfn-badge {
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          font-size: 1.2em;
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+          z-index: 6;
+        }
+
+        .online-dot {
+          position: absolute;
+          top: 8px;
+          left: 8px;
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background: #00ff00;
+          border: 2px solid white;
+          box-shadow: 0 0 8px rgba(0, 255, 0, 0.6);
+          z-index: 6;
+        }
+
+        .view-info {
+          padding: 12px;
+        }
+
+        .username {
+          font-weight: 600;
+          font-size: 0.95em;
+          margin-bottom: 4px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .stats {
+          font-size: 0.8em;
+          color: #aaa;
+          margin-bottom: 6px;
+        }
+
+        .timestamp {
+          font-size: 0.75em;
+          color: #666;
+        }
+
+        @media (max-width: 768px) {
+          .views-grid {
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 10px;
+          }
+
+          .page-content {
+            padding: 15px;
+          }
+        }
+      `}</style>
+    </div>
+  )
+}
+
+function formatTime(timestamp: string): string {
+  const now = new Date()
+  const time = new Date(timestamp)
+  const diff = now.getTime() - time.getTime()
+
+  const minutes = Math.floor(diff / 60000)
+  const hours = Math.floor(diff / 3600000)
+  const days = Math.floor(diff / 86400000)
+
+  if (minutes < 1) return 'Just now'
+  if (minutes < 60) return `${minutes}m ago`
+  if (hours < 24) return `${hours}h ago`
+  if (days < 7) return `${days}d ago`
+
+  return time.toLocaleDateString()
+}
