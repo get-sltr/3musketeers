@@ -55,7 +55,6 @@ export default function AppPage() {
   // Ensure realtime presence/auth is initialized regardless of view
   const { isConnected } = useSocket() as any
   const [loading, setLoading] = useState(true)
-  const [activeFilters, setActiveFilters] = useState<string[]>([])
   const [selectedPositions, setSelectedPositions] = useState<string[]>([])
   const [users, setUsers] = useState<UserWithLocation[]>([])
   const [selectedUser, setSelectedUser] = useState<UserWithLocation | null>(null)
@@ -217,7 +216,7 @@ export default function AppPage() {
 
   const handleFilterChange = (filterData: { filters?: string[]; positions?: string[]; ageRange?: { min: number; max: number } }) => {
     if (filterData.filters) {
-      setActiveFilters(filterData.filters)
+      // Grid handles its own filters locally; map can listen here if needed.
       console.log('Active filters:', filterData.filters)
     }
     if (filterData.positions) {
@@ -555,7 +554,7 @@ export default function AppPage() {
 
         {/* Grid or Map view based on viewMode */}
         {viewMode === 'grid' ? (
-          <LazyGridView activeFilters={activeFilters} />
+          <LazyGridView />
         ) : (
           <div className="relative w-full h-[calc(100vh-12rem)] sm:h-[calc(100vh-10rem)]">
             {/* User Advertising Panel */}
