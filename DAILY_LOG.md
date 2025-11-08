@@ -55,6 +55,32 @@ These files should auto-open when you open the project:
 
 ## 📅 SESSION LOGS
 
+### Friday, November 7, 2025
+**Session Start:** Friday, November 7, 2025 (Stability Pass + Deliverability Tuning)
+
+**Completed:**
+- [x] **Daily.co API Request Fix** – Removed deprecated `config`/`eject_at_token_exp` fields so the `/api/daily/create-room` endpoint now returns 200 once the correct `DAILY_API_KEY` is present.
+- [x] **EROS Assist + Map Controls Polish** – Added idle collapse guard so AssistiveTouch no longer swallows grid taps; repositioned map action stack beside the Updates column to keep “Post an Update” clear on mobile.
+- [x] **Favorites & Avatar Cleanup** – Hydrated grid/map data with `favorited_user_id`, simplified toggle writes, and introduced `resolveProfilePhoto` so grids, pins, and updates always display a photo/fallback silhouette.
+- [x] **Password Recovery Flow Hardened** – Updated `/auth/callback` and `/reset-password` to handle Supabase tokens delivered via URL hash (setSession/verifyOtp) before redirecting to the reset form; users can now set a new password instead of being bounced to login.
+- [x] **Email Deliverability Review** – Verified SPF/DKIM/DMARC records, tested reset emails, documented follow-up (template branding, reputation warm-up) to eliminate Gmail “dangerous message” warnings.
+
+**In Progress:**
+- [ ] **Grid Visual Refresh** – Current component backed up (`src/app/_backups/GridView.tsx.backup`); waiting to drop in new layout once final design is approved.
+- [ ] **Deliverability Warm-Up** – Monitor DMARC/Postmaster data and iterate on password reset template to remove Gmail warnings after reputation builds.
+
+**Files Created/Modified:**
+- src/app/_backups/GridView.tsx.backup (new – snapshot of existing grid for rollback)
+- src/components/GridView.tsx (favorites query + photo fallback updates)
+- src/app/api/daily/create-room/route.ts (Daily room payload cleanup)
+- src/app/app/page.tsx, src/app/components/maps/MapboxUsers.tsx, src/components/ScrollableProfileCard.tsx, src/app/components/UserAdvertisingPanel.tsx (photo resolver + favorites preload)
+- src/app/auth/callback/page.tsx, src/app/reset-password/page.tsx (recovery token handling)
+- src/components/ErosAssistiveTouch.tsx, src/app/components/MapControls.tsx, src/app/components/CornerButtons.tsx (UI positioning/tap fixes)
+
+**Notes:**
+- Gmail still flags reset emails as “Looks safe”; next steps are template polish + engagement warm-up.
+- Daily API key confirmed in `.env.local`/Vercel; further backend usage only needed if Railway starts creating rooms.
+
 ### Tuesday, November 5, 2025
 **Session Start:** Tuesday, November 5, 2025 (Evening Session - Email Configuration & Routing Fix)
 
