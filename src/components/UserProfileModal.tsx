@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { blockUser } from '@/lib/safety'
 import ReportModal from './ReportModal'
+import { recordTap } from '@/lib/profileTracking'
 
 interface User {
   id: string
@@ -47,6 +48,8 @@ export default function UserProfileModal({
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
   const [showReportModal, setShowReportModal] = useState(false)
   const [blocked, setBlocked] = useState(false)
+  const [isTapping, setIsTapping] = useState(false)
+  const [hasTapped, setHasTapped] = useState(false)
   const router = useRouter()
 
   if (!isOpen || !user) return null
@@ -170,6 +173,35 @@ export default function UserProfileModal({
                   style={{ filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.8))' }}
                 >
                   🫧
+                </button>
+                <button
+                  disabled={isTapping || hasTapped}
+                  onClick={async (e) => {
+                    e.stopPropagation()
+                    if (hasTapped) return
+                    try {
+                      setIsTapping(true)
+                      const result = await recordTap(user.id)
+                      if (result.success) {
+                        setHasTapped(true)
+                      } else {
+                        alert('Unable to send tap. Please try again.')
+                      }
+                    } catch (err) {
+                      console.error('Error sending tap:', err)
+                      alert('Unable to send tap. Please try again.')
+                    } finally {
+                      setIsTapping(false)
+                    }
+                  }}
+                  className={`w-12 h-12 rounded-full flex items-center justify-center transition-all text-2xl ${
+                    hasTapped
+                      ? 'bg-green-500/40 text-white cursor-default'
+                      : 'bg-black/50 backdrop-blur-md hover:bg-black/70'
+                  }`}
+                  style={{ filter: 'drop-shadow(0 0 10px rgba(236, 72, 153, 0.6))' }}
+                >
+                  {hasTapped ? '💞' : '😈'}
                 </button>
               </div>
               
