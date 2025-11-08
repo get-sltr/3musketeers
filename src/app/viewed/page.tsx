@@ -125,7 +125,6 @@ export default function ViewedPage() {
                     className="object-cover"
                     unoptimized
                   />
-                  {view.viewer.dtfn && <div className="dtfn-badge">⚡</div>}
                   {view.viewer.is_online && <div className="online-dot" />}
                 </div>
                 <div className="view-info">
