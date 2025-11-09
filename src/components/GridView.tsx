@@ -120,18 +120,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
           return
         }
 
-        const cleanedProfiles = (profiles || []).filter(profile => {
-          const username = profile.username?.trim()
-          const displayName = profile.display_name?.trim()
-          const looksAnonymous =
-            (!displayName || displayName.toLowerCase() === 'unknown') &&
-            (!username || username.toLowerCase().includes('unknown'))
-          const missingVisual =
-            !profile.photo_url &&
-            (!Array.isArray(profile.photos) || profile.photos.length === 0)
-          if (currentUser?.id === profile.id) return true
-          return !looksAnonymous && !missingVisual
-        })
+        const cleanedProfiles = profiles || []
 
         const currentProfile = cleanedProfiles.find(
           profile => profile.id === currentUser?.id
@@ -183,7 +172,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
 
         userList = userList.filter(user => {
           if (user.id === currentUser?.id) return true
-          if (user.distanceMiles == null) return false
+          if (user.distanceMiles == null) return true
           return user.distanceMiles <= MAX_GRID_DISTANCE_MILES
         })
 
