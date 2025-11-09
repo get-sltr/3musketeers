@@ -36,15 +36,29 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // If room exists, return it (allows rejoining)
+    // If room exists, check if it's public or private
     if (getResponse.ok) {
       const existingRoom = await getResponse.json();
-      console.log('✅ Reusing existing Daily.co room:', roomName);
-      return NextResponse.json({
-        url: existingRoom.url,
-        name: existingRoom.name,
-        id: existingRoom.id,
-      });
+
+      // If room is private (old room), delete it and recreate as public
+      if (existingRoom.privacy === 'private') {
+        console.log('🔄 Deleting old private room:', roomName);
+        await fetch(`https://api.daily.co/v1/rooms/${roomName}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+          },
+        });
+        // Continue to create new public room below
+      } else {
+        // Room is already public, reuse it
+        console.log('✅ Reusing existing public Daily.co room:', roomName);
+        return NextResponse.json({
+          url: existingRoom.url,
+          name: existingRoom.name,
+          id: existingRoom.id,
+        });
+      }
     }
 
     // If room doesn't exist (404), create a new one

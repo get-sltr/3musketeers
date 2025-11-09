@@ -663,15 +663,18 @@ export default function GridView({ onUserClick }: GridViewProps) {
         .profile-card {
           position: relative;
           border-radius: 12px;
-          overflow: visible;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          background: rgba(255, 255, 255, 0.04);
-          transition: transform 0.2s ease;
+          overflow: hidden;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          background: rgba(0, 0, 0, 0.3);
+          transition: all 0.2s ease;
           cursor: pointer;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
         .profile-card:hover {
-          transform: scale(1.02);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 212, 255, 0.2);
+          border-color: rgba(0, 212, 255, 0.3);
         }
 
         .photo-container {
@@ -691,11 +694,14 @@ export default function GridView({ onUserClick }: GridViewProps) {
           left: 6px;
           right: 6px;
           bottom: 4px;
-          padding: 6px 10px;
+          padding: 6px 8px;
           border-radius: 10px;
           backdrop-filter: blur(18px) saturate(180%);
           border: 1px solid rgba(255, 255, 255, 0.35);
           box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+          overflow: hidden;
+          display: flex;
+          align-items: center;
         }
 
         .glass-gradient-1 {
@@ -725,20 +731,25 @@ export default function GridView({ onUserClick }: GridViewProps) {
 
         .info-text {
           color: white;
-          font-size: 0.72em;
+          font-size: 0.75em;
           font-weight: 500;
           text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
-          display: inline-flex;
+          display: flex;
           align-items: center;
-          gap: 2px;
+          gap: 3px;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
+          flex: 1;
+          min-width: 0;
         }
 
         .info-username {
           font-weight: 600;
-          margin-right: 4px;
+          margin-right: 3px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 60%;
         }
 
         .info-separator {

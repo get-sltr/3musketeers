@@ -191,32 +191,35 @@ export default function BottomNav() {
   }, [supabase, playPing, notifySound, notifyVibrate])
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-cyan-500/20 bg-black/90 backdrop-blur-xl safe-area-bottom">
-      <div className="flex items-center justify-around h-16 max-w-screen-xl mx-auto px-4">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-cyan-500/20 bg-black/95 backdrop-blur-xl"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+    >
+      <div className="flex items-center justify-around h-16 max-w-screen-xl mx-auto px-2">
         {navItems.map((item) => (
           <button
             key={item.id}
             onClick={item.action}
-            className={`relative flex flex-col items-center justify-center flex-1 h-full transition-all ${
+            className={`relative flex flex-col items-center justify-center gap-1 flex-1 h-full transition-all ${
               activeTab === item.id
                 ? 'text-cyan-400'
                 : 'text-white/60 hover:text-white/80'
             }`}
           >
-            <div className="relative text-xl">{item.icon}</div>
-            <span className="text-[11px] mt-1 font-medium">{item.label}</span>
+            <div className="relative text-2xl">{item.icon}</div>
+            <span className="text-[10px] font-semibold tracking-tight">{item.label}</span>
             {item.id === 'messages' && unreadCount > 0 && (
               <>
-                <span className="absolute top-1/2 -translate-y-1/2 right-6 inline-flex h-4 w-4 rounded-full bg-red-500 opacity-75 animate-ping" />
-                <span className="absolute top-1/2 -translate-y-1/2 right-6 bg-red-500 text-white text-[10px] leading-none rounded-full min-w-4 h-4 px-1 flex items-center justify-center font-bold shadow-lg">
+                <span className="absolute top-2 right-1/4 inline-flex h-4 w-4 rounded-full bg-red-500 opacity-75 animate-ping" />
+                <span className="absolute top-2 right-1/4 bg-red-500 text-white text-[9px] font-bold leading-none rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center shadow-lg">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               </>
             )}
             {activeTab === item.id && (
               <div
-                className="absolute bottom-0 w-12 h-0.5 bg-cyan-400 rounded-t-full"
-                style={{ boxShadow: '0 0 10px rgba(0, 212, 255, 0.8)' }}
+                className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-gradient-to-r from-cyan-400 to-purple-400 rounded-t-full"
+                style={{ boxShadow: '0 0 12px rgba(0, 212, 255, 0.8)' }}
               />
             )}
           </button>
