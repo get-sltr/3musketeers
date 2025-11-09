@@ -655,14 +655,13 @@ export default function GridView({ onUserClick }: GridViewProps) {
         }
 
         .profile-grid {
-          columns: 3;
-          column-gap: 4px;
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 4px;
         }
 
         .profile-card {
           position: relative;
-          break-inside: avoid;
-          margin-bottom: 4px;
           border-radius: 12px;
           overflow: visible;
           border: 1px solid rgba(255, 255, 255, 0.08);
@@ -828,26 +827,10 @@ export default function GridView({ onUserClick }: GridViewProps) {
           color: white;
         }
 
-        @media (max-width: 1024px) {
-          .profile-grid {
-            columns: 2;
-          }
-        }
-
         @media (max-width: 768px) {
           .profile-grid {
-            columns: 2;
-            column-gap: 3px;
-          }
-
-          .profile-card {
-            margin-bottom: 3px;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .profile-grid {
-            columns: 2;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 3px;
           }
 
           .filter-btn {

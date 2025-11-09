@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState, Suspense } from 'react'
 import { createClient } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import FilterBar from '../../components/FilterBar'
 import MobileLayout from '../../components/MobileLayout'
 import LoadingSkeleton from '../../components/LoadingSkeleton'
 import { LazyGridView } from '../../components/LazyWrapper'
@@ -55,7 +54,6 @@ export default function AppPage() {
   // Ensure realtime presence/auth is initialized regardless of view
   const { isConnected } = useSocket() as any
   const [loading, setLoading] = useState(true)
-  const [selectedPositions, setSelectedPositions] = useState<string[]>([])
   const [users, setUsers] = useState<UserWithLocation[]>([])
   const [selectedUser, setSelectedUser] = useState<UserWithLocation | null>(null)
   const [showProfileModal, setShowProfileModal] = useState(false)
@@ -108,48 +106,48 @@ export default function AppPage() {
     const checkAuth = async () => {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
-      
+
       if (!session) {
         router.push('/login')
         return
       }
-      
+
       // Check if current user has location set
       const { data: profile } = await supabase
         .from('profiles')
         .select('latitude, longitude')
         .eq('id', session.user.id)
         .single()
-      
-      // If no location, request it and save
+
+      // If no location, request it and save BEFORE showing page
       if (!profile?.latitude || !profile?.longitude) {
         console.log('📍 No location found, requesting permission...')
         if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            async (position) => {
-              console.log('✅ Location granted:', position.coords.latitude, position.coords.longitude)
-              // Save to database
-              await supabase
-                .from('profiles')
-                .update({
-                  latitude: position.coords.latitude,
-                  longitude: position.coords.longitude
-                })
-                .eq('id', session.user.id)
-              
-              // Fetch users after setting location
-              await fetchUsers(session.user.id)
-            },
-            (error) => {
-              console.warn('⚠️ Location denied or unavailable:', error)
-              alert('Please enable location to appear on the map and see other users nearby!')
-              // Still fetch users even if location denied
-              fetchUsers(session.user.id)
-            }
-          )
+          // Use a promise to wait for location permission response
+          await new Promise<void>((resolve) => {
+            navigator.geolocation.getCurrentPosition(
+              async (position) => {
+                console.log('✅ Location granted:', position.coords.latitude, position.coords.longitude)
+                // Save to database
+                await supabase
+                  .from('profiles')
+                  .update({
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude
+                  })
+                  .eq('id', session.user.id)
+                resolve()
+              },
+              (error) => {
+                console.warn('⚠️ Location denied or unavailable:', error)
+                alert('Location access is required to use SLTR. Please enable location to see other users nearby!')
+                resolve()
+              }
+            )
+          })
         }
       }
-      
+
       // Fetch users with location data (including yourself)
       await fetchUsers(session.user.id)
       setCurrentUserId(session.user.id)
@@ -211,17 +209,6 @@ export default function AppPage() {
       setMapCenter([currentUser.longitude, currentUser.latitude])
     } else {
       console.warn('⚠️ Cannot center map - missing location data')
-    }
-  }
-
-  const handleFilterChange = (filterData: { filters?: string[]; positions?: string[]; ageRange?: { min: number; max: number } }) => {
-    if (filterData.filters) {
-      // Grid handles its own filters locally; map can listen here if needed.
-      console.log('Active filters:', filterData.filters)
-    }
-    if (filterData.positions) {
-      setSelectedPositions(filterData.positions)
-      console.log('Selected positions:', filterData.positions)
     }
   }
 
@@ -496,22 +483,6 @@ export default function AppPage() {
       .filter(u => (menuFilters.online ? !!(u.is_online ?? u.online) : true))
       .filter(u => (menuFilters.hosting ? !!u.party_friendly : true))
       .filter(u => (menuFilters.looking ? !!u.dtfn : true))
-      .filter(u => {
-        // Filter by position if positions are selected
-        if (selectedPositions.length === 0) return true
-        if (!u.position) return selectedPositions.includes('Not Specified')
-        // Handle position matching (exact match or contains)
-        const userPos = u.position
-        return selectedPositions.some((pos: string) => {
-          // Exact match
-          if (userPos === pos) return true
-          // Handle Vers/Top and Vers/Btm matching
-          if (pos === 'Vers/Top' && (userPos === 'Vers/Top' || userPos === 'Vers Top' || userPos?.includes('Vers') && userPos?.includes('Top'))) return true
-          if (pos === 'Vers/Btm' && (userPos === 'Vers/Btm' || userPos === 'Vers Bottom' || userPos?.includes('Vers') && userPos?.includes('Bottom'))) return true
-          // Case-insensitive partial match
-          return userPos?.toLowerCase().includes(pos.toLowerCase()) || pos.toLowerCase().includes(userPos?.toLowerCase() || '')
-        })
-      })
       .map(u => ({
         id: u.id,
         latitude: u.latitude!,
@@ -528,7 +499,7 @@ export default function AppPage() {
         position: u.position,
         distance: u.isYou ? 'You' : undefined
       }))
-  }, [users, mapCenter, radiusMiles, menuFilters, selectedPositions])
+  }, [users, mapCenter, radiusMiles, menuFilters])
 
   if (loading) {
     return (
@@ -549,9 +520,6 @@ export default function AppPage() {
 
       {/* Main Content */}
       <main className="pt-20">
-        {/* Filter Bar */}
-        <FilterBar onFilterChange={handleFilterChange} />
-
         {/* Grid or Map view based on viewMode */}
         {viewMode === 'grid' ? (
           <Suspense fallback={<LoadingSkeleton variant="fullscreen" />}>
