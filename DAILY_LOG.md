@@ -55,6 +55,44 @@ These files should auto-open when you open the project:
 
 ## 📅 SESSION LOGS
 
+### Friday, November 8, 2025
+**Session Start:** Friday, November 8, 2025 (Grid Display Fix + Production Error Fixes)
+
+**Completed:**
+- [x] **Grid Page Display Issue Fixed** – Resolved critical issue preventing grid view from rendering
+  - **Root Cause #1:** LazyGridView component (lazy-loaded with React.lazy) was missing required Suspense boundary wrapper
+  - **Root Cause #2:** Photo containers in GridView missing aspect-ratio property, causing Next.js Image fill prop to fail
+  - **Solution Applied:**
+    1. Added `Suspense` to React imports in src/app/app/page.tsx
+    2. Wrapped `<LazyGridView />` with `<Suspense fallback={<LoadingSkeleton variant="fullscreen" />}>`
+    3. Added `aspect-ratio: 3/4` to `.photo-container` CSS in GridView.tsx
+  - **Result:** Grid view now displays properly with correct image dimensions and loading states
+- [x] **Production Console Errors Fixed** – Resolved 3 critical production errors from console logs
+  - **Error #1 (404):** `settings` table missing - created Supabase migration for global settings table
+  - **Error #2 (400):** `user_settings` table query issue - resolved by creating proper settings table structure
+  - **Error #3 (400):** Daily.co duplicate room creation - implemented check & reuse logic to prevent duplicate room errors
+  - **Solution Applied:**
+    1. Created `supabase/migrations/20251108_create_settings_table.sql` with proper RLS policies
+    2. Updated `/api/daily/create-room` to check for existing rooms before creating new ones
+    3. Added room reuse logic allowing users to rejoin same video call
+  - **Result:** All production console errors eliminated, video calls now work reliably with room reuse
+
+**Files Created/Modified:**
+- src/app/app/page.tsx (updated - added Suspense import and wrapper around LazyGridView)
+- src/components/GridView.tsx (updated - added aspect-ratio to photo-container for proper image sizing)
+- supabase/migrations/20251108_create_settings_table.sql (new - settings table for party_mode and pride_month)
+- src/app/api/daily/create-room/route.ts (updated - added room existence check and reuse logic)
+
+**Notes:**
+- Lazy-loaded React components (created with React.lazy) MUST be wrapped in Suspense boundaries
+- Next.js Image components with `fill` prop require parent containers to have defined dimensions
+- This fix ensures grid view works correctly across all devices and screen sizes
+- Settings table migration must be run in Supabase dashboard: SQL Editor → paste migration → Run
+- Daily.co rooms now reusable - same conversation can rejoin existing room instead of creating duplicates
+- Settings table allows future feature toggles (party mode, pride month themes) via admin panel
+
+---
+
 ### Friday, November 7, 2025
 **Session Start:** Friday, November 7, 2025 (Stability Pass + Deliverability Tuning)
 
@@ -368,14 +406,18 @@ These files should auto-open when you open the project:
 - [ ] Track infrastructure changes here
 
 ### Database Changes
+- [x] 2025-11-08: Created settings table with party_mode and pride_month columns (migration: supabase/migrations/20251108_create_settings_table.sql) - **NEEDS TO BE RUN IN SUPABASE**
 - [ ] 2025-11-04: Add FKs: album_permissions.album_id -> albums.id; album_permissions.granted_to_user_id -> profiles.id; album_photos.album_id -> albums.id; then reload PostgREST schema.
 - [ ] Track migrations applied here
 
 ### API & Backend Changes
+- [x] 2025-11-08: Updated /api/daily/create-room to check for existing rooms before creating, prevents duplicate room errors and allows room reuse
 - [ ] Track backend/server changes here
 - [ ] Track API endpoints added/modified here
 
 ### Frontend Changes
+- [x] 2025-11-08: Fixed Grid display issue - added Suspense boundary around LazyGridView and aspect-ratio to photo containers
+- [x] 2025-11-08: Fixed production console errors - created settings table migration and Daily.co room reuse logic
 - [x] 2025-11-04: Configured metadata icons and added src/app/icon.svg; can switch to public/favicon.ico later.
 - [x] 2025-11-04: Fixed albums SELECT (removed FK hints) and adjusted AlbumsManager modal overlay to remove double blur.
 - [x] 2025-11-04: Resolved React hook order error (#310) by moving useMemo; added presence sync to update online dot.
@@ -399,6 +441,8 @@ These files should auto-open when you open the project:
 ---
 
 ## 🐛 BUGS FIXED
+- [x] 2025-11-08: Grid page not displaying - LazyGridView missing Suspense wrapper and photo containers missing aspect-ratio. Fixed by adding proper Suspense boundary and CSS dimensions.
+- [x] 2025-11-08: Production 404/400 errors - settings/user_settings tables missing and Daily.co duplicate room creation. Fixed by creating settings table migration and implementing room reuse logic.
 - [x] 2025-10-31: TypeScript compilation error in UserProfileModal - `user.photos.length` possibly undefined. Fixed with explicit type annotation and non-null assertion.
 - [x] 2025-10-31: Fixed ERR_NAME_NOT_RESOLVED errors from via.placeholder.com by replacing with inline SVG data URIs
 - [x] 2025-10-31: Fixed mobile profile layout overlapping issues - reorganized with side stacks

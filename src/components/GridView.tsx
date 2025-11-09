@@ -678,6 +678,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
         .photo-container {
           position: relative;
           width: 100%;
+          aspect-ratio: 3/4;
           border-radius: 12px;
           overflow: hidden;
         }

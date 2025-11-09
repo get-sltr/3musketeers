@@ -28,7 +28,27 @@ export async function POST(request: NextRequest) {
     // Create a unique room name based on conversation ID
     const roomName = `sltr-${conversationId.replace(/[^a-zA-Z0-9]/g, '-')}`;
 
-    // Call Daily.co API to create a room
+    // First, check if room already exists
+    const getResponse = await fetch(`https://api.daily.co/v1/rooms/${roomName}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+      },
+    });
+
+    // If room exists, return it (allows rejoining)
+    if (getResponse.ok) {
+      const existingRoom = await getResponse.json();
+      console.log('✅ Reusing existing Daily.co room:', roomName);
+      return NextResponse.json({
+        url: existingRoom.url,
+        name: existingRoom.name,
+        id: existingRoom.id,
+      });
+    }
+
+    // If room doesn't exist (404), create a new one
+    console.log('📝 Creating new Daily.co room:', roomName);
     const response = await fetch('https://api.daily.co/v1/rooms', {
       method: 'POST',
       headers: {

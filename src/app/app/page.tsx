@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, Suspense } from 'react'
 import { createClient } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import FilterBar from '../../components/FilterBar'
@@ -554,7 +554,9 @@ export default function AppPage() {
 
         {/* Grid or Map view based on viewMode */}
         {viewMode === 'grid' ? (
-          <LazyGridView />
+          <Suspense fallback={<LoadingSkeleton variant="fullscreen" />}>
+            <LazyGridView />
+          </Suspense>
         ) : (
           <div className="relative w-full h-[calc(100vh-12rem)] sm:h-[calc(100vh-10rem)]">
             {/* User Advertising Panel */}
