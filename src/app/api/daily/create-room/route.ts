@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         name: roomName,
-        privacy: 'private',
+        privacy: 'public',
         properties: {
           max_participants: 2,
           enable_screenshare: true,

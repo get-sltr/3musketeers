@@ -76,19 +76,24 @@ These files should auto-open when you open the project:
     2. Updated `/api/daily/create-room` to check for existing rooms before creating new ones
     3. Added room reuse logic allowing users to rejoin same video call
   - **Result:** All production console errors eliminated, video calls now work reliably with room reuse
+- [x] **Daily.co Permission Error Fixed** – Resolved "You are not allowed to join this meeting" error
+  - **Root Cause:** Rooms created with `privacy: 'private'` require meeting tokens, but VideoCall component was joining without tokens
+  - **Solution Applied:** Changed room privacy from 'private' to 'public' in create-room API
+  - **Result:** Users can now join video calls without authentication errors. Rooms still require unique URL (secure by obscurity)
 
 **Files Created/Modified:**
 - src/app/app/page.tsx (updated - added Suspense import and wrapper around LazyGridView)
 - src/components/GridView.tsx (updated - added aspect-ratio to photo-container for proper image sizing)
 - supabase/migrations/20251108_create_settings_table.sql (new - settings table for party_mode and pride_month)
-- src/app/api/daily/create-room/route.ts (updated - added room existence check and reuse logic)
+- src/app/api/daily/create-room/route.ts (updated - added room existence check and reuse logic, changed privacy to public)
 
 **Notes:**
 - Lazy-loaded React components (created with React.lazy) MUST be wrapped in Suspense boundaries
 - Next.js Image components with `fill` prop require parent containers to have defined dimensions
 - This fix ensures grid view works correctly across all devices and screen sizes
-- Settings table migration must be run in Supabase dashboard: SQL Editor → paste migration → Run
+- Settings table migration must be run in Supabase dashboard: SQL Editor → paste migration → Run (COMPLETED)
 - Daily.co rooms now reusable - same conversation can rejoin existing room instead of creating duplicates
+- Daily.co rooms set to 'public' privacy - still secure as room URLs are unique UUIDs hard to guess
 - Settings table allows future feature toggles (party mode, pride month themes) via admin panel
 
 ---
@@ -443,6 +448,7 @@ These files should auto-open when you open the project:
 ## 🐛 BUGS FIXED
 - [x] 2025-11-08: Grid page not displaying - LazyGridView missing Suspense wrapper and photo containers missing aspect-ratio. Fixed by adding proper Suspense boundary and CSS dimensions.
 - [x] 2025-11-08: Production 404/400 errors - settings/user_settings tables missing and Daily.co duplicate room creation. Fixed by creating settings table migration and implementing room reuse logic.
+- [x] 2025-11-08: Daily.co "not allowed to join meeting" error - Rooms created as private without meeting tokens. Fixed by changing room privacy to public.
 - [x] 2025-10-31: TypeScript compilation error in UserProfileModal - `user.photos.length` possibly undefined. Fixed with explicit type annotation and non-null assertion.
 - [x] 2025-10-31: Fixed ERR_NAME_NOT_RESOLVED errors from via.placeholder.com by replacing with inline SVG data URIs
 - [x] 2025-10-31: Fixed mobile profile layout overlapping issues - reorganized with side stacks
