@@ -20,6 +20,7 @@ interface User {
   photos?: string[]
   distance: string
   distanceMiles?: number | null
+  eta?: string
   isOnline: boolean
   bio?: string
   position?: string
@@ -80,6 +81,18 @@ const formatDistance = (distanceMiles: number | null | undefined) => {
   if (distanceMiles < 0.1) return '<0.1 mi'
   if (distanceMiles < 10) return `${distanceMiles.toFixed(1)} mi`
   return `${Math.round(distanceMiles)} mi`
+}
+
+const calculateETA = (distanceMiles: number | null | undefined) => {
+  if (distanceMiles == null || Number.isNaN(distanceMiles)) return ''
+  // Walking speed: 3 mph
+  const walkingMinutes = (distanceMiles / 3) * 60
+  if (walkingMinutes < 1) return '<1m'
+  if (walkingMinutes < 60) return `${Math.round(walkingMinutes)}m`
+  const hours = Math.floor(walkingMinutes / 60)
+  const mins = Math.round(walkingMinutes % 60)
+  if (mins === 0) return `${hours}h`
+  return `${hours}h ${mins}m`
 }
 
 export default function GridView({ onUserClick }: GridViewProps) {
@@ -159,6 +172,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
               photos: Array.isArray(profile.photos) ? profile.photos.filter(Boolean) : [],
               distance: isSelf ? 'You' : formatDistance(distanceMiles),
               distanceMiles: isSelf ? 0 : distanceMiles,
+              eta: isSelf ? '' : calculateETA(distanceMiles),
               isOnline: profile.online || profile.is_online || false,
               bio: profile.about || '',
               position: profile.position,
@@ -446,7 +460,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
 
                       <div className={`glass-info-bar ${colorClass}`}>
                         <span className="info-text">
-                          {user.username} • {user.distance}
+                          {user.username} • {user.distance}{user.eta && ` • ${user.eta}`}
                         </span>
                       </div>
                     </div>
@@ -616,13 +630,13 @@ export default function GridView({ onUserClick }: GridViewProps) {
         }
 
         .filter-btn {
-          padding: 8px 16px;
+          padding: 10px 18px;
           border-radius: 20px;
           background: rgba(255, 255, 255, 0.06);
           border: 1px solid rgba(255, 255, 255, 0.15);
           color: white;
-          font-size: 0.8125rem;
-          font-weight: 600;
+          font-size: 1rem;
+          font-weight: 800;
           white-space: nowrap;
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           letter-spacing: 0.02em;

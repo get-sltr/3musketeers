@@ -46,9 +46,9 @@ export default function ProfilePage() {
   const router = useRouter()
   const supabase = createClient()
 
-  const POSITIONS = ['Top', 'Versatile', 'Bottom']
-  const KINKS_OPTIONS = ['BDSM', 'Fetish', 'Roleplay', 'Voyeurism', 'Exhibitionism', 'Group Sex', 'Anal', 'Oral', 'Toys']
-  const TAGS_OPTIONS = ['Chill', 'Direct', 'Curious', 'Beard', 'Jock', 'Bear', 'Rugged', 'Daddy', 'Pup', 'Twink']
+  const POSITIONS = ['Top', 'Top/Vers', 'Vers', 'Btm/Vers', 'Bottom', 'Side']
+  const KINKS_OPTIONS = ['BDSM', 'Fetish', 'Roleplay', 'Voyeurism', 'Exhibitionism', 'Group Sex', 'Anal', 'Oral', 'Toys', 'Leather', 'Bondage', 'Spanking', 'Domination', 'Submission', 'Edging', 'Public Play', 'Feet', 'Watersports', 'Rimming', 'Body Worship', 'Spit', 'Rough']
+  const TAGS_OPTIONS = ['Adventurous', 'Chill', 'Direct', 'Curious', 'Beard', 'Jock', 'Bear', 'Rugged', 'Daddy', 'Pup', 'Twink', 'Otter', 'Wolf', 'Muscle', 'Fit', 'Discreet', 'Kinky', 'Vanilla', 'Wild', 'Gentleman', 'Playful', 'Passionate']
 
   useEffect(() => {
     const loadProfile = async () => {

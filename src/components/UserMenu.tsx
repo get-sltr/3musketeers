@@ -105,13 +105,15 @@ export default function UserMenu({ className = '' }: UserMenuProps) {
       {/* SLTR Logo Button */}
       <button
         onClick={() => setShowUserMenu(!showUserMenu)}
-        className="text-2xl font-black tracking-wider gradient-text hover:scale-105 transition-all duration-300 cursor-pointer"
+        className="text-3xl font-black tracking-wider gradient-text hover:scale-105 transition-all duration-300 cursor-pointer"
         style={{
           background: 'linear-gradient(135deg, #00d4ff, #ff00ff)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text',
-          filter: 'drop-shadow(0 0 16px rgba(255, 0, 255, 0.9)) drop-shadow(0 0 32px rgba(0, 217, 255, 0.7)) drop-shadow(0 0 48px rgba(255, 0, 255, 0.5))'
+          filter: 'drop-shadow(0 0 16px rgba(255, 0, 255, 0.9)) drop-shadow(0 0 32px rgba(0, 217, 255, 0.7)) drop-shadow(0 0 48px rgba(255, 0, 255, 0.5))',
+          fontWeight: 900,
+          letterSpacing: '0.15em'
         }}
       >
         SLTR

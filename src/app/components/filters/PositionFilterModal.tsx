@@ -12,9 +12,9 @@ interface PositionFilterModalProps {
 
 const POSITIONS = [
   { value: 'Top', label: 'Top ↑', icon: '↑' },
-  { value: 'Vers/Top', label: 'Vers/Top ↗', icon: '↗' },
-  { value: 'Versatile', label: 'Versatile ↕', icon: '↕' },
-  { value: 'Vers/Btm', label: 'Vers/Btm ↙', icon: '↙' },
+  { value: 'Top/Vers', label: 'Top/Vers ↗', icon: '↗' },
+  { value: 'Vers', label: 'Vers ↕', icon: '↕' },
+  { value: 'Btm/Vers', label: 'Btm/Vers ↙', icon: '↙' },
   { value: 'Bottom', label: 'Bottom ↓', icon: '↓' },
   { value: 'Side', label: 'Side ↔', icon: '↔' },
   { value: 'Not Specified', label: 'Not Specified', icon: '?' }

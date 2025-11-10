@@ -506,18 +506,6 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
                         required
                       />
                     </div>
-                    <div>
-                      <label className="mb-2 block text-sm font-semibold text-white/80">
-                        Description (optional)
-                      </label>
-                      <textarea
-                        value={newAlbumDescription}
-                        onChange={(e) => setNewAlbumDescription(e.target.value)}
-                        rows={4}
-                        className="w-full resize-none rounded-xl border border-white/15 bg-black/40 px-4 py-3 text-white placeholder-white/40 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/60"
-                        placeholder="Add a short description so your vibe is clear."
-                      />
-                    </div>
                     <div className="rounded-2xl border border-dashed border-white/20 bg-white/[0.04] px-4 py-5 text-sm text-white/60">
                       You can upload photos right after the album is created.
                     </div>
@@ -577,17 +565,6 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
                           onChange={(e) => setAlbumFormName(e.target.value)}
                           className="w-full rounded-xl border border-white/15 bg-black/40 px-4 py-3 text-white placeholder-white/40 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/60"
                           placeholder="Album title"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="mb-2 block text-sm font-semibold text-white/80">Description</label>
-                        <textarea
-                          value={albumFormDescription}
-                          onChange={(e) => setAlbumFormDescription(e.target.value)}
-                          rows={4}
-                          className="w-full resize-none rounded-xl border border-white/15 bg-black/40 px-4 py-3 text-white placeholder-white/40 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/60"
-                          placeholder="Describe this album..."
                         />
                       </div>
 
