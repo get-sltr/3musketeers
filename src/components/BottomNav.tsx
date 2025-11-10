@@ -192,7 +192,7 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-black/98 backdrop-blur-3xl"
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-black/95 backdrop-blur-2xl"
       style={{
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         boxShadow: '0 -4px 24px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.1)'
