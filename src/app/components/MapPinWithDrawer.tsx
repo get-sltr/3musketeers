@@ -9,6 +9,7 @@ interface User {
   age: number;
   position: string;
   dtfn: boolean;
+  party_friendly: boolean;
   latitude: number;
   longitude: number;
   distance?: string;
@@ -67,63 +68,16 @@ export const MapPin: React.FC<MapPinProps> = ({
         {user.dtfn && <div className="pin-badge">⚡</div>}
       </div>
 
-      <div className={`horizontal-drawer ${isHovered ? 'visible' : ''}`}>
-        <div className="drawer-info">
-          <div className="drawer-name">{user.display_name}</div>
-          <div className="drawer-stats">
-            <span className="drawer-stat">
-              <span className="stat-icon">{getPositionEmoji(user.position)}</span>
-              {user.position}
-            </span>
-            <span className="drawer-stat">
-              <span className="stat-icon">🎂</span>
-              {user.age}
-            </span>
-            {user.distance && (
-              <span className="drawer-stat">
-                <span className="stat-icon">📍</span>
-                {user.distance}
-              </span>
-            )}
+      <div className={`horizontal-drawer compact ${isHovered ? 'visible' : ''}`}>
+        <div className="drawer-compact-info">
+          <div className="compact-line">
+            {user.age}, {user.position}, {user.distance || 'Nearby'}
           </div>
-        </div>
-
-        {user.dtfn && <div className="drawer-dtfn">⚡ DTFN</div>}
-
-        <div className="drawer-actions">
-          <button
-            className="action-btn chat"
-            onClick={(e) => {
-              e.stopPropagation();
-              onChat(user.id);
-            }}
-            title="Message"
-          >
-            <span className="action-icon">🫧</span>
-            <span className="action-label">Chat</span>
-          </button>
-          <button
-            className="action-btn video"
-            onClick={(e) => {
-              e.stopPropagation();
-              onVideo(user.id);
-            }}
-            title="Video Call"
-          >
-            <span className="action-icon">📹</span>
-            <span className="action-label">Video</span>
-          </button>
-          <button
-            className="action-btn tap"
-            onClick={(e) => {
-              e.stopPropagation();
-              onTap(user.id);
-            }}
-            title="Send Tap"
-          >
-            <span className="action-icon">😈</span>
-            <span className="action-label">Tap</span>
-          </button>
+          <div className="compact-line">
+            {user.dtfn && <span>⚡️</span>}
+            {user.party_friendly && <span>🥳</span>}
+            {!user.dtfn && !user.party_friendly && <span>—</span>}
+          </div>
         </div>
       </div>
     </div>

@@ -290,3 +290,43 @@
   }
 }
 
+/* Compact Drawer Styles */
+.horizontal-drawer.compact {
+  padding: 6px 12px;
+  min-width: auto;
+}
+
+.drawer-compact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.compact-line {
+  font-size: 13px;
+  font-weight: 500;
+  color: #00ffff;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.compact-line span {
+  font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  .horizontal-drawer.compact {
+    padding: 4px 10px;
+  }
+
+  .compact-line {
+    font-size: 11px;
+  }
+
+  .compact-line span {
+    font-size: 14px;
+  }
+}
+

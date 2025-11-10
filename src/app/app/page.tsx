@@ -18,6 +18,7 @@ import BottomNav from '../../components/BottomNav'
 import PlaceModal from '../components/PlaceModal'
 import GroupModal from '../components/GroupModal'
 import UserAdvertisingPanel from '../components/UserAdvertisingPanel'
+import LocationSearch from '../components/LocationSearch'
 import '../../styles/mobile-optimization.css'
 import { useSocket } from '../../hooks/useSocket'
 import { resolveProfilePhoto } from '@/lib/utils/profile'
@@ -567,6 +568,17 @@ export default function AppPage() {
               onVideo={handleMapVideo}
               onTap={handleMapTap}
             />
+
+            {/* Location Search Bar */}
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-50">
+              <LocationSearch
+                onLocationSelect={(lat, lng, placeName) => {
+                  setMapCenter([lng, lat])
+                  // Optionally show a notification
+                  console.log('Traveling to:', placeName)
+                }}
+              />
+            </div>
 
             {/* Map Session Menu */}
             <MapSessionMenu
