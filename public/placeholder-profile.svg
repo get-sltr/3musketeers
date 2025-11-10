@@ -1,0 +1,40 @@
+<svg width="400" height="533" viewBox="0 0 400 533" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="darkBg" x1="0" y1="0" x2="0" y2="533">
+      <stop offset="0%" stop-color="#000000"/>
+      <stop offset="100%" stop-color="#0a0a0f"/>
+    </linearGradient>
+    <radialGradient id="silhouetteGlow" cx="50%" cy="40%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  
+  <!-- Dark background -->
+  <rect width="400" height="533" fill="url(#darkBg)"/>
+  
+  <!-- Subtle glow behind silhouette -->
+  <ellipse cx="200" cy="180" rx="120" ry="140" fill="url(#silhouetteGlow)"/>
+  
+  <!-- Silhouette of person -->
+  <g opacity="0.4">
+    <!-- Head -->
+    <ellipse cx="200" cy="140" rx="45" ry="55" fill="#1a1a1f"/>
+    
+    <!-- Neck -->
+    <rect x="185" y="185" width="30" height="35" fill="#1a1a1f"/>
+    
+    <!-- Shoulders and upper body -->
+    <path d="M 120 220 Q 120 200 155 200 L 245 200 Q 280 200 280 220 L 280 350 Q 200 360 120 350 Z" 
+          fill="#1a1a1f"/>
+  </g>
+  
+  <!-- Question mark icon -->
+  <g transform="translate(200, 380)">
+    <circle r="35" fill="rgba(255, 0, 255, 0.15)" stroke="#ff00ff" stroke-width="2"/>
+    <text x="0" y="0" text-anchor="middle" dominant-baseline="central" 
+          font-family="-apple-system, sans-serif" font-size="40" font-weight="bold" fill="#ff00ff">
+      ?
+    </text>
+  </g>
+</svg>

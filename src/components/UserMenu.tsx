@@ -110,7 +110,8 @@ export default function UserMenu({ className = '' }: UserMenuProps) {
           background: 'linear-gradient(135deg, #00d4ff, #ff00ff)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text'
+          backgroundClip: 'text',
+          filter: 'drop-shadow(0 0 16px rgba(255, 0, 255, 0.9)) drop-shadow(0 0 32px rgba(0, 217, 255, 0.7)) drop-shadow(0 0 48px rgba(255, 0, 255, 0.5))'
         }}
       >
         SLTR

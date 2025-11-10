@@ -431,7 +431,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
                   >
                     <div className="photo-container">
                       <Image
-                        src={user.photo || '/default-avatar.svg'}
+                        src={user.photo || '/placeholder-profile.svg'}
                         alt={user.username}
                         fill
                         sizes="(max-width: 768px) 45vw, 240px"
@@ -443,35 +443,10 @@ export default function GridView({ onUserClick }: GridViewProps) {
                         <div className="dtfn-badge">⚡</div>
                       )}
                       {user.isOnline && <div className="online-dot" />}
-                      <button
-                        className="favorite-btn"
-                        onClick={e => {
-                          e.stopPropagation()
-                          handleToggleFavorite(user.id)
-                        }}
-                        aria-label="Toggle favorite"
-                      >
-                        {user.isFavorited ? '✨' : '☆'}
-                      </button>
 
                       <div className={`glass-info-bar ${colorClass}`}>
                         <span className="info-text">
-                          <span className="info-username">
-                            {user.username}
-                          </span>
-                          {user.age > 0 && (
-                            <>
-                              {user.age}
-                              <span className="info-separator">•</span>
-                            </>
-                          )}
-                          {user.position && (
-                            <>
-                              {user.position}
-                              <span className="info-separator">•</span>
-                            </>
-                          )}
-                          {user.distance}
+                          {user.username} • {user.distance}
                         </span>
                       </div>
                     </div>
@@ -802,7 +777,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
           position: absolute;
           top: 6px;
           right: 6px;
-          font-size: 1.4em;
+          font-size: 1.1em;
           filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
           z-index: 5;
         }
@@ -820,28 +795,6 @@ export default function GridView({ onUserClick }: GridViewProps) {
           z-index: 5;
         }
 
-        .favorite-btn {
-          position: absolute;
-          top: 6px;
-          right: 40px;
-          width: 28px;
-          height: 28px;
-          border-radius: 50%;
-          background: rgba(0, 0, 0, 0.55);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          color: white;
-          font-size: 1em;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 6;
-          transition: all 0.2s ease;
-        }
-
-        .favorite-btn:hover {
-          background: rgba(0, 217, 255, 0.3);
-          border-color: rgba(0, 217, 255, 0.6);
-        }
 
         .empty-grid {
           text-align: center;

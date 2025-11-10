@@ -30,14 +30,15 @@ export default function AnimatedHeader({ viewMode, onViewModeChange }: AnimatedH
     <motion.header
       className="fixed top-0 w-full z-50 transition-all duration-300"
       style={{
-        background: isScrolled 
-          ? 'rgba(0, 0, 0, 0.98)' 
-          : 'rgba(0, 0, 0, 0.95)',
+        background: isScrolled
+          ? 'linear-gradient(180deg, rgba(10, 10, 15, 0.98) 0%, rgba(26, 10, 46, 0.95) 100%)'
+          : 'linear-gradient(180deg, rgba(10, 10, 15, 0.95) 0%, rgba(26, 10, 46, 0.92) 100%)',
         backdropFilter: `blur(${backdropBlur}px)`,
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-        boxShadow: isScrolled 
-          ? '0 4px 20px rgba(0, 0, 0, 0.3)' 
-          : '0 2px 10px rgba(0, 0, 0, 0.1)',
+        borderBottom: '2px solid transparent',
+        borderImage: 'linear-gradient(90deg, rgba(255, 0, 255, 0.3), rgba(0, 217, 255, 0.3), rgba(255, 0, 255, 0.3)) 1',
+        boxShadow: isScrolled
+          ? '0 4px 24px rgba(0, 0, 0, 0.6), 0 0 40px rgba(255, 0, 255, 0.15)'
+          : '0 2px 16px rgba(0, 0, 0, 0.4), 0 0 30px rgba(255, 0, 255, 0.1)',
         opacity: headerOpacity
       }}
       initial={{ y: -100, opacity: 0 }}
