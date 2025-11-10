@@ -38,7 +38,7 @@ export default function WelcomeModal({ isOpen, onClose, userName }: WelcomeModal
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="">
+    <Modal isOpen={isOpen} onClose={onClose}>
       <div className="space-y-6 text-center">
         {!submitted ? (
           <>
