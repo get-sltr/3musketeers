@@ -1,0 +1,33 @@
+<svg width="400" height="533" viewBox="0 0 400 533" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="400" y2="533" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1a0a2e"/>
+      <stop offset="50%" stop-color="#0f0519"/>
+      <stop offset="100%" stop-color="#1a0a2e"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="400" y2="533" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ff00ff" stop-opacity="0.4"/>
+      <stop offset="50%" stop-color="#00d9ff" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#ff00ff" stop-opacity="0.4"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="400" height="533" fill="url(#bg)"/>
+
+  <!-- Person icon -->
+  <g transform="translate(200, 266)">
+    <!-- Head -->
+    <circle cx="0" cy="-40" r="50" fill="url(#glow)" opacity="0.3"/>
+    <circle cx="0" cy="-40" r="48" fill="none" stroke="#ff00ff" stroke-width="3"/>
+
+    <!-- Body -->
+    <path d="M -60 100 Q -60 20 0 20 Q 60 20 60 100" fill="url(#glow)" opacity="0.3"/>
+    <path d="M -58 100 Q -58 22 0 22 Q 58 22 58 100" fill="none" stroke="#00d9ff" stroke-width="3"/>
+  </g>
+
+  <!-- Logo text -->
+  <text x="200" y="460" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="48" font-weight="bold" fill="#ff00ff" text-anchor="middle" opacity="0.5">
+    SLTR
+  </text>
+</svg>

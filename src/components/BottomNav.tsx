@@ -192,10 +192,13 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-black/95 backdrop-blur-2xl"
+      className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur-2xl"
       style={{
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        boxShadow: '0 -4px 24px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.1)'
+        background: 'linear-gradient(0deg, rgba(10, 10, 15, 0.98) 0%, rgba(10, 10, 15, 0.95) 100%)',
+        borderTop: '2px solid transparent',
+        borderImage: 'linear-gradient(90deg, rgba(255, 0, 255, 0.3), rgba(0, 217, 255, 0.3), rgba(255, 0, 255, 0.3)) 1',
+        boxShadow: '0 -4px 24px rgba(0, 0, 0, 0.6), 0 0 40px rgba(255, 0, 255, 0.1)'
       }}
     >
       <div className="flex items-center justify-around h-16 max-w-screen-xl mx-auto px-2">

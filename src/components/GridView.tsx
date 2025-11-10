@@ -431,7 +431,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
                   >
                     <div className="photo-container">
                       <Image
-                        src={user.photo || '/default-avatar.png'}
+                        src={user.photo || '/default-avatar.svg'}
                         alt={user.username}
                         fill
                         sizes="(max-width: 768px) 45vw, 240px"
@@ -632,11 +632,12 @@ export default function GridView({ onUserClick }: GridViewProps) {
           align-items: center;
           gap: 8px;
           padding: 14px 12px;
-          background: rgba(10, 10, 15, 0.95);
+          background: linear-gradient(180deg, rgba(10, 10, 15, 0.98) 0%, rgba(10, 10, 15, 0.95) 100%);
           backdrop-filter: blur(20px) saturate(180%);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          border-bottom: 2px solid transparent;
+          border-image: linear-gradient(90deg, rgba(255, 0, 255, 0.3), rgba(0, 217, 255, 0.3), rgba(255, 0, 255, 0.3)) 1;
           overflow-x: auto;
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 40px rgba(255, 0, 255, 0.1);
         }
 
         .filter-btn {
@@ -671,7 +672,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
         }
 
         .main-content {
-          padding: 8px 6px 100px;
+          padding: 0px 6px 100px 6px;
           min-height: calc(100vh - 56px);
         }
 
@@ -685,11 +686,11 @@ export default function GridView({ onUserClick }: GridViewProps) {
           position: relative;
           border-radius: 16px;
           overflow: hidden;
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          background: rgba(5, 5, 8, 0.6);
+          border: 2px solid rgba(255, 0, 255, 0.4);
+          background: rgba(5, 5, 8, 0.8);
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           cursor: pointer;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+          box-shadow: 0 0 20px rgba(255, 0, 255, 0.3), 0 4px 12px rgba(0, 0, 0, 0.6);
           animation: fadeInUp 0.5s ease-out backwards;
         }
 
@@ -702,8 +703,8 @@ export default function GridView({ onUserClick }: GridViewProps) {
 
         .profile-card:hover {
           transform: translateY(-4px) scale(1.02);
-          box-shadow: 0 8px 24px rgba(0, 217, 255, 0.4), 0 0 40px rgba(0, 217, 255, 0.2);
-          border-color: rgba(0, 217, 255, 0.6);
+          border: 2px solid rgba(0, 217, 255, 0.8);
+          box-shadow: 0 0 40px rgba(0, 217, 255, 0.6), 0 0 80px rgba(0, 217, 255, 0.3), 0 8px 24px rgba(0, 0, 0, 0.6);
         }
 
         .profile-card:active {
@@ -720,6 +721,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
 
         .profile-photo {
           object-fit: cover;
+          object-position: center;
         }
 
         .glass-info-bar {
