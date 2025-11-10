@@ -12,6 +12,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "SLTR",
   description: "Rules Don't Apply",
+  manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',

@@ -609,8 +609,19 @@ export default function GridView({ onUserClick }: GridViewProps) {
 
       <style jsx>{`
         .grid-container {
-          background: #000;
+          background: #0a0a0f;
           min-height: 100vh;
+        }
+
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
         .filter-header {
@@ -619,34 +630,44 @@ export default function GridView({ onUserClick }: GridViewProps) {
           z-index: 20;
           display: flex;
           align-items: center;
-          gap: 6px;
-          padding: 12px 10px;
-          background: rgba(0, 0, 0, 0.65);
-          backdrop-filter: blur(18px) saturate(180%);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          gap: 8px;
+          padding: 14px 12px;
+          background: rgba(10, 10, 15, 0.95);
+          backdrop-filter: blur(20px) saturate(180%);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
           overflow-x: auto;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
         }
 
         .filter-btn {
-          padding: 6px 14px;
-          border-radius: 16px;
-          background: rgba(255, 255, 255, 0.1);
+          padding: 8px 16px;
+          border-radius: 20px;
+          background: rgba(255, 255, 255, 0.06);
           border: 1px solid rgba(255, 255, 255, 0.15);
           color: white;
-          font-size: 0.8em;
-          font-weight: 500;
+          font-size: 0.8125rem;
+          font-weight: 600;
           white-space: nowrap;
-          transition: all 0.3s ease;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          letter-spacing: 0.02em;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
         .filter-btn:hover {
-          background: rgba(0, 217, 255, 0.2);
-          border-color: #00d9ff;
+          background: rgba(0, 217, 255, 0.15);
+          border-color: rgba(0, 217, 255, 0.5);
+          color: #00d9ff;
+          text-shadow: 0 0 15px rgba(0, 217, 255, 0.8);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(0, 217, 255, 0.3);
         }
 
         .filter-btn.active {
-          background: linear-gradient(135deg, #00d9ff 0%, #ff00ff 100%);
-          border-color: transparent;
+          background: linear-gradient(135deg, rgba(255, 0, 255, 0.3), rgba(138, 43, 226, 0.3));
+          border-color: rgba(255, 0, 255, 0.6);
+          color: #ffffff;
+          text-shadow: 0 0 20px rgba(255, 0, 255, 1);
+          box-shadow: 0 0 24px rgba(255, 0, 255, 0.5);
         }
 
         .main-content {
@@ -662,19 +683,31 @@ export default function GridView({ onUserClick }: GridViewProps) {
 
         .profile-card {
           position: relative;
-          border-radius: 12px;
+          border-radius: 16px;
           overflow: hidden;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          background: rgba(0, 0, 0, 0.3);
-          transition: all 0.2s ease;
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          background: rgba(5, 5, 8, 0.6);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           cursor: pointer;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+          animation: fadeInUp 0.5s ease-out backwards;
         }
 
+        .profile-card:nth-child(1) { animation-delay: 0.05s; }
+        .profile-card:nth-child(2) { animation-delay: 0.1s; }
+        .profile-card:nth-child(3) { animation-delay: 0.15s; }
+        .profile-card:nth-child(4) { animation-delay: 0.2s; }
+        .profile-card:nth-child(5) { animation-delay: 0.25s; }
+        .profile-card:nth-child(6) { animation-delay: 0.3s; }
+
         .profile-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0, 212, 255, 0.2);
-          border-color: rgba(0, 212, 255, 0.3);
+          transform: translateY(-4px) scale(1.02);
+          box-shadow: 0 8px 24px rgba(0, 217, 255, 0.4), 0 0 40px rgba(0, 217, 255, 0.2);
+          border-color: rgba(0, 217, 255, 0.6);
+        }
+
+        .profile-card:active {
+          transform: translateY(-2px) scale(1.01);
         }
 
         .photo-container {
@@ -705,28 +738,34 @@ export default function GridView({ onUserClick }: GridViewProps) {
         }
 
         .glass-gradient-1 {
-          background: linear-gradient(135deg, rgba(0, 217, 255, 0.3), rgba(255, 0, 255, 0.35));
-          border-color: rgba(0, 217, 255, 0.55);
+          background: linear-gradient(135deg, rgba(0, 217, 255, 0.35), rgba(255, 0, 255, 0.4));
+          border-color: rgba(0, 217, 255, 0.7);
+          box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
         }
         .glass-magenta {
-          background: rgba(255, 0, 255, 0.3);
-          border-color: rgba(255, 0, 255, 0.55);
+          background: linear-gradient(135deg, rgba(255, 0, 255, 0.35), rgba(138, 43, 226, 0.35));
+          border-color: rgba(255, 0, 255, 0.7);
+          box-shadow: 0 0 20px rgba(255, 0, 255, 0.3);
         }
         .glass-purple {
-          background: rgba(118, 75, 226, 0.3);
-          border-color: rgba(118, 75, 226, 0.55);
+          background: linear-gradient(135deg, rgba(138, 43, 226, 0.35), rgba(75, 0, 130, 0.35));
+          border-color: rgba(138, 43, 226, 0.7);
+          box-shadow: 0 0 20px rgba(138, 43, 226, 0.3);
         }
         .glass-cyan {
-          background: rgba(0, 217, 255, 0.28);
-          border-color: rgba(0, 217, 255, 0.5);
+          background: linear-gradient(135deg, rgba(0, 217, 255, 0.35), rgba(0, 191, 255, 0.35));
+          border-color: rgba(0, 217, 255, 0.7);
+          box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
         }
         .glass-orange {
-          background: rgba(250, 112, 154, 0.28);
-          border-color: rgba(250, 112, 154, 0.55);
+          background: linear-gradient(135deg, rgba(250, 112, 154, 0.35), rgba(255, 99, 132, 0.35));
+          border-color: rgba(250, 112, 154, 0.7);
+          box-shadow: 0 0 20px rgba(250, 112, 154, 0.3);
         }
         .glass-blue {
-          background: rgba(79, 172, 254, 0.28);
-          border-color: rgba(79, 172, 254, 0.5);
+          background: linear-gradient(135deg, rgba(79, 172, 254, 0.35), rgba(58, 134, 255, 0.35));
+          border-color: rgba(79, 172, 254, 0.7);
+          box-shadow: 0 0 20px rgba(79, 172, 254, 0.3);
         }
 
         .info-text {

@@ -6,22 +6,30 @@
 
 @layer components {
   .glass-bubble {
-    @apply bg-transparent border-0 rounded-xl transition-all duration-300 text-sm font-bold;
-    color: rgba(255, 255, 255, 0.6);
+    @apply bg-white/5 border border-white/10 rounded-xl transition-all duration-300 text-sm font-bold backdrop-blur-xl;
+    color: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   }
-  
+
   .glass-bubble:hover {
-    color: rgba(255, 255, 255, 0.9);
-    text-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
-  }
-  
-  .glass-bubble.active {
     color: rgba(255, 255, 255, 1);
-    text-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 30px rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(0, 217, 255, 0.4);
+    text-shadow: 0 0 20px rgba(0, 217, 255, 0.8);
+    box-shadow: 0 4px 16px rgba(0, 217, 255, 0.3);
   }
-  
+
+  .glass-bubble.active {
+    background: linear-gradient(135deg, rgba(255, 0, 255, 0.2), rgba(138, 43, 226, 0.2));
+    border-color: rgba(255, 0, 255, 0.5);
+    color: rgba(255, 255, 255, 1);
+    text-shadow: 0 0 20px rgba(255, 0, 255, 0.9);
+    box-shadow: 0 0 30px rgba(255, 0, 255, 0.5);
+  }
+
   .glass-card {
-    @apply bg-black/95 border border-white/20 backdrop-blur-2xl rounded-2xl;
+    @apply bg-black/98 border border-white/10 backdrop-blur-3xl rounded-2xl;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.1);
   }
   
   .no-scrollbar::-webkit-scrollbar {
@@ -41,23 +49,37 @@
   }
   
   .gradient-button {
-    background: transparent;
-    border: none;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     cursor: pointer;
-    transition: all 0.3s ease;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 0.75rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.8125rem;
     font-weight: 700;
-    letter-spacing: -0.01em;
+    letter-spacing: 0.02em;
     text-shadow: none;
+    backdrop-filter: blur(12px);
+    border-radius: 12px;
+    padding: 8px 16px;
   }
-  
-  .gradient-button:hover,
+
+  .gradient-button:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(0, 217, 255, 0.4);
+    color: rgba(255, 255, 255, 1);
+    text-shadow: 0 0 20px rgba(0, 217, 255, 0.8);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 217, 255, 0.2);
+  }
+
   .gradient-button:active,
   .gradient-button.active {
+    background: linear-gradient(135deg, rgba(255, 0, 255, 0.3), rgba(138, 43, 226, 0.3));
+    border-color: rgba(255, 0, 255, 0.6);
     color: rgba(255, 255, 255, 1);
-    text-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 30px rgba(255, 255, 255, 0.5);
-    transform: none;
+    text-shadow: 0 0 20px rgba(255, 0, 255, 1);
+    box-shadow: 0 0 30px rgba(255, 0, 255, 0.5);
+    transform: translateY(0);
   }
   
   .sent-bubble {
@@ -79,13 +101,14 @@
 }
 
 body {
-  background: #000000;
+  background: #0a0a0f;
   color: #ffffff;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
-  letter-spacing: -0.01em;
+  letter-spacing: 0.01em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
 }
 
 /* Premium typography styles */
