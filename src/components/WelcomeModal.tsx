@@ -129,7 +129,6 @@ export default function WelcomeModal({ isOpen, onClose, userName }: WelcomeModal
             </div>
           </>
         ) : (
-          {/* Thank You State */}
           <div className="py-8 space-y-4">
             <div className="text-5xl">✨</div>
             <h3 className="text-xl font-bold text-white">Thank You!</h3>
