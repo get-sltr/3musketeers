@@ -11,6 +11,7 @@ interface User {
   age: number;
   position: string;
   dtfn: boolean;
+  party_friendly: boolean;
   latitude: number;
   longitude: number;
   distance?: string;
