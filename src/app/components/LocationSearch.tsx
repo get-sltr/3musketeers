@@ -68,7 +68,7 @@ export default function LocationSearch({ onLocationSelect }: LocationSearchProps
             }
           }}
           placeholder="Search city, county, or place..."
-          className="w-full px-4 py-2 pr-10 rounded-full bg-black/60 border border-white/10 text-white text-sm placeholder-white/40 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/30 transition"
+          className="w-full px-4 py-3 pr-10 rounded-full bg-black/80 backdrop-blur-xl border border-white/20 text-white text-sm font-medium placeholder-white/50 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all shadow-lg"
         />
         <button
           type="submit"

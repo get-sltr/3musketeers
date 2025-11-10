@@ -548,14 +548,14 @@ export default function AppPage() {
         />
 
       {/* Main Content */}
-      <main className="pt-20">
+      <main className={viewMode === 'grid' ? 'pt-20' : 'pt-0'}>
         {/* Grid or Map view based on viewMode */}
         {viewMode === 'grid' ? (
           <Suspense fallback={<LoadingSkeleton variant="fullscreen" />}>
             <LazyGridView />
           </Suspense>
         ) : (
-          <div className="relative w-full h-[calc(100vh-12rem)] sm:h-[calc(100vh-10rem)]">
+          <div className="relative w-full h-screen">
             {/* User Advertising Panel */}
             <UserAdvertisingPanel 
               isOpen={showAdvertisingPanel}
@@ -598,7 +598,7 @@ export default function AppPage() {
             />
 
             {/* Location Search Bar */}
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-50">
+            <div className="absolute top-20 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-40">
               <LocationSearch
                 onLocationSelect={(lat, lng, placeName) => {
                   setMapCenter([lng, lat])
@@ -768,6 +768,13 @@ export default function AppPage() {
           }}
         />
       )}
+
+      {/* Welcome Modal - First login */}
+      <WelcomeModal
+        isOpen={showWelcomeModal}
+        onClose={() => setShowWelcomeModal(false)}
+        userName={userName}
+      />
 
       {/* Bottom Navigation */}
       <BottomNav />

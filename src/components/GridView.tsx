@@ -620,7 +620,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
           display: flex;
           align-items: center;
           gap: 8px;
-          padding: 14px 12px;
+          padding: 14px 8px;
           background: linear-gradient(180deg, rgba(10, 10, 15, 0.98) 0%, rgba(10, 10, 15, 0.95) 100%);
           backdrop-filter: blur(20px) saturate(180%);
           border-bottom: 2px solid transparent;
@@ -661,25 +661,28 @@ export default function GridView({ onUserClick }: GridViewProps) {
         }
 
         .main-content {
-          padding: 0px 6px 100px 6px;
+          padding: 0px 0px 100px 0px;
           min-height: calc(100vh - 56px);
         }
 
         .profile-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
-          gap: 4px;
+          gap: 1px;
         }
 
         .profile-card {
           position: relative;
-          border-radius: 16px;
+          border-radius: 0px;
           overflow: hidden;
-          border: 2px solid rgba(255, 0, 255, 0.4);
-          background: rgba(5, 5, 8, 0.8);
+          border: 2px solid rgba(255, 255, 255, 0.8);
+          background: rgba(5, 5, 8, 0.95);
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           cursor: pointer;
-          box-shadow: 0 0 20px rgba(255, 0, 255, 0.3), 0 4px 12px rgba(0, 0, 0, 0.6);
+          box-shadow:
+            0 0 30px rgba(255, 255, 255, 0.4),
+            inset 0 0 60px rgba(255, 255, 255, 0.05),
+            0 8px 32px rgba(0, 0, 0, 0.8);
           animation: fadeInUp 0.5s ease-out backwards;
         }
 
@@ -691,9 +694,14 @@ export default function GridView({ onUserClick }: GridViewProps) {
         .profile-card:nth-child(6) { animation-delay: 0.3s; }
 
         .profile-card:hover {
-          transform: translateY(-4px) scale(1.02);
-          border: 2px solid rgba(0, 217, 255, 0.8);
-          box-shadow: 0 0 40px rgba(0, 217, 255, 0.6), 0 0 80px rgba(0, 217, 255, 0.3), 0 8px 24px rgba(0, 0, 0, 0.6);
+          transform: scale(1.03);
+          border: 2px solid rgba(0, 217, 255, 1);
+          box-shadow:
+            0 0 60px rgba(0, 217, 255, 0.9),
+            0 0 120px rgba(0, 217, 255, 0.5),
+            inset 0 0 80px rgba(0, 217, 255, 0.1),
+            0 12px 48px rgba(0, 0, 0, 0.9);
+          z-index: 10;
         }
 
         .profile-card:active {
@@ -704,7 +712,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
           position: relative;
           width: 100%;
           aspect-ratio: 3/4;
-          border-radius: 12px;
+          border-radius: 0;
           overflow: hidden;
         }
 
@@ -715,17 +723,19 @@ export default function GridView({ onUserClick }: GridViewProps) {
 
         .glass-info-bar {
           position: absolute;
-          left: 6px;
-          right: 6px;
-          bottom: 4px;
-          padding: 6px 8px;
-          border-radius: 10px;
-          backdrop-filter: blur(18px) saturate(180%);
-          border: 1px solid rgba(255, 255, 255, 0.35);
-          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+          left: 0;
+          right: 0;
+          bottom: 0;
+          padding: 8px 10px;
+          border-radius: 0;
+          backdrop-filter: blur(24px) saturate(200%);
+          border: none;
+          border-top: 1px solid rgba(255, 255, 255, 0.25);
+          box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.6);
           overflow: hidden;
           display: flex;
           align-items: center;
+          background: linear-gradient(180deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.9) 100%);
         }
 
         .glass-gradient-1 {
@@ -761,12 +771,13 @@ export default function GridView({ onUserClick }: GridViewProps) {
 
         .info-text {
           color: white;
-          font-size: 0.75em;
-          font-weight: 500;
-          text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+          font-size: 0.8em;
+          font-weight: 700;
+          letter-spacing: 0.01em;
+          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
           display: flex;
           align-items: center;
-          gap: 3px;
+          gap: 4px;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -789,23 +800,25 @@ export default function GridView({ onUserClick }: GridViewProps) {
 
         .dtfn-badge {
           position: absolute;
-          top: 6px;
-          right: 6px;
+          top: 8px;
+          right: 8px;
           font-size: 1.1em;
-          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+          filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.9));
           z-index: 5;
         }
 
         .online-dot {
           position: absolute;
-          top: 6px;
-          left: 6px;
-          width: 10px;
-          height: 10px;
+          top: 8px;
+          left: 8px;
+          width: 12px;
+          height: 12px;
           border-radius: 50%;
           background: #00ff00;
           border: 2px solid white;
-          box-shadow: 0 0 8px rgba(0, 255, 0, 0.6);
+          box-shadow:
+            0 0 12px rgba(0, 255, 0, 0.8),
+            0 0 24px rgba(0, 255, 0, 0.4);
           z-index: 5;
         }
 

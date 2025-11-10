@@ -57,7 +57,7 @@ export default function MapSessionMenu({
   }
 
   return (
-    <div className="fixed top-36 left-4 z-40">
+    <div className="fixed top-32 left-4 z-30">
       <button
         onClick={() => setOpen(!open)}
         className="mb-3 px-4 py-2 rounded-full bg-black/80 border border-white/10 text-white text-sm font-semibold hover:bg-black/70 transition shadow-lg"
