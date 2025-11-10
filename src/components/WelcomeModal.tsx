@@ -37,12 +37,13 @@ export default function WelcomeModal({ isOpen, onClose, userName }: WelcomeModal
     }
   }
 
+  if (!isOpen) return null
+
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <div className="space-y-6 text-center">
-        {!submitted ? (
+        {!submitted && (
           <>
-            {/* Header */}
             <div className="space-y-3">
               <div className="text-4xl font-black tracking-wider" style={{
                 background: 'linear-gradient(135deg, #00d4ff, #ff00ff)',
@@ -60,7 +61,6 @@ export default function WelcomeModal({ isOpen, onClose, userName }: WelcomeModal
               </p>
             </div>
 
-            {/* Message */}
             <div className="space-y-4 text-left">
               <p className="text-white/90 text-sm leading-relaxed">
                 Connection should feel <span className="text-cyan-400 font-semibold">real</span>. <span className="text-cyan-400 font-semibold">Human</span>. <span className="text-cyan-400 font-semibold">Effortless</span>.
@@ -71,7 +71,6 @@ export default function WelcomeModal({ isOpen, onClose, userName }: WelcomeModal
               </p>
             </div>
 
-            {/* Feedback Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="text-left">
                 <label className="block text-sm font-semibold text-white/80 mb-2">
@@ -112,12 +111,11 @@ export default function WelcomeModal({ isOpen, onClose, userName }: WelcomeModal
                   disabled={sending}
                   className="flex-1 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-semibold hover:scale-105 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {sending ? 'Sending...' : feedback.trim() ? 'Share Thoughts' : 'Let's Go'}
+                  {sending ? 'Sending...' : feedback.trim() ? 'Share Thoughts' : 'Let\'s Go'}
                 </button>
               </div>
             </form>
 
-            {/* Footer */}
             <div className="pt-4 border-t border-white/10 space-y-2">
               <p className="text-xs text-white/50">
                 <span className="font-semibold text-white/70">Kevin</span><br />
@@ -128,7 +126,9 @@ export default function WelcomeModal({ isOpen, onClose, userName }: WelcomeModal
               </p>
             </div>
           </>
-        ) : (
+        )}
+
+        {submitted && (
           <div className="py-8 space-y-4">
             <div className="text-5xl">✨</div>
             <h3 className="text-xl font-bold text-white">Thank You!</h3>
