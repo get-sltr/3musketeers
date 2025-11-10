@@ -27,6 +27,7 @@ type RawProfile = {
   age: number | null;
   position: string | null;
   dtfn: boolean | null;
+  party_friendly: boolean | null;
   latitude: number;
   longitude: number;
   incognito_mode?: boolean | null;
@@ -39,6 +40,7 @@ type MapUser = {
   age: number;
   position: string;
   dtfn: boolean;
+  party_friendly: boolean;
   latitude: number;
   longitude: number;
   distance?: string;
@@ -123,7 +125,7 @@ export default function MapPage() {
       const { data, error: fetchError } = await supabase
         .from('profiles')
         .select(
-          'id, display_name, photo_url, avatar_url, age, position, dtfn, latitude, longitude, incognito_mode',
+          'id, display_name, photo_url, avatar_url, age, position, dtfn, party_friendly, latitude, longitude, incognito_mode',
         )
         .not('latitude', 'is', null)
         .not('longitude', 'is', null)
@@ -148,6 +150,7 @@ export default function MapPage() {
           age: profile.age ?? 0,
           position: profile.position || 'Unknown',
           dtfn: Boolean(profile.dtfn),
+          party_friendly: Boolean(profile.party_friendly),
           latitude: profile.latitude,
           longitude: profile.longitude,
         };
