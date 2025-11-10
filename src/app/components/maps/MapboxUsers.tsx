@@ -490,6 +490,7 @@ export default function MapboxUsers({
         age: u.age ?? 0,
         position: u.position || 'Unknown',
         dtfn: !!u.dtfn,
+        party_friendly: !!u.party_friendly,
         latitude: u.latitude,
         longitude: u.longitude,
         distance: u.distance,

@@ -19,6 +19,7 @@ import PlaceModal from '../components/PlaceModal'
 import GroupModal from '../components/GroupModal'
 import UserAdvertisingPanel from '../components/UserAdvertisingPanel'
 import LocationSearch from '../components/LocationSearch'
+import WelcomeModal from '../../components/WelcomeModal'
 import '../../styles/mobile-optimization.css'
 import { useSocket } from '../../hooks/useSocket'
 import { resolveProfilePhoto } from '@/lib/utils/profile'
@@ -77,7 +78,34 @@ export default function AppPage() {
   const [isHostingGroup, setIsHostingGroup] = useState<boolean>(false)
   const [showAdvertisingPanel, setShowAdvertisingPanel] = useState<boolean>(false)
   const [isLargeDesktop, setIsLargeDesktop] = useState<boolean>(false)
+  const [showWelcomeModal, setShowWelcomeModal] = useState<boolean>(false)
+  const [userName, setUserName] = useState<string>('')
   const router = useRouter()
+
+  // Check if first login and show welcome modal
+  useEffect(() => {
+    const checkFirstLogin = async () => {
+      const hasSeenWelcome = localStorage.getItem('sltr_welcome_shown')
+      if (!hasSeenWelcome) {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          // Get user's display name
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('display_name, username')
+            .eq('id', user.id)
+            .single()
+
+          setUserName(profile?.display_name || profile?.username || '')
+          setShowWelcomeModal(true)
+          localStorage.setItem('sltr_welcome_shown', 'true')
+        }
+      }
+    }
+
+    checkFirstLogin()
+  }, [])
 
   // Listen for bottom nav map button click
   useEffect(() => {
