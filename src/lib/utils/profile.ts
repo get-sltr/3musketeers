@@ -1,4 +1,4 @@
-export const DEFAULT_PROFILE_IMAGE = '/default-avatar.png'
+export const DEFAULT_PROFILE_IMAGE = '/black-white-silhouette-man-600nw-1677576007.webp'
 
 export function resolveProfilePhoto(
   photoUrl?: string | null,

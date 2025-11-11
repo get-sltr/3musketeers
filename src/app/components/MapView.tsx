@@ -43,6 +43,10 @@ export const MapView: React.FC<MapViewProps> = ({
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
+  // Temporary instrumentation to help diagnose blank map render.
+  // eslint-disable-next-line no-console
+  console.log('Mapbox token present?', Boolean(mapboxgl.accessToken));
+
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/dark-v11',
@@ -64,7 +68,15 @@ export const MapView: React.FC<MapViewProps> = ({
       'top-right',
     );
 
+  const handleMapError = (event: mapboxgl.ErrorEvent) => {
+    // eslint-disable-next-line no-console
+    console.error('Mapbox map error:', event?.error ?? event);
+  };
+
+  map.current.on('error', handleMapError);
+
     return () => {
+    map.current?.off('error', handleMapError);
       map.current?.remove();
       map.current = null;
     };

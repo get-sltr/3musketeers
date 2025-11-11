@@ -403,6 +403,18 @@ export default function GridView({ onUserClick }: GridViewProps) {
   return (
     <>
       <div className="grid-container">
+        {/* Founder's Circle Ad */}
+        <div className="founders-ad">
+          <div className="founders-ad-content">
+            <div className="founders-badge">👑</div>
+            <div className="founders-text">
+              <div className="founders-title">Founder's Circle</div>
+              <div className="founders-subtitle">Lifetime Premium • Only $199</div>
+            </div>
+            <button className="founders-cta">Join</button>
+          </div>
+        </div>
+
         <header className="filter-header">
           {FILTER_BUTTONS.map(button => {
             const isActive =
@@ -445,7 +457,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
                   >
                     <div className="photo-container">
                       <Image
-                        src={user.photo || '/placeholder-no-photo.jpg'}
+                        src={user.photo || '/black-white-silhouette-man-600nw-1677576007.webp'}
                         alt={user.username}
                         fill
                         sizes="(max-width: 768px) 45vw, 240px"
@@ -455,13 +467,6 @@ export default function GridView({ onUserClick }: GridViewProps) {
 
                       {/* Top left badges */}
                       {user.isOnline && <div className="online-dot" />}
-
-                      {/* Top right badges */}
-                      <div className="top-right-badges">
-                        {user.photos && user.photos.length > 0 && (
-                          <div className="photo-count-badge">{user.photos.length}</div>
-                        )}
-                      </div>
 
                       {/* Bottom left feature badges */}
                       <div className="feature-badges">
@@ -473,12 +478,9 @@ export default function GridView({ onUserClick }: GridViewProps) {
                         )}
                       </div>
 
-                      {/* Bottom info bar */}
+                      {/* Bottom info bar - distance only */}
                       <div className="glass-info-bar">
-                        <span className="info-text">
-                          <span className="username">{user.username}</span>
-                          <span className="distance">{user.distance}</span>
-                        </span>
+                        <span className="info-text">{user.distance}</span>
                       </div>
                     </div>
                   </div>
@@ -630,34 +632,84 @@ export default function GridView({ onUserClick }: GridViewProps) {
           }
         }
 
+        .founders-ad {
+          background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+          padding: 0;
+          margin: 0;
+        }
+
+        .founders-ad-content {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 12px 16px;
+          gap: 12px;
+        }
+
+        .founders-badge {
+          font-size: 2em;
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+
+        .founders-text {
+          flex: 1;
+        }
+
+        .founders-title {
+          font-size: 1.1em;
+          font-weight: 800;
+          color: #000;
+          line-height: 1.2;
+        }
+
+        .founders-subtitle {
+          font-size: 0.85em;
+          font-weight: 600;
+          color: rgba(0, 0, 0, 0.7);
+        }
+
+        .founders-cta {
+          background: #000;
+          color: #FFD700;
+          padding: 10px 24px;
+          border-radius: 24px;
+          font-weight: 700;
+          font-size: 1em;
+          border: none;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .founders-cta:hover {
+          transform: scale(1.05);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
         .filter-header {
           position: sticky;
           top: 0;
           z-index: 20;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 14px 8px;
+          display: grid;
+          grid-template-columns: repeat(5, 1fr);
+          gap: 4px;
+          padding: 12px 8px;
           background: linear-gradient(180deg, rgba(10, 10, 15, 0.98) 0%, rgba(10, 10, 15, 0.95) 100%);
           backdrop-filter: blur(20px) saturate(180%);
-          border-bottom: 2px solid transparent;
-          border-image: linear-gradient(90deg, rgba(255, 0, 255, 0.3), rgba(0, 217, 255, 0.3), rgba(255, 0, 255, 0.3)) 1;
-          overflow-x: auto;
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 40px rgba(255, 0, 255, 0.1);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .filter-btn {
-          padding: 10px 18px;
+          padding: 10px 8px;
           border-radius: 20px;
           background: rgba(255, 255, 255, 0.06);
           border: 1px solid rgba(255, 255, 255, 0.15);
           color: white;
-          font-size: 1rem;
-          font-weight: 800;
+          font-size: 0.9rem;
+          font-weight: 700;
           white-space: nowrap;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          letter-spacing: 0.02em;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+          transition: all 0.2s ease;
+          letter-spacing: 0.01em;
+          text-align: center;
         }
 
         .filter-btn:hover {
@@ -685,21 +737,18 @@ export default function GridView({ onUserClick }: GridViewProps) {
         .profile-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
-          gap: 4px;
+          gap: 2px;
         }
 
         .profile-card {
           position: relative;
-          border-radius: 16px;
+          border-radius: 8px;
           overflow: hidden;
-          border: 2px solid rgba(0, 212, 255, 0.4);
+          border: 1px solid rgba(0, 212, 255, 0.2);
           background: rgba(5, 5, 8, 0.95);
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: all 0.2s ease;
           cursor: pointer;
-          box-shadow:
-            0 0 20px rgba(0, 212, 255, 0.3),
-            inset 0 0 40px rgba(0, 212, 255, 0.05),
-            0 8px 32px rgba(0, 0, 0, 0.8);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
           animation: fadeInUp 0.5s ease-out backwards;
         }
 
@@ -711,13 +760,9 @@ export default function GridView({ onUserClick }: GridViewProps) {
         .profile-card:nth-child(6) { animation-delay: 0.3s; }
 
         .profile-card:hover {
-          transform: scale(1.02);
-          border: 2px solid rgba(0, 212, 255, 1);
-          box-shadow:
-            0 0 40px rgba(0, 212, 255, 0.8),
-            0 0 80px rgba(0, 212, 255, 0.4),
-            inset 0 0 60px rgba(0, 212, 255, 0.1),
-            0 12px 48px rgba(0, 0, 0, 0.9);
+          transform: scale(1.01);
+          border: 1px solid rgba(0, 212, 255, 0.4);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
           z-index: 10;
         }
 
@@ -728,8 +773,8 @@ export default function GridView({ onUserClick }: GridViewProps) {
         .photo-container {
           position: relative;
           width: 100%;
-          aspect-ratio: 2/3;
-          border-radius: 16px;
+          aspect-ratio: 3/4;
+          border-radius: 8px;
           overflow: hidden;
         }
 
@@ -759,30 +804,12 @@ export default function GridView({ onUserClick }: GridViewProps) {
         .info-text {
           color: white;
           font-size: 0.85em;
-          font-weight: 600;
+          font-weight: 700;
           letter-spacing: 0.01em;
           text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
+          display: block;
+          text-align: left;
           width: 100%;
-        }
-
-        .info-text .username {
-          font-weight: 700;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-          flex: 1;
-          min-width: 0;
-        }
-
-        .info-text .distance {
-          font-weight: 600;
-          opacity: 0.9;
-          margin-left: 8px;
-          white-space: nowrap;
-          font-size: 0.95em;
         }
 
         .info-username {
