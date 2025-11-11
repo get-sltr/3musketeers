@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { submitReport } from '@/lib/safety'
+import { createClient } from '@/lib/supabase/client'
 
 interface ReportModalProps {
   userId: string
@@ -20,15 +21,37 @@ export default function ReportModal({ userId, username, isOpen, onClose, onSucce
 
   const handleSubmit = async () => {
     setSubmitting(true)
-    await submitReport({
-      reportedUserId: userId,
-      reporterUserId: 'current_user', // Replace with actual user ID
-      reason,
-      category
-    })
+
+    try {
+      // Get current user ID
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) {
+        alert('You must be logged in to submit a report')
+        setSubmitting(false)
+        return
+      }
+
+      const result = await submitReport({
+        reportedUserId: userId,
+        reporterUserId: user.id,
+        reason,
+        category
+      })
+
+      if (result.success) {
+        onSuccess()
+        onClose()
+      } else {
+        alert(`Failed to submit report: ${result.error || 'Unknown error'}`)
+      }
+    } catch (error) {
+      console.error('Error submitting report:', error)
+      alert('Failed to submit report. Please try again.')
+    }
+
     setSubmitting(false)
-    onSuccess()
-    onClose()
   }
 
   return (

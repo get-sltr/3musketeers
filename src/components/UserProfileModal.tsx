@@ -75,12 +75,16 @@ export default function UserProfileModal({
     }
   }
 
-  const handleBlock = () => {
+  const handleBlock = async () => {
     if (confirm(`Block ${user.username}? They won't be able to see your profile or message you.`)) {
-      blockUser(user.id, 'Blocked from profile')
-      setBlocked(true)
-      onBlock?.(user.id)
-      setTimeout(() => onClose(), 1000)
+      const result = await blockUser(user.id, 'Blocked from profile')
+      if (result.success) {
+        setBlocked(true)
+        onBlock?.(user.id)
+        setTimeout(() => onClose(), 1000)
+      } else {
+        alert(`Failed to block user: ${result.error || 'Unknown error'}`)
+      }
     }
   }
 
