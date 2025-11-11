@@ -232,7 +232,7 @@ export async function analyzeFavorites(
     const eros = getErosClient();
     const response = await makeErosRequest(() => 
       eros.chat.completions.create({
-        model: 'mixtral-8x7b-32768',
+        model: 'llama-3.1-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
         max_tokens: 800,
@@ -336,7 +336,7 @@ export async function analyzeCallHistory(
     const eros = getErosClient();
     const response = await makeErosRequest(() => 
       eros.chat.completions.create({
-        model: 'mixtral-8x7b-32768',
+        model: 'llama-3.1-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
         max_tokens: 800,
@@ -434,7 +434,7 @@ export async function analyzeBlockPatterns(
     const eros = getErosClient();
     const response = await makeErosRequest(() => 
       eros.chat.completions.create({
-        model: 'mixtral-8x7b-32768',
+        model: 'llama-3.1-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
         max_tokens: 800,
@@ -521,7 +521,7 @@ export async function learnUltimatePreferences(
     const eros = getErosClient();
     const response = await makeErosRequest(() => 
       eros.chat.completions.create({
-        model: 'mixtral-8x7b-32768',
+        model: 'llama-3.1-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
         max_tokens: 2000,
@@ -611,7 +611,7 @@ export async function predictiveMatch(
     const eros = getErosClient();
     const response = await makeErosRequest(() => 
       eros.chat.completions.create({
-        model: 'mixtral-8x7b-32768',
+        model: 'llama-3.1-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.6,
         max_tokens: 1000,
@@ -808,7 +808,7 @@ export async function getIcebreaker(profile: {
     
     const response = await makeErosRequest(() => 
       eros.chat.completions.create({
-        model: 'mixtral-8x7b-32768',
+        model: 'llama-3.1-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.8,
         max_tokens: 150,
@@ -921,7 +921,7 @@ export async function analyzeMatches(
     
     const response = await makeErosRequest(() => 
       eros.chat.completions.create({
-        model: 'mixtral-8x7b-32768',
+        model: 'llama-3.1-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
         max_tokens: 4000, // More tokens for multiple profiles
