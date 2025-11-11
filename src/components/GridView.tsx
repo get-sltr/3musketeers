@@ -106,6 +106,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
   const [users, setUsers] = useState<User[]>([])
   const [filteredUsers, setFilteredUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   const [activeButtons, setActiveButtons] = useState<string[]>([])
   const [ageRange, setAgeRange] = useState(DEFAULT_AGE_RANGE)
@@ -120,6 +121,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
     const loadUsers = async () => {
       try {
         const { data: { user: currentUser } } = await supabase.auth.getUser()
+        setCurrentUserId(currentUser?.id || null)
         let currentUserLat: number | null = null
         let currentUserLon: number | null = null
 
@@ -602,6 +604,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
             ? users.find(u => u.id === selectedUser.id)?.isFavorited
             : false
         }
+        isOwnProfile={selectedUser?.id === currentUserId}
       />
 
       {isMessagingOpen && messagingUser && (

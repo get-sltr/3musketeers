@@ -73,6 +73,8 @@ export default function MapPage() {
   const supabase = useMemo(() => createClient(), []);
   const [users, setUsers] = useState<MapUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mapReady, setMapReady] = useState(false);
+  const [mapErrorMessage, setMapErrorMessage] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -273,6 +275,21 @@ export default function MapPage() {
 
   const showUserPanel = Boolean(selectedUser && (!isMobile || drawerOpen));
 
+  const showLoadingOverlay = useMemo(
+    () => (!mapReady && !mapErrorMessage) || loading,
+    [loading, mapReady, mapErrorMessage],
+  );
+
+  const combinedErrorMessage = useMemo(
+    () => mapErrorMessage || (error && !loading ? error : null),
+    [mapErrorMessage, error, loading],
+  );
+
+  const loadingMessage = useMemo(
+    () => (mapReady ? 'Loading nearby profiles…' : 'Initializing map experience…'),
+    [mapReady],
+  );
+
   const handleSelectUser = useCallback(
     (userId: string) => {
       setSelectedUserId(userId);
@@ -363,6 +380,14 @@ export default function MapPage() {
         onTapUser={handleTapUser}
         onProfileClick={handleProfileClick}
         center={center}
+        onMapReady={() => {
+          setMapReady(true);
+          setMapErrorMessage(null);
+        }}
+        onMapError={(message) => {
+          setMapReady(false);
+          setMapErrorMessage(message);
+        }}
       />
 
       <div className="map-overlay-stack">
@@ -546,16 +571,16 @@ export default function MapPage() {
         )}
       </div>
 
-      {loading && (
+      {showLoadingOverlay && (
         <div className="map-loading">
           <div className="map-loading-spinner" />
-          <span>Loading nearby profiles…</span>
+          <span>{loadingMessage}</span>
         </div>
       )}
 
-      {error && !loading && (
-        <div className="map-loading" style={{ gap: '8px' }}>
-          <span>{error}</span>
+      {combinedErrorMessage && (
+        <div className="map-loading map-loading-error">
+          <span>{combinedErrorMessage}</span>
         </div>
       )}
 
@@ -565,14 +590,16 @@ export default function MapPage() {
           inset: 0;
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          gap: 14px;
           padding: 16px;
+          padding-top: calc(env(safe-area-inset-top, 0px) + 20px);
           pointer-events: none;
         }
 
         .map-hero-panel {
           order: 1;
           align-self: flex-start;
+          margin-top: 4px;
           max-width: min(420px, 100%);
           background: linear-gradient(135deg, rgba(5, 12, 30, 0.84), rgba(8, 26, 48, 0.92));
           border: 1px solid rgba(0, 255, 255, 0.18);

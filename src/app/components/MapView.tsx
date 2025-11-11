@@ -25,6 +25,8 @@ interface MapViewProps {
   onProfileClick: (userId: string) => void;
   center?: [number, number];
   zoom?: number;
+  onMapReady?: () => void;
+  onMapError?: (message: string) => void;
 }
 
 export const MapView: React.FC<MapViewProps> = ({
@@ -35,6 +37,8 @@ export const MapView: React.FC<MapViewProps> = ({
   onProfileClick,
   center = [-118.2437, 34.0522],
   zoom = 12,
+  onMapReady,
+  onMapError,
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -43,9 +47,13 @@ export const MapView: React.FC<MapViewProps> = ({
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
-  // Temporary instrumentation to help diagnose blank map render.
-  // eslint-disable-next-line no-console
-  console.log('Mapbox token present?', Boolean(mapboxgl.accessToken));
+    // Temporary instrumentation to help diagnose blank map render.
+    // eslint-disable-next-line no-console
+    console.log('Mapbox token present?', Boolean(mapboxgl.accessToken));
+
+    if (!mapboxgl.accessToken) {
+      onMapError?.('Missing Mapbox token. Set NEXT_PUBLIC_MAPBOX_TOKEN to enable maps.');
+    }
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
@@ -68,19 +76,30 @@ export const MapView: React.FC<MapViewProps> = ({
       'top-right',
     );
 
-  const handleMapError = (event: mapboxgl.ErrorEvent) => {
-    // eslint-disable-next-line no-console
-    console.error('Mapbox map error:', event?.error ?? event);
-  };
+    const handleMapError = (event: mapboxgl.ErrorEvent) => {
+      // eslint-disable-next-line no-console
+      console.error('Mapbox map error:', event?.error ?? event);
+      const message =
+        (event?.error && 'message' in event.error && typeof event.error.message === 'string'
+          ? event.error.message
+          : undefined) || 'Error loading map data. Please try again.';
+      onMapError?.(message);
+    };
 
-  map.current.on('error', handleMapError);
+    const handleMapLoad = () => {
+      onMapReady?.();
+    };
+
+    map.current.on('error', handleMapError);
+    map.current.once('load', handleMapLoad);
 
     return () => {
-    map.current?.off('error', handleMapError);
+      map.current?.off('error', handleMapError);
+      map.current?.off('load', handleMapLoad);
       map.current?.remove();
       map.current = null;
     };
-  }, [center, zoom]);
+  }, [center, zoom, onMapError, onMapReady]);
 
   useEffect(() => {
     if (!map.current) return;

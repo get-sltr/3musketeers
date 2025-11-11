@@ -125,6 +125,13 @@
   z-index: 1000;
 }
 
+.map-loading.map-loading-error {
+  border-color: rgba(255, 105, 135, 0.45);
+  background: rgba(45, 12, 26, 0.95);
+  color: #ffccd9;
+  gap: 8px;
+}
+
 .map-loading-spinner {
   width: 24px;
   height: 24px;

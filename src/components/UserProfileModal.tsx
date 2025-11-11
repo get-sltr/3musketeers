@@ -33,6 +33,7 @@ interface UserProfileModalProps {
   onReport?: (userId: string) => void
   onFavorite?: (userId: string) => void
   isFavorited?: boolean
+  isOwnProfile?: boolean
 }
 
 export default function UserProfileModal({
@@ -43,7 +44,8 @@ export default function UserProfileModal({
   onBlock,
   onReport,
   onFavorite,
-  isFavorited = false
+  isFavorited = false,
+  isOwnProfile = false
 }: UserProfileModalProps) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
   const [showReportModal, setShowReportModal] = useState(false)
@@ -115,6 +117,22 @@ export default function UserProfileModal({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
+
+        {/* Top Right - Edit Profile (only for own profile) */}
+        {isOwnProfile && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              router.push('/profile')
+            }}
+            className="absolute top-6 right-6 z-20 px-4 py-2 rounded-full bg-cyan-500 backdrop-blur-md flex items-center gap-2 hover:bg-cyan-600 transition-all font-bold text-white shadow-lg"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            Edit Profile
+          </button>
+        )}
 
 
         {/* Right Side Stack - Report & Block (moved higher to not block arrows) */}
