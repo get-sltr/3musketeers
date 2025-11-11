@@ -222,8 +222,56 @@ export default function ProfilePage() {
     try {
       setLoading(true)
       setError(null)
-      
-      const fileExt = file.name.split('.').pop()
+
+      // Create image to check/resize
+      const img = new Image()
+      const reader = new FileReader()
+
+      const processedFile = await new Promise<File>((resolve, reject) => {
+        reader.onload = (event) => {
+          img.onload = () => {
+            // Create canvas with 3:4 aspect ratio
+            const targetWidth = 800
+            const targetHeight = 1067 // 800 * 4/3
+            const canvas = document.createElement('canvas')
+            const ctx = canvas.getContext('2d')
+
+            if (!ctx) {
+              reject(new Error('Failed to get canvas context'))
+              return
+            }
+
+            canvas.width = targetWidth
+            canvas.height = targetHeight
+
+            // Calculate scaling to cover the target dimensions
+            const scale = Math.max(targetWidth / img.width, targetHeight / img.height)
+            const scaledWidth = img.width * scale
+            const scaledHeight = img.height * scale
+
+            // Center the image
+            const x = (targetWidth - scaledWidth) / 2
+            const y = (targetHeight - scaledHeight) / 2
+
+            // Draw image
+            ctx.drawImage(img, x, y, scaledWidth, scaledHeight)
+
+            // Convert to blob
+            canvas.toBlob((blob) => {
+              if (blob) {
+                const processedFile = new File([blob], file.name, { type: 'image/jpeg' })
+                resolve(processedFile)
+              } else {
+                reject(new Error('Failed to create blob'))
+              }
+            }, 'image/jpeg', 0.9)
+          }
+          img.src = event.target?.result as string
+        }
+        reader.readAsDataURL(file)
+      })
+
+      const fileExt = 'jpg'
       const fileName = `${Date.now()}.${fileExt}`
       const filePath = `profiles/${fileName}`
 
@@ -231,7 +279,7 @@ export default function ProfilePage() {
 
       const { error: uploadError } = await supabase.storage
         .from('photos')
-        .upload(filePath, file)
+        .upload(filePath, processedFile)
 
       if (uploadError) {
         console.error('Upload error:', uploadError)
