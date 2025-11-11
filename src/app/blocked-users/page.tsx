@@ -123,7 +123,7 @@ export default function BlockedUsersPage() {
             </div>
 
             {blockedUsers.map(user => {
-              const photoUrl = resolveProfilePhoto(user)
+              const photoUrl = resolveProfilePhoto(user.photo_url, user.photos)
 
               return (
                 <div
