@@ -1,4 +1,5 @@
 const { withSentryConfig } = require("@sentry/nextjs");
+const withNextIntl = require('next-intl/plugin')();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -133,7 +134,9 @@ const sentryWebpackPluginOptions = {
 };
 
 // Make sure adding Sentry options is the last code to run before exporting
-// Only wrap with Sentry if all required environment variables are present
+// Wrap with next-intl first, then Sentry if enabled
+const configWithIntl = withNextIntl(nextConfig);
+
 module.exports = shouldUseSentry
-  ? withSentryConfig(nextConfig, sentryWebpackPluginOptions)
-  : nextConfig;
+  ? withSentryConfig(configWithIntl, sentryWebpackPluginOptions)
+  : configWithIntl;
