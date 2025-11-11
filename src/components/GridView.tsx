@@ -468,7 +468,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
                         {user.dtfn && (
                           <div className="feature-badge dtfn">DTFN</div>
                         )}
-                        {user.partyFriendly && (
+                        {user.party_friendly && (
                           <div className="feature-badge party">🎉</div>
                         )}
                       </div>
