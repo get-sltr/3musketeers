@@ -308,7 +308,7 @@ export default function PricingPage() {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-2xl">💳</span>
-            <span>Powered by Stripe</span>
+            <span>PCI-DSS Certified Payments</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-2xl">↩️</span>
@@ -340,7 +340,7 @@ export default function PricingPage() {
               },
               {
                 q: 'What payment methods do you accept?',
-                a: 'We accept all major credit cards, debit cards, and digital wallets through our secure payment partner Stripe.'
+                a: 'We accept all major credit cards, debit cards, and digital wallets through our PCI-DSS certified payment processors.'
               }
             ].map((faq, i) => (
               <div key={i} className="bg-white/5 rounded-2xl p-6">

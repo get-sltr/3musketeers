@@ -45,7 +45,7 @@ export default function PrivacyPage() {
                 <li><strong>Profile Information:</strong> Photos, bio, physical attributes, gender identity, sexual orientation, relationship preferences, interests, pronouns</li>
                 <li><strong>Optional Profile Data:</strong> Body type, ethnicity, HIV status, PrEP usage, party preferences (party_friendly), hosting status, DTFN (Down To F*** Now) status</li>
                 <li><strong>Verification Data:</strong> Government-issued ID photos (processed and immediately deleted after verification)</li>
-                <li><strong>Payment Information:</strong> Processed securely through Stripe (we do not store full payment card numbers)</li>
+                <li><strong>Payment Information:</strong> Processed securely through certified payment processors (we do not store full payment card numbers)</li>
                 <li><strong>Communications:</strong> Messages sent through our platform, customer support inquiries, feedback submissions</li>
                 <li><strong>User-Generated Content:</strong> Photos, videos, voice recordings, written content you upload or share</li>
               </ul>
@@ -63,8 +63,8 @@ export default function PrivacyPage() {
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">1.3 Information from Third Parties</h3>
               <ul className="list-disc list-inside ml-4 space-y-2">
                 <li><strong>Social Media:</strong> Profile information from linked accounts (if you choose to connect social media)</li>
-                <li><strong>Analytics Providers:</strong> Aggregated usage statistics from Sentry, Vercel Analytics</li>
-                <li><strong>Payment Processors:</strong> Transaction confirmation data from Stripe</li>
+                <li><strong>Analytics Providers:</strong> Aggregated usage statistics for performance monitoring</li>
+                <li><strong>Payment Processors:</strong> Transaction confirmation data from secure payment providers</li>
                 <li><strong>Other Users:</strong> Information contained in reports or abuse flagging</li>
                 <li><strong>Public Sources:</strong> Publicly available information to verify identity or prevent fraud</li>
               </ul>
@@ -144,15 +144,14 @@ export default function PrivacyPage() {
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">3.2 Service Providers</h3>
               <p className="mb-2">We share information with trusted third-party vendors who help us operate our platform:</p>
               <ul className="list-disc list-inside ml-4 space-y-2">
-                <li><strong>Supabase:</strong> Database hosting, authentication, file storage, real-time features</li>
-                <li><strong>Vercel:</strong> Application hosting, content delivery network (CDN)</li>
-                <li><strong>Stripe:</strong> Payment processing (they handle payment card data under PCI-DSS compliance)</li>
-                <li><strong>Daily.co:</strong> Video and voice call infrastructure (WebRTC)</li>
-                <li><strong>Resend:</strong> Transactional email delivery</li>
-                <li><strong>Sentry:</strong> Error monitoring and performance analytics</li>
-                <li><strong>Foursquare:</strong> Venue data for LGBTQ+ location features</li>
-                <li><strong>Mapbox:</strong> Map visualization and geolocation services</li>
-                <li><strong>Anthropic/OpenAI:</strong> AI-powered features (EROS compatibility analysis)</li>
+                <li><strong>Cloud Infrastructure:</strong> Secure database hosting, authentication services, file storage, and real-time features</li>
+                <li><strong>Application Hosting:</strong> Enterprise-grade hosting with content delivery network (CDN)</li>
+                <li><strong>Payment Processing:</strong> PCI-DSS compliant payment processors that handle payment card data securely</li>
+                <li><strong>Video & Voice:</strong> Encrypted video and voice call infrastructure</li>
+                <li><strong>Email Services:</strong> Transactional email delivery for account notifications</li>
+                <li><strong>Error Monitoring:</strong> Performance analytics and error tracking to improve service quality</li>
+                <li><strong>Location Services:</strong> Venue data and map visualization for location-based features</li>
+                <li><strong>AI Services:</strong> Compatibility analysis and personalization features</li>
               </ul>
               <p className="mt-2 text-sm">All service providers are contractually obligated to protect your data and use it only as directed by us.</p>
 
@@ -186,7 +185,7 @@ export default function PrivacyPage() {
                 <li><strong>Encryption:</strong> Data in transit is protected using TLS 1.3+ encryption; data at rest is encrypted using AES-256</li>
                 <li><strong>Access Controls:</strong> Role-based access control (RBAC), Row Level Security (RLS) in database</li>
                 <li><strong>Authentication:</strong> Secure password hashing (bcrypt), JWT token rotation, session management</li>
-                <li><strong>Infrastructure:</strong> Hosted on Vercel with WAF, DDoS protection, automated backups</li>
+                <li><strong>Infrastructure:</strong> Enterprise hosting with Web Application Firewall (WAF), DDoS protection, and automated backups</li>
                 <li><strong>Monitoring:</strong> Real-time alerts for suspicious activity, automated threat detection</li>
                 <li><strong>Audits:</strong> Regular security assessments and penetration testing</li>
                 <li><strong>Incident Response:</strong> 24/7 security monitoring with documented response procedures</li>
@@ -287,7 +286,7 @@ export default function PrivacyPage() {
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">7.1 Types of Cookies We Use</h3>
               <ul className="list-disc list-inside ml-4 space-y-2">
                 <li><strong>Essential Cookies:</strong> Required for authentication and core functionality</li>
-                <li><strong>Performance Cookies:</strong> Analyze how you use our platform (Google Analytics, Vercel Analytics)</li>
+                <li><strong>Performance Cookies:</strong> Analyze how you use our platform to improve performance and user experience</li>
                 <li><strong>Functional Cookies:</strong> Remember your preferences (language, radius, filters)</li>
                 <li><strong>Analytics Cookies:</strong> Track usage patterns to improve our services</li>
               </ul>

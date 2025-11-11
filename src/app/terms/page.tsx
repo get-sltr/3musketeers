@@ -183,7 +183,7 @@ export default function TermsPage() {
               <ul className="list-disc list-inside ml-4 space-y-2">
                 <li>Subscriptions automatically renew at the end of each billing cycle (monthly, quarterly, or annually) unless canceled</li>
                 <li>You will be charged the then-current price for the subscription tier you selected</li>
-                <li>Payment is processed through Stripe, our third-party payment processor</li>
+                <li>Payment is processed through secure third-party payment processors certified to PCI-DSS standards</li>
                 <li>You authorize us to charge your payment method for all fees incurred</li>
                 <li>Price changes will be communicated at least 30 days in advance</li>
               </ul>
@@ -266,7 +266,7 @@ export default function TermsPage() {
             <section>
               <h2 className="text-2xl font-bold text-white mb-4">8. Third-Party Services & Links</h2>
               <p className="mb-4">
-                SLTR integrates with third-party services (e.g., Stripe for payments, Daily.co for video calls, Mapbox for maps). These services have their own terms and privacy policies, which govern your use of those services.
+                SLTR integrates with third-party service providers for payments, video calls, mapping, and other functionality. These services have their own terms and privacy policies, which govern your use of those services.
               </p>
               <p className="mb-4">
                 Our platform may contain links to third-party websites or resources. We are not responsible for the content, accuracy, or practices of these third parties. Your interactions with third-party services are solely between you and the third party.

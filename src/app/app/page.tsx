@@ -23,6 +23,7 @@ import WelcomeModal from '../../components/WelcomeModal'
 import '../../styles/mobile-optimization.css'
 import { useSocket } from '../../hooks/useSocket'
 import { resolveProfilePhoto } from '@/lib/utils/profile'
+import { getBlockedUserIds } from '@/lib/safety'
 
 type ViewMode = 'grid' | 'map'
 
@@ -190,17 +191,22 @@ export default function AppPage() {
 
   const fetchUsers = async (currentUserId: string) => {
     const supabase = createClient()
+
+    // Get blocked user IDs first
+    const blockedUserIds = await getBlockedUserIds()
+    console.log('🚫 Blocked users:', blockedUserIds.length)
+
     const { data, error } = await supabase
       .from('profiles')
       .select('id, display_name, photo_url, photos, is_online, dtfn, party_friendly, latitude, longitude, founder_number')
       .not('latitude', 'is', null)
       .not('longitude', 'is', null)
-    
+
     if (error) {
       console.error('Error fetching users:', error)
       return
     }
-    
+
     const { data: favoritesRows } = await supabase
       .from('favorites')
       .select('favorited_user_id')
@@ -211,23 +217,25 @@ export default function AppPage() {
       if (row?.favorited_user_id) favoriteIds.add(row.favorited_user_id)
     }
 
-    // Mark current user
-    const usersWithYou = (data || []).map(user => ({
-      ...user,
-      online: user.is_online ?? null,
-      photos: Array.isArray(user.photos) ? user.photos.filter(Boolean) : undefined,
-      isYou: user.id === currentUserId,
-      isFavorited: favoriteIds.has(user.id)
-    }))
-    
-    console.log('📊 Fetched users:', usersWithYou.length)
+    // Filter out blocked users and mark current user
+    const usersWithYou = (data || [])
+      .filter(user => !blockedUserIds.includes(user.id)) // FILTER OUT BLOCKED USERS
+      .map(user => ({
+        ...user,
+        online: user.is_online ?? null,
+        photos: Array.isArray(user.photos) ? user.photos.filter(Boolean) : undefined,
+        isYou: user.id === currentUserId,
+        isFavorited: favoriteIds.has(user.id)
+      }))
+
+    console.log('📊 Fetched users (after filtering blocked):', usersWithYou.length)
     const currentUser = usersWithYou.find(u => u.id === currentUserId)
-    console.log('👤 Current user location:', currentUser ? 
-      `lat: ${currentUser.latitude}, lng: ${currentUser.longitude}` : 
+    console.log('👤 Current user location:', currentUser ?
+      `lat: ${currentUser.latitude}, lng: ${currentUser.longitude}` :
       'NOT FOUND')
-    
+
     setUsers(usersWithYou)
-    
+
     // Auto-set map center to current user's location
     if (currentUser?.latitude && currentUser?.longitude && !mapCenter) {
       console.log('🎯 Setting map center to:', currentUser.longitude, currentUser.latitude)

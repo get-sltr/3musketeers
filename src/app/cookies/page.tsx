@@ -60,8 +60,8 @@ export default function CookiePolicyPage() {
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">1.3 Analytics Cookies (Performance & Improvement)</h3>
               <p className="mb-4">These cookies help us understand how you use SLTR so we can improve:</p>
               <ul className="list-disc list-inside ml-4 space-y-2">
-                <li><strong>Vercel Analytics:</strong> Track page views, load times, and performance metrics</li>
-                <li><strong>Sentry:</strong> Monitor errors and crashes to improve stability</li>
+                <li><strong>Performance Monitoring:</strong> Track page views, load times, and performance metrics</li>
+                <li><strong>Error Detection:</strong> Monitor errors and crashes to improve stability</li>
                 <li><strong>Usage Analytics:</strong> Track which features are most used, user flows, and engagement patterns</li>
               </ul>
               <p className="mt-2 text-sm italic">These cookies collect aggregated, anonymized data and do not identify you personally.</p>
@@ -125,34 +125,33 @@ export default function CookiePolicyPage() {
             <section>
               <h2 className="text-2xl font-bold text-white mb-4">3. Third-Party Cookies</h2>
               <p className="mb-4">
-                Some cookies are set by third-party services we use to provide and improve SLTR. These services may collect information according to their own privacy policies:
+                SLTR uses top-tier, industry-certified service providers to deliver secure and reliable experiences. These providers may set cookies according to their own privacy policies:
               </p>
 
               <div className="space-y-4">
                 <div className="glass-bubble p-4 bg-white/5 border border-white/10">
-                  <h3 className="text-lg font-semibold text-cyan-400 mb-2">Vercel Analytics</h3>
-                  <p className="text-sm mb-2">Tracks page views, performance, and Web Vitals</p>
-                  <a href="https://vercel.com/docs/analytics/privacy-policy" className="text-cyan-400 hover:text-cyan-300 text-sm underline">Privacy Policy</a>
+                  <h3 className="text-lg font-semibold text-cyan-400 mb-2">Performance Analytics</h3>
+                  <p className="text-sm mb-2">Enterprise-grade monitoring for page views, performance metrics, and Web Vitals to ensure optimal experience</p>
                 </div>
 
                 <div className="glass-bubble p-4 bg-white/5 border border-white/10">
-                  <h3 className="text-lg font-semibold text-cyan-400 mb-2">Sentry</h3>
-                  <p className="text-sm mb-2">Error monitoring and performance tracking</p>
-                  <a href="https://sentry.io/privacy/" className="text-cyan-400 hover:text-cyan-300 text-sm underline">Privacy Policy</a>
+                  <h3 className="text-lg font-semibold text-cyan-400 mb-2">Error Monitoring</h3>
+                  <p className="text-sm mb-2">Industry-leading error detection and performance tracking to maintain platform stability</p>
                 </div>
 
                 <div className="glass-bubble p-4 bg-white/5 border border-white/10">
-                  <h3 className="text-lg font-semibold text-cyan-400 mb-2">Stripe</h3>
-                  <p className="text-sm mb-2">Payment processing (sets cookies during checkout)</p>
-                  <a href="https://stripe.com/privacy" className="text-cyan-400 hover:text-cyan-300 text-sm underline">Privacy Policy</a>
+                  <h3 className="text-lg font-semibold text-cyan-400 mb-2">Payment Processing</h3>
+                  <p className="text-sm mb-2">PCI-DSS certified payment processors set secure cookies during checkout to protect your transactions</p>
                 </div>
 
                 <div className="glass-bubble p-4 bg-white/5 border border-white/10">
-                  <h3 className="text-lg font-semibold text-cyan-400 mb-2">Mapbox</h3>
-                  <p className="text-sm mb-2">Map visualization and geolocation services</p>
-                  <a href="https://www.mapbox.com/legal/privacy" className="text-cyan-400 hover:text-cyan-300 text-sm underline">Privacy Policy</a>
+                  <h3 className="text-lg font-semibold text-cyan-400 mb-2">Location Services</h3>
+                  <p className="text-sm mb-2">Trusted geolocation and mapping providers for accurate location-based features</p>
                 </div>
               </div>
+              <p className="mt-4 text-sm text-white/60">
+                We partner with top-tier, industrial-level certified providers to ensure your security and privacy are our top priority. All third-party services align with current industry standards and best practices.
+              </p>
             </section>
 
             {/* Section 4 */}
