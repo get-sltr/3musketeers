@@ -55,6 +55,32 @@ These files should auto-open when you open the project:
 
 ## 📅 SESSION LOGS
 
+### Monday, November 11, 2025 (Map Atmosphere & Style Refresh)
+**Session Start:** Monday, November 11, 2025 (Evening – SLTR Map Night Mode)
+
+**Completed:**
+- [x] **SLTR Nightlite Map Style Integration** – Defaulted Mapbox to our Studio-crafted night style (`mapbox://styles/sltr/cmhum4i1k001x01rlasmoccvm`) with environment overrides and updated session menu options.
+  - **Result:** Every map view now launches with the bespoke SLTR visual identity while still allowing fallback styles.
+- [x] **Atmospheric Enhancements** – Added custom fog, ambient lighting, and a dusk sky layer; tuned 3D buildings and road illumination to a soft white palette.
+  - **Result:** Map reads as cinematic night scene without overpowering neon, harmonizing with existing holographic pins.
+- [x] **Heatmap & Venue Restyle** – Swapped density gradient to cool white/blue, refreshed Foursquare venue markers to glassy beacons, and ensured toggles reuse geo-filtered data.
+  - **Result:** Nightlife hotspots glow subtly, complementing avatar pins and the new base style.
+- [x] **Radius & Relocation Flow Polishing** – Debounced Supabase RPC calls on radius changes and refreshed map center instantly after relocation.
+  - **Result:** Smoother UX with server-side geo filtering, no flashing or redundant fetches.
+- [x] **Env Template Update** – Documented Mapbox token + style env vars for local/Vercel parity.
+
+**Files Created/Modified:**
+- `frontend-env-template.txt` (Mapbox env entries)
+- `src/app/components/maps/MapboxUsers.tsx` (style resolution, atmosphere, heatmap palette)
+- `src/app/components/MapSessionMenu.tsx` (SLTR style option)
+- `src/app/components/maps/VenueMarker.tsx` (new beacon visuals)
+- `src/app/app/page.tsx` (default style constant, distance threading)
+
+**Notes:**
+- Fog/sky layers currently apply regardless of `holoTheme`; adjust if we introduce day modes.
+- `<img>` usage in hover tooltips remains (low priority).
+- Next steps: avatar pin refactor to match softer palette, animated clustering, performance telemetry.
+
 ### Saturday, November 9, 2025 (Session 2)
 **Session Start:** Saturday, November 9, 2025 Evening (Critical Pre-Launch Fixes)
 

@@ -6,7 +6,7 @@ interface User {
   id: string;
   display_name: string;
   avatar_url: string | null;
-  age: number;
+  age: number | null;
   position: string;
   dtfn: boolean;
   party_friendly: boolean;
@@ -71,7 +71,7 @@ export const MapPin: React.FC<MapPinProps> = ({
       <div className={`horizontal-drawer compact ${isHovered ? 'visible' : ''}`}>
         <div className="drawer-compact-info">
           <div className="compact-line">
-            {user.age}, {user.position}, {user.distance || 'Nearby'}
+            {user.age ?? '—'}, {user.position}, {user.distance || 'Nearby'}
           </div>
           <div className="compact-line">
             {user.dtfn && <span>⚡️</span>}

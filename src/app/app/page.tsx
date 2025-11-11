@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, Suspense } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from 'react'
 import { createClient } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import MobileLayout from '../../components/MobileLayout'
@@ -23,7 +23,6 @@ import WelcomeModal from '../../components/WelcomeModal'
 import '../../styles/mobile-optimization.css'
 import { useSocket } from '../../hooks/useSocket'
 import { resolveProfilePhoto } from '@/lib/utils/profile'
-import { getBlockedUserIds } from '@/lib/safety'
 
 type ViewMode = 'grid' | 'map'
 
@@ -50,7 +49,20 @@ interface UserWithLocation {
   body_type?: string
   ethnicity?: string
   online?: boolean
+  distance_miles?: number | null
+  distance_label?: string
+  incognito_mode?: boolean
 }
+
+const formatDistance = (miles?: number | null) => {
+  if (miles == null) return undefined
+  if (miles < 0.1) return '<0.1 mi'
+  if (miles < 10) return `${miles.toFixed(1)} mi`
+  return `${Math.round(miles)} mi`
+}
+
+const DEFAULT_SLTR_STYLE =
+  process.env.NEXT_PUBLIC_MAPBOX_SLTR_STYLE || 'mapbox://styles/sltr/cmhum4i1k001x01rlasmoccvm'
 
 export default function AppPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
@@ -66,10 +78,14 @@ export default function AppPage() {
   const [isRelocating, setIsRelocating] = useState(false)
   const [mapCenter, setMapCenter] = useState<[number, number] | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [currentOrigin, setCurrentOrigin] = useState<[number, number] | null>(null)
+  const [isFetching, setIsFetching] = useState(false)
+  const fetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Map session UI state
   const [radiusMiles, setRadiusMiles] = useState<number>(25)
+  const previousRadiusRef = useRef<number>(radiusMiles)
   const [clusterRadius, setClusterRadius] = useState<number>(60)
-  const [styleId, setStyleId] = useState<string>('dark-v11')
+  const [styleId, setStyleId] = useState<string>(DEFAULT_SLTR_STYLE)
   const [menuFilters, setMenuFilters] = useState({ online: false, hosting: false, looking: false })
   const [clusterEnabled, setClusterEnabled] = useState<boolean>(false)
   const [jitterMeters, setJitterMeters] = useState<number>(0)
@@ -134,6 +150,78 @@ export default function AppPage() {
     return () => window.removeEventListener('resize', updateBreakpoint)
   }, [])
 
+  const fetchUsers = useCallback(async (userId: string, origin: [number, number], options: { immediate?: boolean } = {}) => {
+    const supabase = createClient()
+    setIsFetching(true)
+    setCurrentOrigin(origin)
+
+    try {
+      const { data, error } = await supabase.rpc('get_nearby_profiles', {
+        p_user_id: userId,
+        p_origin_lat: origin[1],
+        p_origin_lon: origin[0],
+        p_radius_miles: radiusMiles,
+      })
+
+      if (error) {
+        console.error('Error fetching nearby profiles:', error)
+        return
+      }
+
+      const { data: favoritesRows } = await supabase
+        .from('favorites')
+        .select('favorited_user_id')
+        .eq('user_id', userId)
+
+      const favoriteIds = new Set<string>()
+      for (const row of favoritesRows || []) {
+        if (row?.favorited_user_id) {
+          favoriteIds.add(row.favorited_user_id)
+        }
+      }
+
+      const mappedUsers: UserWithLocation[] = (data || []).map((profile: any) => {
+        const photos = Array.isArray(profile?.photos) ? profile.photos.filter(Boolean) : undefined
+
+        return {
+          id: profile.id,
+          display_name: profile.display_name || 'Anonymous',
+          latitude: profile.latitude ?? undefined,
+          longitude: profile.longitude ?? undefined,
+          isYou: !!profile.is_self,
+          isFavorited: favoriteIds.has(profile.id),
+          dtfn: profile.dtfn ?? false,
+          party_friendly: profile.party_friendly ?? false,
+          photo_url: profile.photo_url ?? undefined,
+          photos,
+          is_online: profile.is_online ?? null,
+          founder_number: profile.founder_number ?? null,
+          about: profile.about ?? undefined,
+          kinks: Array.isArray(profile.kinks) ? profile.kinks : undefined,
+          tags: Array.isArray(profile.tags) ? profile.tags : undefined,
+          position: profile.position ?? undefined,
+          age: profile.age ?? undefined,
+          online: profile.is_online ?? null,
+          distance_miles: profile.distance_miles ?? null,
+          distance_label: profile.is_self ? 'You' : formatDistance(profile.distance_miles),
+          incognito_mode: profile.incognito_mode ?? false,
+        }
+      })
+
+      setUsers(mappedUsers)
+
+      // Auto-center on origin when we first load or explicitly requested
+      if ((options.immediate || !mapCenter) && origin) {
+        setMapCenter(origin)
+      }
+    } finally {
+      setIsFetching(false)
+      if (loading) {
+        setLoading(false)
+      }
+    }
+  }, [radiusMiles, mapCenter, loading])
+
   useEffect(() => {
     const checkAuth = async () => {
       const supabase = createClient()
@@ -151,21 +239,24 @@ export default function AppPage() {
         .eq('id', session.user.id)
         .single()
 
+      let originLat = profile?.latitude ?? null
+      let originLon = profile?.longitude ?? null
+
       // If no location, request it and save BEFORE showing page
-      if (!profile?.latitude || !profile?.longitude) {
+      if (!originLat || !originLon) {
         console.log('📍 No location found, requesting permission...')
         if (navigator.geolocation) {
-          // Use a promise to wait for location permission response
           await new Promise<void>((resolve) => {
             navigator.geolocation.getCurrentPosition(
               async (position) => {
                 console.log('✅ Location granted:', position.coords.latitude, position.coords.longitude)
-                // Save to database
+                originLat = position.coords.latitude
+                originLon = position.coords.longitude
                 await supabase
                   .from('profiles')
                   .update({
-                    latitude: position.coords.latitude,
-                    longitude: position.coords.longitude
+                    latitude: originLat,
+                    longitude: originLon
                   })
                   .eq('id', session.user.id)
                 resolve()
@@ -180,70 +271,37 @@ export default function AppPage() {
         }
       }
 
-      // Fetch users with location data (including yourself)
-      await fetchUsers(session.user.id)
       setCurrentUserId(session.user.id)
-      setLoading(false)
+
+      if (originLat != null && originLon != null) {
+        const origin: [number, number] = [originLon, originLat]
+        await fetchUsers(session.user.id, origin, { immediate: true })
+      } else {
+        setLoading(false)
+      }
     }
     checkAuth()
-  }, [router])
+  }, [router, fetchUsers])
 
+  // Re-fetch when radius changes (debounced to avoid rapid slider spam)
+  useEffect(() => {
+    if (previousRadiusRef.current === radiusMiles) return
+    previousRadiusRef.current = radiusMiles
 
-  const fetchUsers = async (currentUserId: string) => {
-    const supabase = createClient()
-
-    // Get blocked user IDs first
-    const blockedUserIds = await getBlockedUserIds()
-    console.log('🚫 Blocked users:', blockedUserIds.length)
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, display_name, photo_url, photos, is_online, dtfn, party_friendly, latitude, longitude, founder_number')
-      .not('latitude', 'is', null)
-      .not('longitude', 'is', null)
-
-    if (error) {
-      console.error('Error fetching users:', error)
-      return
+    if (!currentUserId || !currentOrigin) return
+    if (fetchTimeoutRef.current) {
+      clearTimeout(fetchTimeoutRef.current)
     }
+    fetchTimeoutRef.current = setTimeout(() => {
+      fetchUsers(currentUserId, currentOrigin)
+    }, 350)
 
-    const { data: favoritesRows } = await supabase
-      .from('favorites')
-      .select('favorited_user_id')
-      .eq('user_id', currentUserId)
-
-    const favoriteIds = new Set<string>()
-    for (const row of favoritesRows || []) {
-      if (row?.favorited_user_id) favoriteIds.add(row.favorited_user_id)
+    return () => {
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current)
+      }
     }
-
-    // Filter out blocked users and mark current user
-    const usersWithYou = (data || [])
-      .filter(user => !blockedUserIds.includes(user.id)) // FILTER OUT BLOCKED USERS
-      .map(user => ({
-        ...user,
-        online: user.is_online ?? null,
-        photos: Array.isArray(user.photos) ? user.photos.filter(Boolean) : undefined,
-        isYou: user.id === currentUserId,
-        isFavorited: favoriteIds.has(user.id)
-      }))
-
-    console.log('📊 Fetched users (after filtering blocked):', usersWithYou.length)
-    const currentUser = usersWithYou.find(u => u.id === currentUserId)
-    console.log('👤 Current user location:', currentUser ?
-      `lat: ${currentUser.latitude}, lng: ${currentUser.longitude}` :
-      'NOT FOUND')
-
-    setUsers(usersWithYou)
-
-    // Auto-set map center to current user's location
-    if (currentUser?.latitude && currentUser?.longitude && !mapCenter) {
-      console.log('🎯 Setting map center to:', currentUser.longitude, currentUser.latitude)
-      setMapCenter([currentUser.longitude, currentUser.latitude])
-    } else {
-      console.warn('⚠️ Cannot center map - missing location data')
-    }
-  }
+  }, [radiusMiles, currentUserId, currentOrigin, fetchUsers])
 
   // Real-time presence updates: keep users[] in sync with socket events
   useEffect(() => {
@@ -492,27 +550,14 @@ export default function AppPage() {
       .update({ latitude: lat, longitude: lng })
       .eq('id', user.id)
 
+    const origin: [number, number] = [lng, lat]
     setIsRelocating(false)
-    // Refresh users
-    await fetchUsers(user.id)
+    await fetchUsers(user.id, origin, { immediate: true })
   }
 
   // Compute map users once per render BEFORE any early return
   const mapUsers = useMemo(() => {
-    const center = mapCenter
-    const inRadius = (lat?: number, lon?: number) => {
-      if (!center || lat == null || lon == null) return true
-      const [centerLon, centerLat] = center
-      const R = 3959
-      const dLat = ((lat - centerLat) * Math.PI) / 180
-      const dLon = ((lon - centerLon) * Math.PI) / 180
-      const a = Math.sin(dLat / 2) ** 2 + Math.cos(centerLat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) * Math.sin(dLon / 2) ** 2
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-      const dist = R * c
-      return dist <= radiusMiles
-    }
     return users
-      .filter(u => inRadius(u.latitude, u.longitude))
       .filter(u => (menuFilters.online ? !!(u.is_online ?? u.online) : true))
       .filter(u => (menuFilters.hosting ? !!u.party_friendly : true))
       .filter(u => (menuFilters.looking ? !!u.dtfn : true))
@@ -530,9 +575,10 @@ export default function AppPage() {
         party_friendly: u.party_friendly,
         age: u.age,
         position: u.position,
-        distance: u.isYou ? 'You' : undefined
+        distance: u.distance_label ?? formatDistance(u.distance_miles),
+        distanceValue: u.distance_miles ?? undefined,
       }))
-  }, [users, mapCenter, radiusMiles, menuFilters])
+  }, [users, menuFilters])
 
   if (loading) {
     return (
@@ -580,7 +626,8 @@ export default function AppPage() {
                 party_friendly: u.party_friendly,
                 age: u.age,
                 position: u.position,
-                distance: u.distance
+                distance: u.distance,
+                distanceValue: u.distanceValue,
               }))}
               advancedPins={false}
               autoLoad={false}

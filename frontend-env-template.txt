@@ -5,6 +5,10 @@
 NEXT_PUBLIC_SUPABASE_URL=https://bnzyzkmixfmylviaojbj.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJuenl6a21peGZteWx2aWFvamJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0NDE3ODksImV4cCI6MjA3NTAxNzc4OX0.8WHWwe9ow_nTljMvwVUI70i07pmNBh2mR0yo80EsGMs
 
+# Mapbox Styles
+NEXT_PUBLIC_MAPBOX_TOKEN=your_mapbox_access_token_here
+NEXT_PUBLIC_MAPBOX_SLTR_STYLE=mapbox://styles/sltr/cmhum4i1k001x01rlasmoccvm
+
 # Application URLs
 NEXT_PUBLIC_FRONTEND_URL=https://getsltr.com
 NEXT_PUBLIC_BACKEND_URL=https://sltr-backend.railway.app
@@ -12,9 +16,6 @@ NEXT_PUBLIC_BACKEND_URL=https://sltr-backend.railway.app
 # Development URLs (for local development)
 NEXT_PUBLIC_DEV_FRONTEND_URL=http://localhost:3000
 NEXT_PUBLIC_DEV_BACKEND_URL=http://localhost:3001
-
-# Mapbox Configuration (if using)
-NEXT_PUBLIC_MAPBOX_TOKEN=your_mapbox_token_here
 
 # Analytics
 NEXT_PUBLIC_VERCEL_ANALYTICS_ID=your_analytics_id

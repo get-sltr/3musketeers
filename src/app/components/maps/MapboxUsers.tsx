@@ -24,6 +24,22 @@ if (!MAPBOX_TOKEN) {
 
 mapboxgl.accessToken = MAPBOX_TOKEN || ''
 
+const DEFAULT_SLTR_STYLE =
+  process.env.NEXT_PUBLIC_MAPBOX_SLTR_STYLE || 'mapbox://styles/sltr/cmhum4i1k001x01rlasmoccvm'
+
+const resolveStyleUrl = (style: string | undefined) => {
+  if (!style || style.trim().length === 0) {
+    return DEFAULT_SLTR_STYLE
+  }
+  if (style.startsWith('mapbox://')) {
+    return style
+  }
+  if (style.includes('/')) {
+    return `mapbox://styles/${style}`
+  }
+  return `mapbox://styles/mapbox/${style}`
+}
+
 type UserPin = {
   id: string
   latitude: number
@@ -38,6 +54,7 @@ type UserPin = {
   position?: string
   age?: number
   distance?: string
+  distanceValue?: number
 }
 
 interface MapboxUsersProps {
@@ -93,7 +110,7 @@ export default function MapboxUsers({
   maxZoom = 18,
   incognito = false,
   cluster = true,
-  styleId = 'dark-v11',
+  styleId = DEFAULT_SLTR_STYLE,
   clusterRadius = 60,
   jitterMeters = 0,
   vanillaMode = false,
@@ -145,7 +162,7 @@ export default function MapboxUsers({
     initialCenterPromise.then((resolvedCenter) => {
       mapRef.current = new mapboxgl.Map({
         container: containerRef.current as HTMLDivElement,
-        style: `mapbox://styles/mapbox/${styleId || 'dark-v11'}`,
+        style: resolveStyleUrl(styleId),
         center: resolvedCenter,
         zoom,
         minZoom,
@@ -175,10 +192,8 @@ export default function MapboxUsers({
       // Wait for map to fully load before allowing markers
       mapRef.current.on('load', () => {
         setMapLoaded(true)
-        // Apply neon/glass theme
-        if (holoTheme) {
-          try { applyNeonTheme(mapRef.current!) } catch {}
-        }
+        // Apply SLTR night theme (atmosphere + lighting)
+        try { applyNightTheme(mapRef.current!) } catch {}
         // Always try to use advanced HoloPinsLayer when WebGL is supported
         if (useAdvanced) {
           // Check if layer already exists, remove it first
@@ -472,16 +487,19 @@ export default function MapboxUsers({
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return
     try {
-      const newStyle = `mapbox://styles/mapbox/${styleId}`
-      if ((mapRef.current as any).getStyle?.().sprite?.includes(styleId)) return
+      const newStyle = resolveStyleUrl(styleId)
+      const styleToken = newStyle.split('/').pop() || newStyle
+      const currentSprite = (mapRef.current as any).getStyle?.().sprite as string | undefined
+      if (currentSprite && currentSprite.includes(styleToken)) return
+
       mapRef.current.setStyle(newStyle)
-      if (holoTheme) {
-        // Re-apply theme once the new style is ready
-        mapRef.current.once('styledata', () => {
-          try { applyNeonTheme(mapRef.current!) } catch {}
-        })
-      }
-    } catch {}
+      // Re-apply theme once the new style is ready
+      mapRef.current.once('styledata', () => {
+        try { applyNightTheme(mapRef.current!) } catch {}
+      })
+    } catch (err) {
+      console.warn('Failed to switch map style', err)
+    }
   }, [styleId, mapLoaded, holoTheme])
 
   const addMarker = (u: UserPin) => {
@@ -722,28 +740,27 @@ export default function MapboxUsers({
             0, 1,
             15, 3
           ],
-          // Color ramp from cyan to magenta to yellow
+          // Cool white-blue gradient to match night palette
           'heatmap-color': [
             'interpolate',
             ['linear'],
             ['heatmap-density'],
-            0, 'rgba(0, 0, 255, 0)',
-            0.2, 'rgb(0, 212, 255)',
-            0.4, 'rgb(147, 51, 234)',
-            0.6, 'rgb(255, 0, 255)',
-            0.8, 'rgb(255, 105, 180)',
-            1, 'rgb(255, 215, 0)'
+            0, 'rgba(255, 255, 255, 0)',
+            0.2, 'rgba(210, 224, 255, 0.25)',
+            0.5, 'rgba(168, 191, 255, 0.55)',
+            0.8, 'rgba(135, 167, 255, 0.75)',
+            1, 'rgba(255, 255, 255, 0.85)'
           ],
           // Radius of each heatmap point
           'heatmap-radius': [
             'interpolate',
             ['linear'],
             ['zoom'],
-            0, 20,
-            15, 40
+            0, 18,
+            15, 42
           ],
           // Opacity
-          'heatmap-opacity': 0.7
+          'heatmap-opacity': 0.6
         }
       }, 'waterway-label') // Place below labels
     } else {
@@ -824,59 +841,68 @@ export default function MapboxUsers({
   )
 }
 
-function applyNeonTheme(map: mapboxgl.Map) {
-  // Atmosphere/fog
+function applyNightTheme(map: mapboxgl.Map) {
+  // Atmosphere / fog
   try {
     (map as any).setFog?.({
-      range: [0.5, 10],
-      color: 'rgba(0, 10, 20, 0.6)',
-      'horizon-blend': 0.2,
-      'high-color': 'rgba(0, 212, 255, 0.2)',
-      'space-color': 'rgb(2, 4, 8)',
-      'star-intensity': 0.3,
+      range: [0.6, 8],
+      color: 'rgba(7, 11, 22, 0.7)',
+      'horizon-blend': 0.25,
+      'high-color': 'rgba(90, 110, 160, 0.25)',
+      'space-color': '#04060d',
+      'star-intensity': 0.22,
     })
   } catch {}
 
-  // Light
-  try { (map as any).setLight?.({ anchor: 'viewport', color: '#0dd', intensity: 0.4 }) } catch {}
+  // Ambient light
+  try {
+    (map as any).setLight?.({
+      anchor: 'viewport',
+      color: '#f5f7ff',
+      intensity: 0.32,
+    })
+  } catch {}
 
-  // Sky
-  if (!map.getLayer('sky')) {
+  // Subtle night sky
+  if (!map.getLayer('sltr-sky')) {
     try {
       map.addLayer({
-        id: 'sky',
+        id: 'sltr-sky',
         type: 'sky',
         paint: {
           'sky-type': 'atmosphere',
-          'sky-atmosphere-sun-intensity': 15,
-          'sky-atmosphere-halo-color': '#00d4ff',
-          'sky-atmosphere-color': '#02060a',
+          'sky-atmosphere-sun-intensity': 12,
+          'sky-atmosphere-halo-color': '#9cb8ff',
+          'sky-atmosphere-color': '#0b1224',
         },
       })
     } catch {}
   }
 
-  // 3D buildings
+  // 3D buildings soft tint
   try {
     const layers = map.getStyle().layers || []
     let labelLayerId: string | undefined
     for (const layer of layers) {
-      if (layer.type === 'symbol' && (layer.layout as any)['text-field']) { labelLayerId = layer.id; break }
+      if (layer.type === 'symbol' && (layer.layout as any)['text-field']) {
+        labelLayerId = layer.id
+        break
+      }
     }
-    if (!map.getLayer('3d-buildings')) {
+    if (!map.getLayer('sltr-3d-buildings')) {
       map.addLayer(
         {
-          id: '3d-buildings',
+          id: 'sltr-3d-buildings',
           source: 'composite',
           'source-layer': 'building',
           filter: ['==', ['get', 'extrude'], 'true'],
           type: 'fill-extrusion',
           minzoom: 14,
           paint: {
-            'fill-extrusion-color': '#0a2a33',
-            'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 14, 0, 16, ['get', 'height']],
-            'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 14, 0, 16, ['get', 'min_height']],
-            'fill-extrusion-opacity': 0.6,
+            'fill-extrusion-color': '#1c2438',
+            'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 14, 0, 16.5, ['get', 'height']],
+            'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 14, 0, 16.5, ['get', 'min_height']],
+            'fill-extrusion-opacity': 0.65,
           },
         },
         labelLayerId
@@ -884,17 +910,32 @@ function applyNeonTheme(map: mapboxgl.Map) {
     }
   } catch {}
 
-  // Water/road accent (best-effort, check layer exists)
+  // Water + road refinements (best effort)
   try {
-    const waterExists = !!map.getLayer('water')
-    if (waterExists) map.setPaintProperty('water', 'fill-color', '#05222a')
+    if (map.getLayer('water')) {
+      map.setPaintProperty('water', 'fill-color', '#0c1525')
+    }
   } catch {}
+
   try {
     const roadLayers = (map.getStyle().layers || [])
       .filter(l => l.type === 'line' && (l.id.includes('road') || l.id.includes('street')))
       .map(l => l.id)
     roadLayers.forEach(id => {
-      try { map.setPaintProperty(id, 'line-color', '#0dd') } catch {}
+      try {
+        map.setPaintProperty(id, 'line-color', 'rgba(235, 241, 255, 0.9)')
+        if (map.getPaintProperty(id, 'line-width') !== undefined) {
+          map.setPaintProperty(id, 'line-width', [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10,
+            0.6,
+            16,
+            2.2,
+          ])
+        }
+      } catch {}
     })
   } catch {}
 }

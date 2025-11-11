@@ -19,16 +19,16 @@ export function VenueMarker({ name, type, address, onClick }: VenueMarkerProps) 
     }
   }
 
-  const getColor = () => {
+  const getAccent = () => {
     switch (type) {
       case 'bar':
-        return 'rgba(255, 0, 255, 0.9)' // Magenta
+        return 'rgba(200, 210, 255, 0.65)'
       case 'club':
-        return 'rgba(147, 51, 234, 0.9)' // Purple
+        return 'rgba(180, 205, 255, 0.65)'
       case 'sauna':
-        return 'rgba(0, 212, 255, 0.9)' // Cyan
+        return 'rgba(155, 210, 235, 0.65)'
       case 'restaurant':
-        return 'rgba(255, 105, 180, 0.9)' // Pink
+        return 'rgba(240, 215, 255, 0.65)'
     }
   }
 
@@ -40,9 +40,9 @@ export function VenueMarker({ name, type, address, onClick }: VenueMarkerProps) 
         width: '40px',
         height: '40px',
         borderRadius: '50%',
-        background: getColor(),
-        border: '3px solid rgba(255, 255, 255, 0.9)',
-        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 0, 255, 0.5)',
+        background: `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.92), ${getAccent()})`,
+        border: '2px solid rgba(255, 255, 255, 0.65)',
+        boxShadow: '0 6px 24px rgba(5, 10, 20, 0.45), 0 0 18px rgba(220, 235, 255, 0.45)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -91,17 +91,20 @@ export function createVenueMarker(
     }
   }
 
-  const getColor = () => {
+  const getAccent = () => {
     switch (type) {
-      case 'bar': return 'rgba(255, 0, 255, 0.9)'
-      case 'club': return 'rgba(147, 51, 234, 0.9)'
-      case 'sauna': return 'rgba(0, 212, 255, 0.9)'
-      case 'restaurant': return 'rgba(255, 105, 180, 0.9)'
+      case 'bar': return 'rgba(200, 210, 255, 0.65)'
+      case 'club': return 'rgba(180, 205, 255, 0.65)'
+      case 'sauna': return 'rgba(155, 210, 235, 0.65)'
+      case 'restaurant': return 'rgba(240, 215, 255, 0.65)'
     }
   }
 
-  el.style.background = getColor()
+  el.style.background = `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.92), ${getAccent()})`
   el.textContent = getIcon()
+  el.style.border = '2px solid rgba(255, 255, 255, 0.65)'
+  el.style.boxShadow = '0 6px 24px rgba(5, 10, 20, 0.45), 0 0 18px rgba(220, 235, 255, 0.45)'
+  el.style.backdropFilter = 'blur(6px)'
 
   el.addEventListener('mouseenter', () => {
     el.style.transform = 'scale(1.2)'

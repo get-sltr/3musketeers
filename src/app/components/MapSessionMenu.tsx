@@ -3,6 +3,9 @@
 import { useState } from "react"
 import { useTranslations } from 'next-intl'
 
+const SLTR_STYLE_ID =
+  process.env.NEXT_PUBLIC_MAPBOX_SLTR_STYLE || 'mapbox://styles/sltr/cmhum4i1k001x01rlasmoccvm'
+
 interface MapSessionMenuProps {
   radiusMiles: number
   setRadiusMiles: (n: number) => void
@@ -137,6 +140,7 @@ export default function MapSessionMenu({
             </div>
             <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
               {[
+                { id: SLTR_STYLE_ID, label: 'SLTR' },
                 { id: "dark-v11", label: t('dark') },
                 { id: "streets-v12", label: t('streets') },
                 { id: "satellite-streets-v12", label: t('satellite') },

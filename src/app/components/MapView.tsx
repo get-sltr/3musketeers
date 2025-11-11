@@ -8,7 +8,7 @@ interface User {
   id: string;
   display_name: string;
   avatar_url: string | null;
-  age: number;
+  age: number | null;
   position: string;
   dtfn: boolean;
   party_friendly: boolean;
