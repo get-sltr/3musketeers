@@ -144,27 +144,33 @@ export default function LegalHubPage() {
               <ul className="space-y-2 text-white/80 text-sm">
                 <li>
                   <strong>Legal Inquiries:</strong>{' '}
-                  <a href="mailto:legal@sltr.app" className="text-cyan-400 hover:underline">
-                    legal@sltr.app
+                  <a href="mailto:info@getsltr.com" className="text-cyan-400 hover:underline">
+                    info@getsltr.com
                   </a>
                 </li>
                 <li>
                   <strong>Privacy Requests:</strong>{' '}
-                  <a href="mailto:privacy@sltr.app" className="text-cyan-400 hover:underline">
-                    privacy@sltr.app
+                  <a href="mailto:support@getsltr.com" className="text-cyan-400 hover:underline">
+                    support@getsltr.com
                   </a>
                 </li>
                 <li>
                   <strong>DMCA Agent:</strong>{' '}
-                  <a href="mailto:dmca@sltr.app" className="text-cyan-400 hover:underline">
-                    dmca@sltr.app
+                  <a href="mailto:info@getsltr.com" className="text-cyan-400 hover:underline">
+                    info@getsltr.com
                   </a>
                 </li>
                 <li>
-                  <strong>Support:</strong>{' '}
-                  <Link href="/help" className="text-cyan-400 hover:underline">
-                    Visit Help Center
-                  </Link>
+                  <strong>Advertising & Partnerships:</strong>{' '}
+                  <a href="mailto:press@getsltr.com" className="text-cyan-400 hover:underline">
+                    press@getsltr.com
+                  </a>
+                </li>
+                <li>
+                  <strong>General Support:</strong>{' '}
+                  <a href="mailto:support@getsltr.com" className="text-cyan-400 hover:underline">
+                    support@getsltr.com
+                  </a>
                 </li>
               </ul>
             </div>
@@ -193,8 +199,8 @@ export default function LegalHubPage() {
         <div className="mt-12 text-center">
           <p className="text-white/40 text-sm">
             Questions about our policies? Reach out to us at{' '}
-            <a href="mailto:legal@sltr.app" className="text-cyan-400 hover:underline">
-              legal@sltr.app
+            <a href="mailto:info@getsltr.com" className="text-cyan-400 hover:underline">
+              info@getsltr.com
             </a>
           </p>
         </div>
