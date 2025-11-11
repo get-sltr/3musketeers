@@ -57,7 +57,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/dark-v11',
+      style: 'mapbox://styles/sltr/cmhum4i1k001x01rlasmoccvm',
       center,
       zoom,
       pitch: 0,

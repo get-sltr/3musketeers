@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import type { ReactNode } from 'react'
 import { createClient } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import AlbumsManager from '../../components/AlbumsManager'
+import { DEFAULT_PROFILE_IMAGE } from '@/lib/utils/profile'
 
 interface Album {
   id: string
@@ -49,6 +51,83 @@ export default function ProfilePage() {
   const POSITIONS = ['Top', 'Top/Vers', 'Vers', 'Btm/Vers', 'Bottom', 'Side']
   const KINKS_OPTIONS = ['BDSM', 'Fetish', 'Roleplay', 'Voyeurism', 'Exhibitionism', 'Group Sex', 'Anal', 'Oral', 'Toys', 'Leather', 'Bondage', 'Spanking', 'Domination', 'Submission', 'Edging', 'Public Play', 'Feet', 'Watersports', 'Rimming', 'Body Worship', 'Spit', 'Rough']
   const TAGS_OPTIONS = ['Adventurous', 'Chill', 'Direct', 'Curious', 'Beard', 'Jock', 'Bear', 'Rugged', 'Daddy', 'Pup', 'Twink', 'Otter', 'Wolf', 'Muscle', 'Fit', 'Discreet', 'Kinky', 'Vanilla', 'Wild', 'Gentleman', 'Playful', 'Passionate']
+
+  type SectionKey = 'identity' | 'interaction' | 'interests' | 'bio'
+
+  const [expandedSections, setExpandedSections] = useState<Record<SectionKey, boolean>>({
+    identity: true,
+    interaction: true,
+    interests: true,
+    bio: true
+  })
+
+  const toggleSection = (id: SectionKey) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }))
+  }
+
+  const Switch = ({ checked, onChange }: { checked: boolean; onChange: (value: boolean) => void }) => (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.preventDefault()
+        onChange(!checked)
+      }}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${checked ? 'bg-cyan-400/80' : 'bg-white/20'}`}
+    >
+      <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-300 ${checked ? 'translate-x-5' : 'translate-x-1'}`} />
+    </button>
+  )
+
+  const SectionCard = ({
+    id,
+    title,
+    description,
+    rightSlot,
+    children,
+  }: {
+    id: SectionKey
+    title: string
+    description?: string
+    rightSlot?: ReactNode
+    children: ReactNode
+  }) => {
+    const isOpen = expandedSections[id]
+    return (
+      <div className="glass-bubble p-0 overflow-hidden">
+        <button
+          type="button"
+          onClick={() => toggleSection(id)}
+          className="w-full flex items-center justify-between px-5 py-4 text-left text-white/80 hover:bg-white/5 transition-colors duration-300"
+        >
+          <div>
+            <h3 className="text-lg font-semibold text-white">{title}</h3>
+            {description && <p className="text-sm text-white/60 mt-0.5">{description}</p>}
+          </div>
+          <div className="flex items-center gap-3">
+            {rightSlot}
+            <svg
+              className={`w-5 h-5 text-white/60 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </button>
+        {isOpen && (
+          <div className="px-5 pb-5 pt-1 border-t border-white/10 space-y-5">
+            {children}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const primaryPhoto = profileData.photos[0] || DEFAULT_PROFILE_IMAGE
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -371,206 +450,274 @@ export default function ProfilePage() {
       </div>
 
       {/* Main Content */}
-      <div className="pt-20 p-4 max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Basic Info */}
-          <div className="lg:col-span-1 space-y-6">
-            <form onSubmit={handleSave} className="space-y-6">
-              {/* Display Name */}
-              <div className="glass-bubble p-4">
-                <label className="block text-white/80 text-sm font-medium mb-2">
-                  Display Name *
-                </label>
-                <input
-                  type="text"
-                  value={profileData.display_name}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, display_name: e.target.value }))}
-                  className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300"
-                  placeholder="Enter your display name"
-                  required
+      <div className="pt-20 pb-32 px-4">
+        <div className="max-w-6xl mx-auto grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <form onSubmit={handleSave} className="space-y-6">
+            <div className="glass-bubble p-6 relative overflow-hidden">
+              {primaryPhoto && (
+                <div
+                  className="absolute inset-0 bg-cover bg-center opacity-10 blur-3xl"
+                  style={{ backgroundImage: `url(${primaryPhoto})` }}
                 />
+              )}
+              <div className="relative z-10 flex flex-col sm:flex-row sm:items-start gap-4">
+                <div className="relative w-24 h-24 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border border-white/20 shadow-lg">
+                  <img
+                    src={primaryPhoto}
+                    alt={profileData.display_name || 'Profile photo'}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = DEFAULT_PROFILE_IMAGE
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="absolute bottom-1 right-1 glass-bubble px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em]"
+                  >
+                    Update
+                  </button>
+                </div>
+                <div className="flex-1 space-y-3">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h2 className="text-2xl font-bold text-white">{profileData.display_name || 'Unnamed'}</h2>
+                    {profileData.age && (
+                      <span className="px-3 py-1 rounded-full text-sm font-semibold bg-white/15 text-white/80">
+                        {profileData.age} yrs
+                      </span>
+                    )}
+                    {profileData.position && (
+                      <span className="px-3 py-1 rounded-full text-sm font-semibold bg-cyan-400/30 text-cyan-100">
+                        {profileData.position}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-white/70 text-sm leading-relaxed max-w-xl">
+                    {profileData.bio ? profileData.bio.split('\n')[0] : 'Add a headline to let members know your vibe.'}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {profileData.party_friendly && (
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-[0.2em] bg-white/15 text-white/80">
+                        🥳 Party Friendly
+                      </span>
+                    )}
+                    {profileData.dtfn && (
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-[0.2em] bg-white/15 text-white/80">
+                        ⚡ Ready Now
+                      </span>
+                    )}
+                    {profileData.tags.slice(0, 3).map((tag) => (
+                      <span key={tag} className="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-[0.2em] bg-white/10 text-white/60">
+                        {tag}
+                      </span>
+                    ))}
+                    {profileData.tags.length > 3 && (
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-[0.2em] bg-white/10 text-white/60">
+                        +{profileData.tags.length - 3}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
+            </div>
 
-              {/* Age */}
-              <div className="glass-bubble p-4">
-                <label className="block text-white/80 text-sm font-medium mb-2">
-                  Age *
-                </label>
-                <input
-                  type="number"
-                  value={profileData.age}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, age: e.target.value }))}
-                  className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300"
-                  placeholder="Enter your age"
-                  min="18"
-                  max="100"
-                  required
-                />
+            <SectionCard
+              id="identity"
+              title="Identity & Stats"
+              description="Shape what others learn about you."
+            >
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-white/60 mb-2">Display Name</label>
+                  <input
+                    type="text"
+                    value={profileData.display_name}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, display_name: e.target.value }))}
+                    className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                    placeholder="Choose your stage name"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-white/60 mb-2">Age</label>
+                  <input
+                    type="number"
+                    value={profileData.age}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, age: e.target.value }))}
+                    className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                    placeholder="Age"
+                    min={18}
+                    max={100}
+                    required
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-white/60 mb-2">Position</label>
+                  <div className="flex flex-wrap gap-2">
+                    {POSITIONS.map(pos => (
+                      <button
+                        key={pos}
+                        type="button"
+                        onClick={() => setProfileData(prev => ({ ...prev, position: pos }))}
+                        className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
+                          profileData.position === pos ? 'bg-cyan-400/30 text-cyan-100 shadow' : 'bg-white/10 text-white/60 hover:bg-white/20'
+                        }`}
+                      >
+                        {pos}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
+            </SectionCard>
 
-              {/* Bio */}
-              <div className="glass-bubble p-4">
-                <label className="block text-white/80 text-sm font-medium mb-2">
-                  Bio
-                </label>
+            <SectionCard
+              id="interaction"
+              title="Energy & Interaction"
+              description="Signal how you like to connect."
+            >
+              <div className="space-y-4">
+                <div className="flex items-center justify-between rounded-2xl bg-white/5 px-4 py-3 border border-white/10">
+                  <div>
+                    <p className="text-white font-medium">Party Friendly</p>
+                    <p className="text-white/60 text-sm">Let others know you’re open to host or hit the scene.</p>
+                  </div>
+                  <Switch
+                    checked={profileData.party_friendly}
+                    onChange={(checked) => setProfileData(prev => ({ ...prev, party_friendly: checked }))}
+                  />
+                </div>
+                <div className="flex items-center justify-between rounded-2xl bg-white/5 px-4 py-3 border border-white/10">
+                  <div>
+                    <p className="text-white font-medium">DTFN ⚡</p>
+                    <p className="text-white/60 text-sm">Show up in the “ready now” radar.</p>
+                  </div>
+                  <Switch
+                    checked={profileData.dtfn}
+                    onChange={(checked) => setProfileData(prev => ({ ...prev, dtfn: checked }))}
+                  />
+                </div>
+              </div>
+            </SectionCard>
+
+            <SectionCard
+              id="interests"
+              title="Kinks & Interests"
+              description="Curate your vibe with quick taps."
+            >
+              <div className="space-y-4">
+                <div>
+                  <p className="text-white/70 text-sm mb-2 uppercase tracking-[0.2em]">Kinks</p>
+                  <div className="flex flex-wrap gap-2">
+                    {KINKS_OPTIONS.map(kink => {
+                      const active = profileData.kinks.includes(kink)
+                      return (
+                        <button
+                          key={kink}
+                          type="button"
+                          onClick={() =>
+                            setProfileData(prev => ({
+                              ...prev,
+                              kinks: active
+                                ? prev.kinks.filter(k => k !== kink)
+                                : [...prev.kinks, kink]
+                            }))
+                          }
+                          className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
+                            active ? 'bg-magenta-500/40 text-white shadow' : 'bg-white/10 text-white/60 hover:bg-white/20'
+                          }`}
+                        >
+                          {kink}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-white/70 text-sm mb-2 uppercase tracking-[0.2em]">Tags</p>
+                  <div className="flex flex-wrap gap-2">
+                    {TAGS_OPTIONS.map(tag => {
+                      const active = profileData.tags.includes(tag)
+                      return (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() =>
+                            setProfileData(prev => ({
+                              ...prev,
+                              tags: active
+                                ? prev.tags.filter(t => t !== tag)
+                                : [...prev.tags, tag]
+                            }))
+                          }
+                          className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
+                            active ? 'bg-purple-500/40 text-white shadow' : 'bg-white/10 text-white/60 hover:bg-white/20'
+                          }`}
+                        >
+                          {tag}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            </SectionCard>
+
+            <SectionCard
+              id="bio"
+              title="Headlines & Notes"
+              description="Leave something memorable."
+            >
+              <div className="space-y-3">
                 <textarea
                   value={profileData.bio}
                   onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
-                  className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300 resize-none"
-                  placeholder="Tell us about yourself... (Use emojis like the Grindr reference!)"
-                  rows={4}
+                  rows={5}
                   maxLength={500}
+                  placeholder="Let SLTR know your vibe, your boundaries, or your invite."
+                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-400 resize-none"
                 />
-                <div className="text-right text-xs text-white/40 mt-1">
-                  {profileData.bio.length}/500
-                </div>
+                <div className="text-right text-xs text-white/40">{profileData.bio.length}/500 characters</div>
               </div>
+            </SectionCard>
 
-              {/* Position */}
-              <div className="glass-bubble p-4">
-                <label className="block text-white/80 text-sm font-medium mb-2">
-                  Position
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {POSITIONS.map(pos => (
-                    <button
-                      type="button"
-                      key={pos}
-                      onClick={() => setProfileData(prev => ({ ...prev, position: pos }))}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                        profileData.position === pos
-                          ? 'bg-magenta-500 text-white shadow-lg'
-                          : 'bg-white/10 text-white/70 hover:bg-white/20'
-                      }`}
-                    >
-                      {pos}
-                    </button>
-                  ))}
-                </div>
+            {error && (
+              <div className="glass-bubble p-4 bg-red-500/10 border border-red-500/20">
+                <p className="text-red-400 text-sm">{error}</p>
               </div>
+            )}
 
-              {/* Kinks */}
-              <div className="glass-bubble p-4">
-                <label className="block text-white/80 text-sm font-medium mb-2">
-                  Kinks
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {KINKS_OPTIONS.map(kink => (
-                    <button
-                      type="button"
-                      key={kink}
-                      onClick={() => setProfileData(prev => ({
-                        ...prev,
-                        kinks: prev.kinks.includes(kink)
-                          ? prev.kinks.filter(k => k !== kink)
-                          : [...prev.kinks, kink]
-                      }))}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                        profileData.kinks.includes(kink)
-                          ? 'bg-cyan-500 text-white shadow-lg'
-                          : 'bg-white/10 text-white/70 hover:bg-white/20'
-                      }`}
-                    >
-                      {kink}
-                    </button>
-                  ))}
-                </div>
+            {success && (
+              <div className="glass-bubble p-4 bg-green-500/10 border border-green-500/20">
+                <p className="text-green-400 text-sm">Profile saved successfully!</p>
               </div>
+            )}
 
-              {/* Tags */}
-              <div className="glass-bubble p-4">
-                <label className="block text-white/80 text-sm font-medium mb-2">
-                  Tags (Interests)
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {TAGS_OPTIONS.map(tag => (
-                    <button
-                      type="button"
-                      key={tag}
-                      onClick={() => setProfileData(prev => ({
-                        ...prev,
-                        tags: prev.tags.includes(tag)
-                          ? prev.tags.filter(t => t !== tag)
-                          : [...prev.tags, tag]
-                      }))}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                        profileData.tags.includes(tag)
-                          ? 'bg-purple-500 text-white shadow-lg'
-                          : 'bg-white/10 text-white/70 hover:bg-white/20'
-                      }`}
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Party Friendly / DTFN Toggles */}
-              <div className="glass-bubble p-4 space-y-4">
-                <label className="flex items-center justify-between cursor-pointer text-white/80">
-                  <span>Party Friendly 🥳</span>
-                  <input
-                    type="checkbox"
-                    checked={profileData.party_friendly}
-                    onChange={(e) => setProfileData(prev => ({ ...prev, party_friendly: e.target.checked }))}
-                    className="toggle toggle-primary"
-                  />
-                </label>
-                <label className="flex items-center justify-between cursor-pointer text-white/80">
-                  <span>DTFN ⚡ (Down To F*** Now)</span>
-                  <input
-                    type="checkbox"
-                    checked={profileData.dtfn}
-                    onChange={(e) => setProfileData(prev => ({ ...prev, dtfn: e.target.checked }))}
-                    className="toggle toggle-secondary"
-                  />
-                </label>
-              </div>
-
-              {/* Error/Success Messages */}
-              {error && (
-                <div className="glass-bubble p-4 bg-red-500/10 border border-red-500/20">
-                  <p className="text-red-400 text-sm">{error}</p>
-                </div>
-              )}
-
-              {success && (
-                <div className="glass-bubble p-4 bg-green-500/10 border border-green-500/20">
-                  <p className="text-green-400 text-sm">Profile saved successfully!</p>
-                </div>
-              )}
-
-              {/* Save Button */}
+            <div className="flex flex-col sm:flex-row gap-3">
               <button
                 type="submit"
                 disabled={saving}
-                className="w-full gradient-button py-4 rounded-2xl text-white font-semibold text-lg hover:scale-105 transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{
-                  background: 'linear-gradient(135deg, #00d4ff, #ff00ff)',
-                  boxShadow: '0 0 30px rgba(0, 212, 255, 0.3)'
-                }}
+                className="flex-1 gradient-button py-4 rounded-2xl text-white font-semibold text-lg hover:scale-[1.02] transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ background: 'linear-gradient(135deg, #00d4ff, #ff00ff)', boxShadow: '0 0 30px rgba(0, 212, 255, 0.25)' }}
               >
-                {saving ? 'Saving...' : 'Save Changes'}
+                {saving ? 'Saving…' : 'Save Changes'}
               </button>
-            </form>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="glass-bubble py-4 px-6 rounded-2xl text-red-400 font-semibold text-lg hover:bg-red-500/10 hover:text-red-300 transition-all duration-300"
+              >
+                Logout
+              </button>
+            </div>
+          </form>
 
-            {/* Logout Button */}
-            <button
-              onClick={handleLogout}
-              className="w-full glass-bubble py-4 rounded-2xl text-red-400 font-semibold text-lg hover:bg-red-500/10 hover:text-red-300 transition-all duration-300"
-            >
-              🚪 Logout
-            </button>
-          </div>
-
-          {/* Right Column - Photos & Albums */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Profile Photos */}
+          <div className="space-y-6">
             <div className="glass-bubble p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-white">Profile Photos</h3>
-                <label className="glass-bubble px-4 py-2 cursor-pointer hover:bg-white/10 transition-all duration-300">
-                  <span className="text-white text-sm">+ Add Photo</span>
+                <h3 className="text-xl font-bold text-white">Media Gallery</h3>
+                <label className="glass-bubble px-4 py-2 cursor-pointer hover:bg-white/10 transition-all duration-300 text-sm text-white">
+                  + Add Photo
                   <input
                     type="file"
                     accept="image/*"
@@ -580,23 +727,20 @@ export default function ProfilePage() {
                   />
                 </label>
               </div>
-              
               {profileData.photos.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {profileData.photos.map((photo, index) => (
-                    <div key={index} className="relative group">
+                    <div key={index} className="relative group rounded-xl overflow-hidden">
                       <img
                         src={photo}
                         alt={`Photo ${index + 1}`}
-                        className="w-full aspect-square object-cover rounded-xl"
-                        onError={(e) => {
-                          console.error('Image failed to load:', photo)
-                          removePhoto(index)
-                        }}
+                        className="w-full aspect-square object-cover"
+                        onError={() => removePhoto(index)}
                       />
                       <button
+                        type="button"
                         onClick={() => removePhoto(index)}
-                        className="absolute top-2 right-2 bg-red-500/80 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-500 transition-all duration-300 opacity-0 group-hover:opacity-100"
+                        className="absolute top-2 right-2 bg-black/60 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs hover:bg-red-500 transition-all duration-300 opacity-0 group-hover:opacity-100"
                       >
                         ×
                       </button>
@@ -612,44 +756,35 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* Albums Section */}
             <div className="glass-bubble p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-bold text-white">Photo Albums</h3>
                 <button
+                  type="button"
                   onClick={() => setShowAlbumsManager(true)}
                   className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-xl font-semibold hover:scale-105 transition-all duration-300"
                 >
                   Manage Albums
                 </button>
               </div>
-
               {albums.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {albums.map((album) => (
-                    <div key={album.id} className="glass-bubble p-4 rounded-xl">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-lg font-bold text-white">{album.name}</h4>
+                <div className="space-y-4">
+                  {albums.map(album => (
+                    <div key={album.id} className="rounded-xl bg-white/5 border border-white/10 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-lg font-semibold text-white">{album.name}</h4>
+                          {album.description && <p className="text-white/60 text-sm mt-1">{album.description}</p>}
+                        </div>
                         <div className="flex items-center gap-2">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            album.is_public 
-                              ? 'bg-green-500/20 text-green-400' 
-                              : 'bg-orange-500/20 text-orange-400'
-                          }`}>
+                          <span className={`px-2 py-1 rounded-full text-xs ${album.is_public ? 'bg-green-500/20 text-green-400' : 'bg-orange-500/20 text-orange-300'}`}>
                             {album.is_public ? 'Public' : 'Private'}
                           </span>
                           {album.permissions.length > 0 && (
-                            <span className="text-cyan-400 text-xs">
-                              {album.permissions.length} shared
-                            </span>
+                            <span className="text-xs text-cyan-300">{album.permissions.length} shared</span>
                           )}
                         </div>
                       </div>
-
-                      {album.description && (
-                        <p className="text-white/60 text-sm mb-3">{album.description}</p>
-                      )}
-
                       {album.photos.length > 0 ? (
                         <div className="grid grid-cols-4 gap-2">
                           {album.photos.slice(0, 4).map((photo, index) => (
@@ -662,26 +797,24 @@ export default function ProfilePage() {
                             />
                           ))}
                           {album.photos.length > 4 && (
-                            <div 
-                              className="aspect-square bg-white/10 rounded-lg flex items-center justify-center cursor-pointer hover:bg-white/20 transition-all duration-300"
+                            <button
+                              type="button"
+                              className="aspect-square bg-white/10 rounded-lg text-white/70 text-sm font-semibold hover:bg-white/15 transition-colors duration-300"
                               onClick={() => openPhotoViewer(album, 4)}
                             >
-                              <span className="text-white/60 text-sm">+{album.photos.length - 4}</span>
-                            </div>
+                              +{album.photos.length - 4}
+                            </button>
                           )}
                         </div>
                       ) : (
-                        <div className="text-center py-4">
-                          <div className="text-2xl mb-2">📸</div>
-                          <p className="text-white/60 text-sm">No photos in this album</p>
-                        </div>
+                        <div className="text-center py-6 text-white/60 text-sm">No photos yet</div>
                       )}
-
-                      <div className="flex items-center justify-between mt-3 text-sm">
-                        <span className="text-white/60">{album.photos.length} photos</span>
+                      <div className="flex items-center justify-between text-sm text-white/50">
+                        <span>{album.photos.length} photos</span>
                         <button
+                          type="button"
                           onClick={() => openPhotoViewer(album, 0)}
-                          className="text-cyan-400 hover:text-cyan-300 transition-colors duration-300"
+                          className="text-cyan-300 hover:text-cyan-200 transition-colors duration-300"
                         >
                           View All
                         </button>
@@ -692,9 +825,10 @@ export default function ProfilePage() {
               ) : (
                 <div className="text-center py-8">
                   <div className="text-4xl mb-2">📚</div>
-                  <p className="text-white/60 mb-4">No albums yet</p>
-                  <p className="text-white/40 text-sm mb-4">Create albums to organize your photos and control who sees them</p>
+                  <p className="text-white/60 mb-3">No albums yet</p>
+                  <p className="text-white/40 text-sm mb-4">Create albums to curate who sees what.</p>
                   <button
+                    type="button"
                     onClick={() => setShowAlbumsManager(true)}
                     className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-xl font-semibold hover:scale-105 transition-all duration-300"
                   >

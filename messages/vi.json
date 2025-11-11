@@ -47,6 +47,7 @@
     "makePublic": "Đặt công khai"
   },
   "map": {
+    "mapSession": "Phiên bản đồ",
     "showMapSession": "Hiện phiên bản đồ",
     "hideMapSession": "Ẩn phiên bản đồ",
     "sessionControls": "Điều khiển phiên",
@@ -112,6 +113,8 @@
     "success": "Thành công",
     "warning": "Cảnh báo",
     "info": "Thông tin",
+    "show": "Hiện",
+    "hide": "Ẩn",
     "mile": "dặm",
     "miles": "dặm",
     "kilometer": "km",

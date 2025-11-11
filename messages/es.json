@@ -47,6 +47,7 @@
     "makePublic": "Hacer público"
   },
   "map": {
+    "mapSession": "Sesión de mapa",
     "showMapSession": "Mostrar sesión de mapa",
     "hideMapSession": "Ocultar sesión de mapa",
     "sessionControls": "Controles de sesión",
@@ -112,6 +113,8 @@
     "success": "Éxito",
     "warning": "Advertencia",
     "info": "Info",
+    "show": "Mostrar",
+    "hide": "Ocultar",
     "mile": "mi",
     "miles": "millas",
     "kilometer": "km",

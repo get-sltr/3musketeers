@@ -47,6 +47,7 @@
     "makePublic": "设为公开"
   },
   "map": {
+    "mapSession": "地图会话",
     "showMapSession": "显示地图会话",
     "hideMapSession": "隐藏地图会话",
     "sessionControls": "会话控制",
@@ -112,6 +113,8 @@
     "success": "成功",
     "warning": "警告",
     "info": "信息",
+    "show": "显示",
+    "hide": "隐藏",
     "mile": "英里",
     "miles": "英里",
     "kilometer": "公里",
