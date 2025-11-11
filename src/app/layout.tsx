@@ -2,8 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from 'next/font/google';
 import "./globals.css";
 import { ErosAssistiveTouch } from '@/components/ErosAssistiveTouch';
+import ClientProviders from '@/components/ClientProviders';
 
-const inter = Inter({ 
+const inter = Inter({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700', '800'],
   variable: '--font-inter',
@@ -36,21 +37,32 @@ export const viewport: Viewport = {
   themeColor: '#000000',
 };
 
-export default function RootLayout({
+async function getLocale() {
+  // Get locale from cookie or default to 'en'
+  const { cookies } = await import('next/headers')
+  const cookieStore = await cookies()
+  return cookieStore.get('NEXT_LOCALE')?.value || 'en'
+}
+
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await getLocale()
+
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang={locale} className={inter.variable}>
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body className="antialiased font-sans touch-pan-y overscroll-none">
-        {children}
-        <ErosAssistiveTouch />
+        <ClientProviders locale={locale}>
+          {children}
+          <ErosAssistiveTouch />
+        </ClientProviders>
       </body>
     </html>
   );

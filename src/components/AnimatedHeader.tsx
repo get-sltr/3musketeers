@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
+import { useTranslations } from 'next-intl'
 import UserMenu from './UserMenu'
 
 interface AnimatedHeaderProps {
@@ -10,6 +11,7 @@ interface AnimatedHeaderProps {
 }
 
 export default function AnimatedHeader({ viewMode, onViewModeChange }: AnimatedHeaderProps) {
+  const t = useTranslations('nav')
   const [isScrolled, setIsScrolled] = useState(false)
   const { scrollY } = useScroll()
 
@@ -81,7 +83,7 @@ export default function AnimatedHeader({ viewMode, onViewModeChange }: AnimatedH
               <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M3 3h7v7H3V3zm0 11h7v7H3v-7zm11-11h7v7h-7V3zm0 11h7v7h-7v-7z"/>
               </svg>
-              <span className="text-xs sm:text-sm font-medium hidden sm:inline">Grid</span>
+              <span className="text-xs sm:text-sm font-medium hidden sm:inline">{t('grid')}</span>
             </motion.button>
 
             <motion.button
@@ -97,7 +99,7 @@ export default function AnimatedHeader({ viewMode, onViewModeChange }: AnimatedH
               <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
               </svg>
-              <span className="text-xs sm:text-sm font-medium hidden sm:inline">Map</span>
+              <span className="text-xs sm:text-sm font-medium hidden sm:inline">{t('map')}</span>
             </motion.button>
           </motion.div>
         </div>
