@@ -23,6 +23,7 @@ import WelcomeModal from '../../components/WelcomeModal'
 import '../../styles/mobile-optimization.css'
 import { useSocket } from '../../hooks/useSocket'
 import { resolveProfilePhoto } from '@/lib/utils/profile'
+import { getBlockedUserIds } from '@/lib/safety'
 
 type ViewMode = 'grid' | 'map'
 
@@ -156,7 +157,10 @@ export default function AppPage() {
     setCurrentOrigin(origin)
 
     try {
-      // RPC function already filters blocked users at database level
+      // Get blocked user IDs first (client-side filtering until DB migration is applied)
+      const blockedUserIds = await getBlockedUserIds()
+      console.log('🚫 Blocked users:', blockedUserIds.length)
+
       const { data, error } = await supabase.rpc('get_nearby_profiles', {
         p_user_id: userId,
         p_origin_lat: origin[1],
@@ -181,9 +185,11 @@ export default function AppPage() {
         }
       }
 
-      console.log('📊 Fetched users:', data?.length || 0, '(blocked users already filtered by DB)')
+      // Filter out blocked users (temporary client-side fix until DB migration applied)
+      const filteredData = (data || []).filter((profile: any) => !blockedUserIds.includes(profile.id))
+      console.log('📊 Fetched users (after filtering blocked):', filteredData.length, '(blocked:', (data?.length || 0) - filteredData.length, ')')
 
-      const mappedUsers: UserWithLocation[] = (data || []).map((profile: any) => {
+      const mappedUsers: UserWithLocation[] = filteredData.map((profile: any) => {
         const photos = Array.isArray(profile?.photos) ? profile.photos.filter(Boolean) : undefined
 
         return {
