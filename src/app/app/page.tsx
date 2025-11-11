@@ -170,9 +170,9 @@ export default function AppPage() {
         p_radius_miles: radiusMiles,
       })
 
-      if (rpcResult.error && rpcResult.error.message?.includes('does not exist')) {
+      if (rpcResult.error && (rpcResult.error.message?.includes('does not exist') || rpcResult.error.message?.includes('Could not find') || rpcResult.error.code === 'PGRST202')) {
         // RPC doesn't exist, use fallback direct query
-        console.warn('⚠️ RPC not found, using fallback query')
+        console.warn('⚠️ RPC not found, using fallback query. Error:', rpcResult.error.message)
         const fallbackResult = await supabase
           .from('profiles')
           .select('id, display_name, photo_url, photos, is_online, dtfn, party_friendly, latitude, longitude, founder_number, about, kinks, tags, position, age, incognito_mode')
