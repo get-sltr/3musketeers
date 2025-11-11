@@ -206,8 +206,16 @@ export default function AppPage() {
       }
 
       // Filter out blocked users (temporary client-side fix until DB migration applied)
-      const filteredData = (data || []).filter((profile: any) => !blockedUserIds.includes(profile.id))
-      console.log('📊 Fetched users (after filtering blocked):', filteredData.length, '(blocked:', (data?.length || 0) - filteredData.length, ')')
+      console.log('🔍 Blocked user IDs:', blockedUserIds)
+      console.log('👥 Total users before filter:', data?.length || 0)
+      const filteredData = (data || []).filter((profile: any) => {
+        const isBlocked = blockedUserIds.includes(profile.id)
+        if (isBlocked) {
+          console.log('❌ Filtering out blocked user:', profile.id, profile.display_name)
+        }
+        return !isBlocked
+      })
+      console.log('📊 Users after filtering blocked:', filteredData.length, '(removed:', (data?.length || 0) - filteredData.length, ')')
 
       const mappedUsers: UserWithLocation[] = filteredData.map((profile: any) => {
         const photos = Array.isArray(profile?.photos) ? profile.photos.filter(Boolean) : undefined
