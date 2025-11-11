@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useRef, useTransition } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
+import { useLocale } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
+import { locales, localeNames, type Locale } from '@/i18n/config'
 
 interface UserMenuProps {
   className?: string
@@ -10,8 +12,12 @@ interface UserMenuProps {
 
 export default function UserMenu({ className = '' }: UserMenuProps) {
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
+  const pathname = usePathname()
+  const locale = useLocale()
+  const [isPending, startTransition] = useTransition()
 
   // Close user menu when clicking outside
   useEffect(() => {
@@ -31,6 +37,42 @@ export default function UserMenu({ className = '' }: UserMenuProps) {
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  const handleLanguageChange = async (newLocale: Locale) => {
+    startTransition(() => {
+      // Get current path without locale prefix
+      const currentPath = pathname || '/'
+      const pathWithoutLocale = currentPath.replace(`/${locale}`, '')
+
+      // Navigate to new locale path
+      const newPath = newLocale === 'en'
+        ? pathWithoutLocale || '/'
+        : `/${newLocale}${pathWithoutLocale || '/'}`
+
+      router.push(newPath)
+      setShowLanguageMenu(false)
+      setShowUserMenu(false)
+    })
+
+    // Save preference to localStorage
+    try {
+      localStorage.setItem('sltr_preferred_language', newLocale)
+    } catch {}
+
+    // Save to Supabase profile
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        await supabase
+          .from('profiles')
+          .update({ preferred_language: newLocale })
+          .eq('id', user.id)
+      }
+    } catch (error) {
+      console.error('Failed to save language preference:', error)
+    }
   }
 
   // Notification preferences (localStorage)
@@ -133,7 +175,7 @@ export default function UserMenu({ className = '' }: UserMenuProps) {
                 </span>
               </label>
             </div>
-            <div className="flex items-center justify-between text-white text-sm">
+            <div className="flex items-center justify-between text-white text-sm mb-2">
               <span>Vibration</span>
               <label className="inline-flex items-center cursor-pointer">
                 <input type="checkbox" className="sr-only" checked={notifyVibrate} onChange={(e) => setNotifyVibrate(e.target.checked)} />
@@ -141,6 +183,39 @@ export default function UserMenu({ className = '' }: UserMenuProps) {
                   <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-all ${notifyVibrate ? 'translate-x-5 bg-cyan-400' : 'bg-white'}`}></span>
                 </span>
               </label>
+            </div>
+            <div className="relative">
+              <button
+                onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+                className="flex items-center justify-between text-white text-sm w-full"
+                disabled={isPending}
+              >
+                <span>Language</span>
+                <span className="flex items-center gap-1 text-cyan-400">
+                  {localeNames[locale as Locale]}
+                  <svg className={`w-4 h-4 transition-transform ${showLanguageMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </span>
+              </button>
+              {showLanguageMenu && (
+                <div className="absolute right-0 top-full mt-2 w-40 bg-black/80 backdrop-blur-2xl border border-white/20 rounded-xl overflow-hidden z-50 animate-fadeIn">
+                  {locales.map((loc) => (
+                    <button
+                      key={loc}
+                      onClick={() => handleLanguageChange(loc)}
+                      className={`w-full px-3 py-2 text-left text-sm transition-all duration-300 ${
+                        locale === loc
+                          ? 'bg-cyan-500/20 text-cyan-400'
+                          : 'text-white hover:bg-white/10'
+                      }`}
+                      disabled={isPending}
+                    >
+                      {localeNames[loc]}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
