@@ -69,7 +69,11 @@ as $function$
     prof.id,
     prof.display_name,
     prof.photo_url,
-    prof.photos,
+    CASE
+      WHEN jsonb_typeof(prof.photos) = 'array'
+      THEN (SELECT array_agg(value::text) FROM jsonb_array_elements_text(prof.photos))
+      ELSE ARRAY[]::text[]
+    END as photos,
     prof.is_online,
     prof.dtfn,
     prof.party_friendly,
