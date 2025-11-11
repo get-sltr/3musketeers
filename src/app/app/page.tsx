@@ -157,16 +157,36 @@ export default function AppPage() {
     setCurrentOrigin(origin)
 
     try {
-      // Get blocked user IDs first (client-side filtering until DB migration is applied)
+      // Get blocked user IDs first (client-side filtering)
       const blockedUserIds = await getBlockedUserIds()
       console.log('🚫 Blocked users:', blockedUserIds.length)
 
-      const { data, error } = await supabase.rpc('get_nearby_profiles', {
+      // Try RPC first, fallback to direct query if RPC doesn't exist
+      let data, error
+      const rpcResult = await supabase.rpc('get_nearby_profiles', {
         p_user_id: userId,
         p_origin_lat: origin[1],
         p_origin_lon: origin[0],
         p_radius_miles: radiusMiles,
       })
+
+      if (rpcResult.error && rpcResult.error.message?.includes('does not exist')) {
+        // RPC doesn't exist, use fallback direct query
+        console.warn('⚠️ RPC not found, using fallback query')
+        const fallbackResult = await supabase
+          .from('profiles')
+          .select('id, display_name, photo_url, photos, is_online, dtfn, party_friendly, latitude, longitude, founder_number, about, kinks, tags, position, age, incognito_mode')
+          .not('latitude', 'is', null)
+          .not('longitude', 'is', null)
+          .eq('incognito_mode', false)
+          .limit(200)
+
+        data = fallbackResult.data
+        error = fallbackResult.error
+      } else {
+        data = rpcResult.data
+        error = rpcResult.error
+      }
 
       if (error) {
         console.error('Error fetching nearby profiles:', error)
