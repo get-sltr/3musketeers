@@ -174,7 +174,7 @@ export default function SecurityPage() {
               investigate and respond quickly. We appreciate reports from researchers and community members.
             </p>
             <div className="glass-bubble p-5 bg-white/5 border border-white/10 text-sm text-white/70 space-y-2">
-              <p><strong>Email:</strong> security@getsltr.com</p>
+              <p><strong>Email:</strong> support@getsltr.com</p>
               <p><strong>Signal:</strong> +1 (213) 756-8086</p>
               <p><strong>Mailing Address:</strong> SLTR DIGITAL LLC • Los Angeles, CA</p>
             </div>
