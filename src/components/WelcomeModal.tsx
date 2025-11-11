@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useTranslations } from 'next-intl'
 import Modal from '@/app/components/ui/Modal'
 
 interface WelcomeModalProps {
@@ -11,8 +10,6 @@ interface WelcomeModalProps {
 }
 
 export default function WelcomeModal({ isOpen, onClose, userName }: WelcomeModalProps) {
-  const t = useTranslations('welcome')
-  const tCommon = useTranslations('common')
   const [feedback, setFeedback] = useState('')
   const [email, setEmail] = useState('')
   const [submitted, setSubmitted] = useState(false)
@@ -66,47 +63,47 @@ export default function WelcomeModal({ isOpen, onClose, userName }: WelcomeModal
                 SLTR
               </div>
               <h2 className="text-2xl font-bold text-white">
-                {t('title')}{userName ? `, ${userName}` : ''}
+                Welcome to SLTR{userName ? `, ${userName}` : ''}!
               </h2>
               <p className="text-white/60 text-sm">
-                {t('subtitle')}
+                Rules Don't Apply
               </p>
             </div>
 
             <div className="space-y-4 text-left">
               <p className="text-white/90 text-sm leading-relaxed">
-                {t('message1')}
+                SLTR is a new kind of dating app built for people who don't fit the mold. This is a safe space to explore, connect, and be yourself without judgment.
               </p>
 
               <p className="text-white/80 text-sm leading-relaxed">
-                {t('message2')}
+                We're just getting started and your feedback helps shape what SLTR becomes. Let us know what you think!
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="text-left">
                 <label className="block text-sm font-semibold text-white/80 mb-2">
-                  {t('feedbackLabel')}
+                  What do you think so far? (optional)
                 </label>
                 <textarea
                   value={feedback}
                   onChange={(e) => setFeedback(e.target.value)}
                   rows={4}
                   className="w-full rounded-xl border border-white/15 bg-black/40 px-4 py-3 text-white placeholder-white/40 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/60 resize-none"
-                  placeholder={t('feedbackPlaceholder')}
+                  placeholder="Share your thoughts, ideas, or feedback..."
                 />
               </div>
 
               <div className="text-left">
                 <label className="block text-sm font-semibold text-white/80 mb-2">
-                  {t('emailLabel')}
+                  Email (optional)
                 </label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full rounded-xl border border-white/15 bg-black/40 px-4 py-3 text-white placeholder-white/40 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/60"
-                  placeholder={t('emailPlaceholder')}
+                  placeholder="your@email.com"
                 />
               </div>
 
@@ -116,14 +113,14 @@ export default function WelcomeModal({ isOpen, onClose, userName }: WelcomeModal
                   onClick={onClose}
                   className="flex-1 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-semibold hover:bg-white/10 transition"
                 >
-                  {t('skipForNow')}
+                  Skip for now
                 </button>
                 <button
                   type="submit"
                   disabled={sending}
                   className="flex-1 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-semibold hover:scale-105 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {sending ? t('sending') : feedback.trim() ? t('shareThoughts') : t('letsGo')}
+                  {sending ? 'Sending...' : feedback.trim() ? 'Share Thoughts' : "Let's Go!"}
                 </button>
               </div>
             </form>
@@ -131,10 +128,10 @@ export default function WelcomeModal({ isOpen, onClose, userName }: WelcomeModal
             <div className="pt-4 border-t border-white/10 space-y-2">
               <p className="text-xs text-white/50">
                 <span className="font-semibold text-white/70">Kevin</span><br />
-                {t('founderRole')}
+                Founder, SLTR
               </p>
               <p className="text-xs text-white/40">
-                {t('gotThoughts')} <a href="mailto:info@getsltr.com" className="text-cyan-400 hover:text-cyan-300">info@getsltr.com</a>
+                Got thoughts? Email me at <a href="mailto:info@getsltr.com" className="text-cyan-400 hover:text-cyan-300">info@getsltr.com</a>
               </p>
             </div>
           </>
@@ -143,9 +140,9 @@ export default function WelcomeModal({ isOpen, onClose, userName }: WelcomeModal
         {submitted && (
           <div className="py-8 space-y-4">
             <div className="text-5xl">✨</div>
-            <h3 className="text-xl font-bold text-white">{t('thankYou')}</h3>
+            <h3 className="text-xl font-bold text-white">Thank You!</h3>
             <p className="text-white/70 text-sm">
-              {t('thankYouMessage')}
+              Your feedback means everything. Let's make SLTR amazing together!
             </p>
           </div>
         )}
