@@ -41,7 +41,16 @@ export default function WelcomeModal({ isOpen, onClose, userName }: WelcomeModal
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <div className="space-y-6 text-center">
+      <div className="space-y-6 text-center relative">
+        <button
+          onClick={onClose}
+          className="absolute -top-2 -right-2 p-2 hover:bg-white/10 rounded-full transition-colors z-10"
+          aria-label="Close"
+        >
+          <svg className="w-5 h-5 text-white/60 hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
         {!submitted && (
           <>
             <div className="space-y-3">

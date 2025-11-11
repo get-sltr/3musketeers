@@ -13,6 +13,7 @@ import type { Pin } from '@/types/pins'
 import { useHoloPins } from '@/hooks/useHoloPins'
 import { createMapboxMarker } from '../MapPinWithDrawer'
 import { resolveProfilePhoto } from '@/lib/utils/profile'
+import { createVenueMarker } from './VenueMarker'
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
 
@@ -58,6 +59,8 @@ interface MapboxUsersProps {
   onTap?: (userId: string) => void
   onNav?: (loc: { lat: number; lng: number }) => void
   holoTheme?: boolean // apply neon/glass Mapbox theming (fog/sky/3D)
+  showVenues?: boolean // show LGBTQ venues
+  showHeatmap?: boolean // show user density heatmap
 }
 
 function hashPair(id: string): [number, number] {
@@ -101,12 +104,16 @@ export default function MapboxUsers({
   onNav,
   autoLoad = false,
   holoTheme = false,
+  showVenues = false,
+  showHeatmap = false,
 }: MapboxUsersProps & { jitterMeters?: number; autoLoad?: boolean }) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const markersRef = useRef<mapboxgl.Marker[]>([])
   const markerIndexRef = useRef<Record<string, mapboxgl.Marker>>({})
+  const venueMarkersRef = useRef<mapboxgl.Marker[]>([])
   const [mapLoaded, setMapLoaded] = useState(false)
+  const [venues, setVenues] = useState<any[]>([])
   const { isConnected, joinConversation, leaveConversation, updateLocation } = useSocket() as any
   const { pins: autoPins, options: holoOptions } = useHoloPins(advancedPins && autoLoad)
 
@@ -594,6 +601,170 @@ export default function MapboxUsers({
       leaveConversation?.('map')
     }
   }, [mapLoaded, isConnected, joinConversation, leaveConversation, updateLocation, incognito])
+
+  // Fetch and display LGBTQ venues
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current || !showVenues) {
+      // Clear venues if toggled off
+      if (!showVenues) {
+        venueMarkersRef.current.forEach(marker => marker.remove())
+        venueMarkersRef.current = []
+      }
+      return
+    }
+
+    const map = mapRef.current
+    const currentCenter = map.getCenter()
+
+    const fetchVenues = async () => {
+      try {
+        const response = await fetch(
+          `/api/venues/lgbtq?lat=${currentCenter.lat}&lng=${currentCenter.lng}&radius=5000`
+        )
+        const data = await response.json()
+        setVenues(data.venues || [])
+      } catch (error) {
+        console.error('Error fetching LGBTQ venues:', error)
+      }
+    }
+
+    fetchVenues()
+
+    // Refetch when map moves significantly
+    const onMoveEnd = () => {
+      fetchVenues()
+    }
+
+    map.on('moveend', onMoveEnd)
+
+    return () => {
+      map.off('moveend', onMoveEnd)
+    }
+  }, [mapLoaded, showVenues])
+
+  // Render venue markers
+  useEffect(() => {
+    if (!mapRef.current || !showVenues || venues.length === 0) return
+
+    // Clear existing venue markers
+    venueMarkersRef.current.forEach(marker => marker.remove())
+    venueMarkersRef.current = []
+
+    // Add new venue markers
+    venues.forEach((venue: any) => {
+      const el = createVenueMarker(
+        venue.name,
+        venue.type,
+        venue.address,
+        () => {
+          alert(`${venue.name}\n${venue.address}`)
+        }
+      )
+
+      const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
+        .setLngLat([venue.longitude, venue.latitude])
+        .addTo(mapRef.current!)
+
+      venueMarkersRef.current.push(marker)
+    })
+  }, [venues, showVenues])
+
+  // Add user density heatmap layer
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current) return
+
+    const map = mapRef.current
+
+    if (showHeatmap && users.length > 0) {
+      // Remove existing heatmap if it exists
+      if (map.getLayer('user-heatmap')) {
+        map.removeLayer('user-heatmap')
+      }
+      if (map.getSource('user-heat')) {
+        map.removeSource('user-heat')
+      }
+
+      // Create GeoJSON from user locations
+      const heatmapData = {
+        type: 'FeatureCollection',
+        features: users.map(u => ({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [u.longitude, u.latitude]
+          },
+          properties: {
+            intensity: u.online ? 2 : 1 // Online users show hotter
+          }
+        }))
+      }
+
+      // Add source
+      map.addSource('user-heat', {
+        type: 'geojson',
+        data: heatmapData as any
+      })
+
+      // Add heatmap layer
+      map.addLayer({
+        id: 'user-heatmap',
+        type: 'heatmap',
+        source: 'user-heat',
+        maxzoom: 15,
+        paint: {
+          // Increase weight based on online status
+          'heatmap-weight': ['get', 'intensity'],
+          // Increase intensity as zoom level increases
+          'heatmap-intensity': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            0, 1,
+            15, 3
+          ],
+          // Color ramp from cyan to magenta to yellow
+          'heatmap-color': [
+            'interpolate',
+            ['linear'],
+            ['heatmap-density'],
+            0, 'rgba(0, 0, 255, 0)',
+            0.2, 'rgb(0, 212, 255)',
+            0.4, 'rgb(147, 51, 234)',
+            0.6, 'rgb(255, 0, 255)',
+            0.8, 'rgb(255, 105, 180)',
+            1, 'rgb(255, 215, 0)'
+          ],
+          // Radius of each heatmap point
+          'heatmap-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            0, 20,
+            15, 40
+          ],
+          // Opacity
+          'heatmap-opacity': 0.7
+        }
+      }, 'waterway-label') // Place below labels
+    } else {
+      // Remove heatmap if toggled off
+      if (map.getLayer('user-heatmap')) {
+        map.removeLayer('user-heatmap')
+      }
+      if (map.getSource('user-heat')) {
+        map.removeSource('user-heat')
+      }
+    }
+
+    return () => {
+      if (map.getLayer('user-heatmap')) {
+        map.removeLayer('user-heatmap')
+      }
+      if (map.getSource('user-heat')) {
+        map.removeSource('user-heat')
+      }
+    }
+  }, [mapLoaded, showHeatmap, users])
 
   if (!MAPBOX_TOKEN) {
     return (

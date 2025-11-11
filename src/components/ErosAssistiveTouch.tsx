@@ -374,20 +374,17 @@ export function ErosAssistiveTouch() {
 
     if (!isDragging && !menuOpen) {
       vibrate(30);
-      // Trigger EROS AI analysis on short press
+      // Trigger EROS AI analysis silently on short press
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         try {
-          showTapFeedback('🤖 EROS AI analyzing...');
           await fetch('/api/eros/analyze', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: user.id, analysisType: 'ultimate' })
           });
-          showTapFeedback('✨ EROS AI analysis complete!');
         } catch (e) {
           console.error('EROS analysis failed:', e);
-          showTapFeedback('⚠️ EROS AI temporarily unavailable');
         }
       }
       return;

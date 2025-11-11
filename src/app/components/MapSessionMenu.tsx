@@ -22,6 +22,10 @@ interface MapSessionMenuProps {
   onClear: () => void
   onAddPlace: () => void
   onHostGroup: () => void
+  showVenues: boolean
+  onToggleVenues: (enabled: boolean) => void
+  showHeatmap: boolean
+  onToggleHeatmap: (enabled: boolean) => void
 }
 
 export default function MapSessionMenu({
@@ -44,6 +48,10 @@ export default function MapSessionMenu({
   setClusterEnabled,
   onAddPlace,
   onHostGroup,
+  showVenues,
+  onToggleVenues,
+  showHeatmap,
+  onToggleHeatmap,
 }: MapSessionMenuProps) {
   const [open, setOpen] = useState(false)
 
@@ -170,21 +178,6 @@ export default function MapSessionMenu({
             </div>
           </div>
 
-          {/* Location Randomizer */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-sm text-white/80">Location Randomizer</label>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-white/60 text-xs">less</span>
-              <input type="range" min={0} max={150} step={5} id="randomizer-slider" className="flex-1 accent-cyan-400" onChange={(e)=>{
-                const ev = new CustomEvent('map_randomizer_change', { detail: parseInt((e.target as HTMLInputElement).value) })
-                window.dispatchEvent(ev)
-              }} />
-              <span className="text-white/60 text-xs">more</span>
-            </div>
-          </div>
-
           {/* Incognito */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -195,6 +188,32 @@ export default function MapSessionMenu({
               className={`px-3 py-2 rounded-xl text-sm border transition ${incognito ? "bg-purple-500/20 border-purple-400 text-purple-200" : "bg-white/5 border-white/10 text-white/80"}`}
             >
               {incognito ? "On" : "Off"}
+            </button>
+          </div>
+
+          {/* LGBTQ Venues */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-white/80">LGBTQ Venues 🍸</span>
+            </div>
+            <button
+              onClick={() => onToggleVenues(!showVenues)}
+              className={`px-3 py-2 rounded-xl text-sm border transition ${showVenues ? "bg-pink-500/20 border-pink-400 text-pink-200" : "bg-white/5 border-white/10 text-white/80"}`}
+            >
+              {showVenues ? "On" : "Off"}
+            </button>
+          </div>
+
+          {/* User Heatmap */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-white/80">User Density</span>
+            </div>
+            <button
+              onClick={() => onToggleHeatmap(!showHeatmap)}
+              className={`px-3 py-2 rounded-xl text-sm border transition ${showHeatmap ? "bg-cyan-500/20 border-cyan-400 text-cyan-200" : "bg-white/5 border-white/10 text-white/80"}`}
+            >
+              {showHeatmap ? "On" : "Off"}
             </button>
           </div>
 

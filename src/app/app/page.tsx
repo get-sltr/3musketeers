@@ -73,6 +73,8 @@ export default function AppPage() {
   const [clusterEnabled, setClusterEnabled] = useState<boolean>(false)
   const [jitterMeters, setJitterMeters] = useState<number>(0)
   const [vanillaMode, setVanillaMode] = useState<boolean>(false)
+  const [showVenues, setShowVenues] = useState<boolean>(false)
+  const [showHeatmap, setShowHeatmap] = useState<boolean>(false)
   // Add/Host modals
   const [isAddingPlace, setIsAddingPlace] = useState<boolean>(false)
   const [isHostingGroup, setIsHostingGroup] = useState<boolean>(false)
@@ -185,12 +187,6 @@ export default function AppPage() {
     checkAuth()
   }, [router])
 
-  // Listen to Location Randomizer slider
-  useEffect(() => {
-    const handler = (e: any) => setJitterMeters(e.detail as number)
-    window.addEventListener('map_randomizer_change', handler)
-    return () => window.removeEventListener('map_randomizer_change', handler)
-  }, [])
 
   const fetchUsers = async (currentUserId: string) => {
     const supabase = createClient()
@@ -548,7 +544,7 @@ export default function AppPage() {
         />
 
       {/* Main Content */}
-      <main className={viewMode === 'grid' ? 'pt-20' : 'pt-0'}>
+      <main className={viewMode === 'grid' ? 'pt-16' : 'pt-0'}>
         {/* Grid or Map view based on viewMode */}
         {viewMode === 'grid' ? (
           <Suspense fallback={<LoadingSkeleton variant="fullscreen" />}>
@@ -592,6 +588,8 @@ export default function AppPage() {
               jitterMeters={jitterMeters}
               vanillaMode={vanillaMode}
               holoTheme={false}
+              showVenues={showVenues}
+              showHeatmap={showHeatmap}
               onChat={handleMessage}
               onVideo={handleMapVideo}
               onTap={handleMapTap}
@@ -632,17 +630,18 @@ export default function AppPage() {
                 setStyleId('dark-v11')
                 setMenuFilters({ online: false, hosting: false, looking: false })
                 setVanillaMode(false)
-                window.dispatchEvent(new CustomEvent('map_randomizer_change', { detail: 0 }))
               }}
               onAddPlace={() => setIsAddingPlace(true)}
               onHostGroup={() => setIsHostingGroup(true)}
+              showVenues={showVenues}
+              onToggleVenues={setShowVenues}
+              showHeatmap={showHeatmap}
+              onToggleHeatmap={setShowHeatmap}
             />
 
             {/* Corner Buttons */}
             <CornerButtons
               onToggleMenu={() => window.dispatchEvent(new Event('toggle_map_session_menu'))}
-              onToggleNight={() => setStyleId(prev => prev === 'dark-v11' ? 'streets-v12' : 'dark-v11')}
-              isNight={styleId === 'dark-v11'}
               onCenter={handleCenterLocation}
               onMessages={() => router.push('/messages')}
               onGroups={() => router.push('/groups')}

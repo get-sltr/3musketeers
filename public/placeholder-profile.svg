@@ -28,13 +28,4 @@
     <path d="M 120 220 Q 120 200 155 200 L 245 200 Q 280 200 280 220 L 280 350 Q 200 360 120 350 Z" 
           fill="#1a1a1f"/>
   </g>
-  
-  <!-- Question mark icon -->
-  <g transform="translate(200, 380)">
-    <circle r="35" fill="rgba(255, 0, 255, 0.15)" stroke="#ff00ff" stroke-width="2"/>
-    <text x="0" y="0" text-anchor="middle" dominant-baseline="central" 
-          font-family="-apple-system, sans-serif" font-size="40" font-weight="bold" fill="#ff00ff">
-      ?
-    </text>
-  </g>
 </svg>
