@@ -445,7 +445,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
                   >
                     <div className="photo-container">
                       <Image
-                        src={user.photo || '/placeholder-profile.svg'}
+                        src={user.photo || '/placeholder-no-photo.jpg'}
                         alt={user.username}
                         fill
                         sizes="(max-width: 768px) 45vw, 240px"
@@ -453,14 +453,31 @@ export default function GridView({ onUserClick }: GridViewProps) {
                         unoptimized
                       />
 
-                      {user.dtfn && (
-                        <div className="dtfn-badge">⚡</div>
-                      )}
+                      {/* Top left badges */}
                       {user.isOnline && <div className="online-dot" />}
 
-                      <div className={`glass-info-bar ${colorClass}`}>
+                      {/* Top right badges */}
+                      <div className="top-right-badges">
+                        {user.photos && user.photos.length > 0 && (
+                          <div className="photo-count-badge">{user.photos.length}</div>
+                        )}
+                      </div>
+
+                      {/* Bottom left feature badges */}
+                      <div className="feature-badges">
+                        {user.dtfn && (
+                          <div className="feature-badge dtfn">DTFN</div>
+                        )}
+                        {user.partyFriendly && (
+                          <div className="feature-badge party">🎉</div>
+                        )}
+                      </div>
+
+                      {/* Bottom info bar */}
+                      <div className="glass-info-bar">
                         <span className="info-text">
-                          {user.username} • {user.distance}{user.eta && ` • ${user.eta}`}
+                          <span className="username">{user.username}</span>
+                          <span className="distance">{user.distance}</span>
                         </span>
                       </div>
                     </div>
@@ -598,7 +615,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
 
       <style jsx>{`
         .grid-container {
-          background: #0a0a0f;
+          background: #000000;
           min-height: 100vh;
         }
 
@@ -668,20 +685,20 @@ export default function GridView({ onUserClick }: GridViewProps) {
         .profile-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
-          gap: 1px;
+          gap: 4px;
         }
 
         .profile-card {
           position: relative;
-          border-radius: 0px;
+          border-radius: 16px;
           overflow: hidden;
-          border: 2px solid rgba(255, 255, 255, 0.8);
+          border: 2px solid rgba(0, 212, 255, 0.4);
           background: rgba(5, 5, 8, 0.95);
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           cursor: pointer;
           box-shadow:
-            0 0 30px rgba(255, 255, 255, 0.4),
-            inset 0 0 60px rgba(255, 255, 255, 0.05),
+            0 0 20px rgba(0, 212, 255, 0.3),
+            inset 0 0 40px rgba(0, 212, 255, 0.05),
             0 8px 32px rgba(0, 0, 0, 0.8);
           animation: fadeInUp 0.5s ease-out backwards;
         }
@@ -694,12 +711,12 @@ export default function GridView({ onUserClick }: GridViewProps) {
         .profile-card:nth-child(6) { animation-delay: 0.3s; }
 
         .profile-card:hover {
-          transform: scale(1.03);
-          border: 2px solid rgba(0, 217, 255, 1);
+          transform: scale(1.02);
+          border: 2px solid rgba(0, 212, 255, 1);
           box-shadow:
-            0 0 60px rgba(0, 217, 255, 0.9),
-            0 0 120px rgba(0, 217, 255, 0.5),
-            inset 0 0 80px rgba(0, 217, 255, 0.1),
+            0 0 40px rgba(0, 212, 255, 0.8),
+            0 0 80px rgba(0, 212, 255, 0.4),
+            inset 0 0 60px rgba(0, 212, 255, 0.1),
             0 12px 48px rgba(0, 0, 0, 0.9);
           z-index: 10;
         }
@@ -711,8 +728,8 @@ export default function GridView({ onUserClick }: GridViewProps) {
         .photo-container {
           position: relative;
           width: 100%;
-          aspect-ratio: 3/4;
-          border-radius: 0;
+          aspect-ratio: 2/3;
+          border-radius: 16px;
           overflow: hidden;
         }
 
@@ -730,59 +747,42 @@ export default function GridView({ onUserClick }: GridViewProps) {
           border-radius: 0;
           backdrop-filter: blur(24px) saturate(200%);
           border: none;
-          border-top: 1px solid rgba(255, 255, 255, 0.25);
+          border-top: 1px solid rgba(0, 212, 255, 0.3);
           box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.6);
           overflow: hidden;
           display: flex;
           align-items: center;
-          background: linear-gradient(180deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.9) 100%);
+          background: linear-gradient(180deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 10, 15, 0.95) 100%);
         }
 
-        .glass-gradient-1 {
-          background: linear-gradient(135deg, rgba(0, 217, 255, 0.35), rgba(255, 0, 255, 0.4));
-          border-color: rgba(0, 217, 255, 0.7);
-          box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
-        }
-        .glass-magenta {
-          background: linear-gradient(135deg, rgba(255, 0, 255, 0.35), rgba(138, 43, 226, 0.35));
-          border-color: rgba(255, 0, 255, 0.7);
-          box-shadow: 0 0 20px rgba(255, 0, 255, 0.3);
-        }
-        .glass-purple {
-          background: linear-gradient(135deg, rgba(138, 43, 226, 0.35), rgba(75, 0, 130, 0.35));
-          border-color: rgba(138, 43, 226, 0.7);
-          box-shadow: 0 0 20px rgba(138, 43, 226, 0.3);
-        }
-        .glass-cyan {
-          background: linear-gradient(135deg, rgba(0, 217, 255, 0.35), rgba(0, 191, 255, 0.35));
-          border-color: rgba(0, 217, 255, 0.7);
-          box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
-        }
-        .glass-orange {
-          background: linear-gradient(135deg, rgba(250, 112, 154, 0.35), rgba(255, 99, 132, 0.35));
-          border-color: rgba(250, 112, 154, 0.7);
-          box-shadow: 0 0 20px rgba(250, 112, 154, 0.3);
-        }
-        .glass-blue {
-          background: linear-gradient(135deg, rgba(79, 172, 254, 0.35), rgba(58, 134, 255, 0.35));
-          border-color: rgba(79, 172, 254, 0.7);
-          box-shadow: 0 0 20px rgba(79, 172, 254, 0.3);
-        }
 
         .info-text {
           color: white;
-          font-size: 0.8em;
-          font-weight: 700;
+          font-size: 0.85em;
+          font-weight: 600;
           letter-spacing: 0.01em;
           text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
           display: flex;
           align-items: center;
-          gap: 4px;
-          white-space: nowrap;
+          justify-content: space-between;
+          width: 100%;
+        }
+
+        .info-text .username {
+          font-weight: 700;
           overflow: hidden;
           text-overflow: ellipsis;
+          white-space: nowrap;
           flex: 1;
           min-width: 0;
+        }
+
+        .info-text .distance {
+          font-weight: 600;
+          opacity: 0.9;
+          margin-left: 8px;
+          white-space: nowrap;
+          font-size: 0.95em;
         }
 
         .info-username {
@@ -798,28 +798,75 @@ export default function GridView({ onUserClick }: GridViewProps) {
           margin: 0 3px;
         }
 
-        .dtfn-badge {
-          position: absolute;
-          top: 8px;
-          right: 8px;
-          font-size: 1.1em;
-          filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.9));
-          z-index: 5;
-        }
 
         .online-dot {
           position: absolute;
-          top: 8px;
-          left: 8px;
-          width: 12px;
-          height: 12px;
+          top: 10px;
+          left: 10px;
+          width: 14px;
+          height: 14px;
           border-radius: 50%;
-          background: #00ff00;
+          background: #00d4ff;
           border: 2px solid white;
           box-shadow:
-            0 0 12px rgba(0, 255, 0, 0.8),
-            0 0 24px rgba(0, 255, 0, 0.4);
+            0 0 15px rgba(0, 212, 255, 0.9),
+            0 0 30px rgba(0, 212, 255, 0.5);
           z-index: 5;
+        }
+
+        .top-right-badges {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          z-index: 5;
+        }
+
+        .photo-count-badge {
+          background: rgba(0, 212, 255, 0.95);
+          color: white;
+          font-size: 0.7em;
+          font-weight: 700;
+          padding: 4px 8px;
+          border-radius: 12px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+          backdrop-filter: blur(8px);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .feature-badges {
+          position: absolute;
+          bottom: 45px;
+          left: 8px;
+          display: flex;
+          flex-direction: row;
+          gap: 6px;
+          z-index: 5;
+        }
+
+        .feature-badge {
+          font-size: 0.7em;
+          font-weight: 700;
+          padding: 4px 8px;
+          border-radius: 8px;
+          backdrop-filter: blur(8px);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+        }
+
+        .feature-badge.dtfn {
+          background: rgba(255, 0, 255, 0.95);
+          color: white;
+          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+        }
+
+        .feature-badge.party {
+          background: rgba(255, 165, 0, 0.95);
+          color: white;
+          font-size: 0.9em;
+          padding: 4px 6px;
         }
 
 

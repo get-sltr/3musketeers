@@ -1,216 +1,232 @@
-/* Map Pin with Horizontal Drawer Styles */
+/* SLTR map pin + drawer styles */
 
 .pin-wrapper {
   position: relative;
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  gap: 15px;
+  gap: 14px;
   z-index: 10;
 }
 
-.map-pin {
-  width: 60px;
-  height: 60px;
+.map-pin-shell {
+  position: relative;
+  width: 74px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: transform 0.25s ease, filter 0.25s ease;
+}
+
+.map-pin-shell:hover {
+  transform: translateY(-6px);
+  filter: brightness(1.05);
+}
+
+.map-pin-halo {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  width: 92px;
+  height: 92px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, rgba(236, 243, 255, 0.8), rgba(70, 90, 140, 0));
+  filter: blur(10px);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.map-pin-shell.is-dtfn .map-pin-halo {
+  background: radial-gradient(circle at 50% 50%, rgba(245, 220, 255, 0.85), rgba(110, 60, 150, 0.08));
+}
+
+.map-pin-shell.is-party .map-pin-halo {
+  background: radial-gradient(circle at 50% 50%, rgba(220, 240, 255, 0.85), rgba(70, 100, 160, 0.08));
+}
+
+.map-pin-core {
+  position: relative;
+  width: 68px;
+  height: 68px;
   border-radius: 50%;
   overflow: hidden;
-  cursor: pointer;
-  position: relative;
-  flex-shrink: 0;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 3px solid rgba(0, 255, 255, 0.6);
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.4), 0 4px 12px rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  box-shadow: 0 10px 24px rgba(5, 12, 24, 0.45);
+  backdrop-filter: blur(6px);
+  z-index: 2;
 }
 
-.map-pin:hover {
-  transform: scale(1.1);
-  border-color: rgba(0, 255, 255, 1);
-  box-shadow: 0 0 30px rgba(0, 255, 255, 0.8), 0 6px 20px rgba(0, 0, 0, 0.7);
-  z-index: 100;
-}
-
-.map-pin.dtfn {
-  border-color: #ff00ff;
-  animation: dtfnPulse 2s ease-in-out infinite;
-}
-
-@keyframes dtfnPulse {
-  0%,
-  100% {
-    box-shadow: 0 0 20px rgba(255, 0, 255, 0.6), 0 4px 12px rgba(0, 0, 0, 0.5);
-  }
-  50% {
-    box-shadow: 0 0 40px rgba(255, 0, 255, 1), 0 6px 20px rgba(255, 0, 255, 0.4);
-  }
-}
-
-.map-pin img {
+.map-pin-core img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.pin-badge {
+.map-pin-ring {
   position: absolute;
-  bottom: -5px;
-  right: -5px;
-  background: linear-gradient(135deg, #ff00ff, #ff0080);
-  width: 24px;
-  height: 24px;
+  top: -4px;
+  left: 50%;
+  width: 82px;
+  height: 82px;
+  transform: translateX(-50%);
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  border: 2px solid #0a0e27;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 0 18px rgba(200, 214, 255, 0.3);
+  pointer-events: none;
   z-index: 1;
+}
+
+.map-pin-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+  z-index: 2;
+}
+
+.pin-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f1f4ff;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pin-distance {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(214, 224, 255, 0.85);
+}
+
+.pin-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+  justify-content: center;
+}
+
+.pin-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(240, 245, 255, 0.88);
+  background: rgba(18, 26, 40, 0.55);
+}
+
+.pin-chip-dtfn {
+  border-color: rgba(255, 180, 255, 0.4);
+  background: rgba(85, 30, 90, 0.4);
+  color: rgba(255, 220, 255, 0.95);
+}
+
+.pin-chip-party {
+  border-color: rgba(165, 200, 255, 0.4);
+  background: rgba(40, 70, 120, 0.42);
+  color: rgba(215, 230, 255, 0.95);
+}
+
+.pin-chip-position {
+  border-color: rgba(255, 255, 255, 0.28);
+  color: rgba(240, 245, 255, 0.82);
 }
 
 .horizontal-drawer {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(15, 20, 35, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(0, 255, 255, 0.2);
-  border-radius: 30px;
-  padding: 8px 16px;
+  gap: 10px;
+  background: rgba(12, 16, 28, 0.92);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(210, 224, 255, 0.18);
+  border-radius: 26px;
+  padding: 10px 18px;
   opacity: 0;
   transform: translateX(-20px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  box-shadow: 0 14px 32px rgba(4, 8, 16, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   white-space: nowrap;
 }
 
-.horizontal-drawer.visible {
-  opacity: 1;
-  transform: translateX(0);
-  pointer-events: all;
-}
-
+.horizontal-drawer.visible,
 .pin-wrapper:hover .horizontal-drawer {
   opacity: 1;
   transform: translateX(0);
   pointer-events: all;
 }
 
-.drawer-info {
+.drawer-compact-info {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding-right: 12px;
-  border-right: 1px solid rgba(0, 255, 255, 0.2);
-}
-
-.drawer-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: #00ffff;
-  white-space: nowrap;
-}
-
-.drawer-stats {
-  display: flex;
-  gap: 8px;
-  font-size: 13px;
-  color: #888;
-}
-
-.drawer-stat {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-}
-
-.stat-icon {
-  font-size: 12px;
-}
-
-.drawer-dtfn {
-  background: linear-gradient(135deg, #ff00ff, #ff0080);
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  animation: dtfnGlow 2s ease-in-out infinite;
-}
-
-@keyframes dtfnGlow {
-  0%,
-  100% {
-    box-shadow: 0 0 10px rgba(255, 0, 255, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 20px rgba(255, 0, 255, 0.8);
-  }
-}
-
-.drawer-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.action-btn {
-  display: inline-flex;
-  align-items: center;
+  flex-direction: column;
   gap: 6px;
-  padding: 10px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(0, 255, 255, 0.25);
-  background: rgba(0, 30, 40, 0.65);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 14px;
-  font-weight: 600;
-  color: #e5f9ff;
-  letter-spacing: 0.01em;
-  box-shadow: 0 6px 14px rgba(0, 255, 255, 0.12);
-}
-
-.action-btn:hover {
-  transform: translateY(-2px) scale(1.08);
-}
-
-.action-btn:active {
-  transform: scale(0.95);
-}
-
-.action-btn .action-icon {
-  font-size: 18px;
-  display: inline-flex;
-}
-
-.action-btn .action-label {
+  color: rgba(230, 238, 255, 0.9);
   font-size: 13px;
+  letter-spacing: 0.01em;
+}
+
+.compact-line {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  color: rgba(205, 215, 235, 0.85);
+}
+
+.descriptor {
+  font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.14em;
+  color: rgba(200, 214, 238, 0.78);
 }
 
-.action-btn.chat {
-  border-color: rgba(100, 200, 255, 0.4);
-  background: rgba(40, 120, 200, 0.18);
-  font-size: 14px;
+.drawer-actions-mini {
+  display: flex;
+  gap: 8px;
 }
 
-.action-btn.chat:hover {
-  background: rgba(100, 200, 255, 0.3);
-  box-shadow: 0 0 20px rgba(100, 200, 255, 0.6);
-  transform: translateY(-2px) scale(1.15);
+.mini-action {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid rgba(210, 224, 255, 0.22);
+  background: rgba(18, 26, 40, 0.7);
+  color: rgba(235, 242, 255, 0.92);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  cursor: pointer;
 }
 
-.action-btn.video:hover {
-  background: rgba(160, 100, 255, 0.3);
-  box-shadow: 0 0 18px rgba(160, 100, 255, 0.5);
+.mini-action:hover {
+  transform: translateY(-1px);
+  border-color: rgba(235, 245, 255, 0.45);
 }
 
-.action-btn.tap:hover {
-  background: rgba(255, 120, 80, 0.3);
-  box-shadow: 0 0 18px rgba(255, 120, 80, 0.55);
+.mini-action.chat {
+  border-color: rgba(150, 190, 255, 0.35);
+}
+
+.mini-action.video {
+  border-color: rgba(200, 170, 255, 0.35);
+}
+
+.mini-action.tap {
+  border-color: rgba(255, 205, 230, 0.35);
 }
 
 .mapbox-marker-container {
@@ -223,110 +239,36 @@
 }
 
 @media (max-width: 768px) {
-  .map-pin {
-    width: 50px;
-    height: 50px;
-    border-width: 2px;
+  .map-pin-shell {
+    width: 60px;
   }
 
-  .pin-badge {
-    width: 20px;
-    height: 20px;
+  .map-pin-core {
+    width: 54px;
+    height: 54px;
+  }
+
+  .pin-name {
     font-size: 12px;
   }
 
-  .horizontal-drawer {
-    padding: 6px 12px;
-    gap: 6px;
-    border-radius: 25px;
-  }
-
-  .drawer-info {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-    padding-right: 8px;
-  }
-
-  .drawer-name {
-    font-size: 14px;
-  }
-
-  .drawer-stats {
-    font-size: 11px;
-    gap: 6px;
-  }
-
-  .action-btn {
-    padding: 8px 12px;
-    gap: 4px;
-    font-size: 13px;
-  }
-
-  .drawer-dtfn {
+  .pin-distance {
     font-size: 10px;
-    padding: 3px 8px;
   }
-}
 
-@media (max-width: 480px) {
-  .map-pin {
-    width: 45px;
-    height: 45px;
+  .pin-chip {
+    font-size: 9px;
   }
 
   .horizontal-drawer {
-    font-size: 12px;
+    padding: 8px 14px;
+    gap: 6px;
+    border-radius: 22px;
   }
 
-  .drawer-name {
-    font-size: 13px;
-  }
-
-  .action-btn {
-    width: 30px;
-    height: 30px;
-    font-size: 13px;
-  }
-}
-
-/* Compact Drawer Styles */
-.horizontal-drawer.compact {
-  padding: 6px 12px;
-  min-width: auto;
-}
-
-.drawer-compact-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.compact-line {
-  font-size: 13px;
-  font-weight: 500;
-  color: #00ffff;
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.compact-line span {
-  font-size: 16px;
-}
-
-@media (max-width: 768px) {
-  .horizontal-drawer.compact {
-    padding: 4px 10px;
-  }
-
-  .compact-line {
-    font-size: 11px;
-  }
-
-  .compact-line span {
-    font-size: 14px;
+  .mini-action {
+    font-size: 10px;
+    padding: 5px 8px;
   }
 }
 

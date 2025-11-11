@@ -23,7 +23,6 @@ import WelcomeModal from '../../components/WelcomeModal'
 import '../../styles/mobile-optimization.css'
 import { useSocket } from '../../hooks/useSocket'
 import { resolveProfilePhoto } from '@/lib/utils/profile'
-import { getBlockedUserIds } from '@/lib/safety'
 
 type ViewMode = 'grid' | 'map'
 
@@ -157,36 +156,12 @@ export default function AppPage() {
     setCurrentOrigin(origin)
 
     try {
-      // Get blocked user IDs first (client-side filtering)
-      const blockedUserIds = await getBlockedUserIds()
-      console.log('🚫 Blocked users:', blockedUserIds.length)
-
-      // Try RPC first, fallback to direct query if RPC doesn't exist
-      let data, error
-      const rpcResult = await supabase.rpc('get_nearby_profiles', {
+      const { data, error } = await supabase.rpc('get_nearby_profiles', {
         p_user_id: userId,
         p_origin_lat: origin[1],
         p_origin_lon: origin[0],
         p_radius_miles: radiusMiles,
       })
-
-      if (rpcResult.error && (rpcResult.error.message?.includes('does not exist') || rpcResult.error.message?.includes('Could not find') || rpcResult.error.code === 'PGRST202')) {
-        // RPC doesn't exist, use fallback direct query
-        console.warn('⚠️ RPC not found, using fallback query. Error:', rpcResult.error.message)
-        const fallbackResult = await supabase
-          .from('profiles')
-          .select('id, display_name, photo_url, photos, is_online, dtfn, party_friendly, latitude, longitude, founder_number, about, kinks, tags, position, age, incognito_mode')
-          .not('latitude', 'is', null)
-          .not('longitude', 'is', null)
-          .eq('incognito_mode', false)
-          .limit(200)
-
-        data = fallbackResult.data
-        error = fallbackResult.error
-      } else {
-        data = rpcResult.data
-        error = rpcResult.error
-      }
 
       if (error) {
         console.error('Error fetching nearby profiles:', error)
@@ -205,19 +180,7 @@ export default function AppPage() {
         }
       }
 
-      // Filter out blocked users (temporary client-side fix until DB migration applied)
-      console.log('🔍 Blocked user IDs:', blockedUserIds)
-      console.log('👥 Total users before filter:', data?.length || 0)
-      const filteredData = (data || []).filter((profile: any) => {
-        const isBlocked = blockedUserIds.includes(profile.id)
-        if (isBlocked) {
-          console.log('❌ Filtering out blocked user:', profile.id, profile.display_name)
-        }
-        return !isBlocked
-      })
-      console.log('📊 Users after filtering blocked:', filteredData.length, '(removed:', (data?.length || 0) - filteredData.length, ')')
-
-      const mappedUsers: UserWithLocation[] = filteredData.map((profile: any) => {
+      const mappedUsers: UserWithLocation[] = (data || []).map((profile: any) => {
         const photos = Array.isArray(profile?.photos) ? profile.photos.filter(Boolean) : undefined
 
         return {
@@ -377,9 +340,30 @@ export default function AppPage() {
   }
 
   const handleBlock = async (userId: string) => {
-    // Just remove from UI - the modal already handled the blocking in the database
-    setUsers(prev => prev.filter(u => u.id !== userId))
-    setShowProfileModal(false)
+    if (confirm('Block this user? They won\'t be able to see your profile or message you.')) {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Add to blocked users
+      const { error } = await supabase
+        .from('blocked_users')
+        .insert({
+          user_id: user.id,
+          blocked_user_id: userId,
+          created_at: new Date().toISOString()
+        })
+
+      if (error) {
+        console.error('Error blocking user:', error)
+        alert('Failed to block user')
+      } else {
+        // Remove from users list
+        setUsers(prev => prev.filter(u => u.id !== userId))
+        setShowProfileModal(false)
+        alert('User blocked')
+      }
+    }
   }
 
   const handleReport = async (userId: string) => {

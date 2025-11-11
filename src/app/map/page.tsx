@@ -135,22 +135,15 @@ export default function MapPage() {
       if (withSpinner) {
         setLoading(true);
       }
-
-      if (!currentUserId) {
-        setLoading(false);
-        return;
-      }
-
-      // Use center coordinates or default
-      const mapCenter = userLocation || DEFAULT_CENTER;
-
-      // Use RPC to fetch nearby profiles (already excludes blocked users at DB level)
-      const { data, error: fetchError } = await supabase.rpc('get_nearby_profiles', {
-        p_user_id: currentUserId,
-        p_origin_lat: mapCenter[1],
-        p_origin_lon: mapCenter[0],
-        p_radius_miles: 500, // Large radius for map view
-      });
+      const { data, error: fetchError } = await supabase
+        .from('profiles')
+        .select(
+          'id, display_name, photo_url, avatar_url, age, position, dtfn, party_friendly, latitude, longitude, incognito_mode',
+        )
+        .not('latitude', 'is', null)
+        .not('longitude', 'is', null)
+        .or('incognito_mode.is.null,incognito_mode.eq.false')
+        .limit(200);
 
       if (isCancelled) return;
 
@@ -164,13 +157,11 @@ export default function MapPage() {
         return;
       }
 
-      console.log('📊 Map users loaded:', data?.length || 0, '(blocked users already filtered by DB)');
-
-      const enriched = (data || []).map((profile: any) => {
+      const enriched = (data || []).map((profile: RawProfile) => {
         const base: MapUser = {
           id: profile.id,
           display_name: profile.display_name || 'Anonymous',
-          avatar_url: profile.photo_url || null,
+          avatar_url: profile.photo_url || profile.avatar_url || null,
           age: profile.age ?? null,
           position: profile.position || 'Unknown',
           dtfn: Boolean(profile.dtfn),
@@ -179,10 +170,13 @@ export default function MapPage() {
           longitude: profile.longitude,
         };
 
-        // RPC already provides distance_miles
-        if (profile.distance_miles != null) {
-          const distance = formatDistance(profile.distance_miles);
-          base.distanceValue = profile.distance_miles;
+        if (userLocation) {
+          const distanceMiles = calculateDistanceInMiles(userLocation, [
+            profile.longitude,
+            profile.latitude,
+          ]);
+          const distance = formatDistance(distanceMiles);
+          base.distanceValue = distanceMiles;
           if (distance) {
             base.distance = distance;
           }
@@ -219,7 +213,7 @@ export default function MapPage() {
       isCancelled = true;
       supabase.removeChannel(subscription);
     };
-  }, [supabase, userLocation, currentUserId]);
+  }, [supabase, userLocation]);
 
   useEffect(() => {
     if (!selectedUserId) return;
@@ -361,7 +355,7 @@ export default function MapPage() {
   );
 
   return (
-    <div className="map-view-container">
+    <div className="map-page-root">
       <MapView
         users={users}
         onChatUser={handleChatUser}

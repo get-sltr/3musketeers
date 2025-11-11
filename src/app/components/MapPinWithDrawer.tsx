@@ -43,6 +43,8 @@ export const MapPin: React.FC<MapPinProps> = ({
     return map[position] || '🎯';
   };
 
+  const avatarSrc = user.avatar_url || DEFAULT_PROFILE_IMAGE
+
   return (
     <div
       ref={pinRef}
@@ -51,32 +53,49 @@ export const MapPin: React.FC<MapPinProps> = ({
       onMouseLeave={() => setIsHovered(false)}
     >
       <div
-        className={`map-pin ${user.dtfn ? 'dtfn' : ''}`}
+        className={`map-pin-shell${user.dtfn ? ' is-dtfn' : ''}${user.party_friendly ? ' is-party' : ''}`}
         onClick={() => onProfileClick(user.id)}
       >
-        <img
-          src={user.avatar_url || DEFAULT_PROFILE_IMAGE}
-          alt={user.display_name}
-          onError={(e) => {
-            const target = e.target as HTMLImageElement
-            if (!target.dataset.fallback) {
-              target.dataset.fallback = 'true'
-              target.src = DEFAULT_PROFILE_IMAGE
-            }
-          }}
-        />
-        {user.dtfn && <div className="pin-badge">⚡</div>}
+        <div className="map-pin-halo" />
+        <div className="map-pin-core">
+          <img
+            src={avatarSrc}
+            alt={user.display_name}
+            onError={(e) => {
+              const target = e.target as HTMLImageElement
+              if (!target.dataset.fallback) {
+                target.dataset.fallback = 'true'
+                target.src = DEFAULT_PROFILE_IMAGE
+              }
+            }}
+          />
+        </div>
+        <div className="map-pin-ring" />
+        <div className="map-pin-info">
+          <span className="pin-name">{user.display_name}</span>
+          <span className="pin-distance">{user.distance || 'Nearby'}</span>
+        </div>
+        <div className="pin-chips">
+          {user.dtfn && <span className="pin-chip pin-chip-dtfn">⚡ Ready</span>}
+          {user.party_friendly && <span className="pin-chip pin-chip-party">🎉 Party</span>}
+          <span className="pin-chip pin-chip-position">{getPositionEmoji(user.position)}</span>
+        </div>
       </div>
 
       <div className={`horizontal-drawer compact ${isHovered ? 'visible' : ''}`}>
         <div className="drawer-compact-info">
           <div className="compact-line">
-            {user.age ?? '—'}, {user.position}, {user.distance || 'Nearby'}
+            {user.age ?? '—'} • {user.position} • {user.distance || 'Nearby'}
           </div>
           <div className="compact-line">
-            {user.dtfn && <span>⚡️</span>}
-            {user.party_friendly && <span>🥳</span>}
-            {!user.dtfn && !user.party_friendly && <span>—</span>}
+            {user.dtfn && <span className="descriptor">⚡ Down Tonight</span>}
+            {user.party_friendly && <span className="descriptor">🥳 Party Friendly</span>}
+            {!user.dtfn && !user.party_friendly && <span className="descriptor">Chill</span>}
+          </div>
+          <div className="drawer-actions-mini">
+            <button className="mini-action chat" onClick={() => onChat(user.id)}>Chat</button>
+            <button className="mini-action video" onClick={() => onVideo(user.id)}>Video</button>
+            <button className="mini-action tap" onClick={() => onTap(user.id)}>Tap</button>
           </div>
         </div>
       </div>
