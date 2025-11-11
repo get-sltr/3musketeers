@@ -23,7 +23,6 @@ import WelcomeModal from '../../components/WelcomeModal'
 import '../../styles/mobile-optimization.css'
 import { useSocket } from '../../hooks/useSocket'
 import { resolveProfilePhoto } from '@/lib/utils/profile'
-import { getBlockedUserIds } from '@/lib/safety'
 
 type ViewMode = 'grid' | 'map'
 
@@ -157,10 +156,7 @@ export default function AppPage() {
     setCurrentOrigin(origin)
 
     try {
-      // Get blocked user IDs first
-      const blockedUserIds = await getBlockedUserIds()
-      console.log('🚫 Blocked users:', blockedUserIds.length)
-
+      // RPC function already filters blocked users at database level
       const { data, error } = await supabase.rpc('get_nearby_profiles', {
         p_user_id: userId,
         p_origin_lat: origin[1],
@@ -185,11 +181,9 @@ export default function AppPage() {
         }
       }
 
-      // Filter out blocked users before mapping
-      const filteredData = (data || []).filter((profile: any) => !blockedUserIds.includes(profile.id))
-      console.log('📊 Fetched users (after filtering blocked):', filteredData.length, '(blocked:', data?.length - filteredData.length, ')')
+      console.log('📊 Fetched users:', data?.length || 0, '(blocked users already filtered by DB)')
 
-      const mappedUsers: UserWithLocation[] = filteredData.map((profile: any) => {
+      const mappedUsers: UserWithLocation[] = (data || []).map((profile: any) => {
         const photos = Array.isArray(profile?.photos) ? profile.photos.filter(Boolean) : undefined
 
         return {
@@ -349,30 +343,9 @@ export default function AppPage() {
   }
 
   const handleBlock = async (userId: string) => {
-    if (confirm('Block this user? They won\'t be able to see your profile or message you.')) {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      // Add to blocked users
-      const { error } = await supabase
-        .from('blocked_users')
-        .insert({
-          user_id: user.id,
-          blocked_user_id: userId,
-          created_at: new Date().toISOString()
-        })
-
-      if (error) {
-        console.error('Error blocking user:', error)
-        alert('Failed to block user')
-      } else {
-        // Remove from users list
-        setUsers(prev => prev.filter(u => u.id !== userId))
-        setShowProfileModal(false)
-        alert('User blocked')
-      }
-    }
+    // Just remove from UI - the modal already handled the blocking in the database
+    setUsers(prev => prev.filter(u => u.id !== userId))
+    setShowProfileModal(false)
   }
 
   const handleReport = async (userId: string) => {
