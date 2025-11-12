@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import "./globals.css";
 import { ErosAssistiveTouch } from '@/components/ErosAssistiveTouch';
 import ClientProviders from '@/components/ClientProviders';
+import NotificationPrompt from '@/components/NotificationPrompt';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -69,6 +70,7 @@ export default async function RootLayout({
         <ClientProviders locale={locale}>
           {children}
           <ErosAssistiveTouch />
+          <NotificationPrompt />
         </ClientProviders>
       </body>
     </html>

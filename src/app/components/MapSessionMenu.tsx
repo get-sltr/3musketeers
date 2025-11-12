@@ -100,10 +100,10 @@ export default function MapSessionMenu({
             <input
               type="range"
               min={1}
-              max={100}
-              step={1}
+              max={10}
+              step={0.5}
               value={radiusMiles}
-              onChange={(e) => setRadiusMiles(parseInt(e.target.value))}
+              onChange={(e) => setRadiusMiles(parseFloat(e.target.value))}
               className="w-full accent-cyan-400"
             />
           </div>

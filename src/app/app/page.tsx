@@ -85,7 +85,7 @@ export default function AppPage() {
   const [isFetching, setIsFetching] = useState(false)
   const fetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Map session UI state
-  const [radiusMiles, setRadiusMiles] = useState<number>(25)
+  const [radiusMiles, setRadiusMiles] = useState<number>(5)  // Default: 5 miles (Grindr-style)
   const previousRadiusRef = useRef<number>(radiusMiles)
   const [clusterRadius, setClusterRadius] = useState<number>(60)
   const [styleId, setStyleId] = useState<string>(DEFAULT_SLTR_STYLE)
@@ -649,7 +649,7 @@ export default function AppPage() {
               onCenter={handleCenterLocation}
               onRelocate={handleMoveLocation}
               onClear={() => {
-                setRadiusMiles(25)
+                setRadiusMiles(5)
                 setClusterRadius(60)
                 setStyleId('dark-v11')
                 setMenuFilters({ online: false, hosting: false, looking: false })
