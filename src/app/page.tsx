@@ -117,33 +117,6 @@ export default function SLTRLanding() {
           variants={itemVariants}
           className="w-full max-w-md space-y-4"
         >
-          {/* Black Card Button - ELITE */}
-          <motion.button
-            onClick={() => router.push('/signup?tier=blackcard')}
-            onMouseEnter={() => setHoveredButton('blackcard')}
-            onMouseLeave={() => setHoveredButton(null)}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="relative group block w-full"
-          >
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"
-            />
-            <div className="relative bg-gradient-to-r from-gray-900 via-black to-gray-900 hover:from-black hover:to-black text-white font-black py-4 px-8 rounded-2xl text-center transition-all shadow-lg hover:shadow-white/20 border border-white/20">
-              <motion.div
-                className="flex flex-col items-center justify-center gap-1"
-                animate={hoveredButton === 'blackcard' ? { x: [0, 5, 0] } : {}}
-                transition={{ duration: 0.6, repeat: Infinity }}
-              >
-                <span className="text-2xl">♠️</span>
-                <div>
-                  <div className="text-lg font-black">Black Card</div>
-                  <div className="text-sm font-bold text-gray-300">$999 Lifetime Elite</div>
-                </div>
-              </motion.div>
-            </div>
-          </motion.button>
-
           {/* Founder's Circle Button - PAID */}
           <motion.button
             onClick={() => router.push('/signup?tier=founder')}

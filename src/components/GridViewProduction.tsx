@@ -142,7 +142,7 @@ export default function GridViewProduction() {
   return (
     <div className="fixed inset-0 bg-black overflow-hidden">
       {/* 3-Column Tight Grid */}
-      <div className="h-full overflow-y-auto overflow-x-hidden">
+      <div className="h-full overflow-y-auto overflow-x-hidden overscroll-none" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="grid grid-cols-3 gap-0">
           {users.map((user) => {
             const photo = resolveProfilePhoto(user.photo_url, user.photos)
@@ -150,11 +150,10 @@ export default function GridViewProduction() {
             const eta = calculateETA(user.distance_miles)
 
             return (
-              <motion.div
+              <div
                 key={user.id}
                 onClick={() => setSelectedUser(user)}
-                className="relative aspect-[3/4] cursor-pointer overflow-hidden"
-                whileTap={{ scale: 0.98 }}
+                className="relative aspect-[3/4] cursor-pointer overflow-hidden active:opacity-90 transition-opacity"
               >
                 {/* Profile Photo Background */}
                 {photo ? (
@@ -194,7 +193,7 @@ export default function GridViewProduction() {
                     )}
                   </div>
                 </div>
-              </motion.div>
+              </div>
             )
           })}
         </div>
