@@ -73,17 +73,17 @@ export default function MessagingModal({
         if (!currentUser) return
 
         // Check if conversation exists
-        const { data: existingConv } = await supabase
+        const { data: existingConv, error: fetchError } = await supabase
           .from('conversations')
           .select('id')
           .or(`and(user1_id.eq.${currentUser.id},user2_id.eq.${user.id}),and(user1_id.eq.${user.id},user2_id.eq.${currentUser.id})`)
-          .single()
+          .maybeSingle()
 
         if (existingConv) {
           setConversationId(existingConv.id)
         } else {
           // Create new conversation
-          const { data: newConv, error } = await supabase
+          const { data: newConv, error: insertError } = await supabase
             .from('conversations')
             .insert({
               user1_id: currentUser.id,
@@ -92,8 +92,10 @@ export default function MessagingModal({
             .select('id')
             .single()
 
-          if (newConv && !error) {
+          if (newConv && !insertError) {
             setConversationId(newConv.id)
+          } else {
+            console.error('Error creating conversation:', insertError)
           }
         }
       } catch (error) {
