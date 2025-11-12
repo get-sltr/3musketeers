@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SLTR Black Card - Founder #0071</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: #000;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-center;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 500px;
+      width: 100%;
+    }
+
+    .card-container {
+      perspective: 1000px;
+      width: 100%;
+      aspect-ratio: 1.586;
+      margin-bottom: 40px;
+    }
+
+    .card {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .card.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .card-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(255, 215, 0, 0.3);
+    }
+
+    .card-front {
+      background: linear-gradient(135deg, #1a1a1a 0%, #000 100%);
+      border: 2px solid #ffd700;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      position: relative;
+    }
+
+    .card-front::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at 50% 50%, rgba(255, 215, 0, 0.1) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .crown {
+      font-size: 60px;
+      margin-bottom: 20px;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .card-title {
+      font-size: 32px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-align: center;
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+    }
+
+    .card-subtitle {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: #888;
+      margin-bottom: 30px;
+    }
+
+    .founder-info {
+      text-align: center;
+    }
+
+    .founder-number {
+      font-size: 28px;
+      font-weight: 700;
+      color: #ffd700;
+      margin-bottom: 10px;
+    }
+
+    .founder-name {
+      font-size: 20px;
+      font-weight: 500;
+      color: #fff;
+    }
+
+    .card-back {
+      background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
+      border: 2px solid #ffd700;
+      transform: rotateY(180deg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+    }
+
+    .qr-container {
+      background: #fff;
+      padding: 20px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 40px rgba(255, 215, 0, 0.2);
+      animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+      0%, 100% { box-shadow: 0 10px 40px rgba(255, 215, 0, 0.2); }
+      50% { box-shadow: 0 10px 60px rgba(255, 215, 0, 0.4); }
+    }
+
+    .qr-code {
+      width: 200px;
+      height: 200px;
+      display: block;
+    }
+
+    .verify-text {
+      font-size: 18px;
+      font-weight: 600;
+      color: #ffd700;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .flip-button {
+      background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+      color: #000;
+      border: none;
+      padding: 16px 40px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(255, 215, 0, 0.3);
+    }
+
+    .flip-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 30px rgba(255, 215, 0, 0.5);
+    }
+
+    .flip-button:active {
+      transform: translateY(0);
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: block;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.95);
+      animation: fadeIn 0.3s;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-content {
+      background: linear-gradient(135deg, #1a1a1a 0%, #000 100%);
+      margin: 10% auto;
+      padding: 40px;
+      border: 2px solid #ffd700;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      position: relative;
+      box-shadow: 0 20px 60px rgba(255, 215, 0, 0.3);
+      animation: slideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateY(-50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .close-modal {
+      color: #ffd700;
+      float: right;
+      font-size: 32px;
+      font-weight: 700;
+      cursor: pointer;
+      line-height: 1;
+      transition: color 0.2s;
+    }
+
+    .close-modal:hover {
+      color: #ffed4e;
+    }
+
+    .modal-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .modal-crown {
+      font-size: 60px;
+      margin-bottom: 15px;
+    }
+
+    .modal-title {
+      font-size: 28px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+    }
+
+    .modal-subtitle {
+      font-size: 14px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .modal-body {
+      color: #ccc;
+      font-size: 16px;
+      line-height: 1.8;
+      margin-bottom: 30px;
+    }
+
+    .modal-body p {
+      margin-bottom: 20px;
+    }
+
+    .modal-signature {
+      font-style: italic;
+      color: #ffd700;
+      text-align: right;
+      margin-top: 30px;
+      font-size: 14px;
+    }
+
+    .close-button {
+      background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+      color: #000;
+      border: none;
+      padding: 16px 40px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      transition: transform 0.2s;
+    }
+
+    .close-button:hover {
+      transform: translateY(-2px);
+    }
+
+    @media (max-width: 600px) {
+      .modal-content {
+        margin: 20% auto;
+        padding: 30px 20px;
+      }
+
+      .card-title {
+        font-size: 24px;
+      }
+
+      .founder-number {
+        font-size: 22px;
+      }
+
+      .founder-name {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Thank You Modal -->
+  <div id="thankYouModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeModal()">&times;</span>
+      <div class="modal-header">
+        <div class="modal-crown">👑</div>
+        <div class="modal-title">To My Very First Believers</div>
+        <div class="modal-subtitle">Founder's Circle · Urban James</div>
+      </div>
+      <div class="modal-body">
+        <p>Thank you. Not for just joining, but for believing before anyone else did.</p>
+        <p>When I started SLTR, it was just code and dreams. You didn't wait to see if it would work. You asked "what if it flies?" and showed up.</p>
+        <p>You're not just users. You're founders of what's coming.</p>
+        <p>This card represents more than lifetime access. It's proof that you were here from the start. Every feature we build, every update we ship, every success we celebrate—your name is in it.</p>
+        <p>Welcome to the inner circle.</p>
+        <p style="margin-top: 30px; font-weight: 600; color: #ffd700;">Stay True · Live Real · Rules Don't Apply</p>
+        <div class="modal-signature">
+          — Kevin Minn<br>
+          Founder & CEO, SLTR Digital LLC
+        </div>
+      </div>
+      <button class="close-button" onclick="closeModal()">See My Black Card →</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card-container" onclick="flipCard()">
+      <div class="card" id="blackCard">
+        <!-- Front of Card -->
+        <div class="card-face card-front">
+          <div class="crown">👑</div>
+          <div class="card-title">SLTR BLACK CARD</div>
+          <div class="card-subtitle">Founder's Circle</div>
+          <div class="founder-info">
+            <div class="founder-number">#0071</div>
+            <div class="founder-name">Urban James</div>
+          </div>
+        </div>
+
+        <!-- Back of Card -->
+        <div class="card-face card-back">
+          <div class="qr-container">
+            <img src="data:image/png;base64,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" alt="QR Code" class="qr-code">
+          </div>
+          <div class="verify-text">SCAN TO VERIFY</div>
+          <div style="margin-top: 10px; font-size: 12px; color: #666; text-align: center;">
+            SLTR-FC-5617-9111
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="flip-button" onclick="flipCard()">
+      <span id="flipText">Tap to Flip</span>
+    </button>
+  </div>
+
+  <script>
+    let isFlipped = false;
+
+    function flipCard() {
+      const card = document.getElementById('blackCard');
+      const flipText = document.getElementById('flipText');
+      isFlipped = !isFlipped;
+
+      if (isFlipped) {
+        card.classList.add('flipped');
+        flipText.textContent = 'Tap to Flip Back';
+      } else {
+        card.classList.remove('flipped');
+        flipText.textContent = 'Tap to Flip';
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('thankYouModal').style.display = 'none';
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+      const modal = document.getElementById('thankYouModal');
+      if (event.target == modal) {
+        closeModal();
+      }
+    }
+  </script>
+</body>
+</html>

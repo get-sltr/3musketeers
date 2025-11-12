@@ -95,6 +95,7 @@ export default function AppPage() {
   const [vanillaMode, setVanillaMode] = useState<boolean>(false)
   const [showVenues, setShowVenues] = useState<boolean>(false)
   const [showHeatmap, setShowHeatmap] = useState<boolean>(false)
+  const [pinStyle, setPinStyle] = useState<number>(1)
   // Add/Host modals
   const [isAddingPlace, setIsAddingPlace] = useState<boolean>(false)
   const [isHostingGroup, setIsHostingGroup] = useState<boolean>(false)
@@ -616,10 +617,10 @@ export default function AppPage() {
               onToggle={() => setShowAdvertisingPanel(!showAdvertisingPanel)}
             />
             
-            <MapViewSimple />
+            <MapViewSimple pinStyle={pinStyle} />
 
             {/* Location Search Bar */}
-            <div className="absolute top-20 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-40">
+            <div className="absolute top-16 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-30">
               <LocationSearch
                 onLocationSelect={(lat, lng, placeName) => {
                   setMapCenter([lng, lat])
@@ -660,6 +661,8 @@ export default function AppPage() {
               onToggleVenues={setShowVenues}
               showHeatmap={showHeatmap}
               onToggleHeatmap={setShowHeatmap}
+              pinStyle={pinStyle}
+              onPinStyleChange={setPinStyle}
             />
 
             {/* Corner Buttons */}

@@ -30,6 +30,8 @@ interface MapSessionMenuProps {
   onToggleVenues: (enabled: boolean) => void
   showHeatmap: boolean
   onToggleHeatmap: (enabled: boolean) => void
+  pinStyle?: number
+  onPinStyleChange?: (styleId: number) => void
 }
 
 export default function MapSessionMenu({
@@ -56,6 +58,8 @@ export default function MapSessionMenu({
   onToggleVenues,
   showHeatmap,
   onToggleHeatmap,
+  pinStyle = 1,
+  onPinStyleChange,
 }: MapSessionMenuProps) {
   const t = useTranslations('map')
   const tCommon = useTranslations('common')
@@ -72,7 +76,7 @@ export default function MapSessionMenu({
   }
 
   return (
-    <div className="fixed top-32 left-4 z-30">
+    <div className="fixed top-20 left-4 z-20">
       <button
         onClick={() => setOpen(!open)}
         className="mb-3 px-4 py-2 rounded-full bg-black/80 border border-white/10 text-white text-sm font-semibold hover:bg-black/70 transition shadow-lg"
@@ -224,6 +228,36 @@ export default function MapSessionMenu({
               {showHeatmap ? tCommon('on') : tCommon('off')}
             </button>
           </div>
+
+          {/* Pin Style Selector */}
+          {onPinStyleChange && (
+            <div>
+              <label className="text-sm text-white/80 mb-2 block">Map Pin Style</label>
+              <div className="grid grid-cols-5 gap-2">
+                {[
+                  { id: 1, icon: '⭕', name: 'Glowing' },
+                  { id: 2, icon: '💎', name: 'Diamond' },
+                  { id: 3, icon: '🔮', name: 'Pulse' },
+                  { id: 4, icon: '⬛', name: 'Minimal' },
+                  { id: 5, icon: '🔺', name: 'Triangle' }
+                ].map((style) => (
+                  <button
+                    key={style.id}
+                    onClick={() => onPinStyleChange(style.id)}
+                    className={`p-2 rounded-xl border transition flex flex-col items-center gap-1 ${
+                      pinStyle === style.id
+                        ? "bg-cyan-500/20 border-cyan-400 text-cyan-300"
+                        : "bg-white/5 border-white/10 text-white/80 hover:bg-white/10"
+                    }`}
+                    title={style.name}
+                  >
+                    <span className="text-lg">{style.icon}</span>
+                    <span className="text-xs">{style.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="grid grid-cols-3 gap-2">

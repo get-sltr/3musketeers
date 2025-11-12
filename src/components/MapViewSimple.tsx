@@ -160,12 +160,11 @@ const createPinStyle5 = (user: any) => {
 }
 
 // Simple Mapbox map component using CDN approach
-export default function MapViewSimple() {
+export default function MapViewSimple({ pinStyle = 1 }: { pinStyle?: number }) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<any>(null)
   const [users, setUsers] = useState<any[]>([])
   const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null)
-  const [pinStyle, setPinStyle] = useState<number>(1) // Default: Glowing Circle
   const markers = useRef<any[]>([])
   const supabase = createClient()
 
@@ -288,7 +287,10 @@ export default function MapViewSimple() {
           if (user.latitude && user.longitude) {
             const el = createMarker(user)
 
-            const marker = new mapboxgl.Marker(el)
+            const marker = new mapboxgl.Marker({
+              element: el,
+              anchor: 'center'  // CRITICAL: Prevents pins from jumping around
+            })
               .setLngLat([user.longitude, user.latitude])
               .addTo(map.current)
 
@@ -338,7 +340,10 @@ export default function MapViewSimple() {
             window.location.href = `/profile/${user.id}`
           })
 
-          const marker = new mapboxgl.Marker(el)
+          const marker = new mapboxgl.Marker({
+            element: el,
+            anchor: 'center'  // CRITICAL: Prevents pins from jumping around
+          })
             .setLngLat([user.longitude, user.latitude])
             .addTo(map.current)
 
@@ -348,86 +353,9 @@ export default function MapViewSimple() {
     }
   }, [pinStyle, users])
 
-  const pinStyles = [
-    { id: 1, name: 'Glowing Circle', icon: '⭕' },
-    { id: 2, name: 'Magenta Diamond', icon: '💎' },
-    { id: 3, name: 'Gradient Pulse', icon: '🔮' },
-    { id: 4, name: 'Minimal Square', icon: '⬛' },
-    { id: 5, name: 'Neon Triangle', icon: '🔺' }
-  ]
-
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
-
-      {/* Pin Style Switcher */}
-      <div style={{
-        position: 'absolute',
-        top: '20px',
-        left: '20px',
-        background: 'rgba(10, 10, 15, 0.95)',
-        backdropFilter: 'blur(10px)',
-        borderRadius: '16px',
-        padding: '12px',
-        border: '2px solid rgba(0, 217, 255, 0.3)',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 217, 255, 0.2)',
-        zIndex: 1000
-      }}>
-        <div style={{
-          fontSize: '12px',
-          fontWeight: 'bold',
-          color: '#00d9ff',
-          marginBottom: '8px',
-          textTransform: 'uppercase',
-          letterSpacing: '1px'
-        }}>
-          Pin Style
-        </div>
-        <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
-          {pinStyles.map((style) => (
-            <button
-              key={style.id}
-              onClick={() => setPinStyle(style.id)}
-              style={{
-                padding: '10px 16px',
-                borderRadius: '10px',
-                border: pinStyle === style.id
-                  ? '2px solid #00d9ff'
-                  : '2px solid rgba(255, 255, 255, 0.1)',
-                background: pinStyle === style.id
-                  ? 'linear-gradient(135deg, rgba(0, 217, 255, 0.2) 0%, rgba(255, 0, 255, 0.2) 100%)'
-                  : 'rgba(255, 255, 255, 0.05)',
-                color: pinStyle === style.id ? '#00d9ff' : 'rgba(255, 255, 255, 0.7)',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: pinStyle === style.id ? 'bold' : 'normal',
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                boxShadow: pinStyle === style.id
-                  ? '0 0 20px rgba(0, 217, 255, 0.4)'
-                  : 'none'
-              }}
-              onMouseEnter={(e) => {
-                if (pinStyle !== style.id) {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'
-                  e.currentTarget.style.borderColor = 'rgba(0, 217, 255, 0.5)'
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (pinStyle !== style.id) {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'
-                }
-              }}
-            >
-              <span style={{ fontSize: '18px' }}>{style.icon}</span>
-              <span>{style.name}</span>
-            </button>
-          ))}
-        </div>
-      </div>
 
       {!currentLocation && (
         <div style={{
