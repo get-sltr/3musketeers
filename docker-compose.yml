@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # SLTR Next.js App
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sltr-app
+    ports:
+      - "3000:3000"
+    environment:
+      # Supabase
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+
+      # Stripe
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_PRICE_MEMBER=${STRIPE_PRICE_MEMBER}
+      - STRIPE_PRICE_FOUNDER=${STRIPE_PRICE_FOUNDER}
+      - STRIPE_PRICE_BLACKCARD=${STRIPE_PRICE_BLACKCARD}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+
+      # App Config
+      - NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL:-http://localhost:3000}
+      - NEXT_PUBLIC_MAPBOX_TOKEN=${NEXT_PUBLIC_MAPBOX_TOKEN}
+
+      # OpenAI (EROS)
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+
+      # Socket.io
+      - NEXT_PUBLIC_SOCKET_URL=${NEXT_PUBLIC_SOCKET_URL:-http://localhost:3001}
+
+      # Sentry (optional)
+      - NEXT_PUBLIC_SENTRY_DSN=${NEXT_PUBLIC_SENTRY_DSN}
+      - SENTRY_AUTH_TOKEN=${SENTRY_AUTH_TOKEN}
+
+    env_file:
+      - .env.local
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - sltr-network
+
+  # Redis (for caching and real-time features)
+  redis:
+    image: redis:7-alpine
+    container_name: sltr-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - sltr-network
+
+networks:
+  sltr-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+    driver: local

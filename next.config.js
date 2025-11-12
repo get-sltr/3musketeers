@@ -7,10 +7,13 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  
+
   // Force clean build
   cleanDistDir: true,
-  
+
+  // Enable standalone output for Docker
+  output: 'standalone',
+
   // Enable experimental features for better performance
   experimental: {
     optimizePackageImports: ['react-leaflet', 'leaflet'],
