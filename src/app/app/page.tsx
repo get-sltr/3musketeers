@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import MobileLayout from '../../components/MobileLayout'
 import LoadingSkeleton from '../../components/LoadingSkeleton'
 import { LazyGridView } from '../../components/LazyWrapper'
-import GridViewNew from '../../components/GridViewNew'
+import GridViewProduction from '../../components/GridViewProduction'
 import dynamic from 'next/dynamic'
 import AnimatedHeader from '../../components/AnimatedHeader'
 import GradientBackground from '../../components/GradientBackground'
@@ -606,7 +606,7 @@ export default function AppPage() {
       <main className={viewMode === 'grid' ? 'pt-0' : 'pt-0'}>
         {/* Grid or Map view based on viewMode */}
         {viewMode === 'grid' ? (
-          <GridViewNew />
+          <GridViewProduction />
         ) : (
           <div className="relative w-full h-screen">
             {/* User Advertising Panel */}
