@@ -54,18 +54,18 @@ export function useFullScreenMobile() {
 
     const handleTouchStart = (e: TouchEvent) => {
       if (e.touches.length !== 1) return;
-      lastTouchY = e.touches[0].clientY;
-      
+      lastTouchY = e.touches[0]?.clientY ?? 0;
+
       // Check if we're at the top of the page
       preventPullToRefresh = window.scrollY === 0;
     };
 
     const handleTouchMove = (e: TouchEvent) => {
       if (!preventPullToRefresh) return;
-      
-      const touchY = e.touches[0].clientY;
+
+      const touchY = e.touches[0]?.clientY ?? 0;
       const touchYDelta = touchY - lastTouchY;
-      
+
       // If pulling down at top of page, prevent default
       if (touchYDelta > 0) {
         e.preventDefault();

@@ -17,7 +17,7 @@ interface VerificationResult {
 export default function VerifyBlackCard() {
   const params = useParams();
   const router = useRouter();
-  const code = params.code as string;
+  const code = params?.code as string;
   const supabase = createClient();
 
   const [verification, setVerification] = useState<VerificationResult | null>(null);
