@@ -80,10 +80,16 @@ export default function BottomNav() {
 
   const navItems = [
     {
-      id: 'viewed',
-      icon: '👀',
-      label: 'Viewed',
-      action: () => router.push('/viewed'),
+      id: 'profile',
+      icon: '👤',
+      label: 'Profile',
+      action: () => router.push('/profile'),
+    },
+    {
+      id: 'discover',
+      icon: '🔥',
+      label: 'Discover',
+      action: () => router.push('/app'),
     },
     {
       id: 'map',
@@ -101,10 +107,10 @@ export default function BottomNav() {
       },
     },
     {
-      id: 'discover',
-      icon: '🔥',
-      label: 'Discover',
-      action: () => router.push('/app'),
+      id: 'messages',
+      icon: '💬',
+      label: 'Messages',
+      action: () => router.push('/messages'),
     },
     {
       id: 'taps',
@@ -113,16 +119,10 @@ export default function BottomNav() {
       action: () => router.push('/taps'),
     },
     {
-      id: 'messages',
-      icon: '💬',
-      label: 'Messages',
-      action: () => router.push('/messages'),
-    },
-    {
-      id: 'profile',
-      icon: '👤',
-      label: 'Profile',
-      action: () => router.push('/profile'),
+      id: 'viewed',
+      icon: '👀',
+      label: 'Viewed',
+      action: () => router.push('/viewed'),
     },
   ]
 
