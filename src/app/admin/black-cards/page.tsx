@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
 interface BlackCard {
@@ -18,7 +18,7 @@ interface BlackCard {
 }
 
 export default function BlackCardsAdmin() {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const router = useRouter();
 
   const [cards, setCards] = useState<BlackCard[]>([]);

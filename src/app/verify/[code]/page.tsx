@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/lib/supabase/client';
 
 interface VerificationResult {
   valid: boolean;
@@ -18,7 +18,7 @@ export default function VerifyBlackCard() {
   const params = useParams();
   const router = useRouter();
   const code = params.code as string;
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   const [verification, setVerification] = useState<VerificationResult | null>(null);
   const [loading, setLoading] = useState(true);
