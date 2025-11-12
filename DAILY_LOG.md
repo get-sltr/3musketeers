@@ -68,6 +68,8 @@ These files should auto-open when you open the project:
 - [x] **Radius & Relocation Flow Polishing** – Debounced Supabase RPC calls on radius changes and refreshed map center instantly after relocation.
   - **Result:** Smoother UX with server-side geo filtering, no flashing or redundant fetches.
 - [x] **Env Template Update** – Documented Mapbox token + style env vars for local/Vercel parity.
+- [x] **Supabase Geo Function + RLS Optimization** – Added `haversine_miles` helper, `get_nearby_profiles` RPC, supporting indexes, and cleaned up RLS policies to use `(select auth.uid())`.
+  - **Result:** Grid/map can rely on server-side proximity filtering; auth policies now lint-free and faster.
 
 **Files Created/Modified:**
 - `frontend-env-template.txt` (Mapbox env entries)
@@ -75,11 +77,13 @@ These files should auto-open when you open the project:
 - `src/app/components/MapSessionMenu.tsx` (SLTR style option)
 - `src/app/components/maps/VenueMarker.tsx` (new beacon visuals)
 - `src/app/app/page.tsx` (default style constant, distance threading)
+- `supabase/migrations/20251111_add_geo_nearby_profiles.sql` (geo RPC + helper)
+- `supabase/migrations/20251111_optimize_rls_policies.sql` (RLS performance pass)
 
 **Notes:**
 - Fog/sky layers currently apply regardless of `holoTheme`; adjust if we introduce day modes.
 - `<img>` usage in hover tooltips remains (low priority).
-- Next steps: avatar pin refactor to match softer palette, animated clustering, performance telemetry.
+- Next steps: avatar pin refactor to match softer palette, animated clustering, final grid facelift.
 
 ### Saturday, November 9, 2025 (Session 2)
 **Session Start:** Saturday, November 9, 2025 Evening (Critical Pre-Launch Fixes)
