@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
-      customer_email: profile.email || user.email,
+      customer_email: profile?.email || user.email,
       client_reference_id: user.id,
       line_items: [
         {
