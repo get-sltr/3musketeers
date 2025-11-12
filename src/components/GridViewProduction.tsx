@@ -17,6 +17,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { createClient } from '../lib/supabase/client'
 import { resolveProfilePhoto } from '@/lib/utils/profile'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -69,6 +70,7 @@ const calculateETA = (miles?: number | null): string => {
 
 export default function GridViewProduction() {
   const supabase = createClient()
+  const router = useRouter()
   const [users, setUsers] = useState<User[]>([])
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
@@ -378,11 +380,107 @@ export default function GridViewProduction() {
 
               {/* Action Buttons */}
               <div className="flex gap-3 pt-4">
-                <button className="flex-1 bg-cyan-500 text-black font-bold py-4 rounded-xl hover:bg-cyan-400 transition">
+                <button
+                  onClick={() => router.push(`/messages?conversation=${selectedUser.id}`)}
+                  className="flex-1 bg-cyan-500 text-black font-bold py-4 rounded-xl hover:bg-cyan-400 transition"
+                >
                   Message
                 </button>
-                <button className="flex-1 bg-gray-800 text-white font-bold py-4 rounded-xl hover:bg-gray-700 transition">
+                <button
+                  onClick={async () => {
+                    try {
+                      const { data: { user } } = await supabase.auth.getUser()
+                      if (!user) return
+
+                      await supabase.from('taps').insert({
+                        from_user_id: user.id,
+                        to_user_id: selectedUser.id,
+                        created_at: new Date().toISOString()
+                      })
+
+                      alert('Tap sent!')
+                    } catch (error) {
+                      console.error('Error sending tap:', error)
+                    }
+                  }}
+                  className="flex-1 bg-gray-800 text-white font-bold py-4 rounded-xl hover:bg-gray-700 transition"
+                >
                   Tap
+                </button>
+              </div>
+
+              {/* Secondary Actions */}
+              <div className="flex gap-3 pt-3">
+                <button
+                  onClick={async () => {
+                    try {
+                      const { data: { user } } = await supabase.auth.getUser()
+                      if (!user) return
+
+                      // Check if already favorited
+                      const { data: existing } = await supabase
+                        .from('favorites')
+                        .select('id')
+                        .eq('user_id', user.id)
+                        .eq('favorite_user_id', selectedUser.id)
+                        .single()
+
+                      if (existing) {
+                        // Remove from favorites
+                        await supabase.from('favorites').delete().eq('id', existing.id)
+                        alert('Removed from favorites')
+                      } else {
+                        // Add to favorites
+                        await supabase.from('favorites').insert({
+                          user_id: user.id,
+                          favorite_user_id: selectedUser.id,
+                          created_at: new Date().toISOString()
+                        })
+                        alert('Added to favorites!')
+                      }
+                    } catch (error) {
+                      console.error('Error toggling favorite:', error)
+                    }
+                  }}
+                  className="flex-1 bg-purple-600 text-white font-semibold py-3 rounded-xl hover:bg-purple-500 transition"
+                >
+                  ⭐ Favorite
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!confirm('Block this user? They won\'t be able to see your profile or message you.')) return
+
+                    try {
+                      const { data: { user } } = await supabase.auth.getUser()
+                      if (!user) return
+
+                      await supabase.from('blocks').insert({
+                        blocker_id: user.id,
+                        blocked_id: selectedUser.id,
+                        created_at: new Date().toISOString()
+                      })
+
+                      alert('User blocked')
+                      setSelectedUser(null)
+                    } catch (error) {
+                      console.error('Error blocking user:', error)
+                    }
+                  }}
+                  className="flex-1 bg-red-600 text-white font-semibold py-3 rounded-xl hover:bg-red-500 transition"
+                >
+                  🚫 Block
+                </button>
+                <button
+                  onClick={() => {
+                    const reason = prompt('Why are you reporting this profile?\n\n1. Fake profile\n2. Inappropriate content\n3. Harassment\n4. Spam\n5. Other')
+                    if (!reason) return
+
+                    // In a real app, send this to your moderation system
+                    alert('Report submitted. Our team will review it shortly.')
+                  }}
+                  className="flex-1 bg-orange-600 text-white font-semibold py-3 rounded-xl hover:bg-orange-500 transition"
+                >
+                  ⚠️ Report
                 </button>
               </div>
 

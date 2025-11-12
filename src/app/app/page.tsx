@@ -7,6 +7,7 @@ import MobileLayout from '../../components/MobileLayout'
 import LoadingSkeleton from '../../components/LoadingSkeleton'
 import { LazyGridView } from '../../components/LazyWrapper'
 import GridViewProduction from '../../components/GridViewProduction'
+import MapViewSimple from '../../components/MapViewSimple'
 import dynamic from 'next/dynamic'
 import AnimatedHeader from '../../components/AnimatedHeader'
 import GradientBackground from '../../components/GradientBackground'
@@ -615,43 +616,7 @@ export default function AppPage() {
               onToggle={() => setShowAdvertisingPanel(!showAdvertisingPanel)}
             />
             
-            <MapboxUsers 
-              users={mapUsers.map(u => ({
-                id: u.id,
-                latitude: u.latitude,
-                longitude: u.longitude,
-                display_name: u.display_name,
-                isCurrentUser: !!u.isYou,
-                photo: resolveProfilePhoto(u.photo_url, u.photos),
-                photos: Array.isArray(u.photos) ? u.photos : undefined,
-                online: !!(u.online),
-                dtfn: u.dtfn,
-                party_friendly: u.party_friendly,
-                age: u.age,
-                position: u.position,
-                distance: u.distance,
-                distanceValue: u.distanceValue,
-              }))}
-              advancedPins={false}
-              autoLoad={false}
-              onUserClick={handleUserClick}
-              onMapClick={handleMapClick}
-              center={mapCenter || undefined}
-              minZoom={2}
-              maxZoom={18}
-              incognito={isIncognito}
-              cluster={clusterEnabled}
-              styleId={styleId}
-              clusterRadius={clusterRadius}
-              jitterMeters={jitterMeters}
-              vanillaMode={vanillaMode}
-              holoTheme={false}
-              showVenues={showVenues}
-              showHeatmap={showHeatmap}
-              onChat={handleMessage}
-              onVideo={handleMapVideo}
-              onTap={handleMapTap}
-            />
+            <MapViewSimple />
 
             {/* Location Search Bar */}
             <div className="absolute top-20 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-40">

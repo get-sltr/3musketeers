@@ -3,6 +3,13 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
+// Helper function to decode HTML entities
+const decodeHtmlEntities = (text: string): string => {
+  const textarea = document.createElement('textarea')
+  textarea.innerHTML = text
+  return textarea.value
+}
+
 interface Album {
   id: string
   name: string
@@ -443,9 +450,9 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
                           )}
                         </div>
                         <div className="flex-1">
-                          <p className="truncate text-sm font-semibold text-white">{album.name}</p>
+                          <p className="truncate text-sm font-semibold text-white">{decodeHtmlEntities(album.name)}</p>
                           {album.description && (
-                            <p className="mt-1 line-clamp-2 text-xs text-white/50">{album.description}</p>
+                            <p className="mt-1 line-clamp-2 text-xs text-white/50">{decodeHtmlEntities(album.description)}</p>
                           )}
                           <div className="mt-2 text-xs text-white/50">
                             {album.photos.length} photo{album.photos.length === 1 ? '' : 's'}

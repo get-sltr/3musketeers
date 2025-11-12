@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 export default function SignupPage() {
@@ -15,6 +15,15 @@ export default function SignupPage() {
   const [ageError, setAgeError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const [tier, setTier] = useState<'free' | 'member' | 'founder' | 'blackcard'>('free')
+
+  useEffect(() => {
+    const tierParam = searchParams.get('tier')
+    if (tierParam === 'blackcard' || tierParam === 'founder' || tierParam === 'member' || tierParam === 'free') {
+      setTier(tierParam)
+    }
+  }, [searchParams])
 
   // Import URL utility - will be imported dynamically in the function
 
@@ -118,6 +127,7 @@ export default function SignupPage() {
           party_friendly: false, // Default to false
           dtfn: false, // Default to false
           online: false, // Default to offline
+          subscription_tier: tier, // Store selected tier
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           last_active: new Date().toISOString()
@@ -152,7 +162,7 @@ export default function SignupPage() {
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <h1 
+          <h1
             className="text-4xl font-black tracking-wider"
             style={{
               background: 'linear-gradient(135deg, #00d4ff, #ff00ff)',
@@ -167,6 +177,36 @@ export default function SignupPage() {
             RULES DON'T APPLY
           </p>
         </div>
+
+        {/* Tier Selection Banner */}
+        {tier === 'blackcard' && (
+          <div className="mb-6 p-4 bg-gradient-to-r from-gray-900 via-black to-gray-900 border border-white/20 rounded-2xl text-center">
+            <div className="text-2xl mb-1">♠️</div>
+            <div className="text-white font-bold">Black Card</div>
+            <div className="text-xs text-gray-300">$999 Lifetime Elite</div>
+          </div>
+        )}
+        {tier === 'founder' && (
+          <div className="mb-6 p-4 bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/50 rounded-2xl text-center">
+            <div className="text-2xl mb-1">👑</div>
+            <div className="text-amber-400 font-bold">Founder's Circle</div>
+            <div className="text-xs text-amber-300/80">$199 Lifetime Access</div>
+          </div>
+        )}
+        {tier === 'member' && (
+          <div className="mb-6 p-4 bg-cyan-500/10 border border-cyan-500/50 rounded-2xl text-center">
+            <div className="text-2xl mb-1">⭐</div>
+            <div className="text-cyan-400 font-bold">Premium Member</div>
+            <div className="text-xs text-cyan-300/80">$12.99/month</div>
+          </div>
+        )}
+        {tier === 'free' && (
+          <div className="mb-6 p-4 bg-magenta-500/10 border border-magenta-500/50 rounded-2xl text-center">
+            <div className="text-2xl mb-1">🔥</div>
+            <div className="text-magenta-400 font-bold">Free Account</div>
+            <div className="text-xs text-magenta-300/80">No credit card needed</div>
+          </div>
+        )}
 
         {/* Signup Form */}
         <form onSubmit={handleSignup} className="space-y-4">
