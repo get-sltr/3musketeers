@@ -35,6 +35,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   themeColor: '#000000',
+  viewportFit: 'cover', // Support for notches and safe areas
 };
 
 async function getLocale() {
@@ -57,8 +58,10 @@ export default async function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="format-detection" content="telephone=no" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
-      <body className="antialiased font-sans touch-pan-y overscroll-none">
+      <body className="antialiased font-sans touch-pan-y overscroll-none fixed w-full h-full">
         <ClientProviders locale={locale}>
           {children}
           <ErosAssistiveTouch />

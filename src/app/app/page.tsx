@@ -23,6 +23,7 @@ import WelcomeModal from '../../components/WelcomeModal'
 import '../../styles/mobile-optimization.css'
 import { useSocket } from '../../hooks/useSocket'
 import { resolveProfilePhoto } from '@/lib/utils/profile'
+import { useFullScreenMobile } from '../../hooks/useFullScreenMobile'
 
 type ViewMode = 'grid' | 'map'
 
@@ -100,6 +101,9 @@ export default function AppPage() {
   const [showWelcomeModal, setShowWelcomeModal] = useState<boolean>(false)
   const [userName, setUserName] = useState<string>('')
   const router = useRouter()
+
+  // Enable full-screen mobile app experience
+  useFullScreenMobile()
 
   // Check if first login and show welcome modal
   useEffect(() => {
