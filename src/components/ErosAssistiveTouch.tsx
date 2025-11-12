@@ -225,8 +225,7 @@ export function ErosAssistiveTouch() {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           // Trigger EROS analysis
-          // DISABLED: EROS API temporarily disabled
-          /* try {
+          try {
             await fetch('/api/eros/analyze', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -234,7 +233,7 @@ export function ErosAssistiveTouch() {
             });
           } catch (e) {
             console.error('EROS analysis failed:', e);
-          } */
+          }
         }
       }
     },
@@ -376,10 +375,9 @@ export function ErosAssistiveTouch() {
     if (!isDragging && !menuOpen) {
       vibrate(30);
       // Trigger EROS AI analysis silently on short press
-      // DISABLED: EROS API temporarily disabled
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        /* try {
+        try {
           await fetch('/api/eros/analyze', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -387,7 +385,7 @@ export function ErosAssistiveTouch() {
           });
         } catch (e) {
           console.error('EROS analysis failed:', e);
-        } */
+        }
       }
       return;
     }
