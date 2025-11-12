@@ -165,7 +165,7 @@ export default function MapViewSimple() {
   const map = useRef<any>(null)
   const [users, setUsers] = useState<any[]>([])
   const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null)
-  const [pinStyle, setPinStyle] = useState<number>(1)
+  const [pinStyle, setPinStyle] = useState<number>(1) // Default: Glowing Circle
   const markers = useRef<any[]>([])
   const supabase = createClient()
 
