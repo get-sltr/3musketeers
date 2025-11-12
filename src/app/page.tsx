@@ -165,60 +165,31 @@ export default function LandingPage() {
           </motion.p>
           
           {/* CTA Buttons with hover effects */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-            className="flex flex-col sm:flex-row gap-6 justify-center"
-          >
-            <Link href="/signup" className="contents">
-              <motion.button
-                whileHover={{ scale: 1.05, boxShadow: '0 20px 40px rgba(236, 72, 153, 0.3)' }}
-                whileTap={{ scale: 0.95 }}
-                className="group relative px-10 py-5 bg-gradient-to-r from-pink-500 to-purple-600 rounded-2xl font-bold text-xl overflow-hidden"
-              >
-                <span className="relative z-10">Get Early Access</span>
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-500"
-                  initial={{ x: '100%' }}
-                  whileHover={{ x: 0 }}
-                  transition={{ duration: 0.3 }}
-                />
-              </motion.button>
+          <div className="flex flex-col sm:flex-row gap-6 justify-center">
+            <Link href="/signup">
+              <button className="px-10 py-5 bg-gradient-to-r from-cyan-500 to-cyan-400 rounded-2xl font-bold text-xl hover:opacity-90 transition-opacity text-black">
+                Get Early Access
+              </button>
             </Link>
 
-            <Link href="/pricing" className="contents">
-              <motion.button
-                whileHover={{ scale: 1.05, boxShadow: '0 20px 40px rgba(251, 191, 36, 0.3)' }}
-                whileTap={{ scale: 0.95 }}
-                className="group relative px-10 py-5 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl font-bold text-xl overflow-hidden"
-              >
-                <span className="relative z-10">Join Founder's Circle</span>
+            <Link href="/pricing">
+              <button className="relative px-10 py-5 bg-gradient-to-r from-cyan-500 to-cyan-400 rounded-2xl font-bold text-xl hover:opacity-90 transition-opacity text-black">
+                Join Founder's Circle
                 <div className="absolute -top-1 -right-1">
                   <span className="relative flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-yellow-500"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
                   </span>
                 </div>
-              </motion.button>
+              </button>
             </Link>
 
-            <Link href="/login" className="contents">
-              <motion.button
-                whileHover={{ scale: 1.05, boxShadow: '0 20px 40px rgba(59, 130, 246, 0.3)' }}
-                whileTap={{ scale: 0.95 }}
-                className="group relative px-10 py-5 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl font-bold text-xl overflow-hidden"
-              >
-                <span className="relative z-10">Welcome Back • Sign In</span>
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-500"
-                  initial={{ x: '100%' }}
-                  whileHover={{ x: 0 }}
-                  transition={{ duration: 0.3 }}
-                />
-              </motion.button>
+            <Link href="/login">
+              <button className="px-10 py-5 bg-gradient-to-r from-cyan-500 to-cyan-400 rounded-2xl font-bold text-xl hover:opacity-90 transition-opacity text-black">
+                Welcome Back • Sign In
+              </button>
             </Link>
-          </motion.div>
+          </div>
           
           {/* Founder Counter */}
           <motion.div

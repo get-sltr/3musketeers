@@ -107,6 +107,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
   const [filteredUsers, setFilteredUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
 
   const [activeButtons, setActiveButtons] = useState<string[]>([])
   const [ageRange, setAgeRange] = useState(DEFAULT_AGE_RANGE)
@@ -741,44 +742,38 @@ export default function GridView({ onUserClick }: GridViewProps) {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
           gap: 2px;
+          padding: 2px;
+          background: black;
         }
 
         .profile-card {
           position: relative;
-          border-radius: 8px;
+          border-radius: 0px;
           overflow: hidden;
-          border: 1px solid rgba(0, 212, 255, 0.2);
-          background: rgba(5, 5, 8, 0.95);
-          transition: all 0.2s ease;
+          border: none;
+          background: black;
+          transition: transform 0.15s ease;
           cursor: pointer;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-          animation: fadeInUp 0.5s ease-out backwards;
-        }
-
-        .profile-card:nth-child(1) { animation-delay: 0.05s; }
-        .profile-card:nth-child(2) { animation-delay: 0.1s; }
-        .profile-card:nth-child(3) { animation-delay: 0.15s; }
-        .profile-card:nth-child(4) { animation-delay: 0.2s; }
-        .profile-card:nth-child(5) { animation-delay: 0.25s; }
-        .profile-card:nth-child(6) { animation-delay: 0.3s; }
-
-        .profile-card:hover {
-          transform: scale(1.01);
-          border: 1px solid rgba(0, 212, 255, 0.4);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
-          z-index: 10;
+          aspect-ratio: 1 / 1;
         }
 
         .profile-card:active {
-          transform: translateY(-2px) scale(1.01);
+          transform: scale(0.95);
+        }
+
+        .profile-card:hover {
+          transform: scale(1.02);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+          z-index: 10;
         }
 
         .photo-container {
           position: relative;
           width: 100%;
-          aspect-ratio: 3/4;
-          border-radius: 8px;
+          height: 100%;
+          border-radius: 0px;
           overflow: hidden;
+          background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
         }
 
         .profile-photo {

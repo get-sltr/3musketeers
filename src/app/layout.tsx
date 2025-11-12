@@ -61,7 +61,7 @@ export default async function RootLayout({
         <meta name="format-detection" content="telephone=no" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
-      <body className="antialiased font-sans touch-pan-y overscroll-none fixed w-full h-full">
+      <body className="antialiased font-sans touch-pan-y overscroll-none">
         <ClientProviders locale={locale}>
           {children}
           <ErosAssistiveTouch />
