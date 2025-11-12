@@ -3,12 +3,170 @@
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
+// PIN STYLE FUNCTIONS
+const createPinStyle1 = (user: any) => {
+  const el = document.createElement('div')
+  el.className = 'custom-marker'
+  el.style.cssText = `
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0, 217, 255, 1) 0%, rgba(0, 217, 255, 0.6) 70%, transparent 100%);
+    box-shadow: 0 0 20px rgba(0, 217, 255, 0.8), 0 0 40px rgba(0, 217, 255, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid rgba(0, 217, 255, 0.9);
+  `
+  if (user.profile_photo_url) {
+    el.innerHTML = `<img src="${user.profile_photo_url}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; opacity: 0.9;" />`
+  }
+  el.addEventListener('mouseenter', () => {
+    el.style.transform = 'scale(1.2)'
+    el.style.boxShadow = '0 0 30px rgba(0, 217, 255, 1), 0 0 60px rgba(0, 217, 255, 0.6)'
+  })
+  el.addEventListener('mouseleave', () => {
+    el.style.transform = 'scale(1)'
+    el.style.boxShadow = '0 0 20px rgba(0, 217, 255, 0.8), 0 0 40px rgba(0, 217, 255, 0.4)'
+  })
+  return el
+}
+
+const createPinStyle2 = (user: any) => {
+  const el = document.createElement('div')
+  el.className = 'custom-marker'
+  el.style.cssText = `
+    width: 40px;
+    height: 40px;
+    transform: rotate(45deg);
+    background: linear-gradient(135deg, rgba(255, 0, 255, 1) 0%, rgba(236, 72, 153, 1) 100%);
+    box-shadow: 0 0 20px rgba(255, 0, 255, 0.8), 0 4px 8px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    position: relative;
+  `
+  if (user.profile_photo_url) {
+    const innerDiv = document.createElement('div')
+    innerDiv.style.cssText = `transform: rotate(-45deg); width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 4px;`
+    innerDiv.innerHTML = `<img src="${user.profile_photo_url}" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.9;" />`
+    el.appendChild(innerDiv)
+  }
+  el.addEventListener('mouseenter', () => {
+    el.style.transform = 'rotate(45deg) scale(1.2)'
+    el.style.boxShadow = '0 0 30px rgba(255, 0, 255, 1), 0 6px 12px rgba(0, 0, 0, 0.4)'
+  })
+  el.addEventListener('mouseleave', () => {
+    el.style.transform = 'rotate(45deg) scale(1)'
+    el.style.boxShadow = '0 0 20px rgba(255, 0, 255, 0.8), 0 4px 8px rgba(0, 0, 0, 0.3)'
+  })
+  return el
+}
+
+const createPinStyle3 = (user: any) => {
+  const el = document.createElement('div')
+  el.className = 'custom-marker'
+  el.style.cssText = `
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00d9ff 0%, #ff00ff 100%);
+    box-shadow: 0 0 0 0 rgba(0, 217, 255, 0.7), 0 4px 8px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 3px solid rgba(255, 255, 255, 0.5);
+    position: relative;
+    animation: pulse 2s infinite;
+  `
+  if (user.profile_photo_url) {
+    el.innerHTML = `<img src="${user.profile_photo_url}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; opacity: 0.85;" />`
+  }
+  el.addEventListener('mouseenter', () => {
+    el.style.transform = 'scale(1.3)'
+    el.style.animationPlayState = 'paused'
+  })
+  el.addEventListener('mouseleave', () => {
+    el.style.transform = 'scale(1)'
+    el.style.animationPlayState = 'running'
+  })
+  return el
+}
+
+const createPinStyle4 = (user: any) => {
+  const el = document.createElement('div')
+  el.className = 'custom-marker'
+  el.style.cssText = `
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    background: rgba(10, 10, 15, 0.95);
+    box-shadow: 0 0 0 2px rgba(0, 217, 255, 1), 0 0 20px rgba(0, 217, 255, 0.5), 0 4px 12px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  `
+  const accent = document.createElement('div')
+  accent.style.cssText = `position: absolute; top: 0; right: 0; width: 8px; height: 8px; background: linear-gradient(135deg, #00d9ff 0%, #ff00ff 100%); border-bottom-left-radius: 4px;`
+  el.appendChild(accent)
+  if (user.profile_photo_url) {
+    const img = document.createElement('img')
+    img.src = user.profile_photo_url
+    img.style.cssText = `width: 100%; height: 100%; object-fit: cover; opacity: 0.9;`
+    el.appendChild(img)
+  }
+  el.addEventListener('mouseenter', () => {
+    el.style.transform = 'scale(1.15) translateY(-4px)'
+    el.style.boxShadow = '0 0 0 3px rgba(0, 217, 255, 1), 0 0 30px rgba(0, 217, 255, 0.8), 0 8px 16px rgba(0, 0, 0, 0.6)'
+  })
+  el.addEventListener('mouseleave', () => {
+    el.style.transform = 'scale(1) translateY(0)'
+    el.style.boxShadow = '0 0 0 2px rgba(0, 217, 255, 1), 0 0 20px rgba(0, 217, 255, 0.5), 0 4px 12px rgba(0, 0, 0, 0.5)'
+  })
+  return el
+}
+
+const createPinStyle5 = (user: any) => {
+  const el = document.createElement('div')
+  el.className = 'custom-marker'
+  el.style.cssText = `
+    width: 0;
+    height: 0;
+    border-left: 25px solid transparent;
+    border-right: 25px solid transparent;
+    border-bottom: 40px solid rgba(0, 217, 255, 1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    filter: drop-shadow(0 0 15px rgba(0, 217, 255, 0.9)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+    position: relative;
+  `
+  const inner = document.createElement('div')
+  inner.style.cssText = `position: absolute; width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-bottom: 32px solid rgba(255, 0, 255, 0.5); top: 4px; left: -20px;`
+  el.appendChild(inner)
+  if (user.profile_photo_url) {
+    const circle = document.createElement('div')
+    circle.style.cssText = `position: absolute; width: 30px; height: 30px; border-radius: 50%; top: 8px; left: -15px; overflow: hidden; border: 2px solid rgba(255, 255, 255, 0.8);`
+    circle.innerHTML = `<img src="${user.profile_photo_url}" style="width: 100%; height: 100%; object-fit: cover;" />`
+    el.appendChild(circle)
+  }
+  el.addEventListener('mouseenter', () => {
+    el.style.transform = 'scale(1.2) translateY(-5px)'
+    el.style.filter = 'drop-shadow(0 0 25px rgba(0, 217, 255, 1)) drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5))'
+  })
+  el.addEventListener('mouseleave', () => {
+    el.style.transform = 'scale(1) translateY(0)'
+    el.style.filter = 'drop-shadow(0 0 15px rgba(0, 217, 255, 0.9)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4))'
+  })
+  return el
+}
+
 // Simple Mapbox map component using CDN approach
 export default function MapViewSimple() {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<any>(null)
   const [users, setUsers] = useState<any[]>([])
   const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null)
+  const [pinStyle, setPinStyle] = useState<number>(1)
+  const markers = useRef<any[]>([])
   const supabase = createClient()
 
   // Get user's location
@@ -91,43 +249,50 @@ export default function MapViewSimple() {
           .setPopup(new mapboxgl.Popup().setHTML('<strong>You are here</strong>'))
           .addTo(map.current)
 
+        // Add CSS animation for pulse effect (Style 3)
+        if (!document.getElementById('pulse-animation')) {
+          const style = document.createElement('style')
+          style.id = 'pulse-animation'
+          style.textContent = `
+            @keyframes pulse {
+              0% { box-shadow: 0 0 0 0 rgba(0, 217, 255, 0.7), 0 4px 8px rgba(0, 0, 0, 0.3); }
+              50% { box-shadow: 0 0 0 15px rgba(0, 217, 255, 0), 0 4px 8px rgba(0, 0, 0, 0.3); }
+              100% { box-shadow: 0 0 0 0 rgba(0, 217, 255, 0), 0 4px 8px rgba(0, 0, 0, 0.3); }
+            }
+          `
+          document.head.appendChild(style)
+        }
+
+        // Function to create marker based on selected style
+        const createMarker = (user: any) => {
+          let el
+          switch (pinStyle) {
+            case 1: el = createPinStyle1(user); break
+            case 2: el = createPinStyle2(user); break
+            case 3: el = createPinStyle3(user); break
+            case 4: el = createPinStyle4(user); break
+            case 5: el = createPinStyle5(user); break
+            default: el = createPinStyle1(user)
+          }
+
+          // Add click handler
+          el.addEventListener('click', () => {
+            window.location.href = `/profile/${user.id}`
+          })
+
+          return el
+        }
+
         // Add other users as markers
         users.forEach((user) => {
           if (user.latitude && user.longitude) {
-            const el = document.createElement('div')
-            el.className = 'user-marker'
-            el.style.cssText = `
-              width: 40px;
-              height: 40px;
-              border-radius: 50%;
-              background: ${user.dtfn ? '#00d4ff' : '#ff00ff'};
-              border: 3px solid white;
-              cursor: pointer;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            `
-            if (user.online) {
-              el.style.border = '3px solid #00ff00'
-            }
+            const el = createMarker(user)
 
-            const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
-              <div style="padding: 8px;">
-                <strong>${user.display_name || 'Anonymous'}</strong>
-                ${user.age ? `, ${user.age}` : ''}
-                <br/>
-                ${user.dtfn ? '<span style="color: #00d4ff;">⚡ DTFN</span>' : ''}
-                ${user.online ? '<span style="color: #00ff00;">● Online</span>' : ''}
-              </div>
-            `)
-
-            new mapboxgl.Marker(el)
+            const marker = new mapboxgl.Marker(el)
               .setLngLat([user.longitude, user.latitude])
-              .setPopup(popup)
               .addTo(map.current)
 
-            // Click to view profile
-            el.addEventListener('click', () => {
-              window.location.href = `/profile/${user.id}`
-            })
+            markers.current.push(marker)
           }
         })
       } else {
@@ -144,11 +309,125 @@ export default function MapViewSimple() {
         map.current = null
       }
     }
-  }, [currentLocation, users])
+  }, [currentLocation, users, pinStyle])
+
+  // Refresh markers when pin style changes
+  useEffect(() => {
+    if (!map.current || !users.length) return
+
+    // Remove old markers
+    markers.current.forEach(marker => marker.remove())
+    markers.current = []
+
+    // Add new markers with updated style
+    const mapboxgl = (window as any).mapboxgl
+    if (mapboxgl) {
+      users.forEach((user) => {
+        if (user.latitude && user.longitude) {
+          let el
+          switch (pinStyle) {
+            case 1: el = createPinStyle1(user); break
+            case 2: el = createPinStyle2(user); break
+            case 3: el = createPinStyle3(user); break
+            case 4: el = createPinStyle4(user); break
+            case 5: el = createPinStyle5(user); break
+            default: el = createPinStyle1(user)
+          }
+
+          el.addEventListener('click', () => {
+            window.location.href = `/profile/${user.id}`
+          })
+
+          const marker = new mapboxgl.Marker(el)
+            .setLngLat([user.longitude, user.latitude])
+            .addTo(map.current)
+
+          markers.current.push(marker)
+        }
+      })
+    }
+  }, [pinStyle, users])
+
+  const pinStyles = [
+    { id: 1, name: 'Glowing Circle', icon: '⭕' },
+    { id: 2, name: 'Magenta Diamond', icon: '💎' },
+    { id: 3, name: 'Gradient Pulse', icon: '🔮' },
+    { id: 4, name: 'Minimal Square', icon: '⬛' },
+    { id: 5, name: 'Neon Triangle', icon: '🔺' }
+  ]
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
+
+      {/* Pin Style Switcher */}
+      <div style={{
+        position: 'absolute',
+        top: '20px',
+        left: '20px',
+        background: 'rgba(10, 10, 15, 0.95)',
+        backdropFilter: 'blur(10px)',
+        borderRadius: '16px',
+        padding: '12px',
+        border: '2px solid rgba(0, 217, 255, 0.3)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 217, 255, 0.2)',
+        zIndex: 1000
+      }}>
+        <div style={{
+          fontSize: '12px',
+          fontWeight: 'bold',
+          color: '#00d9ff',
+          marginBottom: '8px',
+          textTransform: 'uppercase',
+          letterSpacing: '1px'
+        }}>
+          Pin Style
+        </div>
+        <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
+          {pinStyles.map((style) => (
+            <button
+              key={style.id}
+              onClick={() => setPinStyle(style.id)}
+              style={{
+                padding: '10px 16px',
+                borderRadius: '10px',
+                border: pinStyle === style.id
+                  ? '2px solid #00d9ff'
+                  : '2px solid rgba(255, 255, 255, 0.1)',
+                background: pinStyle === style.id
+                  ? 'linear-gradient(135deg, rgba(0, 217, 255, 0.2) 0%, rgba(255, 0, 255, 0.2) 100%)'
+                  : 'rgba(255, 255, 255, 0.05)',
+                color: pinStyle === style.id ? '#00d9ff' : 'rgba(255, 255, 255, 0.7)',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: pinStyle === style.id ? 'bold' : 'normal',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: pinStyle === style.id
+                  ? '0 0 20px rgba(0, 217, 255, 0.4)'
+                  : 'none'
+              }}
+              onMouseEnter={(e) => {
+                if (pinStyle !== style.id) {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'
+                  e.currentTarget.style.borderColor = 'rgba(0, 217, 255, 0.5)'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (pinStyle !== style.id) {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'
+                }
+              }}
+            >
+              <span style={{ fontSize: '18px' }}>{style.icon}</span>
+              <span>{style.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
       {!currentLocation && (
         <div style={{
