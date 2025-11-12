@@ -71,10 +71,10 @@ const HALO_VARIANTS = {
 
 const BADGE_VARIANTS = {
   hidden: { opacity: 0, scale: 0.8 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     scale: 1,
-    transition: { delay: 0.1, type: 'spring', stiffness: 200 }
+    transition: { delay: 0.1, type: 'spring' as const, stiffness: 200 }
   }
 };
 
@@ -282,7 +282,7 @@ function GridCard({
                   className="px-2 py-1 rounded-full bg-yellow-500/90 backdrop-blur-sm"
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 200 }}
+                  transition={{ type: 'spring' as const, stiffness: 200 }}
                 >
                   <p className="text-xs font-bold text-black">🔥 Hot</p>
                 </motion.div>

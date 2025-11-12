@@ -128,7 +128,7 @@ export default function GrindrStyleGrid({
 
     const observer = new IntersectionObserver(
       async (entries) => {
-        if (entries[0].isIntersecting && !isLoadingMore && !loading) {
+        if (entries[0]?.isIntersecting && !isLoadingMore && !loading) {
           setIsLoadingMore(true);
           await onLoadMore();
           setIsLoadingMore(false);
@@ -217,7 +217,7 @@ export function ResponsiveGrindrGrid({
 
     const observer = new IntersectionObserver(
       async (entries) => {
-        if (entries[0].isIntersecting && !isLoadingMore && !loading) {
+        if (entries[0]?.isIntersecting && !isLoadingMore && !loading) {
           setIsLoadingMore(true);
           await onLoadMore();
           setIsLoadingMore(false);
