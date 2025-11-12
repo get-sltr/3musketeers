@@ -17,16 +17,12 @@ export default function SLTRLanding() {
         delayChildren: 0.3,
       },
     },
-  };
+  } as const;
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.8, ease: 'easeOut' },
-    },
-  };
+    visible: { opacity: 1, y: 0 }
+  } as const;
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-black">
@@ -132,8 +128,6 @@ export default function SLTRLanding() {
           >
             <motion.div
               className="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"
-              animate={hoveredButton === 'blackcard' ? { blur: [0, 8, 0] } : {}}
-              transition={{ duration: 2, repeat: Infinity }}
             />
             <div className="relative bg-gradient-to-r from-gray-900 via-black to-gray-900 hover:from-black hover:to-black text-white font-black py-4 px-8 rounded-2xl text-center transition-all shadow-lg hover:shadow-white/20 border border-white/20">
               <motion.div
@@ -161,8 +155,6 @@ export default function SLTRLanding() {
           >
             <motion.div
               className="absolute inset-0 bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"
-              animate={hoveredButton === 'founder' ? { blur: [0, 8, 0] } : {}}
-              transition={{ duration: 2, repeat: Infinity }}
             />
             <div className="relative bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-black font-black py-4 px-8 rounded-2xl text-center transition-all shadow-lg hover:shadow-amber-500/50">
               <motion.div
@@ -190,8 +182,6 @@ export default function SLTRLanding() {
           >
             <motion.div
               className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-magenta-500 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"
-              animate={hoveredButton === 'member' ? { blur: [0, 8, 0] } : {}}
-              transition={{ duration: 2, repeat: Infinity }}
             />
             <div className="relative border-2 border-cyan-500 hover:border-cyan-400 bg-black/50 backdrop-blur-sm hover:bg-black/70 text-white font-black py-4 px-8 rounded-2xl text-center transition-all">
               <motion.div
@@ -219,8 +209,6 @@ export default function SLTRLanding() {
           >
             <motion.div
               className="absolute inset-0 bg-gradient-to-r from-magenta-500 to-cyan-500 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"
-              animate={hoveredButton === 'signup' ? { blur: [0, 8, 0] } : {}}
-              transition={{ duration: 2, repeat: Infinity }}
             />
             <div className="relative border-2 border-magenta-500 hover:border-magenta-400 bg-black/50 backdrop-blur-sm hover:bg-black/70 text-white font-black py-4 px-8 rounded-2xl text-center transition-all">
               <motion.div
