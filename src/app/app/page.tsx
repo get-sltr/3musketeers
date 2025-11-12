@@ -93,6 +93,7 @@ export default function AppPage() {
   const [clusterEnabled, setClusterEnabled] = useState<boolean>(false)
   const [jitterMeters, setJitterMeters] = useState<number>(0)
   const [vanillaMode, setVanillaMode] = useState<boolean>(false)
+  const [travelMode, setTravelMode] = useState<boolean>(false)
   const [showVenues, setShowVenues] = useState<boolean>(false)
   const [showHeatmap, setShowHeatmap] = useState<boolean>(false)
   const [pinStyle, setPinStyle] = useState<number>(1)
@@ -163,11 +164,14 @@ export default function AppPage() {
     setCurrentOrigin(origin)
 
     try {
+      // In travel mode, use a very large radius (25000 miles = entire world)
+      const effectiveRadius = travelMode ? 25000 : radiusMiles
+
       const { data, error } = await supabase.rpc('get_nearby_profiles', {
         p_user_id: userId,
         p_origin_lat: origin[1],
         p_origin_lon: origin[0],
-        p_radius_miles: radiusMiles,
+        p_radius_miles: effectiveRadius,
       })
 
       if (error) {
@@ -227,7 +231,7 @@ export default function AppPage() {
         setLoading(false)
       }
     }
-  }, [radiusMiles, mapCenter, loading])
+  }, [radiusMiles, travelMode, mapCenter, loading])
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -290,7 +294,7 @@ export default function AppPage() {
     checkAuth()
   }, [router, fetchUsers])
 
-  // Re-fetch when radius changes (debounced to avoid rapid slider spam)
+  // Re-fetch when radius or travel mode changes
   useEffect(() => {
     if (previousRadiusRef.current === radiusMiles) return
     previousRadiusRef.current = radiusMiles
@@ -309,6 +313,12 @@ export default function AppPage() {
       }
     }
   }, [radiusMiles, currentUserId, currentOrigin, fetchUsers])
+
+  // Immediately re-fetch when travel mode is toggled (no debounce needed)
+  useEffect(() => {
+    if (!currentUserId || !currentOrigin) return
+    fetchUsers(currentUserId, currentOrigin)
+  }, [travelMode])
 
   // Real-time presence updates: keep users[] in sync with socket events
   useEffect(() => {
@@ -644,6 +654,8 @@ export default function AppPage() {
               onToggleIncognito={handleToggleIncognito}
               vanillaMode={vanillaMode}
               onToggleVanilla={setVanillaMode}
+              travelMode={travelMode}
+              onToggleTravelMode={setTravelMode}
               filters={menuFilters}
               setFilters={setMenuFilters}
               onCenter={handleCenterLocation}
@@ -654,6 +666,7 @@ export default function AppPage() {
                 setStyleId('dark-v11')
                 setMenuFilters({ online: false, hosting: false, looking: false })
                 setVanillaMode(false)
+                setTravelMode(false)
               }}
               onAddPlace={() => setIsAddingPlace(true)}
               onHostGroup={() => setIsHostingGroup(true)}

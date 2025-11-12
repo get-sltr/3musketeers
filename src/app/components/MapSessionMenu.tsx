@@ -19,6 +19,8 @@ interface MapSessionMenuProps {
   onToggleIncognito: (enabled: boolean) => void
   vanillaMode: boolean
   onToggleVanilla: (enabled: boolean) => void
+  travelMode: boolean
+  onToggleTravelMode: (enabled: boolean) => void
   filters: { online: boolean; hosting: boolean; looking: boolean }
   setFilters: (f: { online: boolean; hosting: boolean; looking: boolean }) => void
   onCenter: () => void
@@ -45,6 +47,8 @@ export default function MapSessionMenu({
   onToggleIncognito,
   vanillaMode,
   onToggleVanilla,
+  travelMode,
+  onToggleTravelMode,
   filters,
   setFilters,
   onCenter,
@@ -91,22 +95,47 @@ export default function MapSessionMenu({
             <span className="text-xs text-white/50">{tCommon('live')}</span>
           </div>
 
-          {/* Radius */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-sm text-white/80">{t('radius')}</label>
-              <span className="text-sm text-cyan-400 font-semibold">{radiusMiles} {tCommon('mi')}</span>
+          {/* Travel Mode Toggle */}
+          <div className="flex items-center justify-between p-3 rounded-xl border border-amber-500/30 bg-amber-500/10">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">✈️</span>
+              <div>
+                <span className="text-sm text-white font-semibold block">Travel Mode</span>
+                <span className="text-xs text-white/60">See friends worldwide</span>
+              </div>
             </div>
-            <input
-              type="range"
-              min={1}
-              max={10}
-              step={0.5}
-              value={radiusMiles}
-              onChange={(e) => setRadiusMiles(parseFloat(e.target.value))}
-              className="w-full accent-cyan-400"
-            />
+            <button
+              onClick={() => onToggleTravelMode(!travelMode)}
+              className={`px-3 py-2 rounded-xl text-sm border transition ${travelMode ? "bg-amber-500/20 border-amber-400 text-amber-200" : "bg-white/5 border-white/10 text-white/80"}`}
+            >
+              {travelMode ? tCommon('on') : tCommon('off')}
+            </button>
           </div>
+
+          {/* Radius - only show when NOT in travel mode */}
+          {!travelMode && (
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-sm text-white/80">{t('radius')}</label>
+                <span className="text-sm text-cyan-400 font-semibold">{radiusMiles} {tCommon('mi')}</span>
+              </div>
+              <input
+                type="range"
+                min={1}
+                max={10}
+                step={0.5}
+                value={radiusMiles}
+                onChange={(e) => setRadiusMiles(parseFloat(e.target.value))}
+                className="w-full accent-cyan-400"
+              />
+            </div>
+          )}
+
+          {travelMode && (
+            <div className="text-center p-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
+              <p className="text-xs text-amber-200">🌍 Showing users worldwide - no distance limit</p>
+            </div>
+          )}
 
           {/* Filters */}
           <div className="grid grid-cols-3 gap-2">
