@@ -73,6 +73,13 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // Initialize Supabase
+// Validate Supabase credentials
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
+  console.error('❌ CRITICAL: Missing Supabase credentials!');
+  console.error('Required: SUPABASE_URL and SUPABASE_ANON_KEY in .env');
+  process.exit(1);
+}
+
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
@@ -477,30 +484,17 @@ io.on('connection', (socket) => {
   });
 });
 
-// File upload endpoint
-app.post('/api/upload', upload.single('file'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-
-    const fileUrl = `${process.env.BACKEND_URL || 'http://localhost:3001'}/uploads/${req.file.filename}`;
-    
-    res.json({
-      success: true,
-      fileUrl: fileUrl,
-      fileName: req.file.originalname,
-      fileSize: req.file.size,
-      fileType: req.file.mimetype
-    });
-  } catch (error) {
-    console.error('Upload error:', error);
-    res.status(500).json({ error: 'Upload failed' });
-  }
+// DEPRECATED: File upload endpoint (now using Supabase Storage)
+// This endpoint is disabled to prevent local file storage issues
+app.post('/api/upload', (req, res) => {
+  res.status(410).json({
+    error: 'This endpoint is deprecated. Use Supabase Storage instead.',
+    message: 'File uploads now go directly to Supabase Storage from the client.'
+  });
 });
 
-// Serve uploaded files
-app.use('/uploads', express.static('uploads'));
+// DEPRECATED: Serve uploaded files (now using Supabase Storage)
+// app.use('/uploads', express.static('uploads'));
 
 // Push notification endpoints
 app.get('/api/push/vapid-public-key', (req, res) => {

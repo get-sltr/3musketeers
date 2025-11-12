@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { useSocket } from '@/hooks/useSocket'
+import { createClient } from '@/lib/supabase/client'
 
 interface FileUploadProps {
   conversationId: string
@@ -14,6 +15,7 @@ export default function FileUpload({ conversationId, onFileUploaded }: FileUploa
   const [dragActive, setDragActive] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { shareFile } = useSocket()
+  const supabase = createClient()
 
   const handleFileUpload = async (file: File) => {
     if (!file) return
@@ -22,31 +24,37 @@ export default function FileUpload({ conversationId, onFileUploaded }: FileUploa
     setUploadProgress(0)
 
     try {
-      // Create FormData for file upload
-      const formData = new FormData()
-      formData.append('file', file)
+      // Determine file extension
+      const fileExt = file.name.split('.').pop() || 'bin'
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+      const filePath = `messages/${fileName}`
 
-      // Upload to Railway backend
-      const response = await fetch('https://3musketeers-production.up.railway.app/api/upload', {
-        method: 'POST',
-        body: formData
-      })
+      console.log('Uploading file to Supabase:', filePath)
 
-      if (!response.ok) {
-        throw new Error('Upload failed')
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('files')
+        .upload(filePath, file)
+
+      if (uploadError) {
+        console.error('Supabase upload error:', uploadError)
+        throw new Error(`Upload failed: ${uploadError.message}`)
       }
 
-      const result = await response.json()
-      
-      if (result.success) {
-        // Notify other users about file share
-        shareFile(conversationId, result.fileName, result.fileType, result.fileSize)
-        
-        // Call the callback
-        onFileUploaded(result.fileUrl, result.fileName, result.fileType)
-        
-        setUploadProgress(100)
-      }
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('files')
+        .getPublicUrl(filePath)
+
+      console.log('File uploaded successfully:', publicUrl)
+
+      // Notify other users about file share
+      shareFile(conversationId, file.name, file.type, file.size)
+
+      // Call the callback
+      onFileUploaded(publicUrl, file.name, file.type)
+
+      setUploadProgress(100)
     } catch (error) {
       console.error('File upload error:', error)
       alert('Failed to upload file. Please try again.')
