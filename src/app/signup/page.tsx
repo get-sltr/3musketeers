@@ -19,7 +19,7 @@ export default function SignupPage() {
   const [tier, setTier] = useState<'free' | 'member' | 'founder' | 'blackcard'>('free')
 
   useEffect(() => {
-    const tierParam = searchParams.get('tier')
+    const tierParam = searchParams?.get('tier')
     if (tierParam === 'blackcard' || tierParam === 'founder' || tierParam === 'member' || tierParam === 'free') {
       setTier(tierParam)
     }
