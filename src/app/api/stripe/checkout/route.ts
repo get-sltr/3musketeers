@@ -17,16 +17,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get user profile
+    // Get user profile (optional - will fallback to auth email)
     const { data: profile } = await supabase
       .from('profiles')
       .select('email, display_name')
       .eq('id', user.id)
       .single()
-
-    if (!profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
-    }
 
     // Define tier pricing
     const tierConfig: Record<string, { priceId: string; amount: number; name: string }> = {

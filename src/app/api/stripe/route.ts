@@ -65,22 +65,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify user exists
-    const { data: user, error: userError } = await supabase
+    // Check if user has a profile (optional)
+    const { data: user } = await supabase
       .from('profiles')
       .select('id, founder, subscription_status')
       .eq('id', userId)
       .single()
 
-    if (userError || !user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
-    }
-
     // Check if founder and trying to buy founder again
-    if (priceType === 'founder' && user.founder) {
+    if (priceType === 'founder' && user?.founder) {
       return NextResponse.json(
         { error: 'You are already a founder' },
         { status: 400 }
