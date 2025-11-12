@@ -4,6 +4,8 @@ import "./globals.css";
 import { ErosAssistiveTouch } from '@/components/ErosAssistiveTouch';
 import ClientProviders from '@/components/ClientProviders';
 import NotificationPrompt from '@/components/NotificationPrompt';
+import AdminDashboard from '@/components/AdminDashboard';
+import TwoFactorSetup from '@/components/TwoFactorSetup';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -71,6 +73,8 @@ export default async function RootLayout({
           {children}
           <ErosAssistiveTouch />
           <NotificationPrompt />
+          <TwoFactorSetup />
+          <AdminDashboard />
         </ClientProviders>
       </body>
     </html>
