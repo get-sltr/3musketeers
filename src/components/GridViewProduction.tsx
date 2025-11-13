@@ -142,7 +142,7 @@ export default function GridViewProduction() {
   return (
     <div className="fixed inset-0 bg-black overflow-hidden">
       {/* 3-Column Tight Grid */}
-      <div className="h-full overflow-y-auto overflow-x-hidden overscroll-none" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className="h-full overflow-y-auto overflow-x-hidden overscroll-none pt-16 pb-20" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="grid grid-cols-3 gap-0">
           {users.map((user) => {
             const photo = resolveProfilePhoto(user.photo_url, user.photos)
