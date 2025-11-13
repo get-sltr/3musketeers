@@ -755,8 +755,8 @@ function MessagesPageContent() {
       </div>
 
       <div className="pt-20 flex flex-col md:flex-row h-screen">
-        {/* Conversations List */}
-        <div className="w-full md:w-1/3 md:border-r border-white/10 bg-black/50 md:h-full overflow-y-auto">
+        {/* Conversations List - Hidden on mobile when conversation selected */}
+        <div className={`w-full md:w-1/3 md:border-r border-white/10 bg-black/50 md:h-full overflow-y-auto ${selectedConversation ? 'hidden md:block' : 'block'}`}>
           <div className="p-4">
             <h2 className="text-white font-semibold mb-4">Conversations</h2>
             {conversations.length === 0 ? (
@@ -838,14 +838,23 @@ function MessagesPageContent() {
           </div>
         </div>
 
-        {/* Messages Area */}
-        <div className="flex-1 flex flex-col min-h-0">
+        {/* Messages Area - Show on mobile when conversation selected */}
+        <div className={`flex-1 flex flex-col min-h-0 ${!selectedConversation ? 'hidden md:flex' : 'flex'}`}>
           {selectedConversation ? (
             <>
-              {/* Conversation Header with Video Call Button */}
+              {/* Conversation Header with Video Call Button and Back Button */}
               <div className="border-b border-white/10 p-4 bg-black/50 backdrop-blur-sm sticky top-20 z-40">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
+                    {/* Back button for mobile */}
+                    <button
+                      onClick={() => setSelectedConversation(null)}
+                      className="md:hidden p-2 hover:bg-white/10 rounded-lg transition-all"
+                    >
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
                     {conversations.find(c => c.id === selectedConversation)?.other_user.photo && (
                       <img
                         src={conversations.find(c => c.id === selectedConversation)?.other_user.photo || ''}
