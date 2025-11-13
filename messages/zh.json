@@ -115,8 +115,8 @@
     "info": "信息",
     "show": "显示",
     "hide": "隐藏",
-    "mile": "英里",
-    "miles": "英里",
+    "distance_miles_one": "{{count}} 英里",
+    "distance_miles_other": "{{count}} 英里",
     "kilometer": "公里",
     "meters": "米",
     "private": "私密",
@@ -125,10 +125,12 @@
   },
   "welcome": {
     "title": "欢迎",
+    "userTitle": "{{username}}，欢迎",
     "subtitle": "规则不适用的地方",
     "message1": "连接应该感觉真实。人性化。轻松。",
     "message2": "您是最早的用户之一。您的反馈塑造了我们构建的一切。我们在倾听。",
     "question": "是什么让您对SLTR说是？",
+
     "placeholder": "分享您的想法...（可选）",
     "emailLabel": "想要更新？（可选）",
     "emailPlaceholder": "您的@邮箱.com",

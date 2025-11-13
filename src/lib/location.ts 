@@ -1,0 +1,133 @@
+// --- Shared Types ---
+// This interface defines the object we use for coordinates
+export interface Coordinates {
+  latitude: number
+  longitude: number
+}
+
+// This matches the response from our /api/eta route
+export interface ETAResult {
+  distance: number // in miles
+  duration: number // in minutes
+}
+
+// --- Constants ---
+const DEFAULT_LOCATION: Coordinates = {
+  latitude: 34.0522,
+  longitude: -118.2437 // Los Angeles
+}
+
+const FALLBACK_MINUTES_PER_MILE = 2 // Assumes average 30 mph
+
+// --- Geolocation Function ---
+/**
+ * Gets the user's current location from the browser.
+ * Provides a configurable default on failure or denial.
+ */
+export async function getCurrentUserLocation(
+  defaultLocation: Coordinates = DEFAULT_LOCATION
+): Promise<Coordinates> {
+  return new Promise((resolve) => {
+    // Check if geolocation is available (safe for SSR)
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      console.warn('Geolocation API not available, using default location.')
+      return resolve(defaultLocation)
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      // Success
+      (position) => {
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        })
+      },
+      // Error
+      (error) => {
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            console.error('User denied Geolocation.')
+            break
+          case error.POSITION_UNAVAILABLE:
+            console.error('Location information is unavailable.')
+            break
+          case error.TIMEOUT:
+            console.error('Geolocation request timed out.')
+            break
+          default:
+            console.error('An unknown geolocation error occurred.')
+            break
+        }
+        resolve(defaultLocation)
+      },
+      // Options
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    )
+  })
+}
+
+// --- Haversine Distance (Crow-flies) ---
+/**
+ * Calculates the great-circle distance between two points (in miles).
+ */
+function calculateDistance(from: Coordinates, to: Coordinates): number {
+  const R = 3959 // Earth's radius in miles
+  const dLat = (to.latitude - from.latitude) * Math.PI / 180
+  const dLon = (to.longitude - from.longitude) * Math.PI / 180
+  const lat1Rad = from.latitude * Math.PI / 180
+  const lat2Rad = to.latitude * Math.PI / 180
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1Rad) * Math.cos(lat2Rad) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
+
+// --- Fallback ETA Calculation ---
+/**
+ * A fallback ETA calculation using simple distance and an average speed.
+ * This is used if our API call fails for any reason.
+ */
+function calculateFallbackETA(from: Coordinates, to: Coordinates): ETAResult {
+  console.warn('API fetch failed, using fallback ETA calculation.')
+  
+  const distance = calculateDistance(from, to)
+  return {
+    distance: parseFloat(distance.toFixed(1)),
+    duration: Math.round(distance * FALLBACK_MINUTES_PER_MILE)
+  }
+}
+
+// --- Primary ETA Function ---
+/**
+ * Calculates the ETA by fetching from our secure server-side API route.
+ * Falls back to a simple Haversine calculation if the API fails.
+ */
+export async function calculateETA(
+  from: Coordinates,
+  to: Coordinates
+): Promise<ETAResult> {
+  // We use a relative URL to call our own API
+  const url = `/api/eta?fromLon=${from.longitude}&fromLat=${from.latitude}&toLon=${to.longitude}&toLat=${to.latitude}`
+
+  try {
+    const response = await fetch(url)
+
+    // Check if the server responded with an error
+    if (!response.ok) {
+      const errorData = await response.json()
+      // Throw an error to be caught by the catch block
+      throw new Error(errorData.error || `Server error: ${response.status}`)
+    }
+
+    const data: ETAResult = await response.json()
+    return data
+
+  } catch (error) {
+    console.error('Failed to calculate ETA from API:', error)
+    // If our API fails for any reason, fall back to the simple calculation
+    return calculateFallbackETA(from, to)
+  }
+}

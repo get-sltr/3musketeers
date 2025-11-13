@@ -115,8 +115,8 @@
     "info": "Info",
     "show": "Afficher",
     "hide": "Masquer",
-    "mile": "mi",
-    "miles": "miles",
+    "distance_miles_one": "{{count}} mile",
+    "distance_miles_other": "{{count}} miles",
     "kilometer": "km",
     "meters": "m",
     "private": "Privé",
@@ -125,6 +125,7 @@
   },
   "welcome": {
     "title": "Bienvenue",
+    "userTitle": "Bienvenue, {{username}}",
     "subtitle": "où les règles ne s'appliquent pas",
     "message1": "La connexion doit être réelle. Humaine. Sans effort.",
     "message2": "Vous êtes l'un des premiers. Vos commentaires façonnent tout ce que nous construisons. Nous écoutons.",

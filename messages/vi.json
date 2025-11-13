@@ -115,8 +115,8 @@
     "info": "Thông tin",
     "show": "Hiện",
     "hide": "Ẩn",
-    "mile": "dặm",
-    "miles": "dặm",
+    "distance_miles_one": "{{count}} dặm",
+    "distance_miles_other": "{{count}} dặm",
     "kilometer": "km",
     "meters": "m",
     "private": "Riêng tư",
@@ -125,6 +125,7 @@
   },
   "welcome": {
     "title": "Chào mừng",
+    "userTitle": "Chào mừng, {{username}}",
     "subtitle": "nơi quy tắc không áp dụng",
     "message1": "Kết nối nên cảm thấy thật. Con người. Dễ dàng.",
     "message2": "Bạn là một trong những người đầu tiên. Phản hồi của bạn hình thành mọi thứ chúng tôi xây dựng. Chúng tôi đang lắng nghe.",
