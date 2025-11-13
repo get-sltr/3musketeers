@@ -21,6 +21,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '../lib/supabase/client'
 import { resolveProfilePhoto } from '@/lib/utils/profile'
 import { motion, AnimatePresence } from 'framer-motion'
+import FoundersCircleAd from './FoundersCircleAd'
 
 interface User {
   id: string
@@ -144,12 +145,22 @@ export default function GridViewProduction() {
       {/* 3-Column Tight Grid */}
       <div className="h-full overflow-y-auto overflow-x-hidden overscroll-none pt-16 pb-20" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="grid grid-cols-3 gap-0">
-          {users.map((user) => {
+          {users.map((user, index) => {
             const photo = resolveProfilePhoto(user.photo_url, user.photos)
             const distance = formatDistance(user.distance_miles)
             const eta = calculateETA(user.distance_miles)
 
+            // Insert ad every 7 profiles
+            const showAdBefore = index > 0 && index % 7 === 0
+
             return (
+              <>
+                {showAdBefore && (
+                  <div key={`ad-${index}`} className="relative aspect-[3/4]">
+                    <FoundersCircleAd />
+                  </div>
+                )}
+
               <div
                 key={user.id}
                 onClick={() => setSelectedUser(user)}
@@ -194,6 +205,7 @@ export default function GridViewProduction() {
                   </div>
                 </div>
               </div>
+              </>
             )
           })}
         </div>
