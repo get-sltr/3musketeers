@@ -1,6 +1,6 @@
 'use client'
-
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from 'react'
+import { useMapStore } from '../../stores/useMapStore'
 import { createClient } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import MobileLayout from '../../components/MobileLayout'
@@ -64,9 +64,6 @@ const formatDistance = (miles?: number | null) => {
   return `${Math.round(miles)} mi`
 }
 
-const DEFAULT_SLTR_STYLE =
-  process.env.NEXT_PUBLIC_MAPBOX_SLTR_STYLE || 'mapbox://styles/sltr/cmhum4i1k001x01rlasmoccvm'
-
 export default function AppPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   // Ensure realtime presence/auth is initialized regardless of view
@@ -84,19 +81,35 @@ export default function AppPage() {
   const [currentOrigin, setCurrentOrigin] = useState<[number, number] | null>(null)
   const [isFetching, setIsFetching] = useState(false)
   const fetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // Map session UI state
-  const [radiusMiles, setRadiusMiles] = useState<number>(10)  // Default: 10 miles
+  
+  // Use Zustand store for map session state
+  const {
+    radiusMiles,
+    clusterRadius,
+    styleId,
+    menuFilters,
+    clusterEnabled,
+    jitterMeters,
+    vanillaMode,
+    travelMode,
+    showVenues,
+    showHeatmap,
+    pinStyle,
+    setRadiusMiles,
+    setClusterRadius,
+    setStyleId,
+    setMenuFilters,
+    setClusterEnabled,
+    setJitterMeters,
+    setVanillaMode,
+    setTravelMode,
+    setShowVenues,
+    setShowHeatmap,
+    setPinStyle,
+    resetMapSettings,
+  } = useMapStore()
+  
   const previousRadiusRef = useRef<number>(radiusMiles)
-  const [clusterRadius, setClusterRadius] = useState<number>(60)
-  const [styleId, setStyleId] = useState<string>(DEFAULT_SLTR_STYLE)
-  const [menuFilters, setMenuFilters] = useState({ online: false, hosting: false, looking: false })
-  const [clusterEnabled, setClusterEnabled] = useState<boolean>(false)
-  const [jitterMeters, setJitterMeters] = useState<number>(0)
-  const [vanillaMode, setVanillaMode] = useState<boolean>(false)
-  const [travelMode, setTravelMode] = useState<boolean>(false)
-  const [showVenues, setShowVenues] = useState<boolean>(false)
-  const [showHeatmap, setShowHeatmap] = useState<boolean>(false)
-  const [pinStyle, setPinStyle] = useState<number>(1)
   // Add/Host modals
   const [isAddingPlace, setIsAddingPlace] = useState<boolean>(false)
   const [isHostingGroup, setIsHostingGroup] = useState<boolean>(false)
@@ -660,14 +673,7 @@ export default function AppPage() {
               setFilters={setMenuFilters}
               onCenter={handleCenterLocation}
               onRelocate={handleMoveLocation}
-              onClear={() => {
-                setRadiusMiles(5)
-                setClusterRadius(60)
-                setStyleId('dark-v11')
-                setMenuFilters({ online: false, hosting: false, looking: false })
-                setVanillaMode(false)
-                setTravelMode(false)
-              }}
+              onClear={resetMapSettings}
               onAddPlace={() => setIsAddingPlace(true)}
               onHostGroup={() => setIsHostingGroup(true)}
               showVenues={showVenues}

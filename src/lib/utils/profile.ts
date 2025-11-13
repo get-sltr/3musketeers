@@ -19,3 +19,19 @@ export function resolveProfilePhoto(
   return DEFAULT_PROFILE_IMAGE
 }
 
+export function formatDistance(miles?: number | null): string | undefined {
+  if (miles == null) return undefined
+  if (miles < 0.1) return '<0.1 mi'
+  if (miles < 10) return `${miles.toFixed(1)} mi`
+  return `${Math.round(miles)} mi`
+}
+
+export function calculateETA(miles?: number | null): string | undefined {
+  if (miles == null) return undefined
+  // Rough estimate: 30 mph average speed
+  const hours = miles / 30
+  if (hours < 0.1) return '<1 min'
+  if (hours < 1) return `${Math.round(hours * 60)} min`
+  return `${hours.toFixed(1)} hrs`
+}
+

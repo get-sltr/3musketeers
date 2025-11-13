@@ -2,6 +2,7 @@
 
 import { NextIntlClientProvider } from 'next-intl'
 import { ReactNode, useState, useEffect } from 'react'
+import { Toaster } from 'react-hot-toast'
 
 interface ClientProvidersProps {
   children: ReactNode
@@ -37,6 +38,30 @@ export default function ClientProviders({ children, locale = 'en' }: ClientProvi
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       {children}
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#1a1a1f',
+            color: '#fff',
+            border: '1px solid rgba(6, 182, 212, 0.3)',
+            borderRadius: '8px',
+          },
+          success: {
+            iconTheme: {
+              primary: '#06b6d4',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
     </NextIntlClientProvider>
   )
 }

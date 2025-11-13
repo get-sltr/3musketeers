@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState, useRef, FormEvent } from 'react'
+import React, { useEffect, useState, useRef, FormEvent } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { io, Socket } from 'socket-io-client'
+import { io, Socket } from 'socket.io-client'
 import toast from 'react-hot-toast'
 
 // --- Types ---
@@ -29,7 +29,7 @@ export default function MessagesPage() {
   const searchParams = useSearchParams()
 
   // Get conversationId from URL (e.g., /messages?conversation=...)
-  const conversationId = searchParams.get('conversation')
+  const conversationId = searchParams?.get('conversation') || null
 
   // --- State ---
   const [socket, setSocket] = useState<Socket | null>(null)
@@ -180,12 +180,7 @@ export default function MessagesPage() {
     // This runs when the component unmounts
     return () => {
       if (newSocket) {
-        newSocket.off('connect', onConnect)
-        newSocket.off('authenticated', onAuthenticated)
-        newSocket.off('new_message', onNewMessage)
-        newSocket.off('auth_error', onAuthError)
-        newSocket.off('message_error', onMessageError)
-        newSocket.off('disconnect', onDisconnect)
+        newSocket.removeAllListeners()
         newSocket.disconnect()
         setSocket(null)
       }

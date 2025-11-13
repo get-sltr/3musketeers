@@ -5,7 +5,7 @@ import Image from 'next/image'
 
 // --- Import Shared Types & Utils ---
 import { UserGridProfile } from '@/lib/types/profile'
-import { DEFAULT_PROFILE_IMAGE } from '@/lib/utils/profile'
+import { DEFAULT_PROFILE_IMAGE, resolveProfilePhoto, formatDistance } from '@/lib/utils/profile'
 
 // --- Import Reusable Components ---
 import StatusChip from '@/components/ui/StatusChip' // Assuming you created this
@@ -35,9 +35,9 @@ export default memo(function GridCard({
   const displayName = user.display_name || user.username || 'Member'
   
   // State for handling broken image links
-  const [imgSrc, setImgSrc] = useState(user.photo || DEFAULT_PROFILE_IMAGE)
+  const [imgSrc, setImgSrc] = useState(resolveProfilePhoto(user.photo_url, user.photos) || DEFAULT_PROFILE_IMAGE)
   
-  const distance = user.distance && user.distance !== '' ? user.distance : undefined
+  const distance = formatDistance(user.distance_miles)
 
   return (
     <button
@@ -62,7 +62,7 @@ export default memo(function GridCard({
             }}
           />
 
-          {user.isOnline && (
+          {user.is_online && (
             <span className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-emerald-500/90 px-3 py-1 text-xs font-semibold text-white shadow-lg">
               <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
               Online
@@ -126,18 +126,16 @@ export default memo(function GridCard({
             {/* Use StatusChip Component */}
             <div className="flex flex-wrap gap-2">
               {user.id === 'SELF' && ( // Assuming you might pass the current user's ID
-                <StatusChip variant="self">You</StatusChip>
+                <StatusChip variant="self" label="You" />
               )}
               {user.party_friendly && (
-                <StatusChip variant="party">Party</StatusChip>
+                <StatusChip variant="party" label="Party" />
               )}
               {user.dtfn && (
-                <StatusChip variant="dtfn">Ready Now</StatusChip>
+                <StatusChip variant="dtfn" label="Ready Now" />
               )}
               {user.tags?.slice(0, 2).map((tag) => (
-                <StatusChip key={tag} variant="tag">
-                  {tag}
-                </StatusChip>
+                <StatusChip key={tag} variant="tag" label={tag} />
               ))}
             </div>
           </div>
