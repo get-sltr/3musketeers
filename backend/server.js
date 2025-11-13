@@ -54,13 +54,13 @@ const corsOptions = {
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
 };
+app.set('trust proxy', 1); // Trust the first proxy (Railway load balancer)
 
 // Security middleware (removed unnecessary CSP for JSON API)
-app.use(helmet({
-  crossOriginEmbedderPolicy: false
-}));
-
+app.use(helmet({crossOriginEmbedderPolicy: false}));
 app.use(cors(corsOptions));
+
+
 
 // Rate limiting
 const generalLimiter = rateLimit({
