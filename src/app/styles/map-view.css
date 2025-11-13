@@ -36,16 +36,26 @@
   height: 100%;
 }
 
+/* Hide Mapbox branding and attribution for non-investors/partners */
 .mapboxgl-ctrl-bottom-left,
 .mapboxgl-ctrl-bottom-right {
-  display: none;
+  display: none !important;
 }
 
-@media (min-width: 768px) {
-  .mapboxgl-ctrl-bottom-left,
-  .mapboxgl-ctrl-bottom-right {
-    display: block;
-  }
+.mapboxgl-ctrl-logo {
+  display: none !important;
+}
+
+.mapboxgl-ctrl-attrib {
+  display: none !important;
+}
+
+.mapboxgl-ctrl-attrib-inner {
+  display: none !important;
+}
+
+.mapboxgl-compact {
+  display: none !important;
 }
 
 .mapboxgl-ctrl-group {

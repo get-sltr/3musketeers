@@ -421,7 +421,7 @@ function MessagesPageContent() {
         .select('id, user1_id, user2_id')
         .or(`and(user1_id.eq.${user.id},user2_id.eq.${targetUserId}),and(user1_id.eq.${targetUserId},user2_id.eq.${user.id})`)
 
-      if (existingConversations && existingConversations.length > 0) {
+      if (existingConversations && existingConversations.length > 0 && existingConversations[0]) {
         // Conversation exists, select it
         console.log('✅ Found existing conversation:', existingConversations[0].id)
         setSelectedConversation(existingConversations[0].id)

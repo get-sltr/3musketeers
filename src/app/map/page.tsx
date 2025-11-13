@@ -159,33 +159,45 @@ export default function MapPage() {
         return;
       }
 
-      const enriched = (data || []).map((profile: RawProfile) => {
-        const base: MapUser = {
-          id: profile.id,
-          display_name: profile.display_name || 'Anonymous',
-          avatar_url: profile.photo_url || profile.avatar_url || null,
-          age: profile.age ?? null,
-          position: profile.position || 'Unknown',
-          dtfn: Boolean(profile.dtfn),
-          party_friendly: Boolean(profile.party_friendly),
-          latitude: profile.latitude,
-          longitude: profile.longitude,
-        };
+      const enriched = (data || [])
+        .filter((profile: RawProfile) => {
+          // Filter out profiles with invalid coordinates
+          return (
+            profile &&
+            typeof profile.latitude === 'number' &&
+            typeof profile.longitude === 'number' &&
+            !isNaN(profile.latitude) &&
+            !isNaN(profile.longitude) &&
+            profile.id
+          );
+        })
+        .map((profile: RawProfile) => {
+          const base: MapUser = {
+            id: profile.id,
+            display_name: profile.display_name || 'Anonymous',
+            avatar_url: profile.photo_url || profile.avatar_url || null,
+            age: profile.age ?? null,
+            position: profile.position || 'Unknown',
+            dtfn: Boolean(profile.dtfn),
+            party_friendly: Boolean(profile.party_friendly),
+            latitude: profile.latitude,
+            longitude: profile.longitude,
+          };
 
-        if (userLocation) {
-          const distanceMiles = calculateDistanceInMiles(userLocation, [
-            profile.longitude,
-            profile.latitude,
-          ]);
-          const distance = formatDistance(distanceMiles);
-          base.distanceValue = distanceMiles;
-          if (distance) {
-            base.distance = distance;
+          if (userLocation) {
+            const distanceMiles = calculateDistanceInMiles(userLocation, [
+              profile.longitude,
+              profile.latitude,
+            ]);
+            const distance = formatDistance(distanceMiles);
+            base.distanceValue = distanceMiles;
+            if (distance) {
+              base.distance = distance;
+            }
           }
-        }
 
-        return base;
-      });
+          return base;
+        });
 
       setUsers(enriched);
       if (withSpinner) {

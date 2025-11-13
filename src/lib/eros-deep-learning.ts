@@ -1093,15 +1093,15 @@ export async function analyzeMessageBehavior(
     // Identify patterns
     const ghostedByUser = Object.entries(conversationStats)
       .filter(([_, stats]: [any, any]) => stats.lastMessageBy === 'partner' && stats.sentCount === 0)
-      .map(([partnerId, stats]) => ({ partnerId, ...stats }));
+      .map(([partnerId, stats]: [any, any]) => ({ partnerId, ...(stats as object) }));
 
     const ghostedUser = Object.entries(conversationStats)
       .filter(([_, stats]: [any, any]) => stats.lastMessageBy === 'user' && stats.receivedCount === 0)
-      .map(([partnerId, stats]) => ({ partnerId, ...stats }));
+      .map(([partnerId, stats]: [any, any]) => ({ partnerId, ...(stats as object) }));
 
     const activeConvos = Object.entries(conversationStats)
       .filter(([_, stats]: [any, any]) => stats.sentCount > 3 && stats.receivedCount > 3)
-      .map(([partnerId, stats]) => ({ partnerId, ...stats }));
+      .map(([partnerId, stats]: [any, any]) => ({ partnerId, ...(stats as object) }));
 
     const prompt = `
     You are EROS analyzing MESSAGE BEHAVIOR to learn TRUE preferences.

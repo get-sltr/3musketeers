@@ -73,10 +73,9 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // Initialize Supabase
-// Validate Supabase credentials
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
   console.error('❌ CRITICAL: Missing Supabase credentials!');
-  console.error('Required: SUPABASE_URL and SUPABASE_ANON_KEY in .env');
+  console.error('Required: SUPABASE_URL and SUPABASE_ANON_KEY');
   process.exit(1);
 }
 
@@ -85,12 +84,19 @@ const supabase = createClient(
   process.env.SUPABASE_ANON_KEY
 );
 
-// Configure web-push
+// Configure web-push for push notifications
+if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY || !process.env.VAPID_SUBJECT) {
+  console.error('❌ CRITICAL: Missing VAPID credentials for push notifications!');
+  console.error('Required: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, and VAPID_SUBJECT');
+  process.exit(1);
+}
+
 webpush.setVapidDetails(
-  process.env.VAPID_SUBJECT || 'mailto:support@getsltr.com',
+  process.env.VAPID_SUBJECT,
   process.env.VAPID_PUBLIC_KEY,
   process.env.VAPID_PRIVATE_KEY
 );
+console.log('✅ Web Push notifications enabled');
 
 // File upload configuration
 const storage = multer.diskStorage({

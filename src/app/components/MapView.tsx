@@ -62,6 +62,7 @@ export const MapView: React.FC<MapViewProps> = ({
       zoom,
       pitch: 0,
       bearing: 0,
+      attributionControl: false, // Hide Mapbox attribution for non-investors/partners
     });
 
     map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
