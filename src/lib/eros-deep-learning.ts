@@ -474,11 +474,12 @@ export async function learnUltimatePreferences(
   userId: string
 ): Promise<UltimatePrefPattern> {
   try {
-    // Gather ALL data sources
-    const [favorites, callHistory, blockPatterns, conversationData, tapData, viewData] = await Promise.all([
+    // Gather ALL data sources INCLUDING message behavior
+    const [favorites, callHistory, blockPatterns, messageBehavior, conversationData, tapData, viewData] = await Promise.all([
       analyzeFavorites(userId),
       analyzeCallHistory(userId),
       analyzeBlockPatterns(userId),
+      analyzeMessageBehavior(userId), // NEW: Message behavior tracking
       getConversationHistory(userId),
       getTapHistory(userId),
       getViewPatterns(userId)
@@ -486,22 +487,25 @@ export async function learnUltimatePreferences(
     
     const prompt = `
     You are EROS, the ultimate AI learning what someone REALLY wants, not what they say.
-    
+
     FAVORITES ANALYSIS:
     ${JSON.stringify(favorites)}
-    
+
     VIDEO CALL PATTERNS:
     ${JSON.stringify(callHistory)}
-    
+
     BLOCK/DEALBREAKER PATTERNS:
     ${JSON.stringify(blockPatterns)}
-    
+
+    MESSAGE BEHAVIOR (WHO THEY ACTUALLY TALK TO):
+    ${JSON.stringify(messageBehavior)}
+
     CONVERSATION OUTCOMES:
     ${JSON.stringify(conversationData)}
-    
+
     TAP INTERACTIONS:
     ${JSON.stringify(tapData)}
-    
+
     VIEWING PATTERNS:
     ${JSON.stringify(viewData)}
     
@@ -990,11 +994,179 @@ export async function analyzeMatches(
 
 async function getConversationHistory(userId: string) {
   const supabase = getSupabaseClient();
-  const { data } = await supabase
+
+  // Get all conversations with message counts, response times, and outcomes
+  const { data: conversations } = await supabase
+    .from('conversations')
+    .select(`
+      *,
+      messages:messages(count),
+      other_user:profiles!other_user_id(*)
+    `)
+    .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+    .order('last_message_at', { ascending: false });
+
+  // Get detailed conversation outcomes
+  const { data: outcomes } = await supabase
     .from('conversation_outcomes')
     .select('*')
     .eq('user_id', userId);
-  return data;
+
+  return { conversations, outcomes };
+}
+
+// ============================================
+// 📱 MESSAGE BEHAVIOR TRACKING
+// ============================================
+
+export async function analyzeMessageBehavior(
+  userId: string
+): Promise<{
+  whoTheyActuallyMessage: string[];
+  responsePatterns: any;
+  ghostPatterns: any;
+  messageStyle: string;
+  successfulConvos: any[];
+}> {
+  try {
+    const supabase = getSupabaseClient();
+
+    // Get all messages sent and received
+    const { data: sentMessages } = await supabase
+      .from('messages')
+      .select(`
+        *,
+        recipient:profiles!receiver_id(*)
+      `)
+      .eq('sender_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(500);
+
+    const { data: receivedMessages } = await supabase
+      .from('messages')
+      .select(`
+        *,
+        sender:profiles!sender_id(*)
+      `)
+      .eq('receiver_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(500);
+
+    // Analyze conversations
+    const conversationStats: any = {};
+
+    // Group messages by conversation partner
+    for (const msg of sentMessages || []) {
+      const partnerId = msg.receiver_id;
+      if (!conversationStats[partnerId]) {
+        conversationStats[partnerId] = {
+          sentCount: 0,
+          receivedCount: 0,
+          avgResponseTime: 0,
+          messagesBeforeGhost: 0,
+          lastMessageBy: null,
+          profile: msg.recipient,
+          ledToMeeting: false
+        };
+      }
+      conversationStats[partnerId].sentCount++;
+      conversationStats[partnerId].lastMessageBy = 'user';
+    }
+
+    for (const msg of receivedMessages || []) {
+      const partnerId = msg.sender_id;
+      if (!conversationStats[partnerId]) {
+        conversationStats[partnerId] = {
+          sentCount: 0,
+          receivedCount: 0,
+          avgResponseTime: 0,
+          messagesBeforeGhost: 0,
+          lastMessageBy: null,
+          profile: msg.sender,
+          ledToMeeting: false
+        };
+      }
+      conversationStats[partnerId].receivedCount++;
+      conversationStats[partnerId].lastMessageBy = 'partner';
+    }
+
+    // Identify patterns
+    const ghostedByUser = Object.entries(conversationStats)
+      .filter(([_, stats]: [any, any]) => stats.lastMessageBy === 'partner' && stats.sentCount === 0)
+      .map(([partnerId, stats]) => ({ partnerId, ...stats }));
+
+    const ghostedUser = Object.entries(conversationStats)
+      .filter(([_, stats]: [any, any]) => stats.lastMessageBy === 'user' && stats.receivedCount === 0)
+      .map(([partnerId, stats]) => ({ partnerId, ...stats }));
+
+    const activeConvos = Object.entries(conversationStats)
+      .filter(([_, stats]: [any, any]) => stats.sentCount > 3 && stats.receivedCount > 3)
+      .map(([partnerId, stats]) => ({ partnerId, ...stats }));
+
+    const prompt = `
+    You are EROS analyzing MESSAGE BEHAVIOR to learn TRUE preferences.
+
+    Total conversations: ${Object.keys(conversationStats).length}
+    Messages sent: ${sentMessages?.length || 0}
+    Messages received: ${receivedMessages?.length || 0}
+
+    ACTIVE CONVERSATIONS (both sides engaged):
+    ${JSON.stringify(activeConvos.slice(0, 10))}
+
+    USER GHOSTED THESE PEOPLE (didn't reply):
+    ${JSON.stringify(ghostedByUser.slice(0, 10))}
+
+    USER GOT GHOSTED BY:
+    ${JSON.stringify(ghostedUser.slice(0, 10))}
+
+    Analyze:
+    1. WHO does user actually engage with? (age, type, position)
+    2. WHO does user ghost/ignore after matching?
+    3. What patterns lead to long conversations?
+    4. What kills conversations quickly?
+    5. What's their message style? (direct/flirty/aggressive)
+    6. Response time patterns - do they reply fast to certain types?
+
+    Be SPECIFIC about WHO they engage with vs WHO they ignore!
+
+    Return detailed JSON analysis
+    `;
+
+    const eros = getErosClient();
+    const response = await makeErosRequest(() =>
+      eros.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: 1200,
+        response_format: { type: 'json_object' }
+      })
+    );
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error('No response from EROS API');
+    }
+    const analysis = JSON.parse(content);
+
+    // Store message behavior patterns
+    await supabase
+      .from('message_behavior_patterns')
+      .upsert({
+        user_id: userId,
+        who_they_message: analysis.whoTheyActuallyMessage,
+        response_patterns: analysis.responsePatterns,
+        ghost_patterns: analysis.ghostPatterns,
+        message_style: analysis.messageStyle,
+        successful_convos: analysis.successfulConvos,
+        analyzed_at: new Date().toISOString()
+      });
+
+    return analysis;
+  } catch (error) {
+    console.error('Eros Message Behavior Error:', error);
+    throw error;
+  }
 }
 
 async function getTapHistory(userId: string) {

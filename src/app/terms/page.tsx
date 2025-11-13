@@ -255,7 +255,7 @@ export default function TermsPage() {
               <ul className="list-disc list-inside ml-4 space-y-2 mb-4">
                 <li>Use the in-app reporting feature to flag users or content</li>
                 <li>Block users who harass or bother you</li>
-                <li>Contact support@getsltr.com for urgent safety concerns</li>
+                <li>Contact customersupport@getsltr.com for urgent safety concerns</li>
               </ul>
               <p>
                 If your account is suspended or terminated, you may appeal by contacting legal@getsltr.com with a detailed explanation. Appeals are reviewed within 7 business days.
@@ -497,7 +497,7 @@ export default function TermsPage() {
               </p>
               <div className="glass-bubble p-6 bg-white/5 border border-white/10 space-y-3">
                 <p><strong>Email:</strong> legal@getsltr.com</p>
-                <p><strong>Support:</strong> support@getsltr.com</p>
+                <p><strong>Support:</strong> customersupport@getsltr.com</p>
                 <p><strong>DMCA/Copyright:</strong> dmca@getsltr.com</p>
                 <p><strong>Company:</strong> SLTR DIGITAL LLC</p>
                 <p><strong>Mailing Address:</strong><br />

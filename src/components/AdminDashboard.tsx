@@ -11,8 +11,8 @@ interface UserStat {
 
 interface RecentUser {
   id: string
-  username: string
-  display_name: string
+  username: string | null
+  display_name: string | null
   photo_url: string | null
   created_at: string
   is_online: boolean
@@ -225,7 +225,7 @@ export default function AdminDashboard() {
                               />
                             ) : (
                               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-white font-bold">
-                                {user.display_name.charAt(0).toUpperCase()}
+                                {(user.display_name || user.username || 'U').charAt(0).toUpperCase()}
                               </div>
                             )}
                             {user.is_online && (
@@ -236,7 +236,7 @@ export default function AdminDashboard() {
                           {/* Info */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <p className="text-white font-semibold truncate">{user.display_name}</p>
+                              <p className="text-white font-semibold truncate">{user.display_name || user.username || 'Unknown'}</p>
                               {user.founder_number && (
                                 <span className="text-xs px-2 py-0.5 rounded-full bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border border-yellow-500/30 text-yellow-300">
                                   #{user.founder_number}

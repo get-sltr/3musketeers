@@ -651,11 +651,11 @@ These files should auto-open when you open the project:
     1. kevin@getsltr.com (founder contact)
     2. info@getsltr.com (legal inquiries, DMCA)
     3. press@getsltr.com (advertising & partnerships - monetization)
-    4. support@getsltr.com (general support, privacy requests, security reports)
+    4. customersupport@getsltr.com (general support, privacy requests, security reports)
   - **Solution Applied:**
     1. Updated legal page with all 4 emails in correct categories
     2. Added "Advertising & Partnerships: press@getsltr.com" for monetization
-    3. Changed security page contact to support@getsltr.com
+    3. Changed security page contact to customersupport@getsltr.com
   - **Result:** ✅ All pages use correct official emails
 
 - [x] **Site Verification** – Confirmed site loading successfully

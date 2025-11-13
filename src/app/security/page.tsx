@@ -133,7 +133,7 @@ export default function SecurityPage() {
               If you discover a security vulnerability or have concerns about the security of SLTR, please contact us immediately. We take all reports seriously and will investigate promptly.
             </p>
             <div className="space-y-2 text-sm">
-              <p><strong className="text-white">Email:</strong> support@getsltr.com</p>
+              <p><strong className="text-white">Email:</strong> customersupport@getsltr.com</p>
               <p><strong className="text-white">Response Time:</strong> We aim to respond within 24-48 hours</p>
             </div>
             <p className="text-xs text-white/50">

@@ -155,7 +155,7 @@ Body: {
 ```
 VAPID_PUBLIC_KEY=BOul5iFiwneS_iE2V3k6jQFzJsKk9HmIa88WRxEv0ps-ouN_CsNjUz-RWDppTS44Q9ze-JanQzKOTKnW8NAb8F4
 VAPID_PRIVATE_KEY=Jcg8zts3kZfhRv0beU-IYOY1WgADOxRAzsdeaT5LeNY
-VAPID_SUBJECT=mailto:support@getsltr.com
+VAPID_SUBJECT=mailto:customersupport@getsltr.com
 ```
 
 ### Frontend (.env.local)

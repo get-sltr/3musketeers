@@ -31,6 +31,7 @@ export function ErosAssistiveTouch() {
     '/privacy',
     '/terms',
     '/security',
+    '/messages',
   ]);
 
   if (disabledPaths.has(pathname || '')) {
