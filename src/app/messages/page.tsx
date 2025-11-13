@@ -84,19 +84,20 @@ function MessagesPageContent() {
 
   useEffect(() => {
     loadConversations()
-    
+
     // Request notification permission on mount
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission().catch(err => {
         console.error('Error requesting notification permission:', err)
       })
     }
-    
-    // Check for conversation parameter in URL
+
+    // Check for conversation parameter in URL (this is a USER ID, not conversation ID)
     const urlParams = new URLSearchParams(window.location.search)
-    const conversationParam = urlParams.get('conversation')
-    if (conversationParam) {
-      setSelectedConversation(conversationParam)
+    const userIdParam = urlParams.get('conversation')
+    if (userIdParam) {
+      // Find or create conversation with this user
+      findOrCreateConversation(userIdParam)
     }
   }, [])
 
@@ -406,6 +407,52 @@ function MessagesPageContent() {
       console.error('Error loading conversations:', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const findOrCreateConversation = async (targetUserId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // First, check if a conversation already exists between these users
+      const { data: existingConversations } = await supabase
+        .from('conversations')
+        .select('id, user1_id, user2_id')
+        .or(`and(user1_id.eq.${user.id},user2_id.eq.${targetUserId}),and(user1_id.eq.${targetUserId},user2_id.eq.${user.id})`)
+
+      if (existingConversations && existingConversations.length > 0) {
+        // Conversation exists, select it
+        console.log('✅ Found existing conversation:', existingConversations[0].id)
+        setSelectedConversation(existingConversations[0].id)
+        return
+      }
+
+      // No conversation exists, create one
+      console.log('📝 Creating new conversation with user:', targetUserId)
+      const { data: newConversation, error } = await supabase
+        .from('conversations')
+        .insert({
+          user1_id: user.id,
+          user2_id: targetUserId
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ Error creating conversation:', error)
+        return
+      }
+
+      console.log('✅ Created new conversation:', newConversation.id)
+
+      // Reload conversations to include the new one
+      await loadConversations()
+
+      // Select the new conversation
+      setSelectedConversation(newConversation.id)
+    } catch (err) {
+      console.error('Error finding/creating conversation:', err)
     }
   }
 

@@ -220,7 +220,7 @@ export default function AdminDashboard() {
                             {user.photo_url ? (
                               <img
                                 src={user.photo_url}
-                                alt={user.display_name}
+                                alt={(user.display_name || user.username || 'User')}
                                 className="w-12 h-12 rounded-full object-cover border-2 border-white/20"
                               />
                             ) : (
