@@ -24,6 +24,9 @@ const webpush = require('web-push');
 const app = express();
 const server = http.createServer(app);
 
+// Trust proxy for Railway deployment (behind load balancer)
+app.set('trust proxy', 1);
+
 // CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
@@ -33,18 +36,18 @@ const corsOptions = {
       process.env.DEV_FRONTEND_URL || "http://localhost:3000",
       "http://localhost:3001"
     ];
-
+    
     if (!origin) return callback(null, true);
-
+    
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-
+    
     // Allow Vercel preview deployments in non-production
     if (origin.includes('getsltr') && origin.includes('.vercel.app')) {
       return callback(null, true);
     }
-
+    
     callback(new Error('Not allowed by CORS'));
   },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -143,7 +146,7 @@ async function setupRedis() {
 }
 
 // MULTER SETUP - Using memory storage for Supabase upload
-const upload = multer({
+const upload = multer({ 
   storage: multer.memoryStorage(), // Store in memory, not disk
   limits: {
     fileSize: parseInt(process.env.MAX_FILE_SIZE) || 10485760, // 10MB
@@ -151,14 +154,14 @@ const upload = multer({
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = [
-      'image/jpeg',
-      'image/png',
-      'image/gif',
+      'image/jpeg', 
+      'image/png', 
+      'image/gif', 
       'image/webp',
-      'video/mp4',
+      'video/mp4', 
       'video/webm'
     ];
-
+    
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
@@ -191,7 +194,7 @@ const authenticateUser = async (req, res, next) => {
 // Error handling middleware
 const errorHandler = (err, req, res, next) => {
   console.error('Error:', err);
-
+  
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({ error: 'File too large. Maximum size is 10MB.' });
@@ -200,16 +203,16 @@ const errorHandler = (err, req, res, next) => {
       return res.status(400).json({ error: 'Too many files. Maximum is 5 files.' });
     }
   }
-
+  
   if (err.message && err.message.includes('Invalid file type')) {
     return res.status(400).json({ error: err.message });
   }
-
+  
   if (err.message && err.message.includes('Not allowed by CORS')) {
     return res.status(403).json({ error: 'CORS policy violation' });
   }
-
-  res.status(500).json({
+  
+  res.status(500).json({ 
     error: 'Internal server error',
     timestamp: new Date().toISOString()
   });
@@ -262,7 +265,7 @@ const io = socketIo(server, {
 // Initialize Socket.io with Redis adapter (if available)
 async function initSocketIO() {
   const redisConnected = await setupRedis();
-
+  
   if (redisConnected && redisPubClient && redisSubClient) {
     io.adapter(createAdapter(redisPubClient, redisSubClient));
     console.log('✅ Socket.io Redis adapter enabled - multi-server ready');
@@ -322,14 +325,14 @@ io.on('connection', (socket) => {
   socket.on('authenticate', async (data) => {
     try {
       const { userId, token } = data;
-
+      
       if (!token || !userId) {
         socket.emit('auth_error', { message: 'Missing authentication data' });
         return;
       }
 
       const { data: { user }, error } = await supabase.auth.getUser(token);
-
+      
       if (error || !user || user.id !== userId) {
         socket.emit('auth_error', { message: 'Invalid authentication' });
         return;
@@ -357,7 +360,7 @@ io.on('connection', (socket) => {
         .eq('id', user.id);
 
       socket.join(`user_${user.id}`);
-
+      
       socket.broadcast.emit('user_online', {
         userId: user.id,
         username: user.user_metadata?.username
@@ -374,17 +377,17 @@ io.on('connection', (socket) => {
   socket.on('send_message', async (data) => {
     try {
       // Get user from Redis or memory
-      const user = redisClient
+      const user = redisClient 
         ? await getActiveUser(socket.id)
         : activeUsers.get(socket.id);
-
+      
       if (!user) {
         socket.emit('error', { message: 'User not authenticated' });
         return;
       }
 
       const { conversationId, content, messageType = 'text', fileUrl = null } = data;
-
+      
       if (!conversationId || !content) {
         socket.emit('message_error', { message: 'Missing required data' });
         return;
@@ -414,8 +417,8 @@ io.on('connection', (socket) => {
       }
 
       // Determine receiver - CRITICAL FIX
-      const receiverId = conversation.user1_id === user.userId
-        ? conversation.user2_id
+      const receiverId = conversation.user1_id === user.userId 
+        ? conversation.user2_id 
         : conversation.user1_id;
 
       // Save message WITH receiver_id
@@ -456,7 +459,7 @@ io.on('connection', (socket) => {
       sendPushNotification(receiverId, user.username, content, conversationId);
 
       socket.emit('message_delivered', { messageId: message.id });
-
+      
     } catch (error) {
       console.error('Send message error:', error);
       socket.emit('message_error', { message: 'Failed to send message' });
@@ -465,10 +468,10 @@ io.on('connection', (socket) => {
 
   // Typing indicators
   socket.on('typing_start', async (data) => {
-    const user = redisClient
+    const user = redisClient 
       ? await getActiveUser(socket.id)
       : activeUsers.get(socket.id);
-
+    
     if (!user) return;
 
     const { conversationId } = data;
@@ -495,10 +498,10 @@ io.on('connection', (socket) => {
   });
 
   socket.on('typing_stop', async (data) => {
-    const user = redisClient
+    const user = redisClient 
       ? await getActiveUser(socket.id)
       : activeUsers.get(socket.id);
-
+    
     if (!user) return;
 
     const { conversationId } = data;
@@ -519,15 +522,15 @@ io.on('connection', (socket) => {
   socket.on('mark_message_read', async (data) => {
     try {
       const { messageId, conversationId } = data;
-      const user = redisClient
+      const user = redisClient 
         ? await getActiveUser(socket.id)
         : activeUsers.get(socket.id);
-
+      
       if (!user) return;
 
       const { error } = await supabase
         .from('messages')
-        .update({
+        .update({ 
           read_at: new Date().toISOString(),
           read_by: user.userId
         })
@@ -547,10 +550,10 @@ io.on('connection', (socket) => {
 
   socket.on('join_conversation', async (data) => {
     const { conversationId } = data;
-    const user = redisClient
+    const user = redisClient 
       ? await getActiveUser(socket.id)
       : activeUsers.get(socket.id);
-
+    
     if (!user || !conversationId) return;
 
     const { data: conversation, error } = await supabase
@@ -559,7 +562,7 @@ io.on('connection', (socket) => {
       .eq('id', conversationId)
       .single();
 
-    if (!error && conversation &&
+    if (!error && conversation && 
         (conversation.user1_id === user.userId || conversation.user2_id === user.userId)) {
       socket.join(`conversation_${conversationId}`);
       console.log(`User ${socket.id} joined conversation ${conversationId}`);
@@ -574,12 +577,12 @@ io.on('connection', (socket) => {
   // WebRTC signaling
   socket.on('call_offer', async (data) => {
     const { targetUserId, offer, conversationId } = data;
-    const user = redisClient
+    const user = redisClient 
       ? await getActiveUser(socket.id)
       : activeUsers.get(socket.id);
-
+    
     if (!user) return;
-
+    
     socket.to(`user_${targetUserId}`).emit('call_offer', {
       fromUserId: user.userId,
       offer,
@@ -589,12 +592,12 @@ io.on('connection', (socket) => {
 
   socket.on('call_answer', async (data) => {
     const { targetUserId, answer } = data;
-    const user = redisClient
+    const user = redisClient 
       ? await getActiveUser(socket.id)
       : activeUsers.get(socket.id);
-
+    
     if (!user) return;
-
+    
     socket.to(`user_${targetUserId}`).emit('call_answer', {
       fromUserId: user.userId,
       answer
@@ -603,12 +606,12 @@ io.on('connection', (socket) => {
 
   socket.on('call_ice_candidate', async (data) => {
     const { targetUserId, candidate } = data;
-    const user = redisClient
+    const user = redisClient 
       ? await getActiveUser(socket.id)
       : activeUsers.get(socket.id);
-
+    
     if (!user) return;
-
+    
     socket.to(`user_${targetUserId}`).emit('call_ice_candidate', {
       fromUserId: user.userId,
       candidate
@@ -617,12 +620,12 @@ io.on('connection', (socket) => {
 
   socket.on('call_end', async (data) => {
     const { targetUserId, conversationId } = data;
-    const user = redisClient
+    const user = redisClient 
       ? await getActiveUser(socket.id)
       : activeUsers.get(socket.id);
-
+    
     if (!user) return;
-
+    
     socket.to(`user_${targetUserId}`).emit('call_end', {
       fromUserId: user.userId,
       conversationId
@@ -630,20 +633,20 @@ io.on('connection', (socket) => {
   });
 
   socket.on('location_update', async (data) => {
-    const user = redisClient
+    const user = redisClient 
       ? await getActiveUser(socket.id)
       : activeUsers.get(socket.id);
-
+    
     if (!user) return;
 
     const { latitude, longitude, conversationId } = data;
-
-    if (!latitude || !longitude ||
-        latitude < -90 || latitude > 90 ||
+    
+    if (!latitude || !longitude || 
+        latitude < -90 || latitude > 90 || 
         longitude < -180 || longitude > 180) {
       return;
     }
-
+    
     socket.to(`conversation_${conversationId}`).emit('user_location_update', {
       userId: user.userId,
       username: user.username,
@@ -656,10 +659,10 @@ io.on('connection', (socket) => {
   socket.on('file_share', async (data) => {
     try {
       const { conversationId, fileName, fileType, fileSize } = data;
-      const user = redisClient
+      const user = redisClient 
         ? await getActiveUser(socket.id)
         : activeUsers.get(socket.id);
-
+      
       if (!user || !fileName || !fileType || !fileSize) return;
 
       if (fileSize > 10 * 1024 * 1024) {
@@ -681,14 +684,14 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', async () => {
-    const user = redisClient
+    const user = redisClient 
       ? await getActiveUser(socket.id)
       : activeUsers.get(socket.id);
-
+    
     if (user) {
       await supabase
         .from('profiles')
-        .update({
+        .update({ 
           online: false,
           last_seen: new Date().toISOString()
         })
@@ -698,13 +701,13 @@ io.on('connection', (socket) => {
         userId: user.userId,
         username: user.username
       });
-
+      
       if (redisClient) {
         await removeActiveUser(socket.id);
       } else {
         activeUsers.delete(socket.id);
       }
-
+      
       console.log(`User disconnected: ${socket.id}`);
     }
   });
@@ -713,7 +716,7 @@ io.on('connection', (socket) => {
 // API Routes
 
 app.get('/', (req, res) => {
-  res.json({
+  res.json({ 
     status: 'OK',
     service: 'SLTR Realtime Backend',
     version: '3.0.0-PRODUCTION',
@@ -722,8 +725,8 @@ app.get('/', (req, res) => {
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'OK',
+  res.json({ 
+    status: 'OK', 
     timestamp: new Date().toISOString(),
     version: '3.0.0-PRODUCTION',
     redis: redisClient ? 'connected' : 'not configured'
@@ -783,7 +786,7 @@ app.get('/api/push/vapid-public-key', (req, res) => {
 app.post('/api/push/subscribe', async (req, res) => {
   try {
     const { userId, subscription } = req.body;
-
+    
     if (!userId || !subscription) {
       return res.status(400).json({ error: 'Missing userId or subscription' });
     }
@@ -830,7 +833,7 @@ const PORT = process.env.PORT || 3000;
 
 async function startServer() {
   await initSocketIO();
-
+  
   server.listen(PORT, () => {
     console.log(`🚀 SLTR Backend v3.0-PRODUCTION running on port ${PORT}`);
     console.log(`📡 Socket.io ready`);
