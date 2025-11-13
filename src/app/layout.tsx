@@ -5,7 +5,7 @@ import { ErosAssistiveTouch } from '@/components/ErosAssistiveTouch';
 import ClientProviders from '@/components/ClientProviders';
 import NotificationPrompt from '@/components/NotificationPrompt';
 import AdminDashboard from '@/components/AdminDashboard';
-import TwoFactorSetup from '@/components/TwoFactorSetup';
+// import TwoFactorSetup from '@/components/TwoFactorSetup'; // Temporarily disabled - causing login issues
 
 const inter = Inter({
   subsets: ['latin'],
@@ -73,7 +73,7 @@ export default async function RootLayout({
           {children}
           <ErosAssistiveTouch />
           <NotificationPrompt />
-          <TwoFactorSetup />
+          {/* <TwoFactorSetup /> */}
           <AdminDashboard />
         </ClientProviders>
       </body>
