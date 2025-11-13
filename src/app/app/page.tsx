@@ -85,7 +85,7 @@ export default function AppPage() {
   const [isFetching, setIsFetching] = useState(false)
   const fetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Map session UI state
-  const [radiusMiles, setRadiusMiles] = useState<number>(5)  // Default: 5 miles (Grindr-style)
+  const [radiusMiles, setRadiusMiles] = useState<number>(10)  // Default: 10 miles
   const previousRadiusRef = useRef<number>(radiusMiles)
   const [clusterRadius, setClusterRadius] = useState<number>(60)
   const [styleId, setStyleId] = useState<string>(DEFAULT_SLTR_STYLE)

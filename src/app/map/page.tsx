@@ -197,6 +197,11 @@ export default function MapPage() {
           }
 
           return base;
+        })
+        .filter((user: MapUser) => {
+          // Only show users within 10 miles
+          if (!userLocation || user.distanceValue === undefined) return true;
+          return user.distanceValue <= 10;
         });
 
       setUsers(enriched);
