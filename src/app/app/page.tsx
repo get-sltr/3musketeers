@@ -107,7 +107,6 @@ export default function AppPage() {
   } = useMapStore()
   
   const previousRadiusRef = useRef<number>(radiusMiles)
-  const [isHostingGroup, setIsHostingGroup] = useState<boolean>(false)
   
   // Read from UI Store (state + actions)
   const { 
