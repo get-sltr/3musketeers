@@ -54,8 +54,13 @@ function MessagesPageContent() {
   const [showFileUpload, setShowFileUpload] = useState(false)
   const [messageStatus, setMessageStatus] = useState<{[key: string]: 'sending' | 'delivered' | 'read'}>({})
   const [swipedConversation, setSwipedConversation] = useState<string | null>(null)
+  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null)
   const [touchStart, setTouchStart] = useState<number>(0)
   const [touchEnd, setTouchEnd] = useState<number>(0)
+  const [showMenu, setShowMenu] = useState(false)
+  const [isEditMode, setIsEditMode] = useState(false)
+  const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set())
+  const [isMuted, setIsMuted] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const router = useRouter()
@@ -107,6 +112,17 @@ function MessagesPageContent() {
       loadConversations()
     }
   }, [isConnected])
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showMenu && !(event.target as Element).closest('[data-menu]')) {
+        setShowMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showMenu])
 
   // Real-time event listeners for Supabase Realtime
   useEffect(() => {
@@ -654,6 +670,127 @@ function MessagesPageContent() {
     setShowFileUpload(false)
   }
 
+  // Handle archive conversation
+  const handleArchiveConversation = async (conversationId: string) => {
+    try {
+      // TODO: Add archived field to conversations table or create archived_conversations table
+      // For now, just remove from view
+      setConversations(prev => prev.filter(c => c.id !== conversationId))
+      if (selectedConversation === conversationId) {
+        setSelectedConversation(null)
+      }
+      setSwipedConversation(null)
+      setSwipeDirection(null)
+    } catch (error) {
+      console.error('Error archiving conversation:', error)
+    }
+  }
+
+  // Handle mute/unmute conversation
+  const handleMuteConversation = async (conversationId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Toggle mute status
+      const newMuteStatus = !isMuted
+      
+      // Update conversation muted status (assuming conversations table has a muted_by_user_ids array or similar)
+      // For now, we'll use a user_preferences table or add muted field
+      const { error } = await supabase
+        .from('conversations')
+        .update({ muted: newMuteStatus })
+        .eq('id', conversationId)
+
+      if (error) {
+        // If muted field doesn't exist, try creating a user_conversation_preferences table entry
+        // For now, we'll use localStorage as fallback
+        const mutedConversations = JSON.parse(localStorage.getItem('muted_conversations') || '[]')
+        if (newMuteStatus) {
+          if (!mutedConversations.includes(conversationId)) {
+            mutedConversations.push(conversationId)
+          }
+        } else {
+          const index = mutedConversations.indexOf(conversationId)
+          if (index > -1) {
+            mutedConversations.splice(index, 1)
+          }
+        }
+        localStorage.setItem('muted_conversations', JSON.stringify(mutedConversations))
+      }
+
+      setIsMuted(newMuteStatus)
+      setShowMenu(false)
+    } catch (error) {
+      console.error('Error muting conversation:', error)
+    }
+  }
+
+  // Check if conversation is muted on load
+  useEffect(() => {
+    if (selectedConversation) {
+      const mutedConversations = JSON.parse(localStorage.getItem('muted_conversations') || '[]')
+      setIsMuted(mutedConversations.includes(selectedConversation))
+    }
+  }, [selectedConversation])
+
+  // Handle edit mode - select/deselect messages
+  const toggleMessageSelection = (messageId: string) => {
+    setSelectedMessages(prev => {
+      const next = new Set(prev)
+      if (next.has(messageId)) {
+        next.delete(messageId)
+      } else {
+        next.add(messageId)
+      }
+      return next
+    })
+  }
+
+  // Delete selected messages
+  const handleDeleteSelectedMessages = async () => {
+    if (selectedMessages.size === 0) return
+
+    if (!confirm(`Delete ${selectedMessages.size} message(s)? This cannot be undone.`)) {
+      return
+    }
+
+    try {
+      const messageIds = Array.from(selectedMessages)
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .in('id', messageIds)
+
+      if (error) {
+        console.error('Error deleting messages:', error)
+        alert('Failed to delete messages. Please try again.')
+        return
+      }
+
+      // Remove deleted messages from state
+      setMessages(prev => prev.filter(m => !selectedMessages.has(m.id)))
+      setSelectedMessages(new Set())
+      setIsEditMode(false)
+    } catch (error) {
+      console.error('Error deleting messages:', error)
+      alert('Failed to delete messages. Please try again.')
+    }
+  }
+
+  // Handle invite to group
+  const handleInviteToGroup = () => {
+    if (!selectedConversation) return
+    
+    const conversation = conversations.find(c => c.id === selectedConversation)
+    if (!conversation) return
+
+    // Navigate to groups page with the user ID as a parameter
+    const otherUserId = conversation.other_user.id
+    router.push(`/groups?invite=${otherUserId}`)
+    setShowMenu(false)
+  }
+
   // Handle delete conversation
   const handleDeleteConversation = async (conversationId: string) => {
     if (!confirm('Delete this conversation? This action cannot be undone.')) {
@@ -721,9 +858,15 @@ function MessagesPageContent() {
     if (swipeDistance > minSwipeDistance) {
       // Swiped left - show delete
       setSwipedConversation(conversationId)
+      setSwipeDirection('left')
     } else if (swipeDistance < -minSwipeDistance) {
-      // Swiped right - hide delete
+      // Swiped right - show archive
+      setSwipedConversation(conversationId)
+      setSwipeDirection('right')
+    } else {
+      // Reset if swipe wasn't far enough
       setSwipedConversation(null)
+      setSwipeDirection(null)
     }
   }
 
@@ -800,16 +943,24 @@ function MessagesPageContent() {
                   >
                     {/* Swipeable conversation card */}
                     <div
-                      onClick={() => setSelectedConversation(conversation.id)}
+                      onClick={() => {
+                        if (!swipedConversation) {
+                          setSelectedConversation(conversation.id)
+                        }
+                      }}
                       onTouchStart={(e) => handleTouchStart(e, conversation.id)}
                       onTouchMove={(e) => handleTouchMove(e, conversation.id)}
                       onTouchEnd={() => handleTouchEnd(conversation.id)}
-                      className={`p-3 rounded-xl cursor-pointer transition-all duration-300 ${
+                      className={`relative p-3 rounded-xl cursor-pointer transition-all duration-300 ${
                         selectedConversation === conversation.id
                           ? 'bg-cyan-500/20 border border-cyan-500/30'
                           : 'bg-white/5 hover:bg-white/10'
                       } ${
-                        swipedConversation === conversation.id ? 'translate-x-[-80px]' : 'translate-x-0'
+                        swipedConversation === conversation.id && swipeDirection === 'left'
+                          ? 'translate-x-[-80px]' 
+                          : swipedConversation === conversation.id && swipeDirection === 'right'
+                          ? 'translate-x-[80px]'
+                          : 'translate-x-0'
                       }`}
                       style={{ transition: 'transform 0.3s ease' }}
                     >
@@ -847,18 +998,37 @@ function MessagesPageContent() {
                       </div>
                     </div>
 
-                    {/* Delete button revealed by swipe */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDeleteConversation(conversation.id)
-                      }}
-                      className="absolute right-0 top-0 bottom-0 w-20 bg-red-500 flex items-center justify-center rounded-r-xl"
-                    >
-                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
+                    {/* Delete button revealed by left swipe */}
+                    {swipedConversation === conversation.id && swipeDirection === 'left' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteConversation(conversation.id)
+                          setSwipedConversation(null)
+                          setSwipeDirection(null)
+                        }}
+                        className="absolute right-0 top-0 bottom-0 w-20 bg-red-500 flex items-center justify-center rounded-r-xl z-10"
+                      >
+                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    )}
+
+                    {/* Archive button revealed by right swipe */}
+                    {swipedConversation === conversation.id && swipeDirection === 'right' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleArchiveConversation(conversation.id)
+                        }}
+                        className="absolute left-0 top-0 bottom-0 w-20 bg-blue-500 flex items-center justify-center rounded-l-xl z-10"
+                      >
+                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -870,10 +1040,10 @@ function MessagesPageContent() {
         <div className={`flex-1 flex flex-col min-h-0 ${!selectedConversation ? 'hidden md:flex' : 'flex'}`}>
           {selectedConversation ? (
             <>
-              {/* Conversation Header with Video Call Button and Back Button */}
-              <div className="border-b border-white/10 p-4 bg-black/50 backdrop-blur-sm sticky top-20 z-40">
+              {/* Conversation Header */}
+              <div className="relative border-b border-white/10 p-4 bg-black/50 backdrop-blur-sm sticky top-20 z-40">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
                     {/* Back button for mobile */}
                     <button
                       onClick={() => setSelectedConversation(null)}
@@ -887,45 +1057,203 @@ function MessagesPageContent() {
                       <img
                         src={conversations.find(c => c.id === selectedConversation)?.other_user.photo || ''}
                         alt={conversations.find(c => c.id === selectedConversation)?.other_user.display_name || ''}
-                        className="w-10 h-10 rounded-full object-cover"
+                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
                       />
                     )}
-                    <div>
-                      <h3 className="text-white font-semibold">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-white font-semibold truncate">
                         {conversations.find(c => c.id === selectedConversation)?.other_user.display_name || 'Unknown'}
                       </h3>
                       {conversations.find(c => c.id === selectedConversation)?.other_user.online && (
                         <p className="text-green-400 text-xs">Online</p>
                       )}
                     </div>
+                    {/* Call buttons next to name */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {/* Regular call button */}
+                      <button
+                        onClick={() => {
+                          // TODO: Implement voice call
+                          console.log('Voice call clicked')
+                        }}
+                        className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all"
+                        title="Voice Call"
+                      >
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                      </button>
+                      {/* Video call button */}
+                      <button
+                        onClick={startVideoCall}
+                        disabled={!isConnected}
+                        className="p-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg hover:scale-110 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={isConnected ? "Start Video Call" : "Connect to start video calls"}
+                      >
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {/* Sandwich menu button */}
                     <button
-                      onClick={startVideoCall}
-                      disabled={!isConnected}
-                      className="p-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-xl hover:scale-110 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-cyan-500/30 flex items-center justify-center"
-                      title={isConnected ? "Start Video Call" : "Connect to start video calls"}
+                      data-menu
+                      onClick={() => setShowMenu(!showMenu)}
+                      className="p-2 hover:bg-white/10 rounded-lg transition-all"
+                      title="Menu"
                     >
                       <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                      </svg>
+                    </button>
+                    {/* X button */}
+                    <button
+                      onClick={() => setSelectedConversation(null)}
+                      className="p-2 hover:bg-white/10 rounded-lg transition-all"
+                      title="Close"
+                    >
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
                   </div>
                 </div>
               </div>
 
+              {/* Menu Dropdown */}
+              {showMenu && (
+                <div data-menu className="absolute top-full right-4 mt-2 bg-black/90 border border-white/10 rounded-xl p-2 z-50 min-w-[200px] shadow-lg">
+                  <button
+                    onClick={() => {
+                      const conversation = conversations.find(c => c.id === selectedConversation)
+                      if (conversation) {
+                        router.push(`/app?focus=${conversation.other_user.id}`)
+                      }
+                      setShowMenu(false)
+                    }}
+                    className="w-full text-left px-4 py-2 text-white hover:bg-white/10 rounded-lg text-sm"
+                  >
+                    View Profile
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleMuteConversation(selectedConversation!)
+                    }}
+                    className="w-full text-left px-4 py-2 text-white hover:bg-white/10 rounded-lg text-sm"
+                  >
+                    {isMuted ? '🔊 Unmute' : '🔇 Mute'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsEditMode(true)
+                      setShowMenu(false)
+                    }}
+                    className="w-full text-left px-4 py-2 text-white hover:bg-white/10 rounded-lg text-sm"
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleInviteToGroup()
+                    }}
+                    className="w-full text-left px-4 py-2 text-white hover:bg-white/10 rounded-lg text-sm"
+                  >
+                    👥 Invite to Group
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleArchiveConversation(selectedConversation!)
+                      setShowMenu(false)
+                    }}
+                    className="w-full text-left px-4 py-2 text-white hover:bg-white/10 rounded-lg text-sm"
+                  >
+                    Archive
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm('Delete this conversation?')) {
+                        handleDeleteConversation(selectedConversation!)
+                      }
+                      setShowMenu(false)
+                    }}
+                    className="w-full text-left px-4 py-2 text-red-400 hover:bg-red-500/20 rounded-lg text-sm"
+                  >
+                    Delete Chat
+                  </button>
+                </div>
+              )}
+
+              {/* Edit Mode Header */}
+              {isEditMode && (
+                <div className="border-b border-white/10 p-4 bg-black/50 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => {
+                        setIsEditMode(false)
+                        setSelectedMessages(new Set())
+                      }}
+                      className="px-4 py-2 text-white hover:bg-white/10 rounded-lg text-sm"
+                    >
+                      Cancel
+                    </button>
+                    <span className="text-white/60 text-sm">
+                      {selectedMessages.size} selected
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleDeleteSelectedMessages}
+                    disabled={selectedMessages.size === 0}
+                    className="px-4 py-2 bg-red-600/80 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white text-sm"
+                  >
+                    Delete ({selectedMessages.size})
+                  </button>
+                </div>
+              )}
+
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.sender_id === (conversations.find(c => c.id === selectedConversation)?.other_user.id) ? 'justify-start' : 'justify-end'}`}
-                  >
-                    <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-                      message.sender_id === (conversations.find(c => c.id === selectedConversation)?.other_user.id)
-                        ? 'bg-white/10 text-white'
-                        : 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white'
-                    }`}>
+                {messages.map((message) => {
+                  const isSelected = selectedMessages.has(message.id)
+                  const isOtherUser = message.sender_id === (conversations.find(c => c.id === selectedConversation)?.other_user.id)
+                  
+                  return (
+                    <div
+                      key={message.id}
+                      className={`flex ${isOtherUser ? 'justify-start' : 'justify-end'}`}
+                    >
+                      <div
+                        onClick={() => {
+                          if (isEditMode) {
+                            toggleMessageSelection(message.id)
+                          }
+                        }}
+                        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl cursor-pointer transition-all ${
+                          isEditMode && isSelected
+                            ? 'ring-2 ring-cyan-400 ring-offset-2 ring-offset-black'
+                            : ''
+                        } ${
+                          isOtherUser
+                            ? 'bg-white/10 text-white'
+                            : 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white'
+                        } ${isEditMode ? 'hover:opacity-80' : ''}`}
+                      >
+                        {isEditMode && (
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                              isSelected
+                                ? 'bg-cyan-400 border-cyan-400'
+                                : 'border-white/40'
+                            }`}>
+                              {isSelected && (
+                                <svg className="w-3 h-3 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       {/* File Message */}
                       {message.content.startsWith('📎') && (
                         <div className="flex items-center gap-2 mb-2">
@@ -966,7 +1294,8 @@ function MessagesPageContent() {
                       </div>
                     </div>
                   </div>
-                ))}
+                  )
+                })}
                 
                 {/* Typing Indicator */}
                 {typingUsers.length > 0 && (
@@ -1037,8 +1366,6 @@ function MessagesPageContent() {
         </div>
       </div>
 
-      {/* Bottom Navigation */}
-      <BottomNav />
     </div>
   )
 }

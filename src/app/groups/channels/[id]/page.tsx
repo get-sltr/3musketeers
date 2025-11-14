@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Room, connect } from 'livekit-client'
+import { Room } from 'livekit-client'
 import ConferenceRoom from '@/components/ConferenceRoom'
 import LoadingSkeleton from '@/components/LoadingSkeleton'
 
@@ -64,25 +64,24 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
 
         // Connect to LiveKit room
         const newRoom = new Room()
-        await newRoom.prepareAudioAndVideo({ 
-          audio: true, 
-          video: channelType === 'video' 
-        })
 
         await newRoom.connect(url, token, {
           autoSubscribe: true,
-          participantIdentity: user.id,
-          participantName,
-          participantMetadata: JSON.stringify({
-            userId: user.id,
-            name: participantName,
-            avatar: profile?.photo_url,
-            role: 'member', // Default role, can be 'host' if user created the group
-          }),
         })
 
-        // Publish local tracks
-        await newRoom.localParticipant.publishLocalTracks()
+        // Set participant metadata after connection
+        await newRoom.localParticipant.setMetadata(JSON.stringify({
+          userId: user.id,
+          name: participantName,
+          avatar: profile?.photo_url,
+          role: 'member', // Default role, can be 'host' if user created the group
+        }))
+
+        // Enable camera and microphone
+        if (channelType === 'video') {
+          await newRoom.localParticipant.setCameraEnabled(true)
+        }
+        await newRoom.localParticipant.setMicrophoneEnabled(true)
 
         setRoom(newRoom)
 
