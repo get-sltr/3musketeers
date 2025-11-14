@@ -1,12 +1,23 @@
 import { Redis } from '@upstash/redis'
 
-// Initialize Upstash Redis client
-const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
-  ? new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
-    })
-  : null
+// Lazy initialization of Redis client to avoid build-time errors
+let redis: Redis | null = null
+
+function getRedisClient(): Redis | null {
+  // Only initialize if not already initialized and env vars are available
+  if (!redis && process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    try {
+      redis = new Redis({
+        url: process.env.UPSTASH_REDIS_REST_URL,
+        token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      })
+    } catch (error) {
+      console.warn('Failed to initialize Redis client:', error)
+      return null
+    }
+  }
+  return redis
+}
 
 interface RateLimitResult {
   success: boolean
@@ -26,9 +37,11 @@ export async function rateLimit(
   limit: number = 10,
   window: number = 60
 ): Promise<RateLimitResult> {
+  // Get Redis client (lazy initialization)
+  const redisClient = getRedisClient()
+  
   // Fallback to in-memory if Redis not configured
-  if (!redis) {
-    console.warn('⚠️ Upstash Redis not configured, using in-memory rate limiting')
+  if (!redisClient) {
     return inMemoryRateLimit(identifier, limit, window)
   }
 
@@ -38,7 +51,7 @@ export async function rateLimit(
 
   try {
     // Use Redis pipeline for atomic operations
-    const pipeline = redis.pipeline()
+    const pipeline = redisClient.pipeline()
     
     // Remove expired entries
     pipeline.zremrangebyscore(key, 0, now - windowMs)
