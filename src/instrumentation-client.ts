@@ -10,26 +10,35 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
+  // Enable sending user PII (Personally Identifiable Information)
+  sendDefaultPii: true,
+
   // Adjust this value in production, or use tracesSampler for greater control
   tracesSampleRate: 1.0,
 
+  // Enable logs to be sent to Sentry
+  enableLogs: true,
+
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
-  debug: false,
+  debug: false, // Disable in production
 
+  // Replay configuration
   replaysOnErrorSampleRate: 1.0,
-
-  // This sets the sample rate to be 10%. You may want this to be 100% while
-  // in development and sample at a lower rate in production
   replaysSessionSampleRate: 0.1,
 
-  // You can remove this option if you're not planning to use the Sentry Session Replay feature:
+  // Integrations
   integrations: [
     Sentry.replayIntegration({
       // Additional Replay configuration goes in here, for example:
       maskAllText: true,
       blockAllMedia: true,
     }),
+    Sentry.feedbackIntegration({
+      colorScheme: "system",
+    }),
     Sentry.browserTracingIntegration(),
+    // Send console.log, console.warn, and console.error calls as logs to Sentry
+    Sentry.consoleLoggingIntegration({ levels: ["log", "warn", "error"] }),
   ],
 
   // Note: if you want to override the automatic release value, do not set a
@@ -57,10 +66,8 @@ Sentry.init({
   ],
 
   beforeSend(event, hint) {
-    // Filter out events from localhost in development
-    if (process.env.NODE_ENV === 'development') {
-      return null;
-    }
+    // Allow all errors through in development for testing
+    // In production, this will automatically filter appropriately
     return event;
   },
 });

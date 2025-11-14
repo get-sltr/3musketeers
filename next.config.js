@@ -17,7 +17,7 @@ const nextConfig = {
   // Enable experimental features for better performance
   experimental: {
     optimizePackageImports: ['react-leaflet', 'leaflet'],
-    instrumentationHook: false, // Temporarily disabled for dev
+    instrumentationHook: true, // Required for Sentry
   },
   
   // Configure webpack for Leaflet and path aliases
@@ -88,6 +88,10 @@ const nextConfig = {
   },
 }
 
+// Make sure adding Sentry options is the last code to run before exporting
+// Wrap with next-intl first, then Sentry if enabled
+const configWithIntl = withNextIntl(nextConfig);
+
 // Sentry configuration - only enable if all required env vars are present
 const shouldUseSentry = 
   process.env.NEXT_PUBLIC_SENTRY_DSN && 
@@ -95,50 +99,10 @@ const shouldUseSentry =
   process.env.SENTRY_PROJECT;
 
 const sentryWebpackPluginOptions = {
-  // Additional config options for the Sentry Webpack plugin
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
-  
-  // Only print logs for uploading source maps in CI
-  silent: !process.env.CI,
-  
-  // For all available options, see:
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
-  
-  // Upload a larger set of source maps for prettier stack traces (increases build time)
-  widenClientFileUpload: true,
-  
-  // Transpiles SDK to be compatible with IE11 (increases bundle size)
-  transpileClientSDK: false,
-  
-  // Routes browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers (increases server load)
-  tunnelRoute: "/monitoring",
-  
-  // Hides source maps from generated client bundles
-  hideSourceMaps: true,
-  
-  // Automatically tree-shake Sentry logger statements to reduce bundle size
-  disableLogger: true,
-  
-  // Enables automatic instrumentation of Vercel Cron Monitors
-  automaticVercelMonitors: true,
-  
-  // Suppress warnings about missing source map references
-  errorHandler: (err, invokeErr, compilation) => {
-    // Ignore source map warnings - they're not critical
-    if (err && err.message && err.message.includes('source map reference')) {
-      return;
-    }
-    // Log other errors
-    if (err) {
-      console.warn('Sentry webpack plugin warning:', err.message || err);
-    }
-  },
+  silent: true, // Suppress logs in CI
 };
-
-// Make sure adding Sentry options is the last code to run before exporting
-// Wrap with next-intl first, then Sentry if enabled
-const configWithIntl = withNextIntl(nextConfig);
 
 module.exports = shouldUseSentry
   ? withSentryConfig(configWithIntl, sentryWebpackPluginOptions)
