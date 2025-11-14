@@ -526,14 +526,17 @@ function MessagesPageContent() {
           setMessageStatus(prev => ({ ...prev, [tempId]: 'delivered' }))
         }, 500)
       } else {
-        console.log('📤 Sending message via database (socket not connected)')
-        // Fallback to database-only if Socket.io not connected
+        console.log('📤 Realtime not connected, using direct database insert')
+        // Fallback to database-only if Realtime not connected
         const conversation = conversations.find(c => c.id === selectedConversation)
-        if (!conversation) return
+        if (!conversation) {
+          console.error('❌ Conversation not found')
+          return
+        }
 
         const otherUserId = conversation.other_user.id
 
-        // Prepare message data (handle different schema versions)
+        // Use the same format as useRealtime hook to avoid trigger conflicts
         const messageDataToInsert: any = {
           conversation_id: selectedConversation,
           sender_id: user.id,
@@ -541,8 +544,7 @@ function MessagesPageContent() {
           content: newMessage.trim()
         }
 
-        // Only add optional fields if they exist in schema
-        // message_type might not exist in all schema versions
+        // Insert message - same format as useRealtime hook
         const { data: messageData, error } = await supabase
           .from('messages')
           .insert(messageDataToInsert)
@@ -553,16 +555,16 @@ function MessagesPageContent() {
           console.error('❌ Error code:', error.code)
           console.error('❌ Error message:', error.message)
           console.error('❌ Error details:', JSON.stringify(error, null, 2))
-          console.error('❌ Error hint:', error.hint)
-          console.error('❌ Full error object:', error)
           
-          // More detailed error for debugging
-          const errorMsg = error.hint 
-            ? `${error.message}: ${error.hint}` 
-            : error.message || 'Unknown error'
-          
-          // Show user-friendly error
-          alert(`Failed to send message: ${errorMsg}. Check console for details.`)
+          // Try using useRealtime's sendMessage function instead
+          console.log('🔄 Retrying with useRealtime sendMessage...')
+          try {
+            await realtimeSendMessage(selectedConversation, newMessage.trim(), 'text')
+            console.log('✅ Message sent via useRealtime')
+          } catch (realtimeError) {
+            console.error('❌ Realtime send also failed:', realtimeError)
+            alert(`Failed to send message: ${error.message}. Please try again.`)
+          }
           return
         }
         
