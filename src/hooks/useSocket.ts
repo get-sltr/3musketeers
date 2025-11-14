@@ -104,6 +104,17 @@ export function useSocket(): UseSocketReturn {
       setIsConnected(false)
     })
 
+    // Listen for authentication success
+    socketInstance.on('authenticated', () => {
+      console.log('✅ Socket authenticated!')
+      setIsConnected(true)
+    })
+
+    socketInstance.on('auth_error', (error: any) => {
+      console.error('❌ Socket authentication failed:', error)
+      setIsConnected(false)
+    })
+
     setSocket(socketInstance)
 
     // Cleanup on unmount
@@ -120,13 +131,16 @@ export function useSocket(): UseSocketReturn {
         try {
           const { data: { session } } = await supabase.auth.getSession()
           if (session?.access_token) {
+            console.log('🔐 Authenticating socket with user:', session.user.id)
             socket.emit('authenticate', {
               userId: session.user.id,
               token: session.access_token
             })
+          } else {
+            console.warn('⚠️ No session found for socket authentication')
           }
         } catch (error) {
-          console.error('Authentication error:', error)
+          console.error('❌ Authentication error:', error)
         }
       }
       authenticate()
