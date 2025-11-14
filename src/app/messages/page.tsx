@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, Suspense } from 'react'
 import { createClient } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useSocket } from '../../hooks/useSocket'
+import { useRealtime } from '../../hooks/useRealtime'
 import { useNotifications } from '../../hooks/useNotifications'
 import { MessagesLoadingSkeleton } from '../../components/LoadingSkeleton'
 import LazyWrapper, { LazyVideoCall, LazyFileUpload, LazyErosAI } from '../../components/LazyWrapper'
@@ -67,17 +67,16 @@ function MessagesPageContent() {
   }
   const supabase = createClient()
   
-  // Real-time Socket.io integration
+  // Real-time Supabase Realtime integration
   const { 
-    socket, 
     isConnected, 
-    sendMessage: socketSendMessage, 
+    sendMessage: realtimeSendMessage, 
     startTyping, 
     stopTyping, 
     joinConversation, 
     leaveConversation, 
     markMessageRead 
-  } = useSocket()
+  } = useRealtime()
 
   // Push notifications
   const { showMessageNotification, permission: notifPermission, debugNotifications } = useNotifications()
@@ -101,34 +100,32 @@ function MessagesPageContent() {
     }
   }, [])
 
-  // Load unread messages when socket connects (for offline notifications)
+  // Load unread messages when realtime connects (for offline notifications)
   useEffect(() => {
-    if (isConnected && socket) {
+    if (isConnected) {
       // Reload conversations to show unread messages from offline period
       loadConversations()
     }
-  }, [isConnected, socket])
+  }, [isConnected])
 
-  // Real-time event listeners
+  // Real-time event listeners for Supabase Realtime
   useEffect(() => {
-    if (!socket) return
-
-    // Handle new messages (normalize payload fields)
-    const handleNewMessage = (evt: any) => {
-      const data = evt as any
-      const conversationId = data.conversationId || data.conversation_id
+    // Handle new messages from Supabase Realtime
+    const handleNewMessage = (evt: CustomEvent) => {
+      const data = evt.detail
+      const conversationId = data.conversation_id
       
       if (!conversationId) return
 
-      // Normalize message data
+      // Normalize message data from Supabase
       const normalized = {
         id: data.id || `tmp_${Date.now()}`,
-        sender_id: data.sender_id || data.senderId,
-        receiver_id: data.receiver_id || data.receiverId || '',
+        sender_id: data.sender_id,
+        receiver_id: data.receiver_id || '',
         content: data.content,
-        created_at: data.created_at || data.createdAt || new Date().toISOString(),
-        read: false,
-        sender_name: data.senderName || data.sender_name,
+        created_at: data.created_at || new Date().toISOString(),
+        read: data.read_at ? true : false,
+        sender_name: data.sender_name,
       } as any
 
       // Update messages if this conversation is selected
@@ -172,7 +169,7 @@ function MessagesPageContent() {
       // Show push notification (works even if tab is closed)
       if (conversationId !== selectedConversation) {
         showMessageNotification(
-          data.senderName || 'Unknown',
+          normalized.sender_name || 'Unknown',
           normalized.content,
           conversationId
         )
@@ -211,14 +208,19 @@ function MessagesPageContent() {
       }
     }
 
-    // Handle typing indicators
-    const handleUserTyping = (data: any) => {
+    // Handle typing indicators from Supabase broadcast events (dispatched by useRealtime)
+    const handleUserTyping = (evt: CustomEvent) => {
+      const data = evt.detail
       if (data.conversationId === selectedConversation) {
-        setTypingUsers(prev => [...prev.filter(user => user !== data.username), data.username])
+        // Get user display name from conversations
+        const conversation = conversations.find(c => c.id === selectedConversation)
+        const userName = conversation?.other_user.display_name || 'Someone'
+        setTypingUsers(prev => [...prev.filter(user => user !== userName), userName])
       }
     }
 
-    const handleUserStopTyping = (data: any) => {
+    const handleUserStopTyping = (evt: CustomEvent) => {
+      const data = evt.detail
       if (data.conversationId === selectedConversation) {
         setTypingUsers(prev => {
           // Clear all typing users for this conversation
@@ -227,53 +229,30 @@ function MessagesPageContent() {
       }
     }
 
-    // Handle user presence
-    const handleUserOnline = (data: any) => {
-      setOnlineUsers(prev => new Set([...prev, data.userId]))
+    // Handle message status updates from Supabase
+    const handleMessageUpdated = (evt: CustomEvent) => {
+      const data = evt.detail
+      if (data.read_at) {
+        setMessageStatus(prev => ({
+          ...prev,
+          [data.id]: 'read'
+        }))
+      }
     }
 
-    const handleUserOffline = (data: any) => {
-      setOnlineUsers(prev => {
-        const newSet = new Set(prev)
-        newSet.delete(data.userId)
-        return newSet
-      })
-    }
-
-    // Handle message status updates
-    const handleMessageDelivered = (data: any) => {
-      setMessageStatus(prev => ({
-        ...prev,
-        [data.messageId]: 'delivered'
-      }))
-    }
-
-    const handleMessageRead = (data: any) => {
-      setMessageStatus(prev => ({
-        ...prev,
-        [data.messageId]: 'read'
-      }))
-    }
-
-    // Add event listeners
-    window.addEventListener('new_message', handleNewMessage)
-    window.addEventListener('user_typing', handleUserTyping)
-    window.addEventListener('user_stop_typing', handleUserStopTyping)
-    window.addEventListener('user_online', handleUserOnline)
-    window.addEventListener('user_offline', handleUserOffline)
-    window.addEventListener('message_delivered', handleMessageDelivered)
-    window.addEventListener('message_read', handleMessageRead)
+    // Add event listeners for Supabase Realtime events
+    window.addEventListener('new_message', handleNewMessage as EventListener)
+    window.addEventListener('message_updated', handleMessageUpdated as EventListener)
+    window.addEventListener('user_typing', handleUserTyping as EventListener)
+    window.addEventListener('user_stop_typing', handleUserStopTyping as EventListener)
 
     return () => {
-      window.removeEventListener('new_message', handleNewMessage)
-      window.removeEventListener('user_typing', handleUserTyping)
-      window.removeEventListener('user_stop_typing', handleUserStopTyping)
-      window.removeEventListener('user_online', handleUserOnline)
-      window.removeEventListener('user_offline', handleUserOffline)
-      window.removeEventListener('message_delivered', handleMessageDelivered)
-      window.removeEventListener('message_read', handleMessageRead)
+      window.removeEventListener('new_message', handleNewMessage as EventListener)
+      window.removeEventListener('message_updated', handleMessageUpdated as EventListener)
+      window.removeEventListener('user_typing', handleUserTyping as EventListener)
+      window.removeEventListener('user_stop_typing', handleUserStopTyping as EventListener)
     }
-  }, [socket, selectedConversation])
+  }, [selectedConversation, conversations, isConnected, supabase])
 
   useEffect(() => {
     if (selectedConversation) {
@@ -534,18 +513,18 @@ function MessagesPageContent() {
       // Stop typing indicator
       stopTyping(selectedConversation)
 
-      // Send message via Socket.io for real-time delivery
-      if (isConnected && socketSendMessage) {
-        console.log('📤 Sending message via Socket.io to:', selectedConversation)
+      // Send message via Supabase Realtime
+      if (isConnected && realtimeSendMessage) {
+        console.log('📤 Sending message via Supabase Realtime to:', selectedConversation)
         const tempId = `temp_${Date.now()}`
         setMessageStatus(prev => ({ ...prev, [tempId]: 'sending' }))
-        socketSendMessage(selectedConversation, newMessage.trim(), 'text')
+        await realtimeSendMessage(selectedConversation, newMessage.trim(), 'text')
         
-        // Reload messages after delay to show the sent message (backend needs time to save)
+        // Message will appear via Realtime subscription automatically
+        // No need to reload, but we can mark it as delivered
         setTimeout(() => {
-          console.log('🔄 Reloading messages after send...')
-          loadMessages(selectedConversation)
-        }, 1500)
+          setMessageStatus(prev => ({ ...prev, [tempId]: 'delivered' }))
+        }, 500)
       } else {
         console.log('📤 Sending message via database (socket not connected)')
         // Fallback to database-only if Socket.io not connected
@@ -666,9 +645,9 @@ function MessagesPageContent() {
 
   // Handle file upload
   const handleFileUploaded = (fileUrl: string, fileName: string, fileType: string) => {
-    if (selectedConversation && isConnected && socketSendMessage) {
-      // Send file message via Socket.io
-      socketSendMessage(selectedConversation, `📎 ${fileName}`, 'file')
+    if (selectedConversation && isConnected && realtimeSendMessage) {
+      // Send file message via Supabase Realtime
+      realtimeSendMessage(selectedConversation, `📎 ${fileName}`, 'file', fileUrl)
     }
     setShowFileUpload(false)
   }

@@ -82,6 +82,16 @@ export function useRealtime(): UseRealtimeReturn {
           window.dispatchEvent(event)
         }
       )
+      .on('broadcast', { event: 'typing_start' }, (payload) => {
+        // Dispatch typing start event
+        const event = new CustomEvent('user_typing', { detail: payload.payload })
+        window.dispatchEvent(event)
+      })
+      .on('broadcast', { event: 'typing_stop' }, (payload) => {
+        // Dispatch typing stop event
+        const event = new CustomEvent('user_stop_typing', { detail: payload.payload })
+        window.dispatchEvent(event)
+      })
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
           setIsConnected(true)
