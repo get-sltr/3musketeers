@@ -14,15 +14,7 @@ import { useHoloPins } from '@/hooks/useHoloPins'
 import { createMapboxMarker } from '../MapPinWithDrawer'
 import { resolveProfilePhoto } from '@/lib/utils/profile'
 import { createVenueMarker } from './VenueMarker'
-
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
-
-if (!MAPBOX_TOKEN) {
-  console.error('⚠️ MAPBOX TOKEN MISSING: Add NEXT_PUBLIC_MAPBOX_TOKEN to .env.local')
-  console.error('Get a free token at: https://account.mapbox.com/access-tokens/')
-}
-
-mapboxgl.accessToken = MAPBOX_TOKEN || ''
+import { getMapboxToken } from '@/lib/maps/getMapboxToken'
 
 const DEFAULT_SLTR_STYLE =
   process.env.NEXT_PUBLIC_MAPBOX_SLTR_STYLE || 'mapbox://styles/sltr/cmhum4i1k001x01rlasmoccvm'
@@ -139,14 +131,35 @@ export default function MapboxUsers({
   const supportsAdvanced = (mapboxgl as any).supported?.({ failIfMajorPerformanceCaveat: true }) ?? false
   const useAdvanced = advancedPins && supportsAdvanced
   const [hovered, setHovered] = useState<{ user: UserPin; pt: { x: number; y: number } } | null>(null)
+  const [tokenLoaded, setTokenLoaded] = useState(false)
 
   // Clustering state
   const clusterIndexRef = useRef<any | null>(null)
   const pointsRef = useRef<any[]>([])
 
+  // Fetch Mapbox token from API
+  useEffect(() => {
+    const loadToken = async () => {
+      try {
+        const token = await getMapboxToken()
+        mapboxgl.accessToken = token
+        setTokenLoaded(true)
+      } catch (error) {
+        console.error('⚠️ Failed to load Mapbox token:', error)
+        // Fallback: try to use env var if API fails (for development)
+        if (process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
+          mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+          setTokenLoaded(true)
+        }
+      }
+    }
+    loadToken()
+  }, [])
+
   useEffect(() => {
     if (!containerRef.current) return
     if (mapRef.current) return
+    if (!tokenLoaded) return // Wait for token to load
 
     const initialCenterPromise = (async (): Promise<[number, number]> => {
       if (center) return center
@@ -256,7 +269,7 @@ export default function MapboxUsers({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [tokenLoaded])
 
   // Build/update layers or markers
   useEffect(() => {
@@ -783,24 +796,13 @@ export default function MapboxUsers({
     }
   }, [mapLoaded, showHeatmap, users])
 
-  if (!MAPBOX_TOKEN) {
+  if (!tokenLoaded) {
     return (
       <div className="w-full h-screen overflow-hidden bg-black flex items-center justify-center">
         <div className="text-center p-8 glass-bubble max-w-md">
           <div className="text-6xl mb-4">🗺️</div>
-          <h3 className="text-white text-xl font-bold mb-2">Mapbox Token Missing</h3>
-          <p className="text-white/60 mb-4">To use the map feature, add your Mapbox access token to .env.local:</p>
-          <code className="bg-black/50 text-cyan-400 px-3 py-2 rounded block mb-4 text-sm">
-            NEXT_PUBLIC_MAPBOX_TOKEN=your_token_here
-          </code>
-          <a 
-            href="https://account.mapbox.com/access-tokens/" 
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-cyan-400 hover:text-cyan-300 underline text-sm"
-          >
-            Get a free token from Mapbox →
-          </a>
+          <h3 className="text-white text-xl font-bold mb-2">Loading Map...</h3>
+          <p className="text-white/60 mb-4">Initializing map components...</p>
         </div>
       </div>
     )
