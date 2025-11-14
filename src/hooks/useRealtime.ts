@@ -157,7 +157,7 @@ export function useRealtime(): UseRealtimeReturn {
     
     // Store file URL in metadata JSONB field (schema has metadata column)
     if (fileUrl) {
-      messageData.metadata = JSON.stringify({ file_url: fileUrl })
+      messageData.metadata = { file_url: fileUrl }
     }
     
     const { error } = await supabase
