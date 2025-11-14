@@ -142,16 +142,27 @@ export function useRealtime(): UseRealtimeReturn {
       : conversation.user1_id
 
     // Insert message - Supabase Realtime will automatically broadcast to subscribers
+    // Use ONLY fields that exist in the schema to avoid trigger conflicts
+    const messageData: any = {
+      conversation_id: conversationId,
+      sender_id: user.id,
+      receiver_id: receiverId,
+      content,
+    }
+    
+    // Add message_type only if not default 'text' (schema has CHECK constraint)
+    if (messageType && messageType !== 'text') {
+      messageData.message_type = messageType
+    }
+    
+    // Store file URL in metadata JSONB field (schema has metadata column)
+    if (fileUrl) {
+      messageData.metadata = JSON.stringify({ file_url: fileUrl })
+    }
+    
     const { error } = await supabase
       .from('messages')
-      .insert({
-        conversation_id: conversationId,
-        sender_id: user.id,
-        receiver_id: receiverId,
-        content,
-        message_type: messageType,
-        file_url: fileUrl || null,
-      })
+      .insert(messageData)
 
     if (error) {
       console.error('Error sending message:', error)
