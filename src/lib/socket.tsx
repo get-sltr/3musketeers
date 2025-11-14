@@ -114,7 +114,18 @@ export default function MessagesPage() {
         return
       }
 
-      newSocket = io(backendUrl)
+      // Add better error handling and connection options
+      // Try polling first (more reliable), then upgrade to websocket
+      newSocket = io(backendUrl, {
+        transports: ['polling', 'websocket'], // Try polling first
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        timeout: 20000,
+        path: '/socket.io/', // Default Socket.io path
+        forceNew: false,
+        upgrade: true,
+      })
       setSocket(newSocket)
 
       // --- 3. Define Socket Event Handlers ---
@@ -159,13 +170,24 @@ export default function MessagesPage() {
         toast.error(`Error: ${error.message}`)
       }
 
-      const onDisconnect = () => {
-        console.log('Socket disconnected')
+      const onDisconnect = (reason: string) => {
+        console.log('Socket disconnected:', reason)
+        setIsConnected(false)
+        if (reason === 'io server disconnect') {
+          // Server disconnected, try to reconnect
+          toast.error('Connection lost. Reconnecting...')
+        }
+      }
+
+      const onConnectError = (error: Error) => {
+        console.error('Socket connection error:', error)
+        toast.error(`Cannot connect to server: ${backendUrl}. Check if backend is running.`)
         setIsConnected(false)
       }
 
       // --- 4. Register Event Handlers ---
       newSocket.on('connect', onConnect)
+      newSocket.on('connect_error', onConnectError)
       newSocket.on('authenticated', onAuthenticated)
       newSocket.on('new_message', onNewMessage)
       newSocket.on('auth_error', onAuthError)
