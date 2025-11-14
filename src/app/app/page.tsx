@@ -1,6 +1,7 @@
 'use client'
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from 'react'
 import { useMapStore } from '../../stores/useMapStore'
+import { useUIStore } from '../../stores/useUIStore'
 import { createClient } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import MobileLayout from '../../components/MobileLayout'
@@ -23,7 +24,7 @@ import UserAdvertisingPanel from '../components/UserAdvertisingPanel'
 import LocationSearch from '../components/LocationSearch'
 import WelcomeModal from '../../components/WelcomeModal'
 import '../../styles/mobile-optimization.css'
-import { useSocket } from '../../hooks/useSocket'
+import { useRealtime } from '../../hooks/useRealtime'
 import { resolveProfilePhoto } from '@/lib/utils/profile'
 import { useFullScreenMobile } from '../../hooks/useFullScreenMobile'
 
@@ -67,13 +68,9 @@ const formatDistance = (miles?: number | null) => {
 export default function AppPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   // Ensure realtime presence/auth is initialized regardless of view
-  const { isConnected } = useSocket() as any
+  const { isConnected } = useRealtime()
   const [loading, setLoading] = useState(true)
   const [users, setUsers] = useState<UserWithLocation[]>([])
-  const [selectedUser, setSelectedUser] = useState<UserWithLocation | null>(null)
-  const [showProfileModal, setShowProfileModal] = useState(false)
-  const [messagingUser, setMessagingUser] = useState<UserWithLocation | null>(null)
-  const [showMessagingModal, setShowMessagingModal] = useState(false)
   const [isIncognito, setIsIncognito] = useState(false)
   const [isRelocating, setIsRelocating] = useState(false)
   const [mapCenter, setMapCenter] = useState<[number, number] | null>(null)
@@ -110,13 +107,30 @@ export default function AppPage() {
   } = useMapStore()
   
   const previousRadiusRef = useRef<number>(radiusMiles)
-  // Add/Host modals
-  const [isAddingPlace, setIsAddingPlace] = useState<boolean>(false)
   const [isHostingGroup, setIsHostingGroup] = useState<boolean>(false)
-  const [showAdvertisingPanel, setShowAdvertisingPanel] = useState<boolean>(false)
+  
+  // Read from UI Store (state + actions)
+  const { 
+    selectedUser, 
+    showProfileModal,
+    messagingUser, 
+    showMessagingModal,
+    isAddingPlace, 
+    isHostingGroup,
+    showAdvertisingPanel, 
+    showWelcomeModal,
+    userName,
+    openProfile,
+    closeProfile,
+    openMessages,
+    closeMessages,
+    toggleAddingPlace,
+    toggleHostingGroup,
+    toggleAdvertisingPanel,
+    setShowWelcomeModal
+  } = useUIStore()
+
   const [isLargeDesktop, setIsLargeDesktop] = useState<boolean>(false)
-  const [showWelcomeModal, setShowWelcomeModal] = useState<boolean>(false)
-  const [userName, setUserName] = useState<string>('')
   const router = useRouter()
 
   // Enable full-screen mobile app experience
@@ -137,15 +151,15 @@ export default function AppPage() {
             .eq('id', user.id)
             .single()
 
-          setUserName(profile?.display_name || profile?.username || '')
-          setShowWelcomeModal(true)
+          const name = profile?.display_name || profile?.username || ''
+          setShowWelcomeModal(true, name)
           localStorage.setItem('sltr_welcome_shown', 'true')
         }
       }
     }
 
     checkFirstLogin()
-  }, [])
+  }, [setShowWelcomeModal])
 
   // Listen for bottom nav map button click
   useEffect(() => {
@@ -354,8 +368,7 @@ export default function AppPage() {
   const handleUserClick = (userId: string) => {
     const user = users.find(u => u.id === userId)
     if (user) {
-      setSelectedUser(user)
-      setShowProfileModal(true)
+      openProfile(user)
     }
   }
 
@@ -363,9 +376,7 @@ export default function AppPage() {
     // Open messaging modal instead of navigating
     const userToMessage = users.find(u => u.id === userId)
     if (userToMessage) {
-      setMessagingUser(userToMessage)
-      setShowProfileModal(false) // Close profile modal if open
-      setShowMessagingModal(true) // Open messaging modal
+      openMessages(userToMessage)
     }
   }
 
@@ -390,7 +401,7 @@ export default function AppPage() {
       } else {
         // Remove from users list
         setUsers(prev => prev.filter(u => u.id !== userId))
-        setShowProfileModal(false)
+        closeProfile()
         alert('User blocked')
       }
     }
@@ -417,7 +428,7 @@ export default function AppPage() {
         alert('Failed to report user')
       } else {
         alert('Thank you for your report. Our team will review it.')
-        setShowProfileModal(false)
+        closeProfile()
       }
     }
   }
@@ -637,7 +648,7 @@ export default function AppPage() {
             {/* User Advertising Panel */}
             <UserAdvertisingPanel 
               isOpen={showAdvertisingPanel}
-              onToggle={() => setShowAdvertisingPanel(!showAdvertisingPanel)}
+              onToggle={() => toggleAdvertisingPanel()}
             />
             
             <MapViewSimple pinStyle={pinStyle} />
@@ -674,8 +685,8 @@ export default function AppPage() {
               onCenter={handleCenterLocation}
               onRelocate={handleMoveLocation}
               onClear={resetMapSettings}
-              onAddPlace={() => setIsAddingPlace(true)}
-              onHostGroup={() => setIsHostingGroup(true)}
+              onAddPlace={() => toggleAddingPlace(true)}
+              onHostGroup={() => toggleHostingGroup(true)}
               showVenues={showVenues}
               onToggleVenues={setShowVenues}
               showHeatmap={showHeatmap}
@@ -740,7 +751,7 @@ export default function AppPage() {
       {/* Add Place / Host Group Modals */}
       <PlaceModal
         isOpen={isAddingPlace}
-        onClose={() => setIsAddingPlace(false)}
+        onClose={() => toggleAddingPlace(false)}
         onSave={async ({ name, type, notes }) => {
           const supabase = createClient()
           try {
@@ -766,7 +777,7 @@ export default function AppPage() {
       />
       <GroupModal
         isOpen={isHostingGroup}
-        onClose={() => setIsHostingGroup(false)}
+        onClose={() => toggleHostingGroup(false)}
         onSave={async ({ title, time, description }) => {
           const supabase = createClient()
           try {
@@ -793,7 +804,7 @@ export default function AppPage() {
       <UserProfileCard
         user={selectedUser}
         isOpen={showProfileModal}
-        onClose={() => setShowProfileModal(false)}
+        onClose={closeProfile}
         onMessage={handleMessage}
         onBlock={handleBlock}
         onReport={handleReport}
@@ -802,14 +813,11 @@ export default function AppPage() {
       />
 
       {/* Simple Messaging Modal - Opens on grid, doesn't navigate */}
-      {showMessagingModal && messagingUser && (
+      {messagingUser && (
         <MessagingModal
           user={messagingUser}
           isOpen={showMessagingModal}
-          onClose={() => {
-            setShowMessagingModal(false)
-            setMessagingUser(null)
-          }}
+          onClose={closeMessages}
         />
       )}
 

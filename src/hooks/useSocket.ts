@@ -55,20 +55,21 @@ export function useSocket(): UseSocketReturn {
     
     // Create socket with explicit URL - socket.io will use this URL directly
     // Ensure we're passing a full URL, not a relative path
+    // Use polling first (more reliable), then upgrade to websocket
     const socketInstance = io(fullBackendUrl, {
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'], // Try polling first, then upgrade to websocket
       autoConnect: true,
       reconnection: true,
       reconnectionDelay: 2000,
-      reconnectionAttempts: 3,
+      reconnectionAttempts: 5, // Increased from 3 to 5
       reconnectionDelayMax: 5000,
-      timeout: 5000,
-      forceNew: true,
+      timeout: 20000, // Increased from 5000 to 20000 for better reliability
+      forceNew: false, // Changed to false to allow connection reuse
       rejectUnauthorized: false,
       path: '/socket.io/',
-      withCredentials: false,
+      withCredentials: true, // Changed to true for proper CORS handling
       upgrade: true,
-      rememberUpgrade: false
+      rememberUpgrade: true // Changed to true to remember successful upgrades
     })
 
     // Connection event handlers

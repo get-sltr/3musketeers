@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '../lib/supabase/client'
-import { useSocket } from '../hooks/useSocket'
+import { useRealtime } from '../hooks/useRealtime'
 
 interface User {
   id: string
@@ -43,12 +43,11 @@ export default function MessagingModal({
   const supabase = createClient()
   
   const { 
-    socket, 
     isConnected, 
-    sendMessage: socketSendMessage, 
+    sendMessage: realtimeSendMessage, 
     joinConversation, 
     leaveConversation 
-  } = useSocket()
+  } = useRealtime()
 
   // Get current user
   useEffect(() => {
@@ -123,20 +122,20 @@ export default function MessagingModal({
     }
   }, [conversationId, isConnected, joinConversation, leaveConversation])
 
-  // Listen for new messages
+  // Listen for new messages via Supabase Realtime
   useEffect(() => {
-    if (!socket) return
+    if (!conversationId) return
 
-    const handleNewMessage = (evt: any) => {
-      const data = evt as any
-      if (data.conversationId === conversationId) {
-        const normalized = {
-          id: data.id || `tmp_${Date.now()}`,
-          sender_id: data.sender_id || data.senderId,
-          receiver_id: data.receiver_id || data.receiverId || '',
-          content: data.content,
-          created_at: data.created_at || data.createdAt || new Date().toISOString(),
-          read: false,
+    const handleNewMessage = (evt: CustomEvent) => {
+      const message = evt.detail
+      if (message.conversation_id === conversationId) {
+        const normalized: Message = {
+          id: message.id,
+          sender_id: message.sender_id,
+          receiver_id: message.receiver_id || '',
+          content: message.content,
+          created_at: message.created_at || new Date().toISOString(),
+          read: message.read_at ? true : false,
         }
         setMessages(prev => {
           if (prev.some(m => m.id === normalized.id)) return prev
@@ -146,11 +145,11 @@ export default function MessagingModal({
       }
     }
 
-    window.addEventListener('new_message', handleNewMessage)
+    window.addEventListener('new_message', handleNewMessage as EventListener)
     return () => {
-      window.removeEventListener('new_message', handleNewMessage)
+      window.removeEventListener('new_message', handleNewMessage as EventListener)
     }
-  }, [socket, conversationId])
+  }, [conversationId])
 
   const loadMessages = async (convId: string) => {
     try {
@@ -190,15 +189,13 @@ export default function MessagingModal({
       const { data: { user: currentUser } } = await supabase.auth.getUser()
       if (!currentUser) return
 
-      if (isConnected && socketSendMessage) {
-        socketSendMessage(conversationId, newMessage.trim(), 'text')
-        
-        // Reload messages after delay
-        setTimeout(() => {
-          loadMessages(conversationId)
-        }, 1000)
+      // Use Supabase Realtime to send message
+      // Realtime will automatically broadcast to subscribers
+      if (isConnected && realtimeSendMessage) {
+        await realtimeSendMessage(conversationId, newMessage.trim(), 'text')
+        // Message will appear via Realtime subscription, no need to reload
       } else {
-        // Fallback to database
+        // Fallback: insert directly to database
         const { error } = await supabase
           .from('messages')
           .insert({
