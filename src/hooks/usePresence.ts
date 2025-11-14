@@ -1,61 +1,69 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { usePresenceStore } from '@/stores/usePresenceStore'
-import { RealtimeChannel } from '@supabase/supabase-js'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 
-/**
- * This hook connects to a global Supabase presence channel.
- * It tracks the current user and updates a global store
- * with the list of all other online users.
- */
+const supabase = createClient()
+
 export const usePresence = (currentUserId: string | null) => {
-  const [channel, setChannel] = useState<RealtimeChannel | null>(null)
-  const { setOnlineUsers, addUser, removeUser } = usePresenceStore()
-  const supabase = createClient()
+  const channelRef = useRef<RealtimeChannel | null>(null)
+  const [isConnected, setIsConnected] = useState(false)
+
+  const {
+    setOnlineUsers,
+    addUser,
+    removeUser,
+    resetPresence,
+  } = usePresenceStore()
 
   useEffect(() => {
     if (!currentUserId) return
+    if (channelRef.current) return // already connected
 
-    // Create a channel for "global-presence"
     const presenceChannel = supabase.channel('global-presence', {
       config: {
         presence: {
-          key: currentUserId, // Track this user's presence
+          key: currentUserId,
         },
       },
     })
 
-    // 2. On 'sync', get all users currently in the channel
+    channelRef.current = presenceChannel
+
+    // SYNC EVENT = Full presence snapshot
     presenceChannel.on('presence', { event: 'sync' }, () => {
       const state = presenceChannel.presenceState()
-      const userIds = Object.keys(state)
-        .map(key => {
-          const presences = state[key] as Array<{ user_id?: string }>
-          return presences?.[0]?.user_id
-        })
-        .filter((id): id is string => Boolean(id))
+
+      const userIds = Object.values(state)
+        .flat()
+        .map((p: any) => p.user_id)
+
       setOnlineUsers(userIds)
     })
 
-    // 3. On 'join', add the new user to the store
+    // JOIN EVENT
     presenceChannel.on('presence', { event: 'join' }, ({ newPresences }) => {
-      if (newPresences[0]?.user_id) {
-        addUser(newPresences[0].user_id)
-      }
+      if (!newPresences?.length) return
+      const presence = newPresences[0]
+      const user_id = presence?.user_id || (presence as any)?.user_id
+      if (user_id) addUser(user_id)
     })
 
-    // 4. On 'leave', remove the user from the store
+    // LEAVE EVENT
     presenceChannel.on('presence', { event: 'leave' }, ({ leftPresences }) => {
-      if (leftPresences[0]?.user_id) {
-        removeUser(leftPresences[0].user_id)
-      }
+      if (!leftPresences?.length) return
+      const presence = leftPresences[0]
+      const user_id = presence?.user_id || (presence as any)?.user_id
+      if (user_id) removeUser(user_id)
     })
 
-    // 5. Subscribe and track the current user
+    // SUBSCRIBE AND SEND OWN PRESENCE
     presenceChannel.subscribe(async (status) => {
       if (status === 'SUBSCRIBED') {
+        setIsConnected(true)
+
         await presenceChannel.track({
           user_id: currentUserId,
           online_at: new Date().toISOString(),
@@ -63,16 +71,15 @@ export const usePresence = (currentUserId: string | null) => {
       }
     })
 
-    setChannel(presenceChannel)
-
-    // 6. Unsubscribe on cleanup
+    // CLEANUP
     return () => {
-      if (presenceChannel) {
-        presenceChannel.unsubscribe()
-        supabase.removeChannel(presenceChannel)
-      }
+      setIsConnected(false)
+      resetPresence()
+      presenceChannel.unsubscribe()
+      channelRef.current = null
     }
-  }, [currentUserId, setOnlineUsers, addUser, removeUser, supabase])
+  }, [currentUserId])
 
+  return { isConnected }
 }
 
