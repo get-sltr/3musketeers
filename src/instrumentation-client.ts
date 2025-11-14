@@ -5,8 +5,8 @@
 
 import * as Sentry from "@sentry/nextjs";
 
-// TEMPORARILY DISABLED FOR DEBUGGING - TOO MUCH CONSOLE NOISE
-if (false) {
+// Initialize Sentry on the client
+if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 

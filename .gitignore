@@ -43,3 +43,6 @@ backup-*.zip
 
 # incident logs
 INCIDENT_LOG.md
+
+# Production version folder (keep local only)
+The SLTR V.01.11/
