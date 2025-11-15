@@ -5,6 +5,7 @@ import DailyIframe from '@daily-co/daily-js'
 
 interface VideoCallProps {
   conversationId: string
+  currentUserId: string  // ✅ Added for efficiency
   otherUserId: string
   otherUserName: string
   onEndCall: () => void
@@ -12,6 +13,7 @@ interface VideoCallProps {
 
 export default function VideoCall({
   conversationId,
+  currentUserId,  // ✅ Now using passed prop
   otherUserId,
   otherUserName,
   onEndCall,
@@ -32,7 +34,10 @@ export default function VideoCall({
         const response = await fetch('/api/daily/create-room', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ conversationId }),
+          body: JSON.stringify({ 
+            conversationId,
+            currentUserId  // ✅ Pass it to the API
+          }),
         })
 
         if (!response.ok) {
@@ -90,7 +95,7 @@ export default function VideoCall({
         callFrameRef.current = null
       }
     }
-  }, [conversationId, onEndCall])
+  }, [conversationId, currentUserId, onEndCall])
 
   const toggleMute = () => {
     if (callFrameRef.current) {
@@ -150,3 +155,4 @@ export default function VideoCall({
     </div>
   )
 }
+croll down just a bit more from where you are - the VideoCall component is RIGHT THERE after the style block.

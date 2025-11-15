@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const { conversationId } = await request.json()
+    const { conversationId, currentUserId } = await request.json()
 
     if (!conversationId) {
       return NextResponse.json(
@@ -12,11 +12,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get authenticated user
+    if (!currentUserId) {
+      return NextResponse.json(
+        { error: 'currentUserId is required' },
+        { status: 400 }
+      )
+    }
+
+    // Verify user is authenticated (optional security check)
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-    if (authError || !user) {
+    if (authError || !user || user.id !== currentUserId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -75,7 +82,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Generate a token for the user to join
+    // Generate a token for the user to join (using passed currentUserId)
     const tokenResponse = await fetch(`${dailyApiUrl}/meeting-tokens`, {
       method: 'POST',
       headers: {
@@ -85,7 +92,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         properties: {
           room_name: roomName,
-          user_id: user.id,
+          user_id: currentUserId,  // ✅ Using passed currentUserId
           user_name: user.email || 'User',
           is_owner: true,
         },
