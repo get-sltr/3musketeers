@@ -674,11 +674,8 @@ export default function AppPage() {
               advancedPins={false}
               onChat={(userId) => router.push(`/messages?user=${userId}`)}
               onVideo={(userId) => {
-                const user = users.find(u => u.id === userId)
-                if (user) {
-                  setCurrentCallUser({ id: userId, name: user.display_name })
-                  setIsVideoCallActive(true)
-                }
+                // Navigate to messages page to start video call
+                router.push(`/messages?user=${userId}`)
               }}
               onTap={handleTap}
               showVenues={showVenues}
