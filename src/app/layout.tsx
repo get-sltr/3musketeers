@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from 'next/font/google';
 import "./globals.css";
+import '../styles/SLTRMapPin.css';
 import { ErosAssistiveTouch } from '@/components/ErosAssistiveTouch';
 import ClientProviders from '@/components/ClientProviders';
 import NotificationPrompt from '@/components/NotificationPrompt';

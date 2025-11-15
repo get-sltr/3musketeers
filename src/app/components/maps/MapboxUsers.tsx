@@ -11,7 +11,7 @@ import Supercluster from 'supercluster'
 import { HoloPinsLayer } from '@/app/components/maps/HoloPinsLayer'
 import type { Pin } from '@/types/pins'
 import { useHoloPins } from '@/hooks/useHoloPins'
-import { createMapboxMarker } from '../MapPinWithDrawer'
+import { createSLTRMapboxMarker, cleanupSLTRMarker } from '@/components/SLTRMapPin'
 import { resolveProfilePhoto } from '@/lib/utils/profile'
 import { createVenueMarker } from './VenueMarker'
 import { getMapboxToken } from '@/lib/maps/getMapboxToken'
@@ -377,8 +377,14 @@ export default function MapboxUsers({
     }
 
     const update = () => {
-      // Clear existing markers
-      markersRef.current.forEach(marker => marker.remove())
+      // Clear existing markers with proper cleanup
+      markersRef.current.forEach(marker => {
+        const element = (marker as any).getElement?.()
+        if (element) {
+          cleanupSLTRMarker(element)
+        }
+        marker.remove()
+      })
       markersRef.current = []
       markerIndexRef.current = {}
 
@@ -520,7 +526,7 @@ export default function MapboxUsers({
 
     const primaryPhoto = resolveProfilePhoto(u.photo, u.photos)
 
-    const markerEl = createMapboxMarker(
+    const markerEl = createSLTRMapboxMarker(
       {
         id: u.id,
         display_name: u.display_name || 'Anonymous',
@@ -532,6 +538,8 @@ export default function MapboxUsers({
         latitude: u.latitude,
         longitude: u.longitude,
         distance: u.distance,
+        is_online: u.online ?? u.is_online,
+        online: u.online ?? u.is_online,
       },
       (id) => onChat?.(id),
       (id) => onVideo?.(id),
