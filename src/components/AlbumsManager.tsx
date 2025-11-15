@@ -41,6 +41,7 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
   const [albumFormDescription, setAlbumFormDescription] = useState('')
   const [albumFormPublic, setAlbumFormPublic] = useState(false)
   const [queuedPhotos, setQueuedPhotos] = useState<File[]>([])
+  const [createFormPhotos, setCreateFormPhotos] = useState<File[]>([]) // Photos for new album creation
   const [albumSaving, setAlbumSaving] = useState(false)
   const [photoUploading, setPhotoUploading] = useState(false)
   const [panelMode, setPanelMode] = useState<'idle' | 'create' | 'manage'>('idle')
@@ -50,6 +51,7 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
   const resetCreateForm = () => {
     setNewAlbumName('')
     setNewAlbumDescription('')
+    setCreateFormPhotos([])
   }
 
   const resetManageForm = () => {
@@ -192,8 +194,24 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
         return
       }
 
+      // Upload photos if any were selected during creation
+      if (createFormPhotos.length > 0 && data.id) {
+        setPhotoUploading(true)
+        try {
+          for (const file of createFormPhotos) {
+            await uploadPhotoToAlbum(data.id, file)
+          }
+        } catch (err) {
+          console.error('Error uploading photos during creation:', err)
+        } finally {
+          setPhotoUploading(false)
+        }
+      }
+
       resetCreateForm()
       await loadAlbums(data.id)
+      // Switch to manage mode to show the newly created album
+      setPanelMode('manage')
     } catch (err) {
       console.error('Error creating album:', err)
     } finally {
@@ -513,8 +531,34 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
                         required
                       />
                     </div>
-                    <div className="rounded-2xl border border-dashed border-white/20 bg-white/[0.04] px-4 py-5 text-sm text-white/60">
-                      You can upload photos right after the album is created.
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-white/80">
+                        Upload Photos (Optional)
+                      </label>
+                      <div className="rounded-2xl border border-dashed border-cyan-500/40 bg-black/20 px-4 py-6 text-center">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={(e) => {
+                            if (e.target.files) {
+                              setCreateFormPhotos(Array.from(e.target.files))
+                            }
+                          }}
+                          className="block w-full text-sm text-white/70 file:mr-3 file:rounded-full file:border-0 file:bg-cyan-500/20 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-cyan-100 hover:file:bg-cyan-500/30"
+                        />
+                        <p className="mt-3 text-xs text-white/50">You can select multiple files at once.</p>
+                        {createFormPhotos.length > 0 && (
+                          <div className="mt-4 max-h-24 space-y-2 overflow-y-auto text-left text-xs text-white/70">
+                            {createFormPhotos.map((file, idx) => (
+                              <div key={idx} className="flex items-center justify-between rounded-lg bg-black/30 px-3 py-2">
+                                <span className="truncate">{file.name}</span>
+                                <span>{Math.round(file.size / 1024)} KB</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center justify-end gap-3">
                       <button
@@ -526,10 +570,10 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
                       </button>
                       <button
                         type="submit"
-                        disabled={uploading || !newAlbumName.trim()}
+                        disabled={uploading || photoUploading || !newAlbumName.trim()}
                         className="rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 px-5 py-3 text-sm font-semibold text-white transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {uploading ? 'Creating…' : 'Create Album'}
+                        {uploading || photoUploading ? (photoUploading ? 'Uploading Photos…' : 'Creating…') : 'Create Album'}
                       </button>
                     </div>
                   </form>

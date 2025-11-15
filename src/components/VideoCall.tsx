@@ -40,7 +40,7 @@ export default function VideoCall({
           throw new Error(`Failed to create Daily room (${response.status}): ${text}`)
         }
 
-        const { url } = await response.json()
+        const { url, token } = await response.json()
 
         if (!url) {
           throw new Error('Daily room URL missing from response')
@@ -63,7 +63,8 @@ export default function VideoCall({
 
         callFrameRef.current = callFrame
 
-        await callFrame.join({ url })
+        // Use token if available, otherwise use URL directly
+        await callFrame.join({ url, token: token || undefined })
         setIsCallActive(true)
 
         callFrame.on('left-meeting', () => {
