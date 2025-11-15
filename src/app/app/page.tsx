@@ -666,7 +666,7 @@ export default function AppPage() {
               users={mapUsers}
               onUserClick={(userId) => handleUserClick(userId)}
               onMapClick={handleMapClick}
-              center={mapCenter}
+              center={mapCenter || undefined}
               cluster={clusterEnabled}
               clusterRadius={clusterRadius}
               incognito={isIncognito}
