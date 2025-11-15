@@ -61,9 +61,21 @@ function MessagesPageContent() {
   const [isEditMode, setIsEditMode] = useState(false)
   const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set())
   const [isMuted, setIsMuted] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const router = useRouter()
+
+  // Get current user ID on mount
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setCurrentUserId(user.id)
+      }
+    }
+    getCurrentUser()
+  }, [])
 
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
@@ -883,6 +895,7 @@ function MessagesPageContent() {
       <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><div className="text-white">Loading video call...</div></div>}>
         <LazyVideoCall
           conversationId={selectedConversation}
+          currentUserId={currentUserId!}
           otherUserId={currentCallUser.id}
           otherUserName={currentCallUser.name}
           onEndCall={endVideoCall}
