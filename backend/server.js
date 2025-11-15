@@ -43,8 +43,8 @@ const corsOptions = {
       return callback(null, true);
     }
     
-    // Allow Vercel preview deployments in non-production
-    if (origin.includes('getsltr') && origin.includes('.vercel.app')) {
+    // Allow SLTR Vercel deployments
+    if ((origin.includes('getsltr') || origin.includes('sltr-s-projects') || origin.includes('3musketeers')) && origin.includes('.vercel.app')) {
       return callback(null, true);
     }
     

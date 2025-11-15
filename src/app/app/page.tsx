@@ -8,7 +8,7 @@ import MobileLayout from '../../components/MobileLayout'
 import LoadingSkeleton from '../../components/LoadingSkeleton'
 import { LazyGridView } from '../../components/LazyWrapper'
 import GridViewProduction from '../../components/GridViewProduction'
-// MapViewSimple removed - using MapboxUsers with SLTR pins instead
+import MapViewSimple from '../../components/MapViewSimple'
 import dynamic from 'next/dynamic'
 import AnimatedHeader from '../../components/AnimatedHeader'
 import GradientBackground from '../../components/GradientBackground'
@@ -661,27 +661,7 @@ export default function AppPage() {
               onToggle={() => toggleAdvertisingPanel()}
             />
             
-            <div className="absolute inset-0 z-0">
-            <MapboxUsers
-              users={mapUsers}
-              onUserClick={(userId) => handleUserClick(userId)}
-              onMapClick={handleMapClick}
-              center={mapCenter || undefined}
-              cluster={clusterEnabled}
-              clusterRadius={clusterRadius}
-              incognito={isIncognito}
-              styleId={styleId}
-              advancedPins={false}
-              onChat={(userId) => router.push(`/messages?user=${userId}`)}
-              onVideo={(userId) => {
-                // Navigate to messages page to start video call
-                router.push(`/messages?user=${userId}`)
-              }}
-              onTap={handleMapTap}
-              showVenues={showVenues}
-              showHeatmap={showHeatmap}
-            />
-            </div>
+            <MapViewSimple pinStyle={pinStyle} />
 
             {/* Location Search Bar */}
             <div className="absolute top-16 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-20">
