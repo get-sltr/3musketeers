@@ -677,7 +677,7 @@ export default function AppPage() {
                 // Navigate to messages page to start video call
                 router.push(`/messages?user=${userId}`)
               }}
-              onTap={handleTap}
+              onTap={handleMapTap}
               showVenues={showVenues}
               showHeatmap={showHeatmap}
             />
