@@ -41,6 +41,7 @@ type UserPin = {
   photo?: string
   photos?: string[]
   online?: boolean
+  is_online?: boolean // Support both field names
   dtfn?: boolean
   party_friendly?: boolean
   position?: string
@@ -538,7 +539,7 @@ export default function MapboxUsers({
         latitude: u.latitude,
         longitude: u.longitude,
         distance: u.distance,
-        is_online: u.online ?? u.is_online,
+        is_online: u.is_online ?? u.online,
         online: u.online ?? u.is_online,
       },
       (id) => onChat?.(id),
