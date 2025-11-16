@@ -43,6 +43,9 @@ export default function ProfilePage() {
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null)
   const [showPhotoViewer, setShowPhotoViewer] = useState(false)
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const router = useRouter()
@@ -428,6 +431,43 @@ export default function ProfilePage() {
     router.push('/login')
   }
 
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE') {
+      setError('Please type DELETE to confirm')
+      return
+    }
+
+    setIsDeleting(true)
+    setError(null)
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Call API to delete account
+      const response = await fetch('/api/delete-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id })
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete account')
+      }
+
+      // Sign out and redirect
+      await supabase.auth.signOut()
+      router.push('/login?deleted=true')
+    } catch (err) {
+      console.error('Delete account error:', err)
+      setError(err instanceof Error ? err.message : 'Failed to delete account')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   const openPhotoViewer = (album: Album, photoIndex: number) => {
     setSelectedAlbum(album)
     setCurrentPhotoIndex(photoIndex)
@@ -735,6 +775,19 @@ export default function ProfilePage() {
                 Logout
               </button>
             </div>
+
+            {/* Danger Zone */}
+            <div className="glass-bubble p-6 border-2 border-red-500/30">
+              <h3 className="text-xl font-bold text-red-400 mb-2">⚠️ Danger Zone</h3>
+              <p className="text-white/60 text-sm mb-4">Once you delete your account, there is no going back. This action is permanent.</p>
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="w-full py-3 rounded-xl bg-red-500/20 border-2 border-red-500/40 text-red-400 font-semibold hover:bg-red-500/30 hover:border-red-500/60 transition-all duration-300"
+              >
+                Delete My Account
+              </button>
+            </div>
           </form>
 
           <div className="space-y-6">
@@ -875,6 +928,64 @@ export default function ProfilePage() {
           // TODO: Implement album sharing
         }}
       />
+
+      {/* Delete Account Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="glass-bubble p-8 max-w-md w-full border-2 border-red-500/30">
+            <div className="text-center mb-6">
+              <div className="text-6xl mb-4">⚠️</div>
+              <h2 className="text-2xl font-bold text-white mb-2">Delete Account?</h2>
+              <p className="text-white/70 text-sm">This will permanently delete your profile, photos, messages, and all data. This action cannot be undone.</p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-white/80 mb-2">
+                  Type <span className="font-bold text-red-400">DELETE</span> to confirm:
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  className="w-full rounded-xl bg-white/5 border border-white/20 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-red-400"
+                  placeholder="Type DELETE"
+                  autoFocus
+                />
+              </div>
+
+              {error && (
+                <div className="p-3 rounded-xl bg-red-500/20 border border-red-500/40">
+                  <p className="text-red-400 text-sm">{error}</p>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDeleteConfirm(false)
+                    setDeleteConfirmText('')
+                    setError(null)
+                  }}
+                  disabled={isDeleting}
+                  className="flex-1 py-3 rounded-xl bg-white/10 border border-white/20 text-white font-semibold hover:bg-white/20 transition-all duration-300 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteAccount}
+                  disabled={isDeleting || deleteConfirmText !== 'DELETE'}
+                  className="flex-1 py-3 rounded-xl bg-red-500/20 border-2 border-red-500/40 text-red-400 font-semibold hover:bg-red-500/30 hover:border-red-500/60 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete Forever'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Photo Viewer Modal */}
       {showPhotoViewer && selectedAlbum && (
