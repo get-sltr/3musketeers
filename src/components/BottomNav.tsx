@@ -228,11 +228,12 @@ export default function BottomNav() {
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur-2xl"
       style={{
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 20px)',
         background: 'linear-gradient(0deg, rgba(26, 10, 46, 0.98) 0%, rgba(10, 10, 15, 0.95) 50%, rgba(10, 10, 15, 0.92) 100%)',
         borderTop: '2px solid transparent',
         borderImage: 'linear-gradient(90deg, rgba(255, 0, 255, 0.4), rgba(0, 217, 255, 0.4), rgba(255, 0, 255, 0.4)) 1',
-        boxShadow: '0 -4px 32px rgba(0, 0, 0, 0.7), 0 0 60px rgba(255, 0, 255, 0.2), 0 0 100px rgba(0, 217, 255, 0.1)'
+        boxShadow: '0 -4px 32px rgba(0, 0, 0, 0.7), 0 0 60px rgba(255, 0, 255, 0.2), 0 0 100px rgba(0, 217, 255, 0.1)',
+        minHeight: '80px'
       }}
     >
       <div className="flex items-center justify-around h-16 max-w-screen-xl mx-auto px-2">

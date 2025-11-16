@@ -641,7 +641,9 @@ export default function AppPage() {
 
   return (
     <MobileLayout>
-      <div className="min-h-screen bg-[#0a0a0f] pb-20">
+      <div className="min-h-screen bg-[#0a0a0f]" style={{
+        paddingBottom: viewMode === 'map' ? '0' : 'calc(80px + env(safe-area-inset-bottom))'
+      }}>
         {/* Animated Header with transparency */}
         <AnimatedHeader 
           viewMode={viewMode} 
@@ -654,7 +656,9 @@ export default function AppPage() {
         {viewMode === 'grid' ? (
           <GridViewProduction />
         ) : (
-          <div className="relative w-full h-screen">
+          <div className="fixed inset-0 top-[64px]" style={{
+            paddingBottom: 'env(safe-area-inset-bottom)'
+          }}>
             {/* User Advertising Panel */}
             <UserAdvertisingPanel 
               isOpen={showAdvertisingPanel}

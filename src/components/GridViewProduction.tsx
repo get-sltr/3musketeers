@@ -361,7 +361,7 @@ export default function GridViewProduction() {
   return (
     <div className="fixed inset-0 bg-black overflow-hidden">
       {/* Grindr-style Header */}
-      <div className="fixed top-0 left-0 right-0 z-40 bg-black/95 backdrop-blur-xl border-b border-white/10">
+      <div className="fixed top-0 left-0 right-0 z-40 bg-black/95 backdrop-blur-xl border-b border-white/10" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="flex items-center gap-3 px-4 py-3">
           {/* Profile Photo */}
           <button
@@ -418,8 +418,12 @@ export default function GridViewProduction() {
         </div>
       </div>
       
-      {/* 3-Column Tight Grid */}
-      <div className="h-full overflow-y-auto overflow-x-hidden overscroll-none pt-20 pb-20" style={{ WebkitOverflowScrolling: 'touch' }}>
+      {/* 3-Column Tight Grid - Full Bleed */}
+      <div className="h-full overflow-y-auto overflow-x-hidden overscroll-none" style={{ 
+        WebkitOverflowScrolling: 'touch',
+        paddingTop: 'calc(60px + env(safe-area-inset-top))',
+        paddingBottom: 'calc(80px + env(safe-area-inset-bottom))'
+      }}>
         <div className="grid grid-cols-3 gap-0">
           
           {/* --- EMPTY STATE --- */}
