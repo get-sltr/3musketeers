@@ -142,15 +142,20 @@ export default function MapboxUsers({
   useEffect(() => {
     const loadToken = async () => {
       try {
+        console.log('🗺️ Loading Mapbox token...')
         const token = await getMapboxToken()
+        console.log('✅ Mapbox token loaded successfully')
         mapboxgl.accessToken = token
         setTokenLoaded(true)
       } catch (error) {
-        console.error('⚠️ Failed to load Mapbox token:', error)
+        console.error('⚠️ Failed to load Mapbox token from API:', error)
         // Fallback: try to use env var if API fails (for development)
         if (process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
+          console.log('⚠️ Using fallback NEXT_PUBLIC_MAPBOX_TOKEN')
           mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
           setTokenLoaded(true)
+        } else {
+          console.error('❌ No Mapbox token available')
         }
       }
     }

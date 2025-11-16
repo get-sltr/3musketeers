@@ -724,38 +724,6 @@ export default function AppPage() {
               isIncognito={isIncognito}
               rightOffset={isLargeDesktop && showAdvertisingPanel ? 384 + 32 : 16}
             />
-            
-            {/* Users sidebar */}
-            <div className="hidden lg:block absolute top-0 right-0 w-80 h-screen bg-black/90 backdrop-blur-xl border-l border-cyan-500/20 overflow-y-auto custom-scrollbar z-10">
-              <div className="p-4 border-b border-white/10">
-                <h3 className="text-white font-bold text-lg">Nearby Users</h3>
-                <p className="text-white/60 text-sm">{users.length} online</p>
-              </div>
-              <div className="p-2 space-y-2">
-                {users.map(user => (
-                  <button
-                    key={user.id}
-                    onClick={() => handleUserClick(user.id)}
-                    className="w-full p-3 glass-bubble hover:bg-white/10 transition-all flex items-center gap-3 text-left"
-                  >
-                    <img
-                      src={resolveProfilePhoto(user.photo_url, user.photos ?? undefined)}
-                      alt={user.display_name}
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-white font-semibold truncate">{user.display_name}</p>
-                        {user.age && <span className="text-white/60 text-sm">{user.age}</span>}
-                      </div>
-                      {(user.is_online ?? user.online) && (
-                        <p className="text-green-400 text-xs">Online</p>
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         )}
       </main>
