@@ -360,13 +360,13 @@ export default function GridViewProduction() {
 
   return (
     <div className="fixed inset-0 bg-black overflow-hidden">
-      {/* Grindr-style Header */}
-      <div className="fixed top-0 left-0 right-0 z-40 bg-black/95 backdrop-blur-xl border-b border-white/10" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className="flex items-center gap-3 px-4 py-3">
-          {/* Profile Photo */}
+      {/* Grindr-style Header - Simpler */}
+      <div className="fixed top-0 left-0 right-0 z-40 bg-black border-b border-white/5">
+        <div className="flex items-center gap-3 px-3 py-2">
+          {/* Profile Photo - Smaller like Grindr */}
           <button
             onClick={() => router.push('/profile')}
-            className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-cyan-400/50 flex-shrink-0"
+            className="relative w-10 h-10 rounded-full overflow-hidden border border-white/20 flex-shrink-0"
           >
             <img
               src={currentUserPhoto || DEFAULT_PROFILE_IMAGE}
@@ -375,56 +375,42 @@ export default function GridViewProduction() {
             />
           </button>
           
-          {/* Search Bar */}
+          {/* Search Bar - Simpler */}
           <div className="flex-1 relative">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Explore more profiles"
-              className="w-full bg-white/10 border border-white/20 rounded-full px-4 py-2.5 pl-10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-transparent"
+              className="w-full bg-white/10 border-0 rounded-full px-4 py-2 pl-10 text-white placeholder-white/40 text-sm focus:outline-none focus:bg-white/15"
             />
             <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/50"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-          {searchQuery && (
+            {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white text-sm"
               >
                 ✕
               </button>
             )}
           </div>
-          
-          {/* Refresh Indicator */}
-          <button
-            onClick={() => {
-              fetchGridUsers()
-              setLastRefresh(new Date())
-            }}
-            className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/60 transition"
-            title="Refresh now"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-          </button>
         </div>
       </div>
       
-      {/* 3-Column Tight Grid - Full Bleed */}
+      {/* 3-Column Grid with Gaps - Like Grindr */}
       <div className="h-full overflow-y-auto overflow-x-hidden overscroll-none" style={{ 
         WebkitOverflowScrolling: 'touch',
-        paddingTop: 'calc(60px + env(safe-area-inset-top))',
-        paddingBottom: 'calc(80px + env(safe-area-inset-bottom))'
+        paddingTop: '52px',
+        paddingBottom: '90px'
       }}>
-        <div className="grid grid-cols-3 gap-0">
+        <div className="grid grid-cols-3 gap-0.5 bg-black p-0.5">
           
           {/* --- EMPTY STATE --- */}
           {filteredUsers.length === 0 && (
@@ -439,26 +425,17 @@ export default function GridViewProduction() {
             </div>
           )}
 
-          {filteredUsers.map((user, index) => {
+          {filteredUsers.map((user) => {
             const photo = resolveProfilePhoto(user.photo_url, user.photos)
             const distance = formatDistance(user.distance_miles)
             const eta = calculateETA(user.distance_miles)
 
-            const showAdBefore = index > 0 && index % 7 === 0
-
             return (
-              <>
-                {showAdBefore && (
-                  <div key={`ad-${index}`} className="relative aspect-[3/4]">
-                    <FoundersCircleAd />
-                  </div>
-                )}
-
-                <div
-                  key={user.id}
-                  onClick={() => setSelectedUser(user)}
-                  className="relative aspect-[3/4] cursor-pointer overflow-hidden active:opacity-90 transition-opacity"
-                >
+              <div
+                key={user.id}
+                onClick={() => setSelectedUser(user)}
+                className="relative aspect-[3/4] cursor-pointer overflow-hidden active:opacity-90 transition-opacity bg-gray-900"
+              >
                   {/* ... Grid card details ... */}
                   {photo ? (
                     <Image src={photo} alt={user.display_name || 'User'} fill className="object-cover" sizes="33vw" />
@@ -481,7 +458,6 @@ export default function GridViewProduction() {
                     </div>
                   </div>
                 </div>
-              </>
             )
           })}
         </div>

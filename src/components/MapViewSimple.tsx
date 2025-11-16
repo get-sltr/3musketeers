@@ -263,7 +263,7 @@ export default function MapViewSimple({ pinStyle = 1 }: { pinStyle?: number }) {
     const initMap = () => {
       if (typeof window !== 'undefined' && (window as any).mapboxgl) {
         const mapboxgl = (window as any).mapboxgl
-        mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 'pk.eyJ1Ijoic2x0ciIsImEiOiJjbWdtdXE0MWoxNGd5MmpweDZsZ3ExdmwzIn0.VboEWsoaBpPkIW8xKQdY8w'
+        mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!
 
         map.current = new mapboxgl.Map({
           container: mapContainer.current!,

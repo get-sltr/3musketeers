@@ -226,45 +226,29 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur-2xl"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-lg border-t border-white/5"
       style={{
-        paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 20px)',
-        background: 'linear-gradient(0deg, rgba(26, 10, 46, 0.98) 0%, rgba(10, 10, 15, 0.95) 50%, rgba(10, 10, 15, 0.92) 100%)',
-        borderTop: '2px solid transparent',
-        borderImage: 'linear-gradient(90deg, rgba(255, 0, 255, 0.4), rgba(0, 217, 255, 0.4), rgba(255, 0, 255, 0.4)) 1',
-        boxShadow: '0 -4px 32px rgba(0, 0, 0, 0.7), 0 0 60px rgba(255, 0, 255, 0.2), 0 0 100px rgba(0, 217, 255, 0.1)',
-        minHeight: '80px'
+        paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 16px)',
+        minHeight: '70px'
       }}
     >
-      <div className="flex items-center justify-around h-16 max-w-screen-xl mx-auto px-2">
+      <div className="flex items-center justify-around h-14 max-w-screen-xl mx-auto px-4">
         {navItems.map((item) => (
           <button
             key={item.id}
             onClick={item.action}
-            className={`relative flex flex-col items-center justify-center gap-1 flex-1 h-full transition-all ${
+            className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${
               activeTab === item.id
                 ? 'text-cyan-400'
-                : 'text-white/60 hover:text-white/80'
+                : 'text-white/50 hover:text-white/70'
             }`}
           >
-            <div className="relative text-2xl">{item.icon}</div>
-            <span className="text-[10px] font-semibold tracking-tight">{item.label}</span>
+            <div className="relative text-xl">{item.icon}</div>
+            <span className="text-[9px] font-medium">{item.label}</span>
             {item.id === 'messages' && unreadCount > 0 && (
-              <>
-                <span className="absolute top-2 right-1/4 inline-flex h-4 w-4 rounded-full bg-red-500 opacity-75 animate-ping" />
-                <span className="absolute top-2 right-1/4 bg-red-500 text-white text-[9px] font-bold leading-none rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center shadow-lg">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              </>
-            )}
-            {activeTab === item.id && (
-              <div
-                className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-1 rounded-t-full"
-                style={{
-                  background: 'linear-gradient(90deg, #00d9ff, #ff00ff)',
-                  boxShadow: '0 0 16px rgba(255, 0, 255, 0.9), 0 0 8px rgba(0, 217, 255, 0.6)'
-                }}
-              />
+              <span className="absolute top-1 right-1/4 bg-red-500 text-white text-[9px] font-bold leading-none rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
             )}
           </button>
         ))}
