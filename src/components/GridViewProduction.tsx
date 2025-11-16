@@ -244,11 +244,12 @@ export default function GridViewProduction() {
   // --- ACTIONS (with Optimistic UI and Toasts) ---
 
   const handleTap = async (toUserId: string) => {
-    const promise = supabase.rpc('tap_user', { target_user_id: toUserId })
-      .then(({ data, error }) => {
-        if (error) throw error
-        return data
-      })
+    const promise = Promise.resolve(
+      supabase.rpc('tap_user', { target_user_id: toUserId })
+    ).then(({ data, error }) => {
+      if (error) throw error
+      return data
+    })
 
     toast.promise(promise, {
       loading: 'Sending tap...',
@@ -397,7 +398,9 @@ export default function GridViewProduction() {
       {/* 3-Column Grid with Gaps - Like Grindr */}
       <div className="min-h-screen" style={{ 
         paddingTop: 'calc(112px + max(env(safe-area-inset-top), 20px))',
-        paddingBottom: 'calc(84px + env(safe-area-inset-bottom, 0px))'
+        paddingBottom: 'calc(84px + env(safe-area-inset-bottom, 0px))',
+        WebkitOverflowScrolling: 'touch',
+        overscrollBehavior: 'contain'
       }}>
         <div className="grid grid-cols-3 gap-0.5 bg-black p-0.5">
           
@@ -470,7 +473,8 @@ export default function GridViewProduction() {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed inset-0 bg-black z-[100] flex flex-col" // Use flex-col and z-100 to cover bottom nav
+            className="fixed inset-0 bg-black z-[100] flex flex-col"
+            style={{ touchAction: 'pan-y' }}
           >
             {/* Close Button */}
             <button
@@ -481,7 +485,7 @@ export default function GridViewProduction() {
             </button>
             
             {/* Scrollable Content Area */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
               {/* Profile Header Photo (uses light data, loads instantly) */}
               <div className="relative h-[60vh]">
                 {resolveProfilePhoto(selectedUser.photo_url, selectedUser.photos) ? (
