@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { useSocket } from '@/hooks/useSocket'
 import { createClient } from '@/lib/supabase/client'
 
 interface FileUploadProps {
@@ -14,7 +13,6 @@ export default function FileUpload({ conversationId, onFileUploaded }: FileUploa
   const [uploadProgress, setUploadProgress] = useState(0)
   const [dragActive, setDragActive] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const { shareFile } = useSocket()
   const supabase = createClient()
 
   const handleFileUpload = async (file: File) => {
@@ -48,8 +46,24 @@ export default function FileUpload({ conversationId, onFileUploaded }: FileUploa
 
       console.log('File uploaded successfully:', publicUrl)
 
-      // Notify other users about file share
-      shareFile(conversationId, file.name, file.type, file.size)
+      // Notify other users about file share via Supabase Realtime
+      try {
+        const channel = supabase.channel(`conversation:${conversationId}`)
+        await channel.send({
+          type: 'broadcast',
+          event: 'file_shared',
+          payload: {
+            fileName: file.name,
+            fileType: file.type,
+            fileSize: file.size,
+            fileUrl: publicUrl,
+          },
+        })
+        // Clean up channel
+        supabase.removeChannel(channel)
+      } catch (error) {
+        console.warn('Failed to broadcast file share notification:', error)
+      }
 
       // Call the callback
       onFileUploaded(publicUrl, file.name, file.type)

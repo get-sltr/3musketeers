@@ -6,7 +6,7 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 import '../../styles/map-view.css'
 import '../../styles/map-pin-drawer.css'
 import { getCurrentUserLocation } from '@/app/lib/maps/mapboxUtils'
-import { useSocket } from '@/hooks/useSocket'
+import { useMapRealtime } from '@/hooks/useMapRealtime'
 import Supercluster from 'supercluster'
 import { HoloPinsLayer } from '@/app/components/maps/HoloPinsLayer'
 import type { Pin } from '@/types/pins'
@@ -124,7 +124,7 @@ export default function MapboxUsers({
   const venueMarkersRef = useRef<mapboxgl.Marker[]>([])
   const [mapLoaded, setMapLoaded] = useState(false)
   const [venues, setVenues] = useState<any[]>([])
-  const { isConnected, joinConversation, leaveConversation, updateLocation } = useSocket() as any
+  const { isConnected, joinMap, leaveMap, updateLocation } = useMapRealtime()
   const { pins: autoPins, options: holoOptions } = useHoloPins(advancedPins && autoLoad)
 
   // Holo layer state - always active when WebGL is supported
@@ -592,13 +592,13 @@ export default function MapboxUsers({
   useEffect(() => {
     if (!mapLoaded || !isConnected) return
 
-    // Join a shared map session room
-    joinConversation?.('map')
+    // Join map session
+    joinMap()
 
     // Handle incoming live location updates from other users
     const onLocationUpdate = (e: any) => {
       try {
-        const payload = e as any
+        const payload = e.detail // Supabase sends via event.detail
         const userId = (payload.userId || payload.user_id) as string
         const lat = (payload.latitude ?? payload.lat) as number
         const lng = (payload.longitude ?? payload.lng) as number
@@ -626,8 +626,8 @@ export default function MapboxUsers({
       watchId = navigator.geolocation.watchPosition(
         (pos) => {
           if (!incognito) {
-            // Send to backend (room "map") so others receive updates
-            updateLocation?.('map', pos.coords.latitude, pos.coords.longitude)
+            // Broadcast location via Supabase Realtime
+            updateLocation(pos.coords.latitude, pos.coords.longitude)
           }
         },
         () => {},
@@ -638,9 +638,9 @@ export default function MapboxUsers({
     return () => {
       window.removeEventListener('user_location_update', onLocationUpdate as any)
       if (watchId !== null) navigator.geolocation.clearWatch(watchId)
-      leaveConversation?.('map')
+      leaveMap()
     }
-  }, [mapLoaded, isConnected, joinConversation, leaveConversation, updateLocation, incognito])
+  }, [mapLoaded, isConnected, joinMap, leaveMap, updateLocation, incognito, jitterMeters])
 
   // Fetch and display LGBTQ venues
   useEffect(() => {

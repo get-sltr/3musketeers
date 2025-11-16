@@ -3,11 +3,9 @@
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useSocket } from '@/hooks/useSocket'
 
 export default function BottomNav() {
   const pathname = usePathname()
-  useSocket()
   const router = useRouter()
   const [unreadCount, setUnreadCount] = useState(0)
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
@@ -165,26 +163,62 @@ export default function BottomNav() {
     handleVisibility()
     document.addEventListener('visibilitychange', handleVisibility)
 
-    // Listen for real-time events dispatched by useSocket (if mounted elsewhere)
-    const onNewMessage = () => {
-      // Vibrate + ping on new message (respect settings)
-      if (notifyVibrate && 'vibrate' in navigator) {
-        try { (navigator as any).vibrate([80, 40, 80]) } catch {}
-      }
-      if (notifySound) playPing()
-      loadUnread()
-    }
-    const onMessageRead = loadUnread
+    // Listen for new messages via Supabase Realtime
+    let messageChannel: any = null
+    const setupRealtimeListener = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
 
-    window.addEventListener('new_message', onNewMessage as any)
-    window.addEventListener('message_read', onMessageRead as any)
+        messageChannel = supabase
+          .channel(`user:${user.id}:notifications`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'messages',
+              filter: `receiver_id=eq.${user.id}`,
+            },
+            () => {
+              // Vibrate + ping on new message (respect settings)
+              if (notifyVibrate && 'vibrate' in navigator) {
+                try { (navigator as any).vibrate([80, 40, 80]) } catch {}
+              }
+              if (notifySound) playPing()
+              loadUnread()
+            }
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'messages',
+              filter: `receiver_id=eq.${user.id}`,
+            },
+            () => {
+              // Message read/updated
+              loadUnread()
+            }
+          )
+          .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              console.log('✅ Connected to message notifications (Supabase Realtime)')
+            }
+          })
+      } catch (error) {
+        console.error('❌ Error setting up realtime listener:', error)
+      }
+    }
+
+    setupRealtimeListener()
 
     return () => {
       cancelled = true
       document.removeEventListener('visibilitychange', handleVisibility)
       if (pollingRef.current) clearInterval(pollingRef.current)
-      window.removeEventListener('new_message', onNewMessage as any)
-      window.removeEventListener('message_read', onMessageRead as any)
+      if (messageChannel) supabase.removeChannel(messageChannel)
       try { audioCtxRef.current?.close() } catch {}
       audioCtxRef.current = null
     }
