@@ -19,7 +19,7 @@ export default function ErosAI({ conversationId, onAIMessage }: ErosAIProps) {
   const draggingRef = useRef<{dx:number;dy:number} | null>(null)
 
   useEffect(() => {
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('blaze_pos') : null
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('eros_ai_button_position') : null
     const init = () => {
       const size = 56
       const x = window.innerWidth - size - 16
@@ -52,7 +52,7 @@ export default function ErosAI({ conversationId, onAIMessage }: ErosAIProps) {
   }
   const onDragEnd = () => {
     draggingRef.current = null
-    if (pos) localStorage.setItem('blaze_pos', JSON.stringify(pos))
+    if (pos) localStorage.setItem('eros_ai_button_position', JSON.stringify(pos))
   }
 
   // AI-powered conversation starters

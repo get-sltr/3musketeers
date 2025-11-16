@@ -20,6 +20,8 @@ interface MenuAction {
 export function ErosAssistiveTouch() {
   const router = useRouter();
   const pathname = usePathname();
+  const supabase = createClient();
+  
   const disabledPaths = new Set([
     '/',
     '/login',
@@ -33,11 +35,6 @@ export function ErosAssistiveTouch() {
     '/security',
     '/messages',
   ]);
-
-  if (disabledPaths.has(pathname || '')) {
-    return null;
-  }
-  const supabase = createClient();
   const [position, setPosition] = useState<Position>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -122,7 +119,7 @@ export function ErosAssistiveTouch() {
   // Load saved position
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('eros_position');
+      const saved = localStorage.getItem('eros_assistive_touch_position');
       if (saved) {
         try {
           const pos = JSON.parse(saved);
@@ -141,7 +138,7 @@ export function ErosAssistiveTouch() {
   // Save position when changed
   useEffect(() => {
     if (typeof window !== 'undefined' && !isDragging) {
-      localStorage.setItem('eros_position', JSON.stringify(position));
+      localStorage.setItem('eros_assistive_touch_position', JSON.stringify(position));
     }
   }, [position, isDragging]);
 
@@ -492,6 +489,11 @@ export function ErosAssistiveTouch() {
       }
     };
   }, []);
+  
+  // Early return after ALL hooks are defined (React Rules of Hooks)
+  if (disabledPaths.has(pathname || '')) {
+    return null;
+  }
   
   return (
     <>
