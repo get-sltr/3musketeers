@@ -38,24 +38,20 @@ export const blockUser = async (userId: string, reason?: string): Promise<{ succ
 
     // Check if already blocked
     const { data: existing } = await supabase
-      .from('blocked_users')
+      .from('blocks')
       .select('id')
-      .eq('user_id', user.id)
-      .eq('blocked_user_id', userId)
+      .eq('blocker_id', user.id)
+      .eq('blocked_id', userId)
       .single()
 
     if (existing) {
       return { success: true } // Already blocked
     }
 
-    // Insert block
-    const { error } = await supabase
-      .from('blocked_users')
-      .insert({
-        user_id: user.id,
-        blocked_user_id: userId,
-        reason: reason || null
-      })
+    // Insert block using the database function
+    const { error } = await supabase.rpc('block_user', {
+      target_user_id: userId
+    })
 
     if (error) {
       console.error('Error blocking user:', error)
@@ -83,11 +79,9 @@ export const unblockUser = async (userId: string): Promise<{ success: boolean; e
       return { success: false, error: 'Not authenticated' }
     }
 
-    const { error } = await supabase
-      .from('blocked_users')
-      .delete()
-      .eq('user_id', user.id)
-      .eq('blocked_user_id', userId)
+    const { error } = await supabase.rpc('unblock_user', {
+      target_user_id: userId
+    })
 
     if (error) {
       console.error('Error unblocking user:', error)
@@ -115,9 +109,9 @@ export const getBlockedUsers = async (): Promise<BlockedUser[]> => {
     }
 
     const { data, error } = await supabase
-      .from('blocked_users')
-      .select('id, blocked_user_id, reason, blocked_at')
-      .eq('user_id', user.id)
+      .from('blocks')
+      .select('id, blocked_id, blocked_at')
+      .eq('blocker_id', user.id)
       .order('blocked_at', { ascending: false })
 
     if (error) {
@@ -127,9 +121,9 @@ export const getBlockedUsers = async (): Promise<BlockedUser[]> => {
 
     return (data || []).map(block => ({
       id: block.id,
-      userId: block.blocked_user_id,
+      userId: block.blocked_id,
       blockedAt: new Date(block.blocked_at),
-      reason: block.reason || undefined
+      reason: undefined
     }))
   } catch (error) {
     console.error('Error in getBlockedUsers:', error)
@@ -161,10 +155,10 @@ export const isUserBlocked = async (userId: string): Promise<boolean> => {
     }
 
     const { data, error } = await supabase
-      .from('blocked_users')
+      .from('blocks')
       .select('id')
-      .eq('user_id', user.id)
-      .eq('blocked_user_id', userId)
+      .eq('blocker_id', user.id)
+      .eq('blocked_id', userId)
       .single()
 
     if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
@@ -329,9 +323,9 @@ export const isMutuallyBlocked = async (userId: string): Promise<boolean> => {
 
     // Check if current user blocked them OR they blocked current user
     const { data, error } = await supabase
-      .from('blocked_users')
+      .from('blocks')
       .select('id')
-      .or(`and(user_id.eq.${user.id},blocked_user_id.eq.${userId}),and(user_id.eq.${userId},blocked_user_id.eq.${user.id})`)
+      .or(`and(blocker_id.eq.${user.id},blocked_id.eq.${userId}),and(blocker_id.eq.${userId},blocked_id.eq.${user.id})`)
       .limit(1)
 
     if (error) {

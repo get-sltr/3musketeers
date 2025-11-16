@@ -244,21 +244,15 @@ export default function GridViewProduction() {
   // --- ACTIONS (with Optimistic UI and Toasts) ---
 
   const handleTap = async (toUserId: string) => {
-    const promise = fetch('/api/taps', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to_user_id: toUserId })
-    }).then(async (response) => {
-      const data = await response.json()
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to send tap')
-      }
-      return data
-    })
+    const promise = supabase.rpc('tap_user', { target_user_id: toUserId })
+      .then(({ data, error }) => {
+        if (error) throw error
+        return data
+      })
 
     toast.promise(promise, {
       loading: 'Sending tap...',
-      success: 'Tap sent! 👋',
+      success: (data: any) => data?.already_exists ? 'Already tapped!' : 'Tap sent! 👋',
       error: (err) => err.message || 'Could not send tap'
     })
   }
@@ -311,23 +305,17 @@ export default function GridViewProduction() {
     if (!selectedUser) return
     if (!confirm('Block this user? They won\'t be able to see your profile or message you.')) return
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
     const blockedId = selectedUser.id
 
     // Optimistic UI: Close modal and remove user from grid immediately
     setSelectedUser(null)
     setUsers(currentUsers => currentUsers.filter(u => u.id !== blockedId))
 
-    const promise = Promise.resolve(supabase.from('blocks').insert({
-      blocker_id: user.id,
-      blocked_id: blockedId,
-      created_at: new Date().toISOString()
-    })).then(({ error }) => {
-      if (error) throw error
-      return { success: true }
-    })
+    const promise = supabase.rpc('block_user', { target_user_id: blockedId })
+      .then(({ error }) => {
+        if (error) throw error
+        return { success: true }
+      })
 
     toast.promise(promise, {
       loading: 'Blocking user...',
@@ -336,7 +324,7 @@ export default function GridViewProduction() {
         // Rollback UI on error
         toast.error('Failed to block user. Refreshing.')
         fetchGridUsers() // Refresh to fix optimistic state
-        return 'Failed to block user'
+        return err.message || 'Failed to block user'
       }
     })
   }
@@ -482,7 +470,7 @@ export default function GridViewProduction() {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed inset-0 bg-black z-50 flex flex-col" // Use flex-col
+            className="fixed inset-0 bg-black z-[100] flex flex-col" // Use flex-col and z-100 to cover bottom nav
           >
             {/* Close Button */}
             <button
