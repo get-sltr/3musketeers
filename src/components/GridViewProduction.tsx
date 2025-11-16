@@ -361,7 +361,9 @@ export default function GridViewProduction() {
   return (
     <div className="min-h-screen bg-black">
       {/* Grindr-style Header - Simpler */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-black border-b border-white/5" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+      <div className="fixed left-0 right-0 z-50 bg-black border-b border-white/5" style={{ 
+        top: 'calc(max(env(safe-area-inset-top), 20px) + 56px)'
+      }}>
         <div className="flex items-center gap-3 px-3 py-2.5">
           {/* Profile Photo - Smaller like Grindr */}
           <button
@@ -406,7 +408,7 @@ export default function GridViewProduction() {
       
       {/* 3-Column Grid with Gaps - Like Grindr */}
       <div className="min-h-screen" style={{ 
-        paddingTop: 'calc(56px + 64px + env(safe-area-inset-top, 0px))',
+        paddingTop: 'calc(112px + max(env(safe-area-inset-top), 20px))',
         paddingBottom: 'calc(84px + env(safe-area-inset-bottom, 0px))'
       }}>
         <div className="grid grid-cols-3 gap-0.5 bg-black p-0.5">

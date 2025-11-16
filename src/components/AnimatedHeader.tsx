@@ -41,7 +41,8 @@ export default function AnimatedHeader({ viewMode, onViewModeChange }: AnimatedH
         boxShadow: isScrolled
           ? '0 4px 24px rgba(0, 0, 0, 0.6), 0 0 40px rgba(255, 0, 255, 0.15)'
           : '0 2px 16px rgba(0, 0, 0, 0.4), 0 0 30px rgba(255, 0, 255, 0.1)',
-        opacity: headerOpacity
+        opacity: headerOpacity,
+        paddingTop: 'env(safe-area-inset-top)'
       }}
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
