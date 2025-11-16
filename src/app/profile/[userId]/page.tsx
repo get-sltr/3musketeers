@@ -25,11 +25,20 @@ interface UserProfile {
 export default function UserProfilePage() {
   const params = useParams()
   const router = useRouter()
-  const userId = params.userId as string
+  const userId = params?.userId as string
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
   const supabase = createClient()
+
+  // Early return if no userId
+  if (!userId) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white">Invalid profile</div>
+      </div>
+    )
+  }
 
   useEffect(() => {
     loadProfile()
