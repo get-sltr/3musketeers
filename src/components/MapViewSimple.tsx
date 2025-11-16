@@ -263,7 +263,9 @@ export default function MapViewSimple({ pinStyle = 1 }: { pinStyle?: number }) {
     const initMap = () => {
       if (typeof window !== 'undefined' && (window as any).mapboxgl) {
         const mapboxgl = (window as any).mapboxgl
-        mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!
+        // Use token directly - process.env doesn't always work in client components
+        mapboxgl.accessToken = 'pk.eyJ1Ijoic2x0ciIsImEiOiJjbWh6Z3p3c2kwOTIyMmptenNid3lnbG8zIn0.NqKpGPFkrbUWoS0-rYfzhA'
+        console.log('🗺️ Mapbox initialized')
 
         map.current = new mapboxgl.Map({
           container: mapContainer.current!,

@@ -361,8 +361,8 @@ export default function GridViewProduction() {
   return (
     <div className="fixed inset-0 bg-black overflow-hidden">
       {/* Grindr-style Header - Simpler */}
-      <div className="fixed top-0 left-0 right-0 z-40 bg-black border-b border-white/5">
-        <div className="flex items-center gap-3 px-3 py-2">
+      <div className="fixed top-0 left-0 right-0 z-50 bg-black border-b border-white/5" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+        <div className="flex items-center gap-3 px-3 py-2.5">
           {/* Profile Photo - Smaller like Grindr */}
           <button
             onClick={() => router.push('/profile')}
@@ -407,8 +407,8 @@ export default function GridViewProduction() {
       {/* 3-Column Grid with Gaps - Like Grindr */}
       <div className="h-full overflow-y-auto overflow-x-hidden overscroll-none" style={{ 
         WebkitOverflowScrolling: 'touch',
-        paddingTop: '52px',
-        paddingBottom: '90px'
+        paddingTop: '56px',
+        paddingBottom: '84px'
       }}>
         <div className="grid grid-cols-3 gap-0.5 bg-black p-0.5">
           

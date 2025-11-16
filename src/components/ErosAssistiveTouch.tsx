@@ -375,21 +375,7 @@ export function ErosAssistiveTouch() {
 
     if (!isDragging && !menuOpen) {
       vibrate(30);
-      // Trigger EROS AI analysis silently on short press (battery-aware)
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        erosScheduler.scheduleAnalysis(async () => {
-          try {
-            await fetch('/api/eros/analyze', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ userId: user.id, analysisType: 'ultimate' })
-            });
-          } catch (e) {
-            console.error('EROS analysis failed:', e);
-          }
-        }, 'low');  // Low priority for background learning
-      }
+      // Disabled auto-analysis - only trigger from AI Mode button
       return;
     }
     
