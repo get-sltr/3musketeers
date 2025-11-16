@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SLTR Feature Slides</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .slide {
+      width: 1080px;
+      height: 1080px;
+      background: linear-gradient(135deg, #0a0a0f 0%, #1a0a2e 100%);
+      border-radius: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 60px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Gradient border effect */
+    .slide::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: 3px solid transparent;
+      background: linear-gradient(135deg, #00d9ff, #ff00ff) border-box;
+      -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+    }
+
+    .slide-number {
+      position: absolute;
+      top: 30px;
+      right: 40px;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.4);
+      font-weight: 600;
+      letter-spacing: 2px;
+    }
+
+    .logo {
+      font-size: 72px;
+      font-weight: 900;
+      background: linear-gradient(135deg, #00d9ff, #ff00ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 4px;
+      margin-bottom: 20px;
+    }
+
+    .tagline {
+      font-size: 22px;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 60px;
+      letter-spacing: 1px;
+    }
+
+    h1 {
+      font-size: 64px;
+      color: #fff;
+      margin-bottom: 30px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    h2 {
+      font-size: 48px;
+      color: #fff;
+      margin-bottom: 40px;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      font-size: 28px;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 50px;
+      line-height: 1.5;
+      max-width: 800px;
+    }
+
+    .icon {
+      font-size: 120px;
+      margin-bottom: 40px;
+      filter: drop-shadow(0 0 30px rgba(0, 217, 255, 0.5));
+    }
+
+    .features {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .feature {
+      display: flex;
+      align-items: center;
+      gap: 30px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 30px 40px;
+      border-radius: 20px;
+      border: 1px solid rgba(0, 217, 255, 0.2);
+      backdrop-filter: blur(10px);
+    }
+
+    .feature-icon {
+      font-size: 56px;
+      flex-shrink: 0;
+    }
+
+    .feature-text {
+      text-align: left;
+      flex: 1;
+    }
+
+    .feature-title {
+      font-size: 32px;
+      color: #00d9ff;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .feature-desc {
+      font-size: 20px;
+      color: rgba(255, 255, 255, 0.7);
+      line-height: 1.4;
+    }
+
+    .cta {
+      font-size: 32px;
+      color: #fff;
+      margin-top: 50px;
+      padding: 25px 60px;
+      background: linear-gradient(135deg, #00d9ff, #ff00ff);
+      border-radius: 50px;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-block;
+      box-shadow: 0 10px 40px rgba(0, 217, 255, 0.4);
+      letter-spacing: 1px;
+    }
+
+    .url {
+      font-size: 36px;
+      color: #00d9ff;
+      margin-top: 30px;
+      font-weight: 600;
+      letter-spacing: 2px;
+    }
+
+    /* Print styles for easy export */
+    @media print {
+      body {
+        background: white;
+      }
+      .slide {
+        page-break-after: always;
+        margin-bottom: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Slide 1: Intro -->
+  <div class="slide">
+    <div class="slide-number">1/6</div>
+    <div class="logo">SLTR</div>
+    <div class="tagline">Location-Based Connection</div>
+    <h1>Meet. Connect.<br>Right Now.</h1>
+    <p class="subtitle">The gay dating app that respects your privacy while keeping you connected to who's nearby</p>
+    <div class="icon">🏳️‍🌈</div>
+  </div>
+
+  <!-- Slide 2: Real-Time -->
+  <div class="slide">
+    <div class="slide-number">2/6</div>
+    <div class="icon">⚡</div>
+    <h2>Always Live</h2>
+    <p class="subtitle">See who's online and nearby in real-time. Updates every 15 seconds so you never miss a connection</p>
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">🗺️</div>
+        <div class="feature-text">
+          <div class="feature-title">Interactive Map</div>
+          <div class="feature-desc">See exactly where nearby users are</div>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🔄</div>
+        <div class="feature-text">
+          <div class="feature-title">Real-Time Updates</div>
+          <div class="feature-desc">Profiles refresh automatically</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 3: Privacy -->
+  <div class="slide">
+    <div class="slide-number">3/6</div>
+    <div class="icon">🔒</div>
+    <h2>Your Privacy First</h2>
+    <p class="subtitle">Control what you share and who sees you. No surprises.</p>
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">👁️</div>
+        <div class="feature-text">
+          <div class="feature-title">Incognito Mode</div>
+          <div class="feature-desc">Browse without being seen</div>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🚫</div>
+        <div class="feature-text">
+          <div class="feature-title">Block & Report</div>
+          <div class="feature-desc">Safety tools at your fingertips</div>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📸</div>
+        <div class="feature-text">
+          <div class="feature-title">Private Albums</div>
+          <div class="feature-desc">Choose who sees your photos</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 4: Features -->
+  <div class="slide">
+    <div class="slide-number">4/6</div>
+    <div class="icon">✨</div>
+    <h2>Everything You Need</h2>
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">💬</div>
+        <div class="feature-text">
+          <div class="feature-title">Direct Messaging</div>
+          <div class="feature-desc">Chat instantly with nearby guys</div>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📍</div>
+        <div class="feature-text">
+          <div class="feature-title">10-Mile Radius</div>
+          <div class="feature-desc">Only see users actually nearby</div>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">👋</div>
+        <div class="feature-text">
+          <div class="feature-title">Taps</div>
+          <div class="feature-desc">Quick way to show interest</div>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🔥</div>
+        <div class="feature-text">
+          <div class="feature-title">DTFN Mode</div>
+          <div class="feature-desc">Let them know you're ready now</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 5: Community -->
+  <div class="slide">
+    <div class="slide-number">5/6</div>
+    <div class="icon">🏳️‍🌈</div>
+    <h2>Built For Us, By Us</h2>
+    <p class="subtitle">Solo developer. Built for the community. Your feedback shapes the app.</p>
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">💎</div>
+        <div class="feature-text">
+          <div class="feature-title">Founder Cards</div>
+          <div class="feature-desc">Exclusive for early supporters</div>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🎯</div>
+        <div class="feature-text">
+          <div class="feature-title">No Corporate BS</div>
+          <div class="feature-desc">Just real people connecting</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 6: CTA -->
+  <div class="slide">
+    <div class="slide-number">6/6</div>
+    <h1>Join SLTR Today</h1>
+    <p class="subtitle">Free to join. Early beta access. Help shape the future of gay dating.</p>
+    <div class="icon">📱</div>
+    <a href="https://getsltr.com" class="cta">Get Started</a>
+    <p class="url">getsltr.com</p>
+  </div>
+
+  <script>
+    // Add keyboard navigation
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' && currentSlide < slides.length - 1) {
+        currentSlide++;
+        slides[currentSlide].scrollIntoView({ behavior: 'smooth' });
+      } else if (e.key === 'ArrowLeft' && currentSlide > 0) {
+        currentSlide--;
+        slides[currentSlide].scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  </script>
+
+</body>
+</html>

@@ -57,15 +57,25 @@ export default function UserProfilePage() {
   }
 
   const handleTap = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    try {
+      const response = await fetch('/api/taps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to_user_id: userId })
+      })
 
-    await supabase.from('taps').insert({
-      from_user_id: user.id,
-      to_user_id: userId
-    })
+      const data = await response.json()
 
-    alert('Tap sent!')
+      if (!response.ok) {
+        alert(data.error || 'Failed to send tap')
+        return
+      }
+
+      alert('Tap sent! 👋')
+    } catch (error) {
+      console.error('Error sending tap:', error)
+      alert('Failed to send tap')
+    }
   }
 
   if (loading) {

@@ -188,7 +188,7 @@ export default function MapViewSimple({ pinStyle = 1 }: { pinStyle?: number }) {
     }
   }, [])
 
-  // Load nearby users
+  // Load nearby users with 10-mile radius
   useEffect(() => {
     async function loadUsers() {
       try {
@@ -203,13 +203,18 @@ export default function MapViewSimple({ pinStyle = 1 }: { pinStyle?: number }) {
 
         if (!profile?.latitude || !profile?.longitude) return
 
-        const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .neq('id', user.id)
-          .not('latitude', 'is', null)
-          .not('longitude', 'is', null)
-          .limit(50)
+        // Use get_nearby_profiles with 10-mile radius
+        const { data, error } = await supabase.rpc('get_nearby_profiles', {
+          p_user_id: user.id,
+          p_origin_lat: profile.latitude,
+          p_origin_lon: profile.longitude,
+          p_radius_miles: 10, // 10-mile radius only
+        })
+
+        if (error) {
+          console.error('Error loading nearby users:', error)
+          return
+        }
 
         if (data) {
           setUsers(data)
@@ -220,6 +225,34 @@ export default function MapViewSimple({ pinStyle = 1 }: { pinStyle?: number }) {
     }
 
     loadUsers()
+    
+    // Auto-refresh every 15 seconds
+    const interval = setInterval(() => {
+      console.log('🗺️ Refreshing map users...')
+      loadUsers()
+    }, 15000) // 15 seconds
+    
+    // Subscribe to real-time updates
+    const channel = supabase
+      .channel('map-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+        },
+        (payload) => {
+          console.log('📡 Map real-time update:', payload)
+          loadUsers()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      clearInterval(interval)
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   // Initialize map

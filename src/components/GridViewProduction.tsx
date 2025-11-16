@@ -90,6 +90,7 @@ export default function GridViewProduction() {
   // Current user state for header
   const [currentUserPhoto, setCurrentUserPhoto] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
 
   // --- DATA FETCHING ---
 
@@ -117,6 +118,41 @@ export default function GridViewProduction() {
   useEffect(() => {
     fetchGridUsers()
   }, [])
+  
+  // 4. Auto-refresh every 15 seconds for real-time updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log('🔄 Auto-refreshing grid...')
+      fetchGridUsers()
+      setLastRefresh(new Date())
+    }, 15000) // 15 seconds
+
+    return () => clearInterval(interval)
+  }, [])
+  
+  // 5. Subscribe to real-time profile updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('grid-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+        },
+        (payload) => {
+          console.log('📡 Real-time update:', payload)
+          // Refresh grid when any profile changes
+          fetchGridUsers()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [])
 
   // 3. Fetch the full profile *only* when a user is selected
   useEffect(() => {
@@ -143,15 +179,36 @@ export default function GridViewProduction() {
       }
 
       // --- THIS IS THE CRITICAL FIX ---
-      // Call our secure, fast SQL function instead of client-side logic
-      const { data, error } = await supabase.rpc('get_nearby_users', {
-        user_lat: profile.latitude,
-        user_lon: profile.longitude,
+      // Call our secure, fast SQL function with 10-mile radius
+      const { data, error } = await supabase.rpc('get_nearby_profiles', {
+        p_user_id: currentUser.id,
+        p_origin_lat: profile.latitude,
+        p_origin_lon: profile.longitude,
+        p_radius_miles: 10, // 10-mile radius only
       })
 
-      if (error) throw error
+      if (error) {
+        console.error('Error from get_nearby_profiles:', error)
+        throw error
+      }
 
-      setUsers(data || [])
+      // Filter and transform data
+      const filteredUsers = (data || [])
+        .filter((u: any) => u.id !== currentUser.id) // Exclude self
+        .map((u: any) => ({
+          id: u.id,
+          display_name: u.display_name || 'Anonymous',
+          photo_url: u.photo_url || u.photos?.[0] || null,
+          photos: u.photos || [],
+          age: u.age,
+          position: u.position,
+          dtfn: u.dtfn,
+          party_friendly: u.party_friendly,
+          distance_miles: u.distance_miles,
+          is_online: u.is_online,
+        }))
+
+      setUsers(filteredUsers)
     } catch (error: any) {
       console.error('Error fetching grid users:', error)
       toast.error(`Error fetching users: ${error.message}`)
@@ -187,22 +244,22 @@ export default function GridViewProduction() {
   // --- ACTIONS (with Optimistic UI and Toasts) ---
 
   const handleTap = async (toUserId: string) => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    const promise = Promise.resolve(supabase.from('taps').insert({
-      from_user_id: user.id,
-      to_user_id: toUserId,
-      created_at: new Date().toISOString()
-    })).then(({ error }) => {
-      if (error) throw error
-      return { success: true }
+    const promise = fetch('/api/taps', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to_user_id: toUserId })
+    }).then(async (response) => {
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send tap')
+      }
+      return data
     })
 
     toast.promise(promise, {
       loading: 'Sending tap...',
-      success: 'Tap sent!',
-      error: 'Could not send tap.'
+      success: 'Tap sent! 👋',
+      error: (err) => err.message || 'Could not send tap'
     })
   }
 
@@ -335,7 +392,7 @@ export default function GridViewProduction() {
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            {searchQuery && (
+          {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white"
@@ -344,6 +401,20 @@ export default function GridViewProduction() {
               </button>
             )}
           </div>
+          
+          {/* Refresh Indicator */}
+          <button
+            onClick={() => {
+              fetchGridUsers()
+              setLastRefresh(new Date())
+            }}
+            className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/60 transition"
+            title="Refresh now"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
         </div>
       </div>
       

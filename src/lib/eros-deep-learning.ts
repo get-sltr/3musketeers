@@ -189,11 +189,12 @@ export async function analyzeFavorites(
   patterns: any;
   topTraits: string[];
   favoriteType: string;
+  message?: string;
 }> {
   try {
     // Get all favorites with full profiles
     const supabase = getSupabaseClient();
-    const { data: favorites } = await supabase
+    const { data: favorites, error } = await supabase
       .from('favorites')
       .select(`
         *,
@@ -202,8 +203,18 @@ export async function analyzeFavorites(
       .eq('user_id', userId)
       .order('view_count', { ascending: false });
     
+    if (error) {
+      console.error('Error fetching favorites:', error);
+      throw new Error(`Database error: ${error.message}`);
+    }
+    
     if (!favorites || favorites.length === 0) {
-      return { patterns: {}, topTraits: [], favoriteType: 'none' };
+      return { 
+        patterns: {}, 
+        topTraits: [], 
+        favoriteType: 'none',
+        message: 'Start favoriting profiles to help Eros learn your type! ❤️'
+      };
     }
     
     const prompt = `
