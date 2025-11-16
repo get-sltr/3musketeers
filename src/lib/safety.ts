@@ -105,14 +105,19 @@ export const getBlockedUsers = async (): Promise<BlockedUser[]> => {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
+      console.log('No user found when fetching blocked users')
       return []
     }
 
+    console.log('Fetching blocks for user:', user.id)
+
     const { data, error } = await supabase
       .from('blocks')
-      .select('id, blocked_id, blocked_at')
+      .select('id, blocked_id, created_at')
       .eq('blocker_id', user.id)
-      .order('blocked_at', { ascending: false })
+      .order('created_at', { ascending: false })
+
+    console.log('Blocks query result:', { data, error })
 
     if (error) {
       console.error('Error fetching blocked users:', error)
@@ -122,7 +127,7 @@ export const getBlockedUsers = async (): Promise<BlockedUser[]> => {
     return (data || []).map(block => ({
       id: block.id,
       userId: block.blocked_id,
-      blockedAt: new Date(block.blocked_at),
+      blockedAt: new Date(block.created_at),
       reason: undefined
     }))
   } catch (error) {

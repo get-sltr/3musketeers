@@ -270,7 +270,7 @@ export default function GridViewProduction() {
       .from('favorites')
       .select('id')
       .eq('user_id', user.id)
-      .eq('favorite_user_id', fullProfile.id)
+      .eq('favorited_user_id', fullProfile.id)
       .single()
 
     if (existing) {
@@ -288,7 +288,7 @@ export default function GridViewProduction() {
       // Add to favorites
       const promise = Promise.resolve(supabase.from('favorites').insert({
         user_id: user.id,
-        favorite_user_id: fullProfile.id,
+        favorited_user_id: fullProfile.id,
         created_at: new Date().toISOString()
       })).then(({ error }) => {
         if (error) throw error
