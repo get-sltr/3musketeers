@@ -312,11 +312,12 @@ export default function GridViewProduction() {
     setSelectedUser(null)
     setUsers(currentUsers => currentUsers.filter(u => u.id !== blockedId))
 
-    const promise = supabase.rpc('block_user', { target_user_id: blockedId })
-      .then(({ error }) => {
-        if (error) throw error
-        return { success: true }
-      })
+    const promise = Promise.resolve(
+      supabase.rpc('block_user', { target_user_id: blockedId })
+    ).then(({ error }) => {
+      if (error) throw error
+      return { success: true }
+    })
 
     toast.promise(promise, {
       loading: 'Blocking user...',
