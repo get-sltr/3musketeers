@@ -42,14 +42,14 @@ export async function POST(request: NextRequest) {
     // 4. Check if tap already exists (prevent spam)
     const { data: existing } = await supabase
       .from('taps')
-      .select('id, created_at')
-      .eq('from_user_id', user.id)
-      .eq('to_user_id', to_user_id)
+      .select('id, tapped_at')
+      .eq('tapper_id', user.id)
+      .eq('tapped_user_id', to_user_id)
       .single()
 
     if (existing) {
       // Check if tap is less than 24 hours old
-      const tapAge = Date.now() - new Date(existing.created_at).getTime()
+      const tapAge = Date.now() - new Date(existing.tapped_at).getTime()
       const oneDay = 24 * 60 * 60 * 1000
 
       if (tapAge < oneDay) {
@@ -64,9 +64,9 @@ export async function POST(request: NextRequest) {
     const { data: tap, error: insertError } = await supabase
       .from('taps')
       .insert({
-        from_user_id: user.id,
-        to_user_id: to_user_id,
-        created_at: new Date().toISOString()
+        tapper_id: user.id,
+        tapped_user_id: to_user_id,
+        tapped_at: new Date().toISOString()
       })
       .select()
       .single()
@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
       .from('taps')
       .select(`
         *,
-        from_user:profiles!taps_from_user_id_fkey (
+        tapper:profiles!tapper_id (
           id,
           display_name,
           photo_url,
@@ -126,8 +126,8 @@ export async function GET(request: NextRequest) {
           position
         )
       `)
-      .eq('to_user_id', user.id)
-      .order('created_at', { ascending: false })
+      .eq('tapped_user_id', user.id)
+      .order('tapped_at', { ascending: false })
       .limit(50)
 
     if (error) {

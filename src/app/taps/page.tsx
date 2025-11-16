@@ -332,7 +332,7 @@ export default function TapsPage() {
         }
 
         .page-content {
-          padding: 20px;
+          padding: 80px 20px 20px 20px;
         }
 
         .loading,

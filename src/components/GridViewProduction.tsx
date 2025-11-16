@@ -359,7 +359,7 @@ export default function GridViewProduction() {
     : users
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden">
+    <div className="min-h-screen bg-black">
       {/* Grindr-style Header - Simpler */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-black border-b border-white/5" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="flex items-center gap-3 px-3 py-2.5">
@@ -405,10 +405,9 @@ export default function GridViewProduction() {
       </div>
       
       {/* 3-Column Grid with Gaps - Like Grindr */}
-      <div className="h-full overflow-y-auto overflow-x-hidden overscroll-none" style={{ 
-        WebkitOverflowScrolling: 'touch',
-        paddingTop: '56px',
-        paddingBottom: '84px'
+      <div className="min-h-screen" style={{ 
+        paddingTop: 'calc(56px + 64px + env(safe-area-inset-top, 0px))',
+        paddingBottom: 'calc(84px + env(safe-area-inset-bottom, 0px))'
       }}>
         <div className="grid grid-cols-3 gap-0.5 bg-black p-0.5">
           
