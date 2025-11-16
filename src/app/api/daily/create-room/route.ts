@@ -1,113 +1,120 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 
-/**
- * Create a Daily.co room for video calls
- * This endpoint creates a private room for a conversation
- */
 export async function POST(request: NextRequest) {
   try {
-    const { conversationId } = await request.json();
-    
+    const { conversationId, currentUserId } = await request.json()
+
     if (!conversationId) {
       return NextResponse.json(
         { error: 'conversationId is required' },
         { status: 400 }
-      );
+      )
     }
 
-    const apiKey = process.env.DAILY_API_KEY;
-    
-    if (!apiKey) {
-      console.error('❌ DAILY_API_KEY not configured');
+    if (!currentUserId) {
       return NextResponse.json(
-        { error: 'Daily.co API key not configured' },
-        { status: 500 }
-      );
+        { error: 'currentUserId is required' },
+        { status: 400 }
+      )
     }
 
-    // Create a unique room name based on conversation ID
-    const roomName = `sltr-${conversationId.replace(/[^a-zA-Z0-9]/g, '-')}`;
+    // Verify user is authenticated (optional security check)
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-    // First, check if room already exists
-    const getResponse = await fetch(`https://api.daily.co/v1/rooms/${roomName}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-      },
-    });
-
-    // If room exists, check if it's public or private
-    if (getResponse.ok) {
-      const existingRoom = await getResponse.json();
-
-      // If room is private (old room), delete it and recreate as public
-      if (existingRoom.privacy === 'private') {
-        console.log('🔄 Deleting old private room:', roomName);
-        await fetch(`https://api.daily.co/v1/rooms/${roomName}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-          },
-        });
-        // Continue to create new public room below
-      } else {
-        // Room is already public, reuse it
-        console.log('✅ Reusing existing public Daily.co room:', roomName);
-        return NextResponse.json({
-          url: existingRoom.url,
-          name: existingRoom.name,
-          id: existingRoom.id,
-        });
-      }
+    if (authError || !user || user.id !== currentUserId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
     }
 
-    // If room doesn't exist (404), create a new one
-    console.log('📝 Creating new Daily.co room:', roomName);
-    const response = await fetch('https://api.daily.co/v1/rooms', {
+    // Check if Daily.co API key is configured
+    const dailyApiKey = process.env.DAILY_API_KEY
+    if (!dailyApiKey) {
+      console.error('Daily.co API key not configured')
+      return NextResponse.json(
+        { error: 'Video calling service not configured' },
+        { status: 503 }
+      )
+    }
+
+    // Create a Daily.co room
+    const dailyApiUrl = process.env.DAILY_API_URL || 'https://api.daily.co/v1'
+    const roomName = `conversation-${conversationId}-${Date.now()}`
+
+    const response = await fetch(`${dailyApiUrl}/rooms`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${dailyApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         name: roomName,
-        privacy: 'public',
+        privacy: 'private',
         properties: {
-          max_participants: 2,
+          exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour expiry
+          enable_chat: true,
           enable_screenshare: true,
-          enable_recording: false, // Set to true if you want recording
-          enable_chat: false, // We have our own chat
-          enable_knocking: false,
-          enable_prejoin_ui: false,
-          start_video_off: false,
-          start_audio_off: false,
+          enable_recording: false,
         },
       }),
-    });
+    })
 
     if (!response.ok) {
-      const errorData = await response.text();
-      console.error('❌ Daily.co API error:', errorData);
+      const errorText = await response.text()
+      console.error('Daily.co API error:', errorText)
       return NextResponse.json(
-        { error: 'Failed to create Daily.co room', details: errorData },
-        { status: response.status }
-      );
+        { error: 'Failed to create video room' },
+        { status: 500 }
+      )
     }
 
-    const room = await response.json();
-    
-    return NextResponse.json({
-      url: room.url,
-      name: room.name,
-      id: room.id,
-    });
+    const roomData = await response.json()
+    const roomUrl = roomData.url || roomData.config?.url
 
-  } catch (error) {
-    console.error('❌ Error creating Daily.co room:', error);
+    if (!roomUrl) {
+      console.error('Daily.co room URL missing:', roomData)
+      return NextResponse.json(
+        { error: 'Invalid response from video service' },
+        { status: 500 }
+      )
+    }
+
+    // Generate a token for the user to join (using passed currentUserId)
+    const tokenResponse = await fetch(`${dailyApiUrl}/meeting-tokens`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${dailyApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        properties: {
+          room_name: roomName,
+          user_id: currentUserId,  // ✅ Using passed currentUserId
+          user_name: user.email || 'User',
+          is_owner: true,
+        },
+      }),
+    })
+
+    let token = null
+    if (tokenResponse.ok) {
+      const tokenData = await tokenResponse.json()
+      token = tokenData.token
+    }
+
+    return NextResponse.json({
+      url: roomUrl,
+      token,
+      roomName,
+    })
+  } catch (error: any) {
+    console.error('Error creating Daily.co room:', error)
     return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: error.message || 'Failed to create video room' },
       { status: 500 }
-    );
+    )
   }
 }
-

@@ -5,6 +5,7 @@ import DailyIframe from '@daily-co/daily-js'
 
 interface VideoCallProps {
   conversationId: string
+  currentUserId: string  // ✅ Added for efficiency
   otherUserId: string
   otherUserName: string
   onEndCall: () => void
@@ -12,6 +13,7 @@ interface VideoCallProps {
 
 export default function VideoCall({
   conversationId,
+  currentUserId,  // ✅ Now using passed prop
   otherUserId,
   otherUserName,
   onEndCall,
@@ -32,7 +34,10 @@ export default function VideoCall({
         const response = await fetch('/api/daily/create-room', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ conversationId }),
+          body: JSON.stringify({ 
+            conversationId,
+            currentUserId  // ✅ Pass it to the API
+          }),
         })
 
         if (!response.ok) {
@@ -40,7 +45,7 @@ export default function VideoCall({
           throw new Error(`Failed to create Daily room (${response.status}): ${text}`)
         }
 
-        const { url } = await response.json()
+        const { url, token } = await response.json()
 
         if (!url) {
           throw new Error('Daily room URL missing from response')
@@ -63,7 +68,8 @@ export default function VideoCall({
 
         callFrameRef.current = callFrame
 
-        await callFrame.join({ url })
+        // Use token if available, otherwise use URL directly
+        await callFrame.join({ url, token: token || undefined })
         setIsCallActive(true)
 
         callFrame.on('left-meeting', () => {
@@ -89,7 +95,7 @@ export default function VideoCall({
         callFrameRef.current = null
       }
     }
-  }, [conversationId, onEndCall])
+  }, [conversationId, currentUserId, onEndCall])
 
   const toggleMute = () => {
     if (callFrameRef.current) {

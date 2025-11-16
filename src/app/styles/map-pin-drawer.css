@@ -3,7 +3,7 @@
 .pin-wrapper {
   position: relative;
   display: inline-flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   gap: 14px;
   z-index: 10;
@@ -147,6 +147,10 @@
 }
 
 .horizontal-drawer {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%) translateX(-20px);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -157,17 +161,17 @@
   border-radius: 26px;
   padding: 10px 18px;
   opacity: 0;
-  transform: translateX(-20px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
   box-shadow: 0 14px 32px rgba(4, 8, 16, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   white-space: nowrap;
+  margin-left: 8px;
 }
 
 .horizontal-drawer.visible,
 .pin-wrapper:hover .horizontal-drawer {
   opacity: 1;
-  transform: translateX(0);
+  transform: translateY(-50%) translateX(0);
   pointer-events: all;
 }
 

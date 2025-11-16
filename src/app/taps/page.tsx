@@ -14,7 +14,6 @@ interface TapUserSummary {
   username: string | null
   age: number | null
   position: string | null
-  distance: number | null
   photo_url: string | null
   is_online: boolean | null
   dtfn: boolean | null
@@ -36,7 +35,6 @@ const profileFields = `
   username,
   age,
   position,
-  distance,
   photo_url,
   is_online,
   dtfn
@@ -234,12 +232,6 @@ export default function TapsPage() {
                     <div className="stats">
                       {target.age ? `${target.age} • ` : ''}
                       {target.position || '—'}
-                      {typeof target.distance === 'number' ? (
-                        <>
-                          {' '}
-                          • {target.distance.toFixed(1)} mi
-                        </>
-                      ) : null}
                     </div>
                     <div className="timestamp">
                       {formatTime(tap.tapped_at)}

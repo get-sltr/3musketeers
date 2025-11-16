@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { createSLTRMapboxMarker, cleanupSLTRMarker } from '@/components/SLTRMapPin'
+import { resolveProfilePhoto } from '@/lib/utils/profile'
 
 // PIN STYLE FUNCTIONS
 const createPinStyle1 = (user: any) => {
@@ -262,24 +264,35 @@ export default function MapViewSimple({ pinStyle = 1 }: { pinStyle?: number }) {
           document.head.appendChild(style)
         }
 
-        // Function to create marker based on selected style
+        // Function to create marker using SLTR Map Pin
         const createMarker = (user: any) => {
-          let el
-          switch (pinStyle) {
-            case 1: el = createPinStyle1(user); break
-            case 2: el = createPinStyle2(user); break
-            case 3: el = createPinStyle3(user); break
-            case 4: el = createPinStyle4(user); break
-            case 5: el = createPinStyle5(user); break
-            default: el = createPinStyle1(user)
-          }
+          const primaryPhoto = resolveProfilePhoto(user.profile_photo_url, user.photos)
+          
+          const markerEl = createSLTRMapboxMarker(
+            {
+              id: user.id,
+              display_name: user.display_name || 'Anonymous',
+              avatar_url: primaryPhoto || null,
+              age: user.age ?? 0,
+              position: user.position || 'Unknown',
+              dtfn: !!user.dtfn,
+              party_friendly: !!user.party_friendly,
+              latitude: user.latitude,
+              longitude: user.longitude,
+              distance: user.distance,
+              is_online: user.is_online ?? user.online,
+              online: user.online ?? user.is_online,
+            },
+            (id) => window.location.href = `/messages?user=${id}`,
+            (id) => window.location.href = `/messages?user=${id}&startVideo=1`,
+            (id) => {
+              // Handle tap - you can add tap logic here
+              console.log('Tap:', id)
+            },
+            (id) => window.location.href = `/profile/${id}`
+          )
 
-          // Add click handler
-          el.addEventListener('click', () => {
-            window.location.href = `/profile/${user.id}`
-          })
-
-          return el
+          return markerEl
         }
 
         // Add other users as markers
@@ -289,7 +302,7 @@ export default function MapViewSimple({ pinStyle = 1 }: { pinStyle?: number }) {
 
             const marker = new mapboxgl.Marker({
               element: el,
-              anchor: 'center'  // CRITICAL: Prevents pins from jumping around
+              anchor: 'bottom'  // SLTR pins use bottom anchor
             })
               .setLngLat([user.longitude, user.latitude])
               .addTo(map.current)
@@ -317,32 +330,50 @@ export default function MapViewSimple({ pinStyle = 1 }: { pinStyle?: number }) {
   useEffect(() => {
     if (!map.current || !users.length) return
 
-    // Remove old markers
-    markers.current.forEach(marker => marker.remove())
+    // Remove old markers with proper cleanup
+    markers.current.forEach(marker => {
+      const element = (marker as any).getElement?.()
+      if (element) {
+        cleanupSLTRMarker(element)
+      }
+      marker.remove()
+    })
     markers.current = []
 
-    // Add new markers with updated style
+    // Add new markers with SLTR style
     const mapboxgl = (window as any).mapboxgl
     if (mapboxgl) {
       users.forEach((user) => {
         if (user.latitude && user.longitude) {
-          let el
-          switch (pinStyle) {
-            case 1: el = createPinStyle1(user); break
-            case 2: el = createPinStyle2(user); break
-            case 3: el = createPinStyle3(user); break
-            case 4: el = createPinStyle4(user); break
-            case 5: el = createPinStyle5(user); break
-            default: el = createPinStyle1(user)
-          }
-
-          el.addEventListener('click', () => {
-            window.location.href = `/profile/${user.id}`
-          })
+          const primaryPhoto = resolveProfilePhoto(user.profile_photo_url, user.photos)
+          
+          const markerEl = createSLTRMapboxMarker(
+            {
+              id: user.id,
+              display_name: user.display_name || 'Anonymous',
+              avatar_url: primaryPhoto || null,
+              age: user.age ?? 0,
+              position: user.position || 'Unknown',
+              dtfn: !!user.dtfn,
+              party_friendly: !!user.party_friendly,
+              latitude: user.latitude,
+              longitude: user.longitude,
+              distance: user.distance,
+              is_online: user.is_online ?? user.online,
+              online: user.online ?? user.is_online,
+            },
+            (id) => window.location.href = `/messages?user=${id}`,
+            (id) => window.location.href = `/messages?user=${id}&startVideo=1`,
+            (id) => {
+              // Handle tap
+              console.log('Tap:', id)
+            },
+            (id) => window.location.href = `/profile/${id}`
+          )
 
           const marker = new mapboxgl.Marker({
-            element: el,
-            anchor: 'center'  // CRITICAL: Prevents pins from jumping around
+            element: markerEl,
+            anchor: 'bottom'  // SLTR pins use bottom anchor
           })
             .setLngLat([user.longitude, user.latitude])
             .addTo(map.current)

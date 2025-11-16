@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { getMapboxToken } from '@/lib/maps/getMapboxToken'
 
 interface LocationSearchProps {
   onLocationSelect: (lat: number, lng: number, placeName: string) => void
@@ -20,8 +21,9 @@ export default function LocationSearch({ onLocationSelect }: LocationSearchProps
 
     setIsSearching(true)
     try {
+      const token = await getMapboxToken()
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&types=place,locality,neighborhood,address`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?access_token=${token}&types=place,locality,neighborhood,address`
       )
       const data = await response.json()
       setResults(data.features || [])

@@ -566,10 +566,14 @@ export default function AppPage() {
     if (!user) return
 
     // Update online status in database
-    await supabase
+    const { error } = await supabase
       .from('profiles')
       .update({ online: !enabled })
       .eq('id', user.id)
+    
+    if (error) {
+      console.error('Failed to update online status:', error)
+    }
   }
 
   const handleMoveLocation = () => {
@@ -585,10 +589,16 @@ export default function AppPage() {
     if (!user) return
 
     // Update user location in database
-    await supabase
+    const { error } = await supabase
       .from('profiles')
       .update({ latitude: lat, longitude: lng })
       .eq('id', user.id)
+    
+    if (error) {
+      console.error('Failed to update location:', error)
+      alert('Failed to update location. Please try again.')
+      return
+    }
 
     const origin: [number, number] = [lng, lat]
     setIsRelocating(false)
@@ -608,9 +618,10 @@ export default function AppPage() {
         display_name: u.isYou ? 'You' : u.display_name,
         isYou: u.isYou,
         isCurrentUser: u.isYou,
-        photo_url: u.photo_url,
+        photo: u.photo_url,
         photos: Array.isArray(u.photos) ? u.photos.filter(Boolean) : undefined,
         online: u.is_online ?? u.online,
+        is_online: u.is_online ?? u.online,
         dtfn: u.dtfn,
         party_friendly: u.party_friendly,
         age: u.age,
@@ -653,7 +664,7 @@ export default function AppPage() {
             <MapViewSimple pinStyle={pinStyle} />
 
             {/* Location Search Bar */}
-            <div className="absolute top-16 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-30">
+            <div className="absolute top-16 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-20">
               <LocationSearch
                 onLocationSelect={(lat, lng, placeName) => {
                   setMapCenter([lng, lat])
@@ -664,6 +675,7 @@ export default function AppPage() {
             </div>
 
             {/* Map Session Menu */}
+            <div className="z-20">
             <MapSessionMenu
               radiusMiles={radiusMiles}
               setRadiusMiles={setRadiusMiles}
@@ -693,6 +705,7 @@ export default function AppPage() {
               pinStyle={pinStyle}
               onPinStyleChange={setPinStyle}
             />
+            </div>
 
             {/* Corner Buttons */}
             <CornerButtons
@@ -713,7 +726,7 @@ export default function AppPage() {
             />
             
             {/* Users sidebar */}
-            <div className="hidden lg:block absolute top-0 right-0 w-80 h-screen bg-black/90 backdrop-blur-xl border-l border-cyan-500/20 overflow-y-auto custom-scrollbar">
+            <div className="hidden lg:block absolute top-0 right-0 w-80 h-screen bg-black/90 backdrop-blur-xl border-l border-cyan-500/20 overflow-y-auto custom-scrollbar z-10">
               <div className="p-4 border-b border-white/10">
                 <h3 className="text-white font-bold text-lg">Nearby Users</h3>
                 <p className="text-white/60 text-sm">{users.length} online</p>
@@ -792,9 +805,21 @@ export default function AppPage() {
               })
               .select('id')
               .single()
-            if (!error && data?.id) router.push(`/groups/${data.id}`)
-          } catch (e) {
+            if (error) {
+              // Handle table doesn't exist error gracefully
+              if (error.code === '42P01' || error.code === '42P17') {
+                console.warn('Groups table not found. Please create it in Supabase.')
+                alert('Groups feature is not available yet. Please contact support.')
+              } else {
+                console.error('Error creating group:', error)
+                alert('Failed to create group. Please try again.')
+              }
+            } else if (data?.id) {
+              router.push(`/groups/${data.id}`)
+            }
+          } catch (e: any) {
             console.warn('Groups table may be missing; skipping insert', e)
+            alert('Groups feature is not available yet. Please contact support.')
           }
         }}
       />

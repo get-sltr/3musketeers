@@ -1,4 +1,4 @@
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+import { getMapboxToken } from '@/lib/maps/getMapboxToken'
 
 interface ETAResult {
   distance: number  // in miles
@@ -11,7 +11,19 @@ export async function calculateETA(
   toLat: number,
   toLon: number
 ): Promise<ETAResult> {
-  if (!MAPBOX_TOKEN) {
+  let token: string | null = null
+  try {
+    token = await getMapboxToken()
+  } catch (error) {
+    console.warn('Mapbox token not found, using fallback calculation')
+    const distance = calculateDistance(fromLat, fromLon, toLat, toLon)
+    return {
+      distance: parseFloat(distance.toFixed(1)),
+      duration: Math.round(distance * 2)
+    }
+  }
+
+  if (!token) {
     console.warn('Mapbox token not found, using fallback calculation')
     const distance = calculateDistance(fromLat, fromLon, toLat, toLon)
     return {
@@ -21,7 +33,7 @@ export async function calculateETA(
   }
 
   try {
-    const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${fromLon},${fromLat};${toLon},${toLat}?access_token=${MAPBOX_TOKEN}`
+    const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${fromLon},${fromLat};${toLon},${toLat}?access_token=${token}`
     const response = await fetch(url)
     const data = await response.json()
     if (data.routes && data.routes[0]) {

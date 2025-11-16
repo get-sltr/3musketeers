@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { createClient } from '../../lib/supabase/client'
 import BottomNav from '../../components/BottomNav'
 import MobileLayout from '../../components/MobileLayout'
@@ -44,6 +45,22 @@ export default function GroupsPage() {
             <h1 className="text-white text-2xl font-bold">Groups</h1>
             <p className="text-white/60 text-sm">Connect with your community</p>
           </div>
+        </div>
+
+        {/* Channels & Rooms Link */}
+        <div className="px-4 py-4">
+          <Link
+            href="/groups/channels"
+            className="block p-6 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-400/40 rounded-2xl hover:border-cyan-400/60 transition"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-white text-xl font-bold mb-1">Channels & Rooms</h2>
+                <p className="text-white/70 text-sm">Join group video calls and voice chats</p>
+              </div>
+              <div className="text-2xl">📹</div>
+            </div>
+          </Link>
         </div>
 
         {/* Coming Soon Content */}

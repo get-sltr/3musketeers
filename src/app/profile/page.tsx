@@ -261,27 +261,52 @@ export default function ProfilePage() {
 
       console.log('Saving profile with photos:', profileData.photos)
       
+      // Validate age - only include if it's a valid number
+      const ageValue = profileData.age ? parseInt(profileData.age, 10) : null
+      if (ageValue !== null && (isNaN(ageValue) || ageValue < 18 || ageValue > 100)) {
+        setError('Please enter a valid age between 18 and 100')
+        setSaving(false)
+        return
+      }
+
+      // Build update object with only valid fields
+      const updateData: any = {
+        id: user.id,
+        display_name: profileData.display_name || null,
+        about: profileData.bio || null,
+        position: profileData.position || null,
+        kinks: profileData.kinks.length > 0 ? profileData.kinks : null,
+        tags: profileData.tags.length > 0 ? profileData.tags : null,
+        party_friendly: profileData.party_friendly,
+        dtfn: profileData.dtfn,
+        photos: profileData.photos.length > 0 ? profileData.photos : null,
+        updated_at: new Date().toISOString()
+      }
+
+      // Only include age if it's valid
+      if (ageValue !== null && !isNaN(ageValue)) {
+        updateData.age = ageValue
+      }
+
+      // Only include email if user has one
+      if (user.email) {
+        updateData.email = user.email
+      }
+      
       const { error } = await supabase
         .from('profiles')
-        .upsert({
-          id: user.id,
-          email: user.email,
-          display_name: profileData.display_name,
-          age: parseInt(profileData.age),
-          about: profileData.bio,
-          position: profileData.position,
-          kinks: profileData.kinks,
-          tags: profileData.tags,
-          party_friendly: profileData.party_friendly,
-          dtfn: profileData.dtfn,
-          photos: profileData.photos,
-          updated_at: new Date().toISOString()
-        })
+        .upsert(updateData)
 
       console.log('Save error:', error)
 
       if (error) {
-        setError(error.message)
+        console.error('Profile save error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        })
+        setError(error.message || 'Failed to save profile. Please check your input.')
       } else {
         setSuccess(true)
         setTimeout(() => setSuccess(false), 3000)

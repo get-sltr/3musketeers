@@ -66,8 +66,8 @@ export default function VerifyPage() {
     // Check if Stripe is loaded
     if (!window.Stripe) {
       setError('Verification service is still loading. Please wait a moment and try again.')
-      setStatus('failed')
-      return
+        setStatus('failed')
+        return
     }
 
     setStatus('loading')

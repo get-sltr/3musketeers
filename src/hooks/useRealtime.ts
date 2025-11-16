@@ -144,10 +144,10 @@ export function useRealtime(): UseRealtimeReturn {
     // Insert message - Supabase Realtime will automatically broadcast to subscribers
     // Use ONLY fields that exist in the schema to avoid trigger conflicts
     const messageData: any = {
-      conversation_id: conversationId,
-      sender_id: user.id,
-      receiver_id: receiverId,
-      content,
+        conversation_id: conversationId,
+        sender_id: user.id,
+        receiver_id: receiverId,
+        content,
     }
     
     // Add message_type only if not default 'text' (schema has CHECK constraint)

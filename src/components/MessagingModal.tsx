@@ -264,7 +264,7 @@ export default function MessagingModal({
             {/* Video Call Button */}
             <button
               onClick={() => setShowVideoCall(true)}
-              disabled={!conversationId}
+              disabled={!conversationId || !currentUserId}
               className="px-4 py-2 bg-gradient-to-r from-fuchsia-500 to-purple-600 hover:from-fuchsia-600 hover:to-purple-700 text-white rounded-full font-semibold flex items-center gap-2 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
               title="Start Video Call"
             >
@@ -357,9 +357,10 @@ export default function MessagingModal({
       </div>
 
       {/* Video Call Modal */}
-      {showVideoCall && conversationId && (
+      {showVideoCall && conversationId && currentUserId && (
         <VideoCall
           conversationId={conversationId}
+          currentUserId={currentUserId}
           otherUserId={user.id}
           otherUserName={user.display_name || user.username || 'User'}
           onEndCall={() => setShowVideoCall(false)}
@@ -368,3 +369,4 @@ export default function MessagingModal({
     </>
   )
 }
+
