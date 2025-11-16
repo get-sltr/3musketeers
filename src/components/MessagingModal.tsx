@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '../lib/supabase/client'
 import { useRealtime } from '../hooks/useRealtime'
+import VideoCall from './VideoCall'
 
 interface User {
   id: string
@@ -39,6 +40,7 @@ export default function MessagingModal({
   const [sending, setSending] = useState(false)
   const [conversationId, setConversationId] = useState<string | null>(initialConversationId || null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [showVideoCall, setShowVideoCall] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
   
@@ -230,115 +232,139 @@ export default function MessagingModal({
   if (!isOpen || !user) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="w-full max-w-2xl h-[80vh] max-h-[600px] bg-black/95 backdrop-blur-xl border border-cyan-500/20 rounded-2xl overflow-hidden flex flex-col shadow-2xl">
-        {/* Header - Shows who you're messaging */}
-        <div className="flex items-center gap-3 p-4 border-b border-white/10 bg-gradient-to-r from-cyan-500/10 to-purple-500/10">
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-white/10 rounded-lg transition-all"
-          >
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          
-          <img
-            src={user.photos?.[0] || user.photo || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23222" width="100" height="100"/%3E%3Ctext fill="%23aaa" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"%3E?%3C/text%3E%3C/svg%3E'}
-            alt={user.display_name || user.username}
-            className="w-10 h-10 rounded-full object-cover border-2 border-cyan-500/30"
-          />
-          
-          <div className="flex-1">
-          <h2 className="text-white font-bold text-lg">
-            {user.display_name || user.username || 'User'}
-          </h2>
-            <p className="text-white/60 text-xs">
-              {isConnected ? 'Real-time • Online' : 'Offline'}
-            </p>
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div className="w-full max-w-2xl h-[80vh] max-h-[600px] bg-black/95 backdrop-blur-xl border border-cyan-500/20 rounded-2xl overflow-hidden flex flex-col shadow-2xl">
+          {/* Header - Shows who you're messaging */}
+          <div className="flex items-center gap-3 p-4 border-b border-white/10 bg-gradient-to-r from-cyan-500/10 to-purple-500/10">
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white/10 rounded-lg transition-all"
+            >
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            
+            <img
+              src={user.photos?.[0] || user.photo || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23222" width="100" height="100"/%3E%3Ctext fill="%23aaa" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"%3E?%3C/text%3E%3C/svg%3E'}
+              alt={user.display_name || user.username}
+              className="w-10 h-10 rounded-full object-cover border-2 border-cyan-500/30"
+            />
+            
+            <div className="flex-1">
+              <h2 className="text-white font-bold text-lg">
+                {user.display_name || user.username || 'User'}
+              </h2>
+              <p className="text-white/60 text-xs">
+                {isConnected ? 'Real-time • Online' : 'Offline'}
+              </p>
+            </div>
+
+            {/* Video Call Button */}
+            <button
+              onClick={() => setShowVideoCall(true)}
+              disabled={!conversationId}
+              className="px-4 py-2 bg-gradient-to-r from-fuchsia-500 to-purple-600 hover:from-fuchsia-600 hover:to-purple-700 text-white rounded-full font-semibold flex items-center gap-2 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Start Video Call"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              <span className="hidden sm:inline">Video</span>
+            </button>
+
+            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
           </div>
 
-          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
-        </div>
-
-        {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-          {messages.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <div className="text-6xl mb-4">💬</div>
-                <p className="text-white/60">No messages yet</p>
-                <p className="text-white/40 text-sm mt-2">Start the conversation!</p>
-              </div>
-            </div>
-          ) : (
-            messages.map((message) => {
-              const isSent = message.sender_id === currentUserId
-              return (
-                <div
-                  key={message.id}
-                  className={`flex ${isSent ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[70%] px-4 py-2 rounded-2xl ${
-                      isSent
-                        ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white'
-                        : 'bg-white/10 text-white'
-                    }`}
-                  >
-                    <p className="text-sm">{message.content}</p>
-                    <p className={`text-xs mt-1 ${isSent ? 'text-white/70' : 'text-white/50'}`}>
-                      {new Date(message.created_at).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
-                  </div>
+          {/* Messages Area */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+            {messages.length === 0 ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <div className="text-6xl mb-4">💬</div>
+                  <p className="text-white/60">No messages yet</p>
+                  <p className="text-white/40 text-sm mt-2">Start the conversation!</p>
                 </div>
-              )
-            })
-          )}
-          <div ref={messagesEndRef} />
+              </div>
+            ) : (
+              messages.map((message) => {
+                const isSent = message.sender_id === currentUserId
+                return (
+                  <div
+                    key={message.id}
+                    className={`flex ${isSent ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[70%] px-4 py-2 rounded-2xl ${
+                        isSent
+                          ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white'
+                          : 'bg-white/10 text-white'
+                      }`}
+                    >
+                      <p className="text-sm">{message.content}</p>
+                      <p className={`text-xs mt-1 ${isSent ? 'text-white/70' : 'text-white/50'}`}>
+                        {new Date(message.created_at).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Message Input */}
+          <div className="p-4 border-t border-white/10">
+            <form onSubmit={sendMessage} className="flex gap-3">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder={`Message ${user.display_name || user.username || 'User'}...`}
+                className="flex-1 bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300"
+                disabled={sending || !conversationId}
+              />
+              <button
+                type="submit"
+                disabled={!newMessage.trim() || sending || !conversationId}
+                className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-xl font-semibold hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {sending ? '...' : 'Send'}
+              </button>
+            </form>
+          </div>
         </div>
 
-        {/* Message Input */}
-        <div className="p-4 border-t border-white/10">
-          <form onSubmit={sendMessage} className="flex gap-3">
-            <input
-              type="text"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder={`Message ${user.display_name || user.username || 'User'}...`}
-              className="flex-1 bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300"
-              disabled={sending || !conversationId}
-            />
-            <button
-              type="submit"
-              disabled={!newMessage.trim() || sending || !conversationId}
-              className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-xl font-semibold hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {sending ? '...' : 'Send'}
-            </button>
-          </form>
-        </div>
+        <style jsx>{`
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(0, 212, 255, 0.3);
+            border-radius: 3px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 212, 255, 0.5);
+          }
+        `}</style>
       </div>
 
-      <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.05);
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(0, 212, 255, 0.3);
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(0, 212, 255, 0.5);
-        }
-      `}</style>
-    </div>
+      {/* Video Call Modal */}
+      {showVideoCall && conversationId && (
+        <VideoCall
+          conversationId={conversationId}
+          otherUserId={user.id}
+          otherUserName={user.display_name || user.username || 'User'}
+          onEndCall={() => setShowVideoCall(false)}
+        />
+      )}
+    </>
   )
 }
-
