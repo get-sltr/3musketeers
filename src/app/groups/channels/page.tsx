@@ -361,7 +361,7 @@ export default function ChannelsPage() {
                   </button>
                   <button
                     type="submit"
-                    disabled={creatingChannel || !newChannelName.trim() || !selectedGroup}
+                    disabled={creatingChannel || !newChannelName.trim()}
                     className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-semibold hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {creatingChannel ? 'Creating…' : 'Create Channel'}
