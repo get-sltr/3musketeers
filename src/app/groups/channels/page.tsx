@@ -124,19 +124,32 @@ export default function ChannelsPage() {
 
   const handleCreateChannel = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newChannelName.trim() || !selectedGroup) return
+    if (!newChannelName.trim()) {
+      alert('Please enter a channel name')
+      return
+    }
+
+    // If no group selected, use first group or create a default one
+    const groupId = selectedGroup || groups[0]?.id
+    if (!groupId) {
+      alert('Please create or select a group first')
+      return
+    }
 
     setCreatingChannel(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) {
+        alert('You must be logged in to create a channel')
+        return
+      }
 
       const { data, error } = await supabase
         .from('channels')
         .insert({
           name: newChannelName.trim(),
           description: newChannelDescription.trim() || null,
-          group_id: selectedGroup,
+          group_id: groupId,
           type: newChannelType,
           created_by: user.id,
         })
@@ -145,19 +158,25 @@ export default function ChannelsPage() {
 
       if (error) {
         console.error('Error creating channel:', error)
-        alert('Failed to create channel. Please try again.')
+        // Better error messaging
+        if (error.code === '42P01') {
+          alert('Channels table not set up. Please create it in Supabase.')
+        } else {
+          alert(`Failed to create channel: ${error.message}`)
+        }
         return
       }
 
-      // Reload channels
+      // Success - reload channels
       await loadChannels()
       setShowCreateChannel(false)
       setNewChannelName('')
       setNewChannelDescription('')
       setNewChannelType('text')
-    } catch (err) {
+      alert('Channel created successfully!')
+    } catch (err: any) {
       console.error('Error creating channel:', err)
-      alert('Failed to create channel. Please try again.')
+      alert(`Error: ${err.message || 'Failed to create channel'}`)
     } finally {
       setCreatingChannel(false)
     }
