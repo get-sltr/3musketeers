@@ -93,16 +93,7 @@ export default function BottomNav() {
       id: 'map',
       icon: '🗺️',
       label: 'Map',
-      action: () => {
-        if (pathname === '/app') {
-          window.dispatchEvent(new CustomEvent('sltr_switch_to_map'))
-        } else {
-          router.push('/app')
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('sltr_switch_to_map'))
-          }, 100)
-        }
-      },
+      action: () => router.push('/map'),
     },
     {
       id: 'messages',
