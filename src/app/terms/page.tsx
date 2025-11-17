@@ -258,7 +258,7 @@ export default function TermsPage() {
                 <li>Contact customersupport@getsltr.com for urgent safety concerns</li>
               </ul>
               <p>
-                If your account is suspended or terminated, you may appeal by contacting legal@getsltr.com with a detailed explanation. Appeals are reviewed within 7 business days.
+                If your account is suspended or terminated, you may appeal by contacting customersupport@getsltr.com with a detailed explanation. Appeals are reviewed within 7 business days.
               </p>
             </section>
 

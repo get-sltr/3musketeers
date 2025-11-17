@@ -272,7 +272,7 @@ export default function PrivacyPage() {
               <h3 className="text-xl font-semibold text-white mt-6 mb-3">6.4 How to Exercise Your Rights</h3>
               <p className="mb-2">To exercise any of these rights, contact us at:</p>
               <div className="glass-bubble p-4 bg-white/5 border border-white/10">
-                <p><strong>Email:</strong> privacy@getsltr.com</p>
+                <p><strong>Email:</strong> customersupport@getsltr.com</p>
                 <p><strong>Subject Line:</strong> "Privacy Rights Request - [Your Right]"</p>
                 <p className="mt-2 text-sm">We will respond within 30 days (45 days for GDPR requests). You may designate an authorized agent to make requests on your behalf.</p>
               </div>
@@ -323,7 +323,7 @@ export default function PrivacyPage() {
                 SLTR is strictly for users 18 years of age or older. We do not knowingly collect personal information from anyone under 18. If you are under 18, do not use this service or provide any information to us.
               </p>
               <p>
-                If we learn that we have collected personal information from a person under 18, we will immediately delete that information and terminate the account. If you believe we may have information from someone under 18, please contact us immediately at privacy@getsltr.com.
+                If we learn that we have collected personal information from a person under 18, we will immediately delete that information and terminate the account. If you believe we may have information from someone under 18, please contact us immediately at customersupport@getsltr.com.
               </p>
             </section>
 
@@ -351,7 +351,7 @@ export default function PrivacyPage() {
                 <li>Personalize your experience and content recommendations</li>
               </ul>
               <p className="mt-4">
-                These automated decisions do not have legal or similarly significant effects. You can opt out of certain AI features in your settings. If you have concerns about automated processing, contact privacy@getsltr.com.
+                These automated decisions do not have legal or similarly significant effects. You can opt out of certain AI features in your settings. If you have concerns about automated processing, contact customersupport@getsltr.com.
               </p>
             </section>
 
