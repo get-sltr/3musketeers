@@ -9,7 +9,7 @@ import { loadStripe } from '@stripe/stripe-js'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
-export default function CheckoutPage({ 
+export default function CheckoutPage({
   params 
 }: { 
   params: Promise<{ tier: string }> 
@@ -75,16 +75,12 @@ export default function CheckoutPage({
       }
 
       // Redirect to Stripe Checkout
-      const stripe = await stripePromise
-      if (!stripe) throw new Error('Stripe failed to load')
-
-      const { error: stripeError } = await stripe.redirectToCheckout({
-        sessionId: data.sessionId,
-      })
-
-      if (stripeError) {
-        throw new Error(stripeError.message)
+      if (!data.url) {
+        throw new Error('No checkout URL returned')
       }
+
+      // Redirect to the checkout URL
+      window.location.href = data.url
 
     } catch (err: any) {
       console.error('Checkout error:', err)

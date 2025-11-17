@@ -8,13 +8,6 @@ import BottomNav from '@/components/BottomNav'
 import { useRouter } from 'next/navigation'
 import Script from 'next/script'
 
-// Stripe Identity is loaded via script tag
-declare global {
-  interface Window {
-    Stripe?: any
-  }
-}
-
 export default function VerifyPage() {
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'failed'>('idle')
@@ -80,8 +73,8 @@ export default function VerifyPage() {
         throw new Error('Stripe publishable key not configured')
       }
 
-      const stripe = window.Stripe(publishableKey)
-      const identity = stripe.identity
+      const stripe = (window as any).Stripe(publishableKey)
+      const identity = (stripe as any).identity
 
       // Open Stripe's verification UI
       const { error: verificationError } = await identity.verifyIdentity(clientSecret)
