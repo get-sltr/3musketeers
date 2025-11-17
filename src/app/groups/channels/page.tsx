@@ -201,10 +201,6 @@ export default function ChannelsPage() {
         <div className="sticky top-0 z-40 bg-black/90 backdrop-blur-xl border-b border-cyan-500/20">
           <div className="max-w-screen-xl mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-white text-2xl font-bold">Channels & Rooms</h1>
-                <p className="text-white/60 text-sm">Join group conversations</p>
-              </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowCreateChannel(true)}
@@ -214,11 +210,22 @@ export default function ChannelsPage() {
                 </button>
                 <Link
                   href="/groups"
-                  className="px-4 py-2 rounded-xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-sm"
+                  className="px-4 py-2 rounded-xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-sm hover:bg-cyan-500/30 transition-all"
                 >
                   All Groups
                 </Link>
               </div>
+              <div>
+                <h1 className="text-white text-2xl font-bold">Channels & Rooms</h1>
+                <p className="text-white/60 text-sm">Join group conversations</p>
+              </div>
+              <button
+                onClick={() => router.push('/app')}
+                className="px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white text-sm font-semibold hover:bg-white/20 transition-all"
+                title="Exit"
+              >
+                ✕
+              </button>
             </div>
           </div>
         </div>
