@@ -45,6 +45,7 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
   const [albumSaving, setAlbumSaving] = useState(false)
   const [photoUploading, setPhotoUploading] = useState(false)
   const [panelMode, setPanelMode] = useState<'idle' | 'create' | 'manage'>('idle')
+  const [uploadError, setUploadError] = useState<string | null>(null)
   
   const supabase = createClient()
 
@@ -75,6 +76,7 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
       resetCreateForm()
       setUploading(false)
       resetManageForm()
+      setUploadError(null)
       loadAlbums()
     } else {
       setSelectedAlbum(null)
@@ -82,6 +84,7 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
       resetCreateForm()
       setUploading(false)
       resetManageForm()
+      setUploadError(null)
     }
   }, [isOpen])
 
@@ -174,9 +177,15 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
     if (!newAlbumName.trim()) return
 
     setUploading(true)
+    setUploadError(null)
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) {
+        setUploadError('Not authenticated. Please log in.')
+        return
+      }
+
+      console.log('Creating album:', newAlbumName)
 
       const { data, error } = await supabase
         .from('albums')
@@ -191,18 +200,26 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
 
       if (error) {
         console.error('Error creating album:', error)
-        return
+        setUploadError(`Failed to create album: ${error.message}`)
+        throw error
       }
 
+      console.log('Album created successfully:', data)
+
       // Upload photos if any were selected during creation
-      if (createFormPhotos.length > 0 && data.id) {
+      if (createFormPhotos.length > 0 && data?.id) {
         setPhotoUploading(true)
+        console.log('Starting photo upload for', createFormPhotos.length, 'files')
         try {
           for (const file of createFormPhotos) {
+            console.log('Uploading file:', file.name)
             await uploadPhotoToAlbum(data.id, file)
           }
+          console.log('All photos uploaded successfully')
         } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : 'Unknown error'
           console.error('Error uploading photos during creation:', err)
+          setUploadError(`Photo upload failed: ${errorMsg}. Album created but photos not added.`)
         } finally {
           setPhotoUploading(false)
         }
@@ -213,7 +230,11 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
       // Switch to manage mode to show the newly created album
       setPanelMode('manage')
     } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error'
       console.error('Error creating album:', err)
+      if (!uploadError) {
+        setUploadError(`Error: ${errorMsg}`)
+      }
     } finally {
       setUploading(false)
     }
@@ -221,37 +242,49 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
 
   const uploadPhotoToAlbum = async (albumId: string, file: File) => {
     try {
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${Date.now()}.${fileExt}`
+      const fileExt = file.name.split('.').pop() || 'jpg'
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
       const filePath = `albums/${albumId}/${fileName}`
+
+      console.log('Uploading file:', fileName, 'to path:', filePath)
 
       const { error: uploadError } = await supabase.storage
         .from('photos')
-        .upload(filePath, file)
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
 
       if (uploadError) {
         console.error('Upload error:', uploadError)
-        return
+        throw uploadError
       }
 
       const { data: { publicUrl } } = supabase.storage
         .from('photos')
         .getPublicUrl(filePath)
 
+      console.log('Photo uploaded, public URL:', publicUrl)
+
       // Add photo to album
-      const { error: insertError } = await supabase
+      const { data, error: insertError } = await supabase
         .from('album_photos')
         .insert({
           album_id: albumId,
           photo_url: publicUrl,
           photo_order: 0
         })
+        .select()
 
       if (insertError) {
         console.error('Error adding photo to album:', insertError)
+        throw insertError
       }
+
+      console.log('Photo added to album:', data)
     } catch (err) {
       console.error('Error uploading photo:', err)
+      throw err
     }
   }
 
@@ -560,6 +593,11 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
                         )}
                       </div>
                     </div>
+                    {uploadError && (
+                      <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3">
+                        <p className="text-sm text-red-400">{uploadError}</p>
+                      </div>
+                    )}
                     <div className="flex items-center justify-end gap-3">
                       <button
                         type="button"
@@ -583,7 +621,7 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
               <div className="flex h-full flex-col">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-6 py-4">
                   <div>
-                    <h3 className="text-xl font-semibold text-white">{selectedAlbum.name}</h3>
+                    <h3 className="text-xl font-semibold text-white">{decodeHtmlEntities(selectedAlbum.name)}</h3>
                     <p className="text-sm text-white/50">
                       {selectedAlbum.photos.length} photo{selectedAlbum.photos.length === 1 ? '' : 's'} •{' '}
                       {selectedAlbum.is_public ? 'Public' : 'Private'}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import type { ReactNode } from 'react'
 import { createClient } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -64,12 +64,16 @@ export default function ProfilePage() {
     bio: true
   })
 
-  const toggleSection = (id: SectionKey) => {
+  const toggleSection = useCallback((id: SectionKey) => {
     setExpandedSections(prev => ({
       ...prev,
       [id]: !prev[id]
     }))
-  }
+  }, [])
+
+  const handleBioChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setProfileData(prev => ({ ...prev, bio: e.target.value }))
+  }, [])
 
   const Switch = ({ checked, onChange }: { checked: boolean; onChange: (value: boolean) => void }) => (
     <button
@@ -249,7 +253,7 @@ export default function ProfilePage() {
     }
   }
 
-  const handleSave = async (e: React.FormEvent) => {
+  const handleSave = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
     setError(null)
@@ -320,7 +324,7 @@ export default function ProfilePage() {
     } finally {
       setSaving(false)
     }
-  }
+  }, [profileData, supabase, router])
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -733,12 +737,15 @@ export default function ProfilePage() {
               title="Headlines & Notes"
               description="Leave something memorable."
             >
-              <div className="space-y-3">
+              <div className="space-y-3" key="bio-section">
                 <textarea
+                  key="bio-textarea"
                   value={profileData.bio}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
+                  onChange={handleBioChange}
                   rows={5}
                   maxLength={500}
+                  autoComplete="off"
+                  spellCheck="true"
                   placeholder="Let SLTR know your vibe, your boundaries, or your invite."
                   className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-400 resize-none"
                 />
