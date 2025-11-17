@@ -1066,12 +1066,23 @@ function MessagesPageContent() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                       </svg>
                     </button>
-                    {conversations.find(c => c.id === selectedConversation)?.other_user.photo && (
-                      <img
-                        src={conversations.find(c => c.id === selectedConversation)?.other_user.photo || ''}
-                        alt={conversations.find(c => c.id === selectedConversation)?.other_user.display_name || ''}
-                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                      />
+                    {conversations.find(c => c.id === selectedConversation)?.other_user && (
+                      <button
+                        onClick={() => {
+                          const conversation = conversations.find(c => c.id === selectedConversation)
+                          if (conversation) {
+                            router.push(`/profile/${conversation.other_user.id}`)
+                          }
+                        }}
+                        className="flex-shrink-0 hover:opacity-80 transition-opacity duration-200 rounded-full"
+                        title="View Profile"
+                      >
+                        <img
+                          src={conversations.find(c => c.id === selectedConversation)?.other_user.photo || ''}
+                          alt={conversations.find(c => c.id === selectedConversation)?.other_user.display_name || ''}
+                          className="w-10 h-10 rounded-full object-cover cursor-pointer"
+                        />
+                      </button>
                     )}
                     <div className="flex-1 min-w-0">
                       <h3 className="text-white font-semibold truncate">
@@ -1131,13 +1142,13 @@ function MessagesPageContent() {
                     onClick={() => {
                       const conversation = conversations.find(c => c.id === selectedConversation)
                       if (conversation) {
-                        router.push(`/app?focus=${conversation.other_user.id}`)
+                        router.push(`/profile/${conversation.other_user.id}`)
                       }
                       setShowMenu(false)
                     }}
                     className="w-full text-left px-4 py-2 text-white hover:bg-white/10 rounded-lg text-sm"
                   >
-                    View Profile
+                    👤 View Profile
                   </button>
                   <button
                     onClick={() => {

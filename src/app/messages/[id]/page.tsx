@@ -29,7 +29,8 @@ export default function ConversationPage({
   const [conversation, setConversation] = useState({
     username: 'Loading...',
     photo: '',
-    isOnline: false
+    isOnline: false,
+    userId: ''
   })
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
@@ -189,7 +190,8 @@ export default function ConversationPage({
         setConversation({
           username: profileData.display_name || 'Unknown User',
           photo: profileData.photos?.[0] || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23222" width="100" height="100"/%3E%3Ctext fill="%23aaa" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"%3E?%3C/text%3E%3C/svg%3E',
-          isOnline: profileData.online || false
+          isOnline: profileData.online || false,
+          userId: profileData.id
         })
       }
     } catch (err) {
@@ -273,30 +275,41 @@ export default function ConversationPage({
     <div className="min-h-screen bg-black flex flex-col">
       {/* Header */}
       <div className="fixed top-0 w-full bg-black/95 backdrop-blur-xl border-b border-white/10 p-4 z-50">
-        <div className="flex items-center gap-4">
-          <Link href="/messages" className="glass-bubble p-2 hover:bg-white/10 transition-all duration-300">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </Link>
-          
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <img
-                src={conversation.photo}
-                alt={conversation.username}
-                className="w-10 h-10 rounded-full object-cover"
-              />
-              {conversation.isOnline && (
-                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-black"></div>
-              )}
-            </div>
-            <div>
-              <h2 className="text-white font-semibold text-lg">{conversation.username}</h2>
-              <p className="text-white/60 text-sm">
-                {conversation.isOnline ? 'Online' : 'Last seen recently'}
-              </p>
-            </div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4 flex-1">
+            {/* Close Button */}
+            <button
+              onClick={() => router.back()}
+              className="glass-bubble p-2 hover:bg-white/10 transition-all duration-300"
+              title="Close"
+            >
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            
+            {/* User Profile Link */}
+            <Link
+              href={`/profile/${conversation.userId}`}
+              className="flex items-center gap-3 flex-1 hover:opacity-80 transition-opacity duration-200"
+            >
+              <div className="relative">
+                <img
+                  src={conversation.photo}
+                  alt={conversation.username}
+                  className="w-10 h-10 rounded-full object-cover cursor-pointer"
+                />
+                {conversation.isOnline && (
+                  <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-black"></div>
+                )}
+              </div>
+              <div>
+                <h2 className="text-white font-semibold text-lg">{conversation.username}</h2>
+                <p className="text-white/60 text-sm">
+                  {conversation.isOnline ? 'Online' : 'Last seen recently'}
+                </p>
+              </div>
+            </Link>
           </div>
         </div>
       </div>

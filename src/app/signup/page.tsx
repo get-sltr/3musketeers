@@ -135,17 +135,11 @@ export default function SignupPage() {
 
       if (profileError) {
         console.error('Profile creation error:', profileError)
-        // Still redirect to login even if profile creation fails
+        // Still continue to verification page
       }
       
-      // Check if email confirmation is required
-      if (data.user && !data.user.email_confirmed_at) {
-        // Email confirmation required - redirect to login with message
-        router.push('/login?message=Please check your email to confirm your account')
-      } else {
-        // Email already confirmed or auto-confirmed - go to main app
-        router.push('/app')
-      }
+      // Redirect to verify-email page to confirm email
+      router.push(`/verify-email?email=${encodeURIComponent(email.trim().toLowerCase())}`)
     }
   }
 
