@@ -96,11 +96,21 @@ class RealtimeManager {
         .on('broadcast', { event: 'user_offline' }, (payload) => {
           this.emit('user:offline', payload.payload)
         })
-        .subscribe((status) => {
+        .subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
             this.isConnected = true
             this.connectionAttempts = 0
             console.log('✅ Global realtime connected')
+            
+            // Set user as online in database
+            await this.supabase
+              .from('profiles')
+              .update({ online: true, last_active: new Date().toISOString() })
+              .eq('id', userId)
+            
+            // Broadcast online status
+            this.broadcast('user_online', { userId })
+            
             this.emit('realtime:connected', { userId })
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
             console.warn('⚠️ Realtime connection failed:', status)
@@ -120,7 +130,17 @@ class RealtimeManager {
   /**
    * Disconnect and cleanup
    */
-  disconnect(): void {
+  async disconnect(userId?: string): Promise<void> {
+    // Set user offline before disconnecting
+    if (userId) {
+      await this.supabase
+        .from('profiles')
+        .update({ online: false, last_active: new Date().toISOString() })
+        .eq('id', userId)
+      
+      this.broadcast('user_offline', { userId })
+    }
+    
     if (this.channel) {
       this.supabase.removeChannel(this.channel)
       this.channel = null
