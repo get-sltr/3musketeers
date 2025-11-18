@@ -290,8 +290,8 @@ export default function TapsPage() {
         }
 
         .back-btn:hover {
-          background: rgba(0, 217, 255, 0.3);
-          border-color: #00d9ff;
+          background: rgba(204, 255, 0, 0.3);
+          border-color: #ccff00;
         }
 
         .page-header h1 {
@@ -328,7 +328,7 @@ export default function TapsPage() {
 
         .tab.active {
           color: white;
-          border-bottom-color: #00d9ff;
+          border-bottom-color: #ccff00;
         }
 
         .page-content {
@@ -345,8 +345,8 @@ export default function TapsPage() {
         .loading-spinner {
           width: 40px;
           height: 40px;
-          border: 3px solid rgba(0, 217, 255, 0.3);
-          border-top-color: #00d9ff;
+          border: 3px solid rgba(204, 255, 0, 0.3);
+          border-top-color: #ccff00;
           border-radius: 50%;
           animation: spin 1s linear infinite;
           margin: 0 auto 16px;
@@ -368,15 +368,15 @@ export default function TapsPage() {
           margin-top: 16px;
           padding: 10px 18px;
           border-radius: 999px;
-          background: rgba(0, 217, 255, 0.25);
-          border: 1px solid rgba(0, 217, 255, 0.45);
-          color: white;
+          background: #ccff00;
+          border: 1px solid #ccff00;
+          color: black;
           font-weight: 600;
           transition: all 0.3s ease;
         }
 
         .retry-btn:hover {
-          background: rgba(0, 217, 255, 0.4);
+          background: rgba(204, 255, 0, 0.8);
         }
 
         .taps-grid {
@@ -396,8 +396,8 @@ export default function TapsPage() {
 
         .tap-card:hover {
           transform: translateY(-4px);
-          border-color: rgba(0, 217, 255, 0.45);
-          box-shadow: 0 8px 20px rgba(0, 217, 255, 0.15);
+          border-color: rgba(204, 255, 0, 0.45);
+          box-shadow: 0 8px 20px rgba(204, 255, 0, 0.15);
         }
 
         .photo-container {
