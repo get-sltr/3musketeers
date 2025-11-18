@@ -1,12 +1,45 @@
-// Service Worker for Push Notifications
+// Service Worker for PWA - Notifications + Offline Support
+const CACHE_NAME = 'sltr-v1';
+const OFFLINE_URL = '/offline';
+
+// Assets to cache on install
+const CORE_ASSETS = [
+  '/',
+  '/app',
+  '/messages',
+  '/offline',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/icon.svg',
+  '/manifest.json'
+];
+
 self.addEventListener('install', (event) => {
-  console.log('Service Worker installing...');
-  self.skipWaiting();
+  console.log('✅ Service Worker installing...');
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        console.log('📦 Caching core assets');
+        return cache.addAll(CORE_ASSETS);
+      })
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker activating...');
-  event.waitUntil(clients.claim());
+  console.log('✅ Service Worker activating...');
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('🗑️ Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => clients.claim())
+  );
 });
 
 // Handle push notifications
@@ -85,5 +118,49 @@ async function syncMessages() {
   console.log('Syncing messages...');
 }
 
-// No fetch handler needed - we're only using this SW for notifications
-// The browser will handle all network requests normally
+// Fetch handler - Network first, falling back to cache
+self.addEventListener('fetch', (event) => {
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') return;
+  
+  // Skip chrome-extension and other non-http(s) requests
+  if (!event.request.url.startsWith('http')) return;
+  
+  event.respondWith(
+    fetch(event.request)
+      .then(response => {
+        // Clone response before caching
+        const responseToCache = response.clone();
+        
+        // Cache successful responses
+        if (response.status === 200) {
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, responseToCache);
+          });
+        }
+        
+        return response;
+      })
+      .catch(() => {
+        // Network failed, try cache
+        return caches.match(event.request)
+          .then(cachedResponse => {
+            if (cachedResponse) {
+              console.log('📦 Serving from cache:', event.request.url);
+              return cachedResponse;
+            }
+            
+            // If requesting a page, show offline page
+            if (event.request.mode === 'navigate') {
+              return caches.match(OFFLINE_URL);
+            }
+            
+            // Return offline response for other resources
+            return new Response('Offline', {
+              status: 503,
+              statusText: 'Service Unavailable'
+            });
+          });
+      })
+  );
+});

@@ -25,11 +25,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
       { url: '/icon.svg', type: 'image/svg+xml' }
-      // Add '/favicon.ico' here after you place a real ICO into public/
     ],
-    // Add an Apple touch icon when you have a real PNG asset
-    // apple: [ { url: '/apple-touch-icon.png', sizes: '180x180' } ],
+    apple: [
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' }
+    ],
   },
 };
 
@@ -64,6 +65,7 @@ export default async function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="format-detection" content="telephone=no" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
+        <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
 
         {/* Mapbox GL JS CDN */}
         <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
