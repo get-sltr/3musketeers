@@ -135,9 +135,8 @@ export default function PricingPage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-5xl md:text-7xl font-bold text-center mb-6"
           >
-            <span className="bg-gradient-to-r from-pink-500 to-cyan-500 bg-clip-text text-transparent">
-              Member Services
-            </span>
+            <span className="text-white">sltr</span>
+            <span className="text-lime-400" style={{ verticalAlign: 'super', fontSize: '0.6em', position: 'relative', top: '-0.5em' }}>∝</span>
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -152,7 +151,7 @@ export default function PricingPage() {
 
       {/* Pricing Cards */}
       <div className="max-w-7xl mx-auto px-4 py-20">
-        <div className="grid md:grid-cols-3 gap-8 lg:gap-12">
+        <div className="grid md:grid-cols-2 gap-8 lg:gap-12 max-w-4xl mx-auto">
           
           {/* Free Tier */}
           <motion.div
@@ -197,39 +196,43 @@ export default function PricingPage() {
             </button>
           </motion.div>
 
-          {/* Member Tier */}
+          {/* SLTR⁺ Tier */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="relative bg-gradient-to-b from-purple-500/20 to-transparent rounded-3xl p-8 border-2 border-purple-500/50"
+            className="relative bg-gradient-to-b from-lime-400/20 to-transparent rounded-3xl p-8 border-2 border-lime-400/50"
           >
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-purple-500 rounded-full text-sm font-semibold">
-              MOST POPULAR
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-lime-400 text-black rounded-full text-sm font-semibold">
+              RECOMMENDED
             </div>
             
-            <h3 className="text-2xl font-bold mb-2">Member</h3>
+            <h3 className="text-2xl font-bold mb-2">
+              <span className="text-white">sltr</span>
+              <span className="text-lime-400" style={{ verticalAlign: 'super', fontSize: '0.7em', position: 'relative', top: '-0.3em' }}>∝</span>
+            </h3>
             <p className="text-gray-400 mb-6">Everything you need to connect</p>
             
             <div className="mb-8">
-              <span className="text-5xl font-bold">$12.99</span>
+              <span className="text-5xl font-bold text-lime-400">$4.99</span>
               <span className="text-gray-400 ml-2">/month</span>
             </div>
 
             <ul className="space-y-4 mb-8">
               {[
-                'Unlimited likes & messages',
-                'Full EROS AI access',
-                'HD video calls',
-                'See who liked you',
-                'Advanced filters',
-                'Read receipts',
-                'Incognito mode',
-                'Priority support',
-                'Reduced ads',
+                'Unlimited Profile Views',
+                'See Who Viewed Your Profile',
+                'Unlimited Messaging',
+                'Ad-Free Experience',
+                'Priority DTFN Badge',
+                'Read Receipts',
+                'Advanced Filters',
+                'Extended Map Range',
+                'Enhanced Privacy Controls',
+                'Profile Boost'
               ].map((feature) => (
                 <li key={feature} className="flex items-start">
-                  <svg className="w-5 h-5 text-purple-500 mr-3 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5 text-lime-400 mr-3 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                   <span className="text-gray-300">{feature}</span>
@@ -239,64 +242,11 @@ export default function PricingPage() {
 
             <CheckoutButton 
               priceType="member"
-              className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl font-semibold hover:scale-105 transition-transform"
+              className="w-full py-3 bg-lime-400 text-black rounded-xl font-semibold hover:scale-105 transition-transform"
             >
-              Start 7-Day Free Trial
+              Get sltr∝ - $4.99/mo
             </CheckoutButton>
             <p className="text-xs text-center text-gray-500 mt-2">Cancel anytime</p>
-          </motion.div>
-
-          {/* Founder's Circle */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="relative bg-gradient-to-b from-yellow-500/20 to-transparent rounded-3xl p-8 border-2 border-yellow-500/50"
-          >
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full text-sm font-semibold">
-              LIMITED EDITION
-            </div>
-            
-            <h3 className="text-2xl font-bold mb-2 flex items-center">
-              Founder's Circle
-              <span className="ml-2 text-3xl">👑</span>
-            </h3>
-            <p className="text-gray-400 mb-6">Lifetime premium access</p>
-            
-            <div className="mb-4">
-              <span className="text-5xl font-bold">$199</span>
-              <span className="text-gray-400 ml-2">one-time</span>
-            </div>
-
-            <FounderCount />
-
-            <ul className="space-y-4 my-8">
-              {[
-                'Everything in Member tier',
-                'Lifetime access - never pay again',
-                'No ads ever',
-                'Exclusive Founder badge',
-                'Your Founder number (e.g. #0042)',
-                'Priority support forever',
-                'Vote on new features',
-                'Early access to updates',
-                'Special Founder events',
-                'Direct line to CEO',
-              ].map((feature) => (
-                <li key={feature} className="flex items-start">
-                  <span className="text-yellow-500 mr-3 mt-0.5">★</span>
-                  <span className="text-gray-300">{feature}</span>
-                </li>
-              ))}
-            </ul>
-
-            <CheckoutButton 
-              priceType="founder"
-              className="w-full py-3 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl font-semibold hover:scale-105 transition-transform"
-            >
-              Secure Your Spot - $199
-            </CheckoutButton>
-            <p className="text-xs text-center text-yellow-500/70 mt-2">Once it's gone, it's gone forever</p>
           </motion.div>
         </div>
 

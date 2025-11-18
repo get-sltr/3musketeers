@@ -4,47 +4,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-type PlanDuration = '1week' | '1month' | '3months' | '6months'
-
-interface Plan {
-  id: PlanDuration
-  duration: string
-  price: number
-  perMonth: number
-  discount?: number
-  popular?: boolean
-}
-
-const plans: Plan[] = [
-  {
-    id: '1week',
-    duration: '1 Week',
-    price: 8.99,
-    perMonth: 8.99
-  },
-  {
-    id: '1month',
-    duration: '1 Month',
-    price: 12.99,
-    perMonth: 12.99,
-    discount: 64
-  },
-  {
-    id: '3months',
-    duration: '3 Months',
-    price: 27.27,
-    perMonth: 9.09,
-    discount: 70,
-    popular: true
-  },
-  {
-    id: '6months',
-    duration: '6 Months',
-    price: 49.49,
-    perMonth: 8.25,
-    discount: 85
-  }
-]
 
 const features = [
   { icon: '🔓', text: 'Unlimited Profile Views' },
@@ -66,10 +25,9 @@ const features = [
 
 export default function SLTRPlusPage() {
   const router = useRouter()
-  const [selectedPlan, setSelectedPlan] = useState<PlanDuration>('3months')
 
   const handleContinue = () => {
-    router.push(`/checkout/${selectedPlan}`)
+    router.push('/checkout/sltr-plus')
   }
 
   return (
@@ -83,55 +41,25 @@ export default function SLTRPlusPage() {
             </svg>
           </Link>
           <h1 className="text-2xl font-black">
-            <span className="text-white">SLTR</span>
-            <span className="text-lime-400 text-3xl align-super">⁺</span>
+            <span className="text-white">sltr</span>
+            <span className="text-lime-400" style={{ verticalAlign: 'super', fontSize: '0.7em', position: 'relative', top: '-0.3em' }}>∝</span>
           </h1>
           <div className="w-6" />
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-8">
-        {/* Plans */}
-        <div className="space-y-3 mb-8">
-          {plans.map((plan) => (
-            <button
-              key={plan.id}
-              onClick={() => setSelectedPlan(plan.id)}
-              className={`w-full p-4 rounded-2xl border-2 transition-all duration-300 ${
-                selectedPlan === plan.id
-                  ? 'border-lime-400 bg-lime-400/10'
-                  : 'border-white/20 bg-white/5 hover:border-white/40'
-              } ${plan.popular ? 'ring-2 ring-lime-400/50' : ''}`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                    selectedPlan === plan.id
-                      ? 'border-lime-400 bg-lime-400'
-                      : 'border-white/40'
-                  }`}>
-                    {selectedPlan === plan.id && (
-                      <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </div>
-                  <span className="text-white text-lg font-semibold">{plan.duration}</span>
-                  {plan.discount && (
-                    <span className="px-3 py-1 rounded-full bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold">
-                      {plan.discount}% Off
-                    </span>
-                  )}
-                </div>
-                <div className="text-right">
-                  <div className="text-white text-xl font-bold">${plan.price}</div>
-                  {plan.perMonth !== plan.price && (
-                    <div className="text-white/60 text-sm">${plan.perMonth.toFixed(2)}/mo</div>
-                  )}
-                </div>
-              </div>
-            </button>
-          ))}
+        {/* Simple Pricing */}
+        <div className="mb-8 text-center">
+          <div className="text-6xl font-black text-lime-400 mb-2">
+            $4.99
+          </div>
+          <div className="text-xl text-white/60 mb-4">
+            per month
+          </div>
+          <p className="text-white/50 text-sm">
+            Simple. Transparent. Cancel anytime.
+          </p>
         </div>
 
         {/* Features */}
@@ -160,7 +88,7 @@ export default function SLTRPlusPage() {
         </button>
 
         <p className="text-center text-white/40 text-sm mt-4">
-          SLTR<span className="text-lime-400">⁺</span> Subscription. Cancel any time.
+          sltr<span className="text-lime-400">∝</span> Subscription. Cancel any time.
         </p>
       </div>
     </div>

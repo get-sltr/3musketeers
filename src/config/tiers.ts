@@ -38,25 +38,32 @@ export const TIER_CONFIG: Record<TierType, TierConfig> = {
   },
   member: {
     id: 'member',
-    name: 'SLTR+',
-    displayName: 'SLTR+ Premium',
+    name: 'sltr∝',
+    displayName: 'sltr∝',
     description: 'Unlock the full SLTR experience',
-    price: 12.99,
-    priceId: 'price_1SQ3YU3Au54W8cq8OHVyLAiq',
+    price: 4.99,
+    priceId: 'price_PLACEHOLDER', // Update with new Stripe price ID
     interval: 'month',
     features: [
-      'Unlimited messages',
-      'Map view unlocked',
-      'See who viewed your profile',
-      'Priority in discovery',
-      'Video calls',
-      'DTFN status',
-      'Plus badge on profile',
-      'Priority support'
+      'Unlimited Profile Views',
+      'See Who Viewed Your Profile',
+      'Unlimited Messaging',
+      'Ad-Free Experience',
+      'Priority DTFN Badge',
+      'Pin Favorite Users',
+      'Read Receipts',
+      'Advanced Filters',
+      'Extended Map Range',
+      'Travel Mode',
+      'Enhanced Privacy Controls',
+      'Location Spoofing',
+      'Incognito Browsing',
+      'Private Photo Albums',
+      'Profile Boost'
     ],
-    badge: '⭐',
-    color: '#00d4ff',
-    gradient: 'from-cyan-500 to-blue-500'
+    badge: '∝',
+    color: '#ccff00',
+    gradient: 'from-lime-400 to-lime-500'
   },
   founder: {
     id: 'founder',
