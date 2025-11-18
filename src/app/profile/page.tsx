@@ -508,7 +508,7 @@ export default function ProfilePage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
-          <h1 className="text-2xl font-bold gradient-text">Edit Profile</h1>
+          <h1 className="text-2xl font-bold text-lime-400">Edit Profile</h1>
           <button
             onClick={() => setShowAlbumsManager(true)}
             className="glass-bubble px-4 py-2 text-white hover:bg-white/10 transition-all duration-300 flex items-center gap-2"
@@ -693,7 +693,7 @@ export default function ProfilePage() {
                             }))
                           }
                           className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
-                            active ? 'bg-magenta-500/40 text-white shadow' : 'bg-white/10 text-white/60 hover:bg-white/20'
+                            active ? 'bg-lime-400/30 text-lime-100 shadow' : 'bg-white/10 text-white/60 hover:bg-white/20'
                           }`}
                         >
                           {kink}
@@ -720,7 +720,7 @@ export default function ProfilePage() {
                             }))
                           }
                           className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
-                            active ? 'bg-purple-500/40 text-white shadow' : 'bg-white/10 text-white/60 hover:bg-white/20'
+                            active ? 'bg-lime-400/30 text-lime-100 shadow' : 'bg-white/10 text-white/60 hover:bg-white/20'
                           }`}
                         >
                           {tag}
