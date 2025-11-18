@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
 import { locales, localeNames, type Locale } from '@/i18n/config'
+import SltrButton from './SltrButton'
 
 interface UserMenuProps {
   className?: string
@@ -148,18 +149,6 @@ export default function UserMenu({ className = '' }: UserMenuProps) {
         setShowUserMenu(false)
       }
     },
-    {
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      text: 'sltr∝',
-      onClick: () => {
-        router.push('/pricing')
-        setShowUserMenu(false)
-      }
-    }
   ]
 
   return (
@@ -203,6 +192,11 @@ export default function UserMenu({ className = '' }: UserMenuProps) {
       {/* User Menu Dropdown */}
       {showUserMenu && (
         <div className="absolute top-full left-0 mt-2 w-48 bg-black/60 backdrop-blur-2xl border border-white/20 rounded-xl overflow-hidden z-[9999] animate-fadeIn shadow-2xl">
+          {/* sltr∝ Button */}
+          <div className="px-3 py-3 border-b border-white/10">
+            <SltrButton size="sm" fullWidth />
+          </div>
+          
           {/* Quick Settings */}
           <div className="px-4 py-3 border-b border-white/10">
             <div className="flex items-center justify-between text-white text-sm mb-2">

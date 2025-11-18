@@ -74,7 +74,7 @@ export const TIER_CONFIG: Record<TierType, TierConfig> = {
     priceId: 'price_1SQ3VO3Au54W8cq8xXnDe2dy',
     interval: 'lifetime',
     features: [
-      'All SLTR+ features',
+      'All sltr∝ features',
       'Private invitations to SLTR launch parties',
       'Free VIP entry to all SLTR events',
       'Priority entry and VIP sections',
