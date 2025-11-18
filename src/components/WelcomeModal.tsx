@@ -134,7 +134,7 @@ export default function WelcomeModal({ isOpen, onClose, userName }: WelcomeModal
                 {t('founder')}
               </p>
               <p className="text-xs text-white/40">
-                {t('gotThoughts')} <a href="mailto:info@getsltr.com" className="text-cyan-400 hover:text-cyan-300">info@getsltr.com</a>
+                {t('gotThoughts')} <a href="mailto:customersupport@getsltr.com" className="text-cyan-400 hover:text-cyan-300">customersupport@getsltr.com</a>
               </p>
             </div>
           </>

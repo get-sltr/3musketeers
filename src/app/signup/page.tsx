@@ -155,18 +155,32 @@ export default function SignupPage() {
         }}
       >
         {/* Logo */}
-        <div className="text-center mb-8">
-          <h1
-            className="text-4xl font-black tracking-wider"
-            style={{
-              background: 'linear-gradient(135deg, #00d4ff, #ff00ff)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
-            }}
-          >
-            SLTR
-          </h1>
+        <div className="text-center mb-8 flex flex-col items-center">
+          <div className="flex items-center gap-4 mb-2">
+            {/* Dot Grid with Bubble Effect */}
+            <svg width="50" height="50" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+              {[0, 1, 2, 3].map((row) =>
+                [0, 1, 2, 3].map((col) => {
+                  const x = 15 + col * 20;
+                  const y = 15 + row * 20;
+                  const isMiddle = (row === 1 || row === 2) && (col === 1 || col === 2);
+                  const radius = isMiddle ? 8 : 5;
+                  return (
+                    <circle
+                      key={`${row}-${col}`}
+                      cx={x}
+                      cy={y}
+                      r={radius}
+                      fill="#ccff00"
+                    />
+                  );
+                })
+              )}
+            </svg>
+            <div className="text-4xl font-black tracking-[0.3em] text-lime-400">
+              sltr
+            </div>
+          </div>
           <p className="text-white/60 text-sm tracking-widest uppercase mt-2">
             RULES DON'T APPLY
           </p>
@@ -214,7 +228,7 @@ export default function SignupPage() {
               placeholder="Username (3-20 characters)"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-200"
+              className="w-full px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all duration-200"
               style={{
                 background: 'rgba(255, 255, 255, 0.1)',
                 border: '1px solid rgba(255, 255, 255, 0.2)',
@@ -236,7 +250,7 @@ export default function SignupPage() {
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-200"
+              className="w-full px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all duration-200"
               style={{
                 background: 'rgba(255, 255, 255, 0.1)',
                 border: '1px solid rgba(255, 255, 255, 0.2)',
@@ -302,7 +316,7 @@ export default function SignupPage() {
               placeholder="Confirm Password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-200"
+              className="w-full px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all duration-200"
               style={{
                 background: 'rgba(255, 255, 255, 0.1)',
                 border: '1px solid rgba(255, 255, 255, 0.2)',
@@ -321,9 +335,9 @@ export default function SignupPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-2xl text-white font-semibold hover:opacity-90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 rounded-2xl text-black font-semibold hover:opacity-90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
-              background: 'linear-gradient(135deg, #00d4ff, #ff00ff)',
+              background: '#ccff00',
               borderRadius: '16px'
             }}
           >
@@ -344,13 +358,7 @@ export default function SignupPage() {
             Already have an account?{' '}
             <Link 
               href="/login" 
-              className="text-white hover:underline font-medium"
-              style={{
-                background: 'linear-gradient(135deg, #00d4ff, #ff00ff)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text'
-              }}
+              className="text-lime-400 hover:text-lime-300 hover:underline font-medium"
             >
               Login
             </Link>

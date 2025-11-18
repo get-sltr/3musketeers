@@ -1,20 +1,50 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function SLTRLanding() {
   const router = useRouter();
   const [hoveredButton, setHoveredButton] = useState<string | null>(null);
+  const [showSplash, setShowSplash] = useState(false);
+
+  // Generate whirlpool dots for splash effect
+  const whirlpoolDots = useMemo(() => {
+    const dots = [];
+    for (let i = 0; i < 100; i++) {
+      dots.push({
+        id: i,
+        angle: (i / 100) * Math.PI * 2,
+        distance: Math.random() * 50 + 10,
+        delay: i * 0.01,
+      });
+    }
+    return dots;
+  }, []);
+
+  const handleJoinClick = () => {
+    setShowSplash(true);
+    setTimeout(() => {
+      router.push('/signup?tier=free');
+    }, 1500);
+  };
+
+  const handleSignInClick = () => {
+    setShowSplash(true);
+    setTimeout(() => {
+      router.push('/login');
+    }, 1500);
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.3,
+        staggerChildren: 0.1,
+        delayChildren: 0.2,
       },
     },
   } as const;
@@ -26,45 +56,23 @@ export default function SLTRLanding() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-black">
-      {/* Animated background gradient */}
-      <motion.div
-        className="absolute inset-0 opacity-30"
-        animate={{
-          background: [
-            'radial-gradient(circle at 20% 50%, rgba(14, 165, 233, 0.2) 0%, transparent 50%)',
-            'radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.2) 0%, transparent 50%)',
-            'radial-gradient(circle at 40% 40%, rgba(14, 165, 233, 0.2) 0%, transparent 50%)',
-          ],
-        }}
-        transition={{ duration: 8, repeat: Infinity, repeatType: 'reverse' }}
-      />
-
-      {/* Grid background */}
-      <div className="absolute inset-0 opacity-5">
+      {/* Hero Background Image with Gradient Opacity */}
+      <div className="absolute inset-0">
+        <Image
+          src="/hero-model.jpg"
+          alt="SLTR"
+          fill
+          className="object-cover object-center"
+          priority
+        />
+        {/* Gradient Fade Overlay */}
         <div
-          className="h-full w-full"
+          className="absolute inset-0"
           style={{
-            backgroundImage:
-              'linear-gradient(0deg, transparent 24%, rgba(14, 165, 233, 0.05) 25%, rgba(14, 165, 233, 0.05) 26%, transparent 27%, transparent 74%, rgba(14, 165, 233, 0.05) 75%, rgba(14, 165, 233, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(14, 165, 233, 0.05) 25%, rgba(14, 165, 233, 0.05) 26%, transparent 27%, transparent 74%, rgba(14, 165, 233, 0.05) 75%, rgba(14, 165, 233, 0.05) 76%, transparent 77%, transparent)',
-            backgroundSize: '50px 50px',
+            background: 'linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.80) 50%, rgba(0,0,0,0.70) 100%)',
           }}
         />
       </div>
-
-      {/* Top right: Login link for existing members */}
-      <motion.div
-        className="absolute top-6 right-6 z-20"
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.5 }}
-      >
-        <button
-          onClick={() => router.push('/login')}
-          className="text-gray-400 hover:text-cyan-400 text-sm font-semibold transition-colors"
-        >
-          Already a member? <span className="text-cyan-400">Sign in →</span>
-        </button>
-      </motion.div>
 
       {/* Content */}
       <motion.div
@@ -73,131 +81,96 @@ export default function SLTRLanding() {
         initial="hidden"
         animate="visible"
       >
-        {/* Logo */}
-        <motion.div variants={itemVariants} className="mb-8">
-          <motion.h1
-            className="text-7xl md:text-8xl font-black bg-gradient-to-r from-cyan-400 via-magenta-500 to-cyan-400 bg-clip-text text-transparent drop-shadow-2xl"
-            animate={{
-              textShadow: [
-                '0 0 20px rgba(14, 165, 233, 0.5)',
-                '0 0 40px rgba(236, 72, 153, 0.5)',
-                '0 0 20px rgba(14, 165, 233, 0.5)',
-              ],
-            }}
-            transition={{ duration: 3, repeat: Infinity }}
-          >
-            SLTR
-          </motion.h1>
-        </motion.div>
-
-        {/* Tagline */}
-        <motion.div variants={itemVariants} className="text-center mb-12 max-w-2xl">
-          <p className="text-xl md:text-2xl text-gray-300 mb-2">Stay True. Live Real.</p>
-          <p className="text-sm md:text-base text-gray-500">Rules don't apply to us</p>
-        </motion.div>
-
-        {/* Description */}
+        {/* SLTR Logo */}
         <motion.div
           variants={itemVariants}
-          className="mb-16 max-w-xl text-center space-y-4"
+          className="mb-16 flex items-center gap-6"
         >
-          <p className="text-lg text-gray-300 leading-relaxed">
-            The dating app built for real connections.
-          </p>
-          <p className="text-gray-400">
-            No crashes. No bots. No endless scrolling.
-          </p>
-          <p className="text-gray-500 text-sm">
-            Just you. Real people. Real technology.
-          </p>
+          {/* Dot Grid with Bubble Effect */}
+          <svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+            {/* 4x4 grid with bubble effect (middle dots larger) */}
+            {[0, 1, 2, 3].map((row) =>
+              [0, 1, 2, 3].map((col) => {
+                const x = 15 + col * 20;
+                const y = 15 + row * 20;
+                // Middle dots are larger (bubble effect)
+                const isMiddle = (row === 1 || row === 2) && (col === 1 || col === 2);
+                const radius = isMiddle ? 8 : 5;
+                return (
+                  <circle
+                    key={`${row}-${col}`}
+                    cx={x}
+                    cy={y}
+                    r={radius}
+                    fill="#ccff00"
+                  />
+                );
+              })
+            )}
+          </svg>
+          
+          {/* Text: s l t r */}
+          <div className="text-6xl md:text-8xl font-black tracking-[0.3em] text-lime-400">
+            sltr
+          </div>
+        </motion.div>
+
+        {/* Main Tagline */}
+        <motion.div variants={itemVariants} className="text-center mb-8">
+          <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter mb-4">
+            Rules Don't Apply
+          </h1>
+          <div className="h-1 w-32 bg-lime-400 mx-auto rounded-full" />
         </motion.div>
 
         {/* CTA Buttons */}
-        <motion.div
-          variants={itemVariants}
-          className="w-full max-w-md space-y-4"
-        >
-          {/* Founder's Circle Button - PAID */}
+        <motion.div variants={itemVariants} className="w-full max-w-sm space-y-4">
+          {/* Join Free Button */}
           <motion.button
-            onClick={() => router.push('/signup?tier=founder')}
-            onMouseEnter={() => setHoveredButton('founder')}
+            onClick={handleJoinClick}
+            onMouseEnter={() => setHoveredButton('primary')}
             onMouseLeave={() => setHoveredButton(null)}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="relative group block w-full"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="w-full relative group"
           >
             <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute inset-0 bg-lime-400 rounded-full blur-lg opacity-0 group-hover:opacity-75 transition-opacity"
+              animate={hoveredButton === 'primary' ? { scale: [1, 1.1, 1] } : {}}
+              transition={{ duration: 0.6, repeat: Infinity }}
             />
-            <div className="relative bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-black font-black py-4 px-8 rounded-2xl text-center transition-all shadow-lg hover:shadow-amber-500/50">
-              <motion.div
-                className="flex flex-col items-center justify-center gap-1"
-                animate={hoveredButton === 'founder' ? { x: [0, 5, 0] } : {}}
-                transition={{ duration: 0.6, repeat: Infinity }}
-              >
-                <span className="text-2xl">👑</span>
-                <div>
-                  <div className="text-lg font-black">Founder's Circle</div>
-                  <div className="text-sm font-bold text-black/80">$199 Lifetime Access</div>
-                </div>
-              </motion.div>
+            <div className="relative bg-lime-400 hover:bg-lime-300 text-black font-black py-5 px-8 rounded-full text-center transition-all text-lg tracking-wide">
+              Join Free
             </div>
           </motion.button>
 
-          {/* Join as Member Button - PAID */}
+          {/* Sign In Button */}
           <motion.button
-            onClick={() => router.push('/signup?tier=member')}
-            onMouseEnter={() => setHoveredButton('member')}
+            onClick={handleSignInClick}
+            onMouseEnter={() => setHoveredButton('signin')}
             onMouseLeave={() => setHoveredButton(null)}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="relative group block w-full"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="w-full relative group"
           >
             <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-magenta-500 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute inset-0 bg-lime-400/30 rounded-full blur-lg opacity-0 group-hover:opacity-75 transition-opacity"
+              animate={hoveredButton === 'signin' ? { scale: [1, 1.1, 1] } : {}}
+              transition={{ duration: 0.6, repeat: Infinity }}
             />
-            <div className="relative border-2 border-cyan-500 hover:border-cyan-400 bg-black/50 backdrop-blur-sm hover:bg-black/70 text-white font-black py-4 px-8 rounded-2xl text-center transition-all">
-              <motion.div
-                className="flex flex-col items-center justify-center gap-1"
-                animate={hoveredButton === 'member' ? { x: [0, 5, 0] } : {}}
-                transition={{ duration: 0.6, repeat: Infinity }}
-              >
-                <span className="text-2xl">⭐</span>
-                <div>
-                  <div className="text-lg font-black">Premium Member</div>
-                  <div className="text-sm font-semibold text-gray-300">$12.99/month</div>
-                </div>
-              </motion.div>
-            </div>
-          </motion.button>
-
-          {/* Sign Up Free Button - FREE */}
-          <motion.button
-            onClick={() => router.push('/signup?tier=free')}
-            onMouseEnter={() => setHoveredButton('signup')}
-            onMouseLeave={() => setHoveredButton(null)}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="relative group block w-full"
-          >
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-magenta-500 to-cyan-500 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"
-            />
-            <div className="relative border-2 border-magenta-500 hover:border-magenta-400 bg-black/50 backdrop-blur-sm hover:bg-black/70 text-white font-black py-4 px-8 rounded-2xl text-center transition-all">
-              <motion.div
-                className="flex flex-col items-center justify-center gap-1"
-                animate={hoveredButton === 'signup' ? { x: [0, 5, 0] } : {}}
-                transition={{ duration: 0.6, repeat: Infinity }}
-              >
-                <span className="text-2xl">🔥</span>
-                <div>
-                  <div className="text-lg font-black">Join Free</div>
-                  <div className="text-sm font-semibold text-gray-300">No credit card needed</div>
-                </div>
-              </motion.div>
+            <div className="relative bg-transparent border-2 border-lime-400 hover:bg-lime-400/10 text-lime-400 font-black py-5 px-8 rounded-full text-center transition-all text-lg tracking-wide">
+              Already a member? Sign in
             </div>
           </motion.button>
         </motion.div>
+
+        {/* Secondary Text */}
+        <motion.p
+          variants={itemVariants}
+          className="mt-8 text-gray-400 text-sm text-center max-w-md"
+        >
+          No credit card needed. Real connections. Real people.
+        </motion.p>
 
         {/* Bottom accent text */}
         <motion.div
@@ -207,6 +180,33 @@ export default function SLTRLanding() {
           <p>Available now at getsltr.com</p>
           <p className="text-gray-600">Real connections start here</p>
         </motion.div>
+
+        {/* Footer with Company Info & Policy Links */}
+        <motion.footer
+          variants={itemVariants}
+          className="mt-20 mb-8 text-center text-gray-500 text-xs space-y-3"
+        >
+          <div className="space-y-1">
+            <p className="font-semibold text-gray-400">SLTR DIGITAL LLC</p>
+            <p className="text-gray-600">Innovative | Intelligence | Intuitive</p>
+          </div>
+          <div className="flex items-center justify-center gap-4 text-gray-600">
+            <button
+              onClick={() => router.push('/privacy')}
+              className="hover:text-lime-400 transition-colors"
+            >
+              Privacy Policy
+            </button>
+            <span>•</span>
+            <button
+              onClick={() => router.push('/terms')}
+              className="hover:text-lime-400 transition-colors"
+            >
+              Terms of Service
+            </button>
+          </div>
+          <p className="text-gray-700">© {new Date().getFullYear()} SLTR Digital LLC. All rights reserved.</p>
+        </motion.footer>
       </motion.div>
 
       {/* Floating orbs for extra effect */}
@@ -243,6 +243,43 @@ export default function SLTRLanding() {
         animate={{ opacity: [0.2, 0.8, 0.2] }}
         transition={{ duration: 3, repeat: Infinity, delay: 1 }}
       />
+
+      {/* Whirlpool Splash Effect */}
+      <AnimatePresence>
+        {showSplash && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            {whirlpoolDots.map((dot) => (
+              <motion.div
+                key={dot.id}
+                className="absolute w-3 h-3 bg-lime-400 rounded-full"
+                initial={{
+                  x: 0,
+                  y: 0,
+                  scale: 0,
+                  opacity: 1,
+                }}
+                animate={{
+                  x: Math.cos(dot.angle) * dot.distance * 20,
+                  y: Math.sin(dot.angle) * dot.distance * 20,
+                  scale: [0, 1, 0],
+                  opacity: [1, 1, 0],
+                  rotate: [0, 360 * 3],
+                }}
+                transition={{
+                  duration: 1.5,
+                  delay: dot.delay,
+                  ease: 'easeOut',
+                }}
+              />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

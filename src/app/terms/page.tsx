@@ -8,7 +8,7 @@ export default function TermsPage() {
       {/* Header */}
       <div className="fixed top-0 w-full bg-black/95 backdrop-blur-xl border-b border-white/10 p-4 z-50">
         <div className="flex items-center justify-between">
-          <Link href="/app" className="glass-bubble p-2 hover:bg-white/10 transition-all duration-300">
+          <Link href="/" className="glass-bubble p-2 hover:bg-white/10 transition-all duration-300">
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -538,10 +538,10 @@ export default function TermsPage() {
               By using SLTR, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
             </p>
             <Link
-              href="/app"
+              href="/"
               className="inline-block bg-gradient-to-r from-cyan-500 to-purple-500 py-3 px-8 rounded-2xl text-white font-semibold hover:scale-105 transition-all duration-300"
             >
-              Back to App
+              Back to Home
             </Link>
           </div>
         </div>

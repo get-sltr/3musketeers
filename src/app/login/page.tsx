@@ -60,21 +60,43 @@ export default function LoginPage() {
         <div className="mb-8">
           <Link 
             href="/"
-            className="text-gray-400 hover:text-cyan-400 transition-colors text-sm flex items-center gap-2"
+            className="text-gray-400 hover:text-lime-400 transition-colors text-sm flex items-center gap-2"
           >
             ← Back to Home
           </Link>
         </div>
 
         {/* Card */}
-        <div className="bg-black/40 backdrop-blur-xl border border-cyan-500/20 p-8 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-magenta-500/5" />
+        <div className="bg-black/40 backdrop-blur-xl border border-lime-400/20 p-8 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-lime-400/5 via-transparent to-lime-400/5" />
           
           <div className="relative z-10">
             {/* Logo */}
-            <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-magenta-500 mb-2">
-              SLTR
-            </h1>
+            <div className="flex items-center gap-4 mb-2">
+              {/* Dot Grid with Bubble Effect */}
+              <svg width="50" height="50" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                {[0, 1, 2, 3].map((row) =>
+                  [0, 1, 2, 3].map((col) => {
+                    const x = 15 + col * 20;
+                    const y = 15 + row * 20;
+                    const isMiddle = (row === 1 || row === 2) && (col === 1 || col === 2);
+                    const radius = isMiddle ? 8 : 5;
+                    return (
+                      <circle
+                        key={`${row}-${col}`}
+                        cx={x}
+                        cy={y}
+                        r={radius}
+                        fill="#ccff00"
+                      />
+                    );
+                  })
+                )}
+              </svg>
+              <div className="text-4xl font-black tracking-[0.3em] text-lime-400">
+                sltr
+              </div>
+            </div>
             <p className="text-gray-400 mb-8">Welcome back</p>
 
             {/* Error Message */}
@@ -96,7 +118,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 focus:border-cyan-500 text-white placeholder-gray-500 outline-none transition-colors"
+                  className="w-full px-4 py-3 bg-black/50 border border-lime-400/30 focus:border-lime-400 text-white placeholder-gray-500 outline-none transition-colors"
                   placeholder="your@email.com"
                 />
               </div>
@@ -111,7 +133,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full px-4 py-3 bg-black/50 border border-cyan-500/30 focus:border-cyan-500 text-white placeholder-gray-500 outline-none transition-colors"
+                  className="w-full px-4 py-3 bg-black/50 border border-lime-400/30 focus:border-lime-400 text-white placeholder-gray-500 outline-none transition-colors"
                   placeholder="••••••••"
                 />
               </div>
@@ -120,7 +142,7 @@ export default function LoginPage() {
               <div className="text-right">
                 <Link 
                   href="/forgot-password"
-                  className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+                  className="text-sm text-lime-400 hover:text-lime-300 transition-colors"
                 >
                   Forgot password?
                 </Link>
@@ -130,7 +152,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full px-6 py-4 bg-gradient-to-r from-cyan-500 to-magenta-500 text-black font-bold text-lg hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed transition-transform shadow-[0_0_30px_rgba(0,255,255,0.5)]"
+                className="w-full px-6 py-4 bg-lime-400 hover:bg-lime-300 text-black font-bold text-lg hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_0_30px_rgba(204,255,0,0.5)]"
               >
                 {loading ? 'Logging in...' : 'Log In'}
               </button>
@@ -140,7 +162,7 @@ export default function LoginPage() {
             <div className="mt-8 text-center">
               <p className="text-gray-400 text-sm">
                 Don't have an account?{' '}
-                <Link href="/signup" className="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors">
+                <Link href="/signup" className="text-lime-400 hover:text-lime-300 font-semibold transition-colors">
                   Sign up
                 </Link>
               </p>
