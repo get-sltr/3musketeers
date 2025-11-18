@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import AlbumsManager from '../../components/AlbumsManager'
 import { DEFAULT_PROFILE_IMAGE } from '@/lib/utils/profile'
+import SltrButton from '../../components/SltrButton'
 
 interface Album {
   id: string
@@ -509,12 +510,15 @@ export default function ProfilePage() {
             </svg>
           </Link>
           <h1 className="text-2xl font-bold text-lime-400">Edit Profile</h1>
-          <button
-            onClick={() => setShowAlbumsManager(true)}
-            className="glass-bubble px-4 py-2 text-white hover:bg-white/10 transition-all duration-300 flex items-center gap-2"
-          >
-            📸 Albums
-          </button>
+          <div className="flex items-center gap-2">
+            <SltrButton size="sm" />
+            <button
+              onClick={() => setShowAlbumsManager(true)}
+              className="glass-bubble px-4 py-2 text-white hover:bg-white/10 transition-all duration-300 flex items-center gap-2"
+            >
+              📸 Albums
+            </button>
+          </div>
         </div>
       </div>
 
