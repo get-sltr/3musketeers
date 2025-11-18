@@ -57,13 +57,31 @@ export default function WelcomeModal({ isOpen, onClose, userName }: WelcomeModal
         {!submitted && (
           <>
             <div className="space-y-3">
-              <div className="text-4xl font-black tracking-wider" style={{
-                background: 'linear-gradient(135deg, #00d4ff, #ff00ff)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text'
-              }}>
-                SLTR
+              <div className="flex items-center justify-center gap-3">
+                {/* Dot Grid */}
+                <svg width="40" height="40" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                  {[0, 1, 2, 3].map((row) =>
+                    [0, 1, 2, 3].map((col) => {
+                      const x = 15 + col * 20;
+                      const y = 15 + row * 20;
+                      const isMiddle = (row === 1 || row === 2) && (col === 1 || col === 2);
+                      const radius = isMiddle ? 8 : 5;
+                      return (
+                        <circle
+                          key={`${row}-${col}`}
+                          cx={x}
+                          cy={y}
+                          r={radius}
+                          fill="#ccff00"
+                        />
+                      );
+                    })
+                  )}
+                </svg>
+                {/* Text */}
+                <span className="text-4xl font-black tracking-[0.3em] text-lime-400">
+                  sltr
+                </span>
               </div>
               <h2 className="text-2xl font-bold text-white">
                 {t('title')}{userName ? `, ${userName}` : ''}
@@ -92,7 +110,7 @@ export default function WelcomeModal({ isOpen, onClose, userName }: WelcomeModal
                   value={feedback}
                   onChange={(e) => setFeedback(e.target.value)}
                   rows={4}
-                  className="w-full rounded-xl border border-white/15 bg-black/40 px-4 py-3 text-white placeholder-white/40 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/60 resize-none"
+                  className="w-full rounded-xl border border-white/15 bg-black/40 px-4 py-3 text-white placeholder-white/40 focus:border-lime-400 focus:outline-none focus:ring-2 focus:ring-lime-400/60 resize-none"
                   placeholder={t('placeholder')}
                 />
               </div>
@@ -105,7 +123,7 @@ export default function WelcomeModal({ isOpen, onClose, userName }: WelcomeModal
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-xl border border-white/15 bg-black/40 px-4 py-3 text-white placeholder-white/40 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/60"
+                  className="w-full rounded-xl border border-white/15 bg-black/40 px-4 py-3 text-white placeholder-white/40 focus:border-lime-400 focus:outline-none focus:ring-2 focus:ring-lime-400/60"
                   placeholder={t('emailPlaceholder')}
                 />
               </div>
@@ -121,7 +139,7 @@ export default function WelcomeModal({ isOpen, onClose, userName }: WelcomeModal
                 <button
                   type="submit"
                   disabled={sending}
-                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-semibold hover:scale-105 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 py-3 rounded-xl bg-lime-400 text-black font-semibold hover:scale-105 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {sending ? tCommon('loading') : feedback.trim() ? t('shareThoughts') : t('letsGo')}
                 </button>
@@ -134,7 +152,7 @@ export default function WelcomeModal({ isOpen, onClose, userName }: WelcomeModal
                 {t('founder')}
               </p>
               <p className="text-xs text-white/40">
-                {t('gotThoughts')} <a href="mailto:customersupport@getsltr.com" className="text-cyan-400 hover:text-cyan-300">customersupport@getsltr.com</a>
+                {t('gotThoughts')} <a href="mailto:customersupport@getsltr.com" className="text-lime-400 hover:text-lime-300">customersupport@getsltr.com</a>
               </p>
             </div>
           </>
