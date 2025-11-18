@@ -17,8 +17,12 @@ class RealtimeManager {
   private channel: RealtimeChannel | null = null
   private eventHandlers: Map<string, Set<EventHandler>> = new Map()
   private isConnected = false
+  private isConnecting = false
   private connectionAttempts = 0
   private maxRetries = 3
+  private lastConnectionAttempt = 0
+  private connectionCooldown = 5000 // 5 seconds between retries
+  private currentUserId: string | null = null
 
   private constructor() {}
 
@@ -33,17 +37,35 @@ class RealtimeManager {
    * Initialize the global realtime connection
    */
   async connect(userId: string): Promise<boolean> {
-    if (this.isConnected && this.channel) {
+    // Already connected to this user
+    if (this.isConnected && this.channel && this.currentUserId === userId) {
       console.log('✅ Realtime already connected')
       return true
     }
 
+    // Already connecting - prevent duplicate attempts
+    if (this.isConnecting) {
+      console.log('⏳ Connection already in progress, waiting...')
+      return false
+    }
+
+    // Check cooldown period
+    const now = Date.now()
+    if (now - this.lastConnectionAttempt < this.connectionCooldown) {
+      console.log('⏸️ Connection on cooldown')
+      return false
+    }
+
+    // Max retries reached - stop trying
     if (this.connectionAttempts >= this.maxRetries) {
       console.warn('⚠️ Max realtime connection retries reached')
       return false
     }
 
+    this.isConnecting = true
+    this.lastConnectionAttempt = now
     this.connectionAttempts++
+    this.currentUserId = userId
 
     try {
       // Create a single global channel for this user
@@ -99,6 +121,7 @@ class RealtimeManager {
         .subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
             this.isConnected = true
+            this.isConnecting = false
             this.connectionAttempts = 0
             console.log('✅ Global realtime connected')
             
@@ -115,6 +138,7 @@ class RealtimeManager {
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
             console.warn('⚠️ Realtime connection failed:', status)
             this.isConnected = false
+            this.isConnecting = false
             this.emit('realtime:error', { status })
           }
         })
@@ -123,6 +147,7 @@ class RealtimeManager {
     } catch (error) {
       console.error('❌ Realtime connection error:', error)
       this.isConnected = false
+      this.isConnecting = false
       return false
     }
   }
@@ -146,8 +171,20 @@ class RealtimeManager {
       this.channel = null
     }
     this.isConnected = false
+    this.isConnecting = false
+    this.currentUserId = null
     this.eventHandlers.clear()
     console.log('🔌 Realtime disconnected')
+  }
+
+  /**
+   * Reset connection state (use after errors to allow reconnection)
+   */
+  reset(): void {
+    this.connectionAttempts = 0
+    this.isConnecting = false
+    this.lastConnectionAttempt = 0
+    console.log('🔄 Realtime connection state reset')
   }
 
   /**

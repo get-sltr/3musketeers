@@ -20,28 +20,36 @@ export function useRealtime(): UseRealtimeReturn {
   const supabase = createClient()
 
   useEffect(() => {
+    let unsubConnect: (() => void) | undefined
+    let unsubError: (() => void) | undefined
+
     // Connect to global realtime manager
     const initRealtime = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const connected = await RealtimeManager.connect(user.id)
-      setIsConnected(connected)
+      // Check current connection status first
+      const currentStatus = RealtimeManager.getConnectionStatus()
+      setIsConnected(currentStatus)
+
+      // Only attempt connection if not already connected
+      if (!currentStatus) {
+        const connected = await RealtimeManager.connect(user.id)
+        setIsConnected(connected)
+      }
 
       // Listen for connection status changes
-      const unsubConnect = RealtimeManager.on('realtime:connected', () => setIsConnected(true))
-      const unsubError = RealtimeManager.on('realtime:error', () => setIsConnected(false))
-
-      return () => {
-        unsubConnect()
-        unsubError()
-      }
+      unsubConnect = RealtimeManager.on('realtime:connected', () => setIsConnected(true))
+      unsubError = RealtimeManager.on('realtime:error', () => setIsConnected(false))
     }
 
     initRealtime()
     
     // Cleanup on unmount - DON'T disconnect as other components may use it
-    return () => {}
+    return () => {
+      unsubConnect?.()
+      unsubError?.()
+    }
   }, [])
 
   const joinConversation = useCallback((conversationId: string) => {
