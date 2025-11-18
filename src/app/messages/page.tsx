@@ -909,13 +909,13 @@ function MessagesPageContent() {
       {/* Header */}
       <div className="fixed top-0 w-full bg-black/95 backdrop-blur-xl border-b border-white/10 p-4 z-50">
         <div className="flex items-center justify-between">
-          <Link href="/app" className="glass-bubble p-2 hover:bg-white/10 transition-all duration-300">
+                  <Link href="/app" className="glass-bubble p-2 hover:bg-white/10 transition-all duration-300">
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold gradient-text">Messages</h1>
+            <h1 className="text-2xl font-bold text-lime-400">Messages</h1>
             {/* Connection Status */}
             <div className="flex items-center gap-2">
               <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
@@ -966,7 +966,7 @@ function MessagesPageContent() {
                       onTouchEnd={() => handleTouchEnd(conversation.id)}
                       className={`relative p-3 rounded-xl cursor-pointer transition-all duration-300 ${
                         selectedConversation === conversation.id
-                          ? 'bg-cyan-500/20 border border-cyan-500/30'
+                          ? 'bg-lime-400/20 border border-lime-400/30'
                           : 'bg-white/5 hover:bg-white/10'
                       } ${
                         swipedConversation === conversation.id && swipeDirection === 'left'
@@ -1002,7 +1002,7 @@ function MessagesPageContent() {
                           </p>
                           {conversation.unread_count > 0 && (
                             <div className="flex justify-end mt-1">
-                              <span className="bg-cyan-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
+                              <span className="bg-lime-400 text-black text-xs px-2 py-1 rounded-full font-semibold">
                                 {conversation.unread_count}
                               </span>
                             </div>
@@ -1110,7 +1110,7 @@ function MessagesPageContent() {
                       {/* Video call button */}
                     <button
                       onClick={startVideoCall}
-                        className="p-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg hover:scale-110 transition-all duration-300"
+                        className="p-2 bg-lime-400 rounded-lg hover:scale-110 transition-all duration-300"
                       title="Start Video Call"
                     >
                         <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1259,19 +1259,19 @@ function MessagesPageContent() {
                         }}
                         className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl cursor-pointer transition-all ${
                           isEditMode && isSelected
-                            ? 'ring-2 ring-cyan-400 ring-offset-2 ring-offset-black'
+                            ? 'ring-2 ring-lime-400 ring-offset-2 ring-offset-black'
                             : ''
                         } ${
                           isOtherUser
                         ? 'bg-white/10 text-white'
-                        : 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white'
+                        : 'bg-lime-400 text-black'
                         } ${isEditMode ? 'hover:opacity-80' : ''}`}
                       >
                         {isEditMode && (
                           <div className="flex items-center gap-2 mb-2">
                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                               isSelected
-                                ? 'bg-cyan-400 border-cyan-400'
+                                ? 'bg-lime-400 border-lime-400'
                                 : 'border-white/40'
                             }`}>
                               {isSelected && (
@@ -1337,9 +1337,9 @@ function MessagesPageContent() {
                           }
                         </span>
                         <div className="flex gap-1">
-                          <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
-                          <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
-                          <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
+                          <div className="w-2 h-2 bg-lime-400 rounded-full animate-pulse"></div>
+                          <div className="w-2 h-2 bg-lime-400 rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
+                          <div className="w-2 h-2 bg-lime-400 rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
                         </div>
                       </div>
                     </div>
@@ -1357,14 +1357,14 @@ function MessagesPageContent() {
                     value={newMessage}
                     onChange={handleTyping}
                     placeholder="Type a message..."
-                    className="flex-1 bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300"
+                    className="flex-1 bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all duration-300"
                     disabled={sending}
                   />
                   {/* Video Call Button */}
                   <button
                     type="button"
                     onClick={startVideoCall}
-                    className="p-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-xl hover:scale-110 transition-all duration-300 shadow-lg shadow-cyan-500/30 flex items-center justify-center"
+                    className="p-3 bg-lime-400 rounded-xl hover:scale-110 transition-all duration-300 shadow-lg shadow-lime-400/30 flex items-center justify-center"
                     title="Start Video Call"
                   >
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1374,7 +1374,7 @@ function MessagesPageContent() {
                   <button
                     type="submit"
                     disabled={!newMessage.trim() || sending}
-                    className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-xl font-semibold hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-3 bg-lime-400 text-black rounded-xl font-semibold hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {sending ? 'Sending...' : 'Send'}
                   </button>
