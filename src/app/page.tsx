@@ -76,7 +76,7 @@ export default function SLTRLanding() {
 
       {/* Content */}
       <motion.div
-        className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4"
+        className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 pt-24"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -84,42 +84,46 @@ export default function SLTRLanding() {
         {/* SLTR Logo */}
         <motion.div
           variants={itemVariants}
-          className="mb-16 flex items-center gap-6"
+          className="mb-8 flex flex-col items-center"
         >
-          {/* Dot Grid with Bubble Effect */}
-          <svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-            {/* 4x4 grid with bubble effect (middle dots larger) */}
-            {[0, 1, 2, 3].map((row) =>
-              [0, 1, 2, 3].map((col) => {
-                const x = 15 + col * 20;
-                const y = 15 + row * 20;
-                // Middle dots are larger (bubble effect)
-                const isMiddle = (row === 1 || row === 2) && (col === 1 || col === 2);
-                const radius = isMiddle ? 8 : 5;
-                return (
-                  <circle
-                    key={`${row}-${col}`}
-                    cx={x}
-                    cy={y}
-                    r={radius}
-                    fill="#ccff00"
-                  />
-                );
-              })
-            )}
-          </svg>
-          
-          {/* Text: s l t r */}
-          <div className="text-6xl md:text-8xl font-black tracking-[0.3em] text-lime-400">
-            sltr
+          <div className="flex items-center gap-6 mb-2">
+            {/* Dot Grid with Bubble Effect */}
+            <svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+              {/* 4x4 grid with bubble effect (middle dots larger) */}
+              {[0, 1, 2, 3].map((row) =>
+                [0, 1, 2, 3].map((col) => {
+                  const x = 15 + col * 20;
+                  const y = 15 + row * 20;
+                  // Middle dots are larger (bubble effect)
+                  const isMiddle = (row === 1 || row === 2) && (col === 1 || col === 2);
+                  const radius = isMiddle ? 8 : 5;
+                  return (
+                    <circle
+                      key={`${row}-${col}`}
+                      cx={x}
+                      cy={y}
+                      r={radius}
+                      fill="#ccff00"
+                    />
+                  );
+                })
+              )}
+            </svg>
+            
+            {/* Text: s l t r - larger size */}
+            <div className="text-7xl md:text-9xl font-black tracking-[0.3em] text-lime-400">
+              sltr
+            </div>
           </div>
+          
+          {/* Tagline underneath - much smaller */}
+          <p className="text-[10px] md:text-xs tracking-[0.4em] text-white/60 uppercase font-medium">
+            RULES DON'T APPLY
+          </p>
         </motion.div>
 
-        {/* Main Tagline */}
-        <motion.div variants={itemVariants} className="text-center mb-8">
-          <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter mb-4">
-            Rules Don't Apply
-          </h1>
+        {/* Accent line */}
+        <motion.div variants={itemVariants} className="mb-8">
           <div className="h-1 w-32 bg-lime-400 mx-auto rounded-full" />
         </motion.div>
 
