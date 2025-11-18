@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useTranslations } from 'next-intl'
 
 const SLTR_STYLE_ID =
@@ -70,14 +70,12 @@ export default function MapSessionMenu({
   const tActions = useTranslations('actions')
   const [open, setOpen] = useState(false)
 
-  // Allow external toggling (e.g., from corner button)
-  if (typeof window !== 'undefined') {
-    // attach once per render pass
-    (window as any).__mapMenuInit || ((window as any).__mapMenuInit = (() => {
-      window.addEventListener('toggle_map_session_menu', () => setOpen(prev => !prev))
-      return true
-    })())
-  }
+  // Allow external toggling (e.g., from corner button) with proper cleanup
+  useEffect(() => {
+    const handler = () => setOpen(prev => !prev)
+    window.addEventListener('toggle_map_session_menu', handler)
+    return () => window.removeEventListener('toggle_map_session_menu', handler)
+  }, [])
 
   return (
     <div className="fixed top-20 left-4 z-20">

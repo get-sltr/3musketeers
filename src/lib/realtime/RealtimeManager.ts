@@ -86,6 +86,18 @@ class RealtimeManager {
         .on(
           'postgres_changes',
           {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages',
+            filter: `sender_id=eq.${userId}`,
+          },
+          (payload) => {
+            this.emit('message:new', payload.new)
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
             event: 'UPDATE',
             schema: 'public',
             table: 'messages',

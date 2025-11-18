@@ -13,6 +13,16 @@ export default function BottomNav() {
   const audioCtxRef = useRef<AudioContext | null>(null)
   const [notifySound, setNotifySound] = useState(true)
   const [notifyVibrate, setNotifyVibrate] = useState(true)
+  const [isMapView, setIsMapView] = useState(false)
+
+  // Listen for view mode changes
+  useEffect(() => {
+    const handleViewChange = ((e: CustomEvent) => {
+      setIsMapView(e.detail?.viewMode === 'map')
+    }) as EventListener
+    window.addEventListener('sltr_view_mode_changed', handleViewChange)
+    return () => window.removeEventListener('sltr_view_mode_changed', handleViewChange)
+  }, [])
 
   // Load notification preferences
   useEffect(() => {
@@ -91,8 +101,8 @@ export default function BottomNav() {
     },
     {
       id: 'map',
-      icon: '🗺️',
-      label: 'Map',
+      icon: isMapView ? '🔲' : '🗺️',
+      label: isMapView ? 'Grid' : 'Map',
       action: () => {
         if (pathname === '/app') {
           window.dispatchEvent(new Event('sltr_switch_to_map'))

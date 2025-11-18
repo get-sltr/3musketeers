@@ -160,10 +160,10 @@ export default function AppPage() {
     checkFirstLogin()
   }, [setShowWelcomeModal])
 
-  // Listen for bottom nav map button click
+  // Listen for bottom nav map button click - toggle between grid and map
   useEffect(() => {
     const handleSwitchToMap = () => {
-      setViewMode('map')
+      setViewMode(prev => prev === 'grid' ? 'map' : 'grid')
     }
     
     window.addEventListener('sltr_switch_to_map', handleSwitchToMap)
@@ -171,6 +171,13 @@ export default function AppPage() {
       window.removeEventListener('sltr_switch_to_map', handleSwitchToMap)
     }
   }, [])
+
+  // Emit view mode change event for bottom nav
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('sltr_view_mode_changed', {
+      detail: { viewMode }
+    }))
+  }, [viewMode])
 
   useEffect(() => {
     const updateBreakpoint = () => {

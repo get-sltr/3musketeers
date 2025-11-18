@@ -195,44 +195,85 @@ function MessagesPageContent() {
       })
 
       // Show push notification (works even if tab is closed)
+      console.log('📨 New message received:', {
+        conversationId,
+        selectedConversation,
+        shouldNotify: conversationId !== selectedConversation
+      })
+      
       if (conversationId !== selectedConversation) {
+        console.log('🔔 Showing notification for message from:', normalized.sender_name)
+        
+        // Try both notification methods
         showMessageNotification(
           normalized.sender_name || 'Unknown',
           normalized.content,
           conversationId
         )
+        
+        // Also try browser notification directly
+        showBrowserNotification(
+          `Message from ${normalized.sender_name || 'Unknown'}`,
+          normalized.content,
+          conversationId
+        )
+      } else {
+        console.log('ℹ️ Message is in current conversation, not showing notification')
       }
     }
 
-    // Browser notification helper
+    // Browser notification helper with debugging
     const showBrowserNotification = async (title: string, body: string, conversationId: string) => {
+      console.log('🔔 showBrowserNotification called:', { title, body, conversationId })
+      
+      // Check if Notification API is available
+      if (!('Notification' in window)) {
+        console.error('❌ Notification API not available in this browser')
+        return
+      }
+      
+      console.log('🔔 Current notification permission:', Notification.permission)
+      
       // Request notification permission if not granted
-      if ('Notification' in window && Notification.permission === 'default') {
-        await Notification.requestPermission()
+      if (Notification.permission === 'default') {
+        console.log('🔔 Requesting notification permission...')
+        const permission = await Notification.requestPermission()
+        console.log('🔔 Permission result:', permission)
       }
 
       // Show notification if permission granted
-      if ('Notification' in window && Notification.permission === 'granted') {
+      if (Notification.permission === 'granted') {
         try {
+          console.log('✅ Permission granted, creating notification...')
           const notification = new Notification(title, {
             body: body,
-            icon: '/favicon.ico',
-            tag: `message-${conversationId}`, // Prevent duplicate notifications
+            icon: '/icon-192.png',
+            tag: `message-${conversationId}`,
             requireInteraction: false,
+            badge: '/icon-192.png',
           })
+          
+          console.log('✅ Notification created successfully!')
 
-          // Handle notification click - focus window and open conversation
+          // Handle notification click
           notification.onclick = () => {
+            console.log('🔔 Notification clicked')
             window.focus()
             setSelectedConversation(conversationId)
             notification.close()
+          }
+          
+          notification.onerror = (e) => {
+            console.error('❌ Notification error:', e)
           }
 
           // Auto-close after 5 seconds
           setTimeout(() => notification.close(), 5000)
         } catch (error) {
-          console.error('Error showing notification:', error)
+          console.error('❌ Error creating notification:', error)
         }
+      } else {
+        console.warn('⚠️ Notification permission not granted:', Notification.permission)
       }
     }
 
@@ -382,6 +423,25 @@ function MessagesPageContent() {
           
           const lastMsg = lastMsgArray?.[0] || null
 
+          // Count unread messages for this conversation (with fallback)
+          let unreadCount = 0
+          try {
+            const { count, error: countError } = await supabase
+              .from('messages')
+              .select('id', { count: 'exact', head: true })
+              .eq('conversation_id', conv.id)
+              .eq('receiver_id', user.id)
+              .eq('read', false)
+            
+            if (!countError) {
+              unreadCount = count || 0
+            } else {
+              console.warn('Could not count unread messages:', countError)
+            }
+          } catch (e) {
+            console.warn('Unread count failed, defaulting to 0:', e)
+          }
+
           return {
             id: conv.id,
             other_user: {
@@ -398,7 +458,7 @@ function MessagesPageContent() {
               created_at: lastMsg?.created_at || conv.created_at,
               sender_name: profileData?.display_name || 'Unknown'
             },
-            unread_count: 0 // TODO: Implement unread count
+            unread_count: unreadCount || 0
           }
         })
       )
@@ -465,6 +525,9 @@ function MessagesPageContent() {
 
   const loadMessages = async (conversationId: string) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
       const { data: messagesData, error } = await supabase
         .from('messages')
         .select(`
@@ -480,6 +543,19 @@ function MessagesPageContent() {
       if (error) {
         console.error('Error loading messages:', error)
         return
+      }
+
+      // Mark all unread messages in this conversation as read (non-blocking)
+      try {
+        await supabase
+          .from('messages')
+          .update({ read: true })
+          .eq('conversation_id', conversationId)
+          .eq('receiver_id', user.id)
+          .eq('read', false)
+      } catch (markReadError) {
+        console.warn('Failed to mark messages as read:', markReadError)
+        // Continue anyway - don't block message display
       }
 
       // Debug: Log the messages data structure
@@ -1302,20 +1378,13 @@ function MessagesPageContent() {
                         <p className="text-xs opacity-70">
                           {formatTime(message.created_at)}
                         </p>
-                        {/* Message Status Indicators */}
+                        {/* Message Status Indicators - Show for own messages */}
                         {message.sender_id !== (conversations.find(c => c.id === selectedConversation)?.other_user.id) && (
-                          <div className="flex items-center gap-1">
-                            {messageStatus[message.id] === 'sending' && (
-                              <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
-                            )}
-                            {messageStatus[message.id] === 'delivered' && (
-                              <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                            )}
-                            {messageStatus[message.id] === 'read' && (
-                              <div className="flex gap-1">
-                                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                              </div>
+                          <div className="flex items-center gap-1 text-xs">
+                            {message.read ? (
+                              <span className="opacity-70">✓✓</span>
+                            ) : (
+                              <span className="opacity-70">✓</span>
                             )}
                           </div>
                         )}

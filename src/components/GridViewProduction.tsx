@@ -68,13 +68,21 @@ const ReportModal = ({
   )
 }
 
-export default function GridViewProduction() {
+interface GridViewProductionProps {
+  onUserClick: (userId: string) => void
+  users?: UserGridProfile[]
+}
+
+export default function GridViewProduction({ 
+  onUserClick,
+  users: propsUsers = [] 
+}: GridViewProductionProps) {
   const supabase = createClient()
   const router = useRouter()
   
   // --- STATE MANAGEMENT ---
-  // Users for the grid (light data)
-  const [users, setUsers] = useState<UserGridProfile[]>([])
+  // Users for the grid (light data) - use prop if provided, otherwise fetch
+  const [users, setUsers] = useState<UserGridProfile[]>(propsUsers)
   // The currently clicked user (light data)
   const [selectedUser, setSelectedUser] = useState<UserGridProfile | null>(null)
   // The full, lazy-loaded profile for the modal
@@ -114,10 +122,14 @@ export default function GridViewProduction() {
     loadCurrentUser()
   }, [])
   
-  // 2. Fetch the initial grid of users
+  // 2. Sync internal state with props if provided
   useEffect(() => {
-    fetchGridUsers()
-  }, [])
+    if (propsUsers.length > 0) {
+      setUsers(propsUsers)
+    } else {
+      fetchGridUsers()
+    }
+  }, [propsUsers])
   
   // 4. Auto-refresh every 15 seconds for real-time updates
   useEffect(() => {

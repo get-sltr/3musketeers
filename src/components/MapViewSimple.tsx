@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { createSLTRMapboxMarker, cleanupSLTRMarker } from '@/components/SLTRMapPin'
-import { resolveProfilePhoto } from '@/lib/utils/profile'
+import { useEffect, useRef, useState, memo } from 'react'
+import { createClient } from '../lib/supabase/client'
+import { createSLTRMapboxMarker, cleanupSLTRMarker } from './SLTRMapPin'
+import { resolveProfilePhoto } from '../lib/utils/profile'
 
 // PIN STYLE FUNCTIONS
 const createPinStyle1 = (user: any) => {
@@ -162,7 +162,7 @@ const createPinStyle5 = (user: any) => {
 }
 
 // Simple Mapbox map component using CDN approach
-export default function MapViewSimple({ pinStyle = 1 }: { pinStyle?: number }) {
+function MapViewSimple({ pinStyle = 1 }: { pinStyle?: number }) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<any>(null)
   const [users, setUsers] = useState<any[]>([])
@@ -172,28 +172,42 @@ export default function MapViewSimple({ pinStyle = 1 }: { pinStyle?: number }) {
 
   // Get user's location
   useEffect(() => {
+    let isMounted = true
+    
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setCurrentLocation([position.coords.longitude, position.coords.latitude])
+          if (isMounted) {
+            setCurrentLocation([position.coords.longitude, position.coords.latitude])
+          }
         },
         (error) => {
           console.error('Error getting location:', error)
           // Default to LA if location fails
-          setCurrentLocation([-118.2437, 34.0522])
+          if (isMounted) {
+            setCurrentLocation([-118.2437, 34.0522])
+          }
         }
       )
     } else {
-      setCurrentLocation([-118.2437, 34.0522])
+      if (isMounted) {
+        setCurrentLocation([-118.2437, 34.0522])
+      }
+    }
+    
+    return () => {
+      isMounted = false
     }
   }, [])
 
   // Load nearby users with 10-mile radius
   useEffect(() => {
+    let isMounted = true
+    
     async function loadUsers() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
+        if (!user || !isMounted) return
 
         const { data: profile } = await supabase
           .from('profiles')
@@ -201,7 +215,7 @@ export default function MapViewSimple({ pinStyle = 1 }: { pinStyle?: number }) {
           .eq('id', user.id)
           .single()
 
-        if (!profile?.latitude || !profile?.longitude) return
+        if (!profile?.latitude || !profile?.longitude || !isMounted) return
 
         // Use get_nearby_profiles with 10-mile radius
         const { data, error } = await supabase.rpc('get_nearby_profiles', {
@@ -216,7 +230,7 @@ export default function MapViewSimple({ pinStyle = 1 }: { pinStyle?: number }) {
           return
         }
 
-        if (data) {
+        if (data && isMounted) {
           setUsers(data)
         }
       } catch (error) {
@@ -228,8 +242,10 @@ export default function MapViewSimple({ pinStyle = 1 }: { pinStyle?: number }) {
     
     // Auto-refresh every 30 seconds (reduced from 15 to save connections)
     const interval = setInterval(() => {
-      console.log('🗺️ Refreshing map users...')
-      loadUsers()
+      if (isMounted) {
+        console.log('🗺️ Refreshing map users...')
+        loadUsers()
+      }
     }, 30000) // 30 seconds
     
     // REMOVED realtime subscription - it was creating too many connections
@@ -237,9 +253,10 @@ export default function MapViewSimple({ pinStyle = 1 }: { pinStyle?: number }) {
     // If you need realtime back, use a single global channel with user-specific filters
 
     return () => {
+      isMounted = false
       clearInterval(interval)
     }
-  }, [])
+  }, [supabase])
 
   // Initialize map
   useEffect(() => {
@@ -426,3 +443,6 @@ export default function MapViewSimple({ pinStyle = 1 }: { pinStyle?: number }) {
     </div>
   )
 }
+
+// Export memoized version to prevent unnecessary re-renders
+export default memo(MapViewSimple)
