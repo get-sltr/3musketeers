@@ -26,15 +26,20 @@ export function useRealtime(): UseRealtimeReturn {
         // Test connection by subscribing to a test channel
         const testChannel = supabase.channel('connection-test')
         testChannel.subscribe((status) => {
-          setIsConnected(status === 'SUBSCRIBED')
+          if (status === 'SUBSCRIBED') {
+            setIsConnected(true)
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.warn('Realtime connection unavailable - app will work without live updates')
+            setIsConnected(false)
+          }
         })
         
         // Cleanup test channel after a moment
         setTimeout(() => {
           supabase.removeChannel(testChannel)
-        }, 1000)
+        }, 2000)
       } catch (error) {
-        console.error('Realtime connection error:', error)
+        console.warn('Realtime connection error (app will still work):', error)
         setIsConnected(false)
       }
     }
