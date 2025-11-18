@@ -76,10 +76,10 @@ export default function SltrButton({
         </p>
         <button
           disabled
-          className="w-full px-6 py-4 bg-black text-white font-bold text-lg rounded-full border-2 border-white/30 opacity-50 cursor-wait flex items-center justify-center gap-1"
+          className="w-full px-6 py-4 bg-black text-white font-bold text-lg rounded-full border-2 border-white/30 opacity-50 cursor-wait flex items-center justify-center"
         >
-          <span className="tracking-[0.3em]">s l t r</span>
-          <span className="text-lime-400 text-2xl" style={{ verticalAlign: 'super', lineHeight: '0' }}>∝</span>
+          <span className="font-black tracking-[0.3em]">sltr</span>
+          <span className="text-lime-400 text-xl font-bold relative -top-2 ml-0.5">∝</span>
         </button>
       </div>
     )
@@ -94,10 +94,10 @@ export default function SltrButton({
       </p>
       <button
         onClick={handleClick}
-        className="w-full px-6 py-4 bg-black hover:bg-black text-white font-bold text-lg rounded-full border-2 border-lime-400/30 hover:border-lime-400 hover:shadow-[0_0_30px_rgba(204,255,0,0.3)] transition-all duration-300 flex items-center justify-center gap-1"
+        className="w-full px-6 py-4 bg-black hover:bg-black text-white font-bold text-lg rounded-full border-2 border-lime-400/30 hover:border-lime-400 hover:shadow-[0_0_30px_rgba(204,255,0,0.3)] transition-all duration-300 flex items-center justify-center"
       >
-        <span className="tracking-[0.3em]">s l t r</span>
-        <span className="text-lime-400 text-2xl" style={{ verticalAlign: 'super', lineHeight: '0' }}>∝</span>
+        <span className="font-black tracking-[0.3em]">sltr</span>
+        <span className="text-lime-400 text-xl font-bold relative -top-2 ml-0.5">∝</span>
       </button>
     </div>
   )

@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import SltrButton from '../../components/SltrButton'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -16,6 +17,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [redirect, setRedirect] = useState<string | null>(null)
+
+  useEffect(() => {
+    const redirectParam = searchParams?.get('redirect')
+    if (redirectParam) {
+      setRedirect(redirectParam)
+    }
+  }, [searchParams])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -30,7 +39,8 @@ export default function LoginPage() {
 
       if (signInError) throw signInError
 
-      router.push('/app')
+      // Redirect to the specified page or default to /app
+      router.push(redirect || '/app')
       router.refresh()
     } catch (err: any) {
       setError(err.message || 'Failed to log in')
