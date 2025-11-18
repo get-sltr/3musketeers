@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
+import SltrButton from '../../components/SltrButton'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -166,6 +167,11 @@ export default function LoginPage() {
                   Sign up
                 </Link>
               </p>
+            </div>
+
+            {/* sltr∝ Link */}
+            <div className="mt-6 flex justify-center">
+              <SltrButton size="sm" />
             </div>
           </div>
         </div>

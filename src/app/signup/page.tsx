@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import SltrButton from '../../components/SltrButton'
 
 export default function SignupPage() {
   const [username, setUsername] = useState('')
@@ -363,6 +364,11 @@ export default function SignupPage() {
               Login
             </Link>
           </p>
+        </div>
+
+        {/* sltr∝ Link */}
+        <div className="mt-6 flex justify-center">
+          <SltrButton size="sm" />
         </div>
 
         <p className="text-center text-white/40 text-xs mt-4">
