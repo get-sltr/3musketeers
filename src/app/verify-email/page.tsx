@@ -98,18 +98,32 @@ export default function VerifyEmailPage() {
         }}
       >
         {/* Logo */}
-        <div className="text-center mb-8">
-          <h1
-            className="text-4xl font-black tracking-wider"
-            style={{
-              background: 'linear-gradient(135deg, #00d4ff, #ff00ff)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
-            SLTR
-          </h1>
+        <div className="text-center mb-8 flex flex-col items-center">
+          <div className="flex items-center gap-4 mb-2">
+            {/* Dot Grid with Bubble Effect */}
+            <svg width="50" height="50" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+              {[0, 1, 2, 3].map((row) =>
+                [0, 1, 2, 3].map((col) => {
+                  const x = 15 + col * 20;
+                  const y = 15 + row * 20;
+                  const isMiddle = (row === 1 || row === 2) && (col === 1 || col === 2);
+                  const radius = isMiddle ? 8 : 5;
+                  return (
+                    <circle
+                      key={`${row}-${col}`}
+                      cx={x}
+                      cy={y}
+                      r={radius}
+                      fill="#ccff00"
+                    />
+                  );
+                })
+              )}
+            </svg>
+            <div className="text-4xl font-black tracking-[0.3em] text-lime-400">
+              sltr
+            </div>
+          </div>
           <p className="text-white/60 text-sm tracking-widest uppercase mt-2">
             RULES DON&apos;T APPLY
           </p>
@@ -120,7 +134,7 @@ export default function VerifyEmailPage() {
           <div
             className="w-20 h-20 rounded-full flex items-center justify-center"
             style={{
-              background: 'linear-gradient(135deg, #00d4ff, #ff00ff)',
+              background: '#ccff00',
             }}
           >
             <svg
@@ -128,7 +142,7 @@ export default function VerifyEmailPage() {
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={2}
-              stroke="white"
+              stroke="black"
               className="w-10 h-10"
             >
               <path
@@ -182,11 +196,11 @@ export default function VerifyEmailPage() {
           <div
             className="p-4 rounded-2xl mb-4"
             style={{
-              background: 'rgba(0, 212, 255, 0.1)',
-              border: '1px solid rgba(0, 212, 255, 0.3)',
+              background: 'rgba(204, 255, 0, 0.1)',
+              border: '1px solid rgba(204, 255, 0, 0.3)',
             }}
           >
-            <p className="text-cyan-400 text-sm text-center">
+            <p className="text-lime-400 text-sm text-center">
               ✓ Email sent. Check your inbox.
             </p>
           </div>
@@ -226,9 +240,9 @@ export default function VerifyEmailPage() {
 
           <Link
             href="/login"
-            className="block w-full py-3 rounded-2xl text-white font-semibold text-center transition-all duration-200"
+            className="block w-full py-3 rounded-2xl text-black font-semibold text-center transition-all duration-200 hover:opacity-90"
             style={{
-              background: 'linear-gradient(135deg, #00d4ff, #ff00ff)',
+              background: '#ccff00',
             }}
           >
             Go to Login
