@@ -68,53 +68,36 @@ export default function SltrButton({
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center gap-2">
-        <p className="text-white/60 text-xs text-center" style={{
-          textShadow: '0 0 10px rgba(204, 255, 0, 0.3)'
+      <div className="flex flex-col items-center gap-3 w-full">
+        <p className="text-white/80 text-sm text-center font-medium" style={{
+          textShadow: '0 0 15px rgba(204, 255, 0, 0.5)'
         }}>
           Your experience increases in proportion to your membership.
         </p>
         <button
           disabled
-          className={`
-            bg-black text-white rounded-lg font-semibold 
-            border border-white/20
-            flex items-center gap-1.5 justify-center
-            opacity-50 cursor-wait
-            ${sizeClasses[size]}
-            ${fullWidth ? 'w-full' : ''}
-            ${className}
-          `}
+          className="w-full px-6 py-4 bg-black text-white font-bold text-lg rounded-full border-2 border-white/30 opacity-50 cursor-wait flex items-center justify-center gap-1"
         >
-          <span className="text-white">sltr</span>
-          <span className="text-lime-400">∝</span>
+          <span className="tracking-[0.3em]">s l t r</span>
+          <span className="text-lime-400 text-2xl" style={{ verticalAlign: 'super', lineHeight: '0' }}>∝</span>
         </button>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <p className="text-white/60 text-xs text-center" style={{
-        textShadow: '0 0 10px rgba(204, 255, 0, 0.3)'
+    <div className="flex flex-col items-center gap-3 w-full">
+      <p className="text-white/80 text-sm text-center font-medium" style={{
+        textShadow: '0 0 15px rgba(204, 255, 0, 0.5)'
       }}>
         Your experience increases in proportion to your membership.
       </p>
       <button
         onClick={handleClick}
-        className={`
-          bg-black text-white rounded-lg font-semibold 
-          border border-white/20
-          hover:border-lime-400/50 hover:shadow-lg hover:shadow-lime-400/20
-          transition-all duration-300
-          flex items-center gap-1.5 justify-center
-          ${sizeClasses[size]}
-          ${fullWidth ? 'w-full' : ''}
-          ${className}
-        `}
+        className="w-full px-6 py-4 bg-black hover:bg-black text-white font-bold text-lg rounded-full border-2 border-lime-400/30 hover:border-lime-400 hover:shadow-[0_0_30px_rgba(204,255,0,0.3)] transition-all duration-300 flex items-center justify-center gap-1"
       >
-        <span className="text-white">sltr</span>
-        <span className="text-lime-400">∝</span>
+        <span className="tracking-[0.3em]">s l t r</span>
+        <span className="text-lime-400 text-2xl" style={{ verticalAlign: 'super', lineHeight: '0' }}>∝</span>
       </button>
     </div>
   )
