@@ -186,7 +186,7 @@ export default function ChannelsPage() {
     return (
       <MobileLayout>
         <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-lime-400"></div>
         </div>
       </MobileLayout>
     )
@@ -198,19 +198,19 @@ export default function ChannelsPage() {
     <MobileLayout>
       <div className="min-h-screen bg-[#0a0a0f] pb-20">
         {/* Header */}
-        <div className="sticky top-0 z-40 bg-black/90 backdrop-blur-xl border-b border-cyan-500/20">
+        <div className="sticky top-0 z-40 bg-black/90 backdrop-blur-xl border-b border-lime-400/20">
           <div className="max-w-screen-xl mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowCreateChannel(true)}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-sm font-semibold hover:scale-105 transition-all"
+                  className="px-4 py-2 rounded-xl bg-lime-400 text-black text-sm font-semibold hover:scale-105 transition-all"
                 >
                   + Create Channel
                 </button>
                 <Link
                   href="/groups"
-                  className="px-4 py-2 rounded-xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-sm hover:bg-cyan-500/30 transition-all"
+                  className="px-4 py-2 rounded-xl bg-lime-400/20 border border-lime-400/40 text-lime-300 text-sm hover:bg-lime-400/30 transition-all"
                 >
                   All Groups
                 </Link>
@@ -240,7 +240,7 @@ export default function ChannelsPage() {
                   onClick={() => setSelectedGroup(group.id)}
                   className={`px-4 py-2 rounded-xl text-sm whitespace-nowrap transition ${
                     selectedGroup === group.id
-                      ? 'bg-cyan-500/30 border border-cyan-400/60 text-white'
+                      ? 'bg-lime-400/30 border border-lime-400/60 text-white'
                       : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10'
                   }`}
                 >
@@ -270,7 +270,7 @@ export default function ChannelsPage() {
               <Link
                 key={channel.id}
                 href={`/groups/channels/${channel.id}?group=${selectedGroup}&type=${channel.type}`}
-                className="block p-4 bg-black/40 border border-white/10 rounded-xl hover:border-cyan-400/40 transition"
+                className="block p-4 bg-black/40 border border-white/10 rounded-xl hover:border-lime-400/40 transition"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -329,7 +329,7 @@ export default function ChannelsPage() {
                     type="text"
                     value={newChannelName}
                     onChange={(e) => setNewChannelName(e.target.value)}
-                    className="w-full rounded-xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                    className="w-full rounded-xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-lime-400"
                     placeholder="e.g., General, Voice Chat, Video Room"
                     required
                   />
@@ -343,7 +343,7 @@ export default function ChannelsPage() {
                     type="text"
                     value={newChannelDescription}
                     onChange={(e) => setNewChannelDescription(e.target.value)}
-                    className="w-full rounded-xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                    className="w-full rounded-xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-lime-400"
                     placeholder="What's this channel for?"
                   />
                 </div>
@@ -360,7 +360,7 @@ export default function ChannelsPage() {
                         onClick={() => setNewChannelType(type)}
                         className={`flex-1 px-4 py-3 rounded-xl font-semibold transition-all ${
                           newChannelType === type
-                            ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white'
+                            ? 'bg-lime-400 text-black'
                             : 'bg-white/10 text-white/60 hover:bg-white/20'
                         }`}
                       >
@@ -388,7 +388,7 @@ export default function ChannelsPage() {
                   <button
                     type="submit"
                     disabled={creatingChannel || !newChannelName.trim()}
-                    className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-semibold hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 px-4 py-3 rounded-xl bg-lime-400 text-black font-semibold hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {creatingChannel ? 'Creating…' : 'Create Channel'}
                   </button>

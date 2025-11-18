@@ -30,7 +30,7 @@ export default function GroupsPage() {
     return (
       <MobileLayout>
         <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-lime-400"></div>
         </div>
       </MobileLayout>
     )
@@ -40,7 +40,7 @@ export default function GroupsPage() {
     <MobileLayout>
       <div className="min-h-screen bg-[#0a0a0f] pb-20">
         {/* Header */}
-        <div className="sticky top-0 z-40 bg-black/90 backdrop-blur-xl border-b border-cyan-500/20">
+        <div className="sticky top-0 z-40 bg-black/90 backdrop-blur-xl border-b border-lime-400/20">
           <div className="max-w-screen-xl mx-auto px-4 py-4">
             <h1 className="text-white text-2xl font-bold">Groups</h1>
             <p className="text-white/60 text-sm">Connect with your community</p>
@@ -51,7 +51,7 @@ export default function GroupsPage() {
         <div className="px-4 py-4">
           <Link
             href="/groups/channels"
-            className="block p-6 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-400/40 rounded-2xl hover:border-cyan-400/60 transition"
+            className="block p-6 bg-lime-400/20 border border-lime-400/40 rounded-2xl hover:border-lime-400/60 transition"
           >
             <div className="flex items-center justify-between">
               <div>

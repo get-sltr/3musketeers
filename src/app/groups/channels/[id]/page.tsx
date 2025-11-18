@@ -112,7 +112,7 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-lime-400 mx-auto mb-4"></div>
           <p className="text-white">Connecting to {channelType === 'video' ? 'video' : 'voice'} room...</p>
         </div>
       </div>
