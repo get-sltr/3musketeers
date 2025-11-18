@@ -226,32 +226,18 @@ export default function MapViewSimple({ pinStyle = 1 }: { pinStyle?: number }) {
 
     loadUsers()
     
-    // Auto-refresh every 15 seconds
+    // Auto-refresh every 30 seconds (reduced from 15 to save connections)
     const interval = setInterval(() => {
       console.log('🗺️ Refreshing map users...')
       loadUsers()
-    }, 15000) // 15 seconds
+    }, 30000) // 30 seconds
     
-    // Subscribe to real-time updates
-    const channel = supabase
-      .channel('map-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'profiles',
-        },
-        (payload) => {
-          console.log('📡 Map real-time update:', payload)
-          loadUsers()
-        }
-      )
-      .subscribe()
+    // REMOVED realtime subscription - it was creating too many connections
+    // Map auto-refreshes every 30 seconds instead
+    // If you need realtime back, use a single global channel with user-specific filters
 
     return () => {
       clearInterval(interval)
-      supabase.removeChannel(channel)
     }
   }, [])
 
