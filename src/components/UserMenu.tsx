@@ -202,7 +202,7 @@ export default function UserMenu({ className = '' }: UserMenuProps) {
       
       {/* User Menu Dropdown */}
       {showUserMenu && (
-        <div className="absolute top-full left-0 mt-2 w-48 bg-black/60 backdrop-blur-2xl border border-white/20 rounded-xl overflow-hidden z-50 animate-fadeIn shadow-2xl">
+        <div className="absolute top-full left-0 mt-2 w-48 bg-black/60 backdrop-blur-2xl border border-white/20 rounded-xl overflow-hidden z-[9999] animate-fadeIn shadow-2xl">
           {/* Quick Settings */}
           <div className="px-4 py-3 border-b border-white/10">
             <div className="flex items-center justify-between text-white text-sm mb-2">
