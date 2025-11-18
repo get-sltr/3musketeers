@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '../lib/supabase/client'
 import { RealtimeChannel } from '@supabase/supabase-js'
+import RealtimeManager from '../lib/realtime/RealtimeManager'
 
 interface UseRealtimeReturn {
   isConnected: boolean
@@ -16,107 +17,60 @@ interface UseRealtimeReturn {
 
 export function useRealtime(): UseRealtimeReturn {
   const [isConnected, setIsConnected] = useState(false)
-  const [channels, setChannels] = useState<Map<string, RealtimeChannel>>(new Map())
   const supabase = createClient()
 
   useEffect(() => {
-    // Check connection status
-    const checkConnection = async () => {
-      try {
-        // Test connection by subscribing to a test channel
-        const testChannel = supabase.channel('connection-test')
-        testChannel.subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            setIsConnected(true)
-          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            console.warn('Realtime connection unavailable - app will work without live updates')
-            setIsConnected(false)
-          }
-        })
-        
-        // Cleanup test channel after a moment
-        setTimeout(() => {
-          supabase.removeChannel(testChannel)
-        }, 2000)
-      } catch (error) {
-        console.warn('Realtime connection error (app will still work):', error)
-        setIsConnected(false)
+    // Connect to global realtime manager
+    const initRealtime = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const connected = await RealtimeManager.connect(user.id)
+      setIsConnected(connected)
+
+      // Listen for connection status changes
+      const unsubConnect = RealtimeManager.on('realtime:connected', () => setIsConnected(true))
+      const unsubError = RealtimeManager.on('realtime:error', () => setIsConnected(false))
+
+      return () => {
+        unsubConnect()
+        unsubError()
       }
     }
 
-    checkConnection()
+    initRealtime()
     
-    // Cleanup on unmount
-    return () => {
-      channels.forEach((channel) => {
-        supabase.removeChannel(channel)
-      })
-    }
+    // Cleanup on unmount - DON'T disconnect as other components may use it
+    return () => {}
   }, [])
 
   const joinConversation = useCallback((conversationId: string) => {
-    if (channels.has(conversationId)) return
-
-    const channel = supabase
-      .channel(`conversation:${conversationId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${conversationId}`,
-        },
-        (payload) => {
-          // Dispatch custom event for new messages
-          const event = new CustomEvent('new_message', { detail: payload.new })
-          window.dispatchEvent(event)
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${conversationId}`,
-        },
-        (payload) => {
-          // Dispatch custom event for message updates (e.g., read receipts)
-          const event = new CustomEvent('message_updated', { detail: payload.new })
-          window.dispatchEvent(event)
-        }
-      )
-      .on('broadcast', { event: 'typing_start' }, (payload) => {
-        // Dispatch typing start event
-        const event = new CustomEvent('user_typing', { detail: payload.payload })
-        window.dispatchEvent(event)
-      })
-      .on('broadcast', { event: 'typing_stop' }, (payload) => {
-        // Dispatch typing stop event
-        const event = new CustomEvent('user_stop_typing', { detail: payload.payload })
-        window.dispatchEvent(event)
-      })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          setIsConnected(true)
-        }
-      })
-
-    setChannels((prev) => new Map(prev).set(conversationId, channel))
-  }, [channels, supabase])
+    // Subscribe to message events from global manager
+    RealtimeManager.on('message:new', (message) => {
+      if (message.conversation_id === conversationId) {
+        window.dispatchEvent(new CustomEvent('new_message', { detail: message }))
+      }
+    })
+    RealtimeManager.on('message:updated', (message) => {
+      if (message.conversation_id === conversationId) {
+        window.dispatchEvent(new CustomEvent('message_updated', { detail: message }))
+      }
+    })
+    RealtimeManager.on('user:typing', (data) => {
+      if (data.conversationId === conversationId) {
+        window.dispatchEvent(new CustomEvent('user_typing', { detail: data }))
+      }
+    })
+    RealtimeManager.on('user:stop_typing', (data) => {
+      if (data.conversationId === conversationId) {
+        window.dispatchEvent(new CustomEvent('user_stop_typing', { detail: data }))
+      }
+    })
+  }, [])
 
   const leaveConversation = useCallback((conversationId: string) => {
-    const channel = channels.get(conversationId)
-    if (channel) {
-      supabase.removeChannel(channel)
-      setChannels((prev) => {
-        const newMap = new Map(prev)
-        newMap.delete(conversationId)
-        return newMap
-      })
-    }
-  }, [channels, supabase])
+    // No-op - global manager handles all subscriptions
+  }, [])
 
   const sendMessage = useCallback(async (
     conversationId: string,
@@ -178,30 +132,15 @@ export function useRealtime(): UseRealtimeReturn {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    // Broadcast typing indicator via custom channel event
-    const channel = channels.get(conversationId)
-    if (channel) {
-      channel.send({
-        type: 'broadcast',
-        event: 'typing_start',
-        payload: { userId: user.id, conversationId },
-      })
-    }
-  }, [channels, supabase])
+    RealtimeManager.broadcast('typing_start', { userId: user.id, conversationId })
+  }, [supabase])
 
   const stopTyping = useCallback(async (conversationId: string) => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const channel = channels.get(conversationId)
-    if (channel) {
-      channel.send({
-        type: 'broadcast',
-        event: 'typing_stop',
-        payload: { userId: user.id, conversationId },
-      })
-    }
-  }, [channels, supabase])
+    RealtimeManager.broadcast('typing_stop', { userId: user.id, conversationId })
+  }, [supabase])
 
   const markMessageRead = useCallback(async (messageId: string, conversationId: string) => {
     const { data: { user } } = await supabase.auth.getUser()
