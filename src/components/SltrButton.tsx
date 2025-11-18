@@ -28,6 +28,7 @@ export default function SltrButton({
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
+        // Not logged in - button will go to pricing page
         setLoading(false)
         return
       }
