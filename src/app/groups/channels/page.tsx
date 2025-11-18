@@ -302,7 +302,18 @@ export default function ChannelsPage() {
         {/* Create Channel Modal */}
         {showCreateChannel && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xl p-4">
-            <div className="w-full max-w-md rounded-2xl bg-black/90 border border-white/20 p-6">
+            <div className="w-full max-w-md rounded-2xl bg-black/90 border border-white/20 p-6 relative">
+              {!selectedGroup && (
+                <div className="mb-4 p-3 bg-white rounded-lg">
+                  <p className="text-gray-800 text-sm">Please create or select a group first</p>
+                  <button
+                    onClick={() => setShowCreateChannel(false)}
+                    className="mt-2 text-sm text-gray-600 underline"
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-white">Create Channel</h2>
                 <button
