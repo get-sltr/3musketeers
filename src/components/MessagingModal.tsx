@@ -234,9 +234,9 @@ export default function MessagingModal({
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-        <div className="w-full max-w-2xl h-[80vh] max-h-[600px] bg-black/95 backdrop-blur-xl border border-cyan-500/20 rounded-2xl overflow-hidden flex flex-col shadow-2xl">
+        <div className="w-full max-w-2xl h-[80vh] max-h-[600px] bg-black/95 backdrop-blur-xl border border-lime-400/20 rounded-2xl overflow-hidden flex flex-col shadow-2xl">
           {/* Header - Shows who you're messaging */}
-          <div className="flex items-center gap-3 p-4 border-b border-white/10 bg-gradient-to-r from-cyan-500/10 to-purple-500/10">
+          <div className="flex items-center gap-3 p-4 border-b border-white/10 bg-gradient-to-r from-lime-400/10 to-lime-400/5">
             <button
               onClick={onClose}
               className="p-2 hover:bg-white/10 rounded-lg transition-all"
@@ -249,7 +249,7 @@ export default function MessagingModal({
             <img
               src={user.photos?.[0] || user.photo || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23222" width="100" height="100"/%3E%3Ctext fill="%23aaa" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"%3E?%3C/text%3E%3C/svg%3E'}
               alt={user.display_name || user.username}
-              className="w-10 h-10 rounded-full object-cover border-2 border-cyan-500/30"
+              className="w-10 h-10 rounded-full object-cover border-2 border-lime-400/30"
             />
             
             <div className="flex-1">
@@ -298,7 +298,7 @@ export default function MessagingModal({
                     <div
                       className={`max-w-[70%] px-4 py-2 rounded-2xl ${
                         isSent
-                          ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white'
+                          ? 'bg-lime-400 text-black'
                           : 'bg-white/10 text-white'
                       }`}
                     >
@@ -325,13 +325,13 @@ export default function MessagingModal({
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder={`Message ${user.display_name || user.username || 'User'}...`}
-                className="flex-1 bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300"
+                className="flex-1 bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all duration-300"
                 disabled={sending || !conversationId}
               />
               <button
                 type="submit"
                 disabled={!newMessage.trim() || sending || !conversationId}
-                className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-xl font-semibold hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-3 bg-lime-400 text-black rounded-xl font-semibold hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {sending ? '...' : 'Send'}
               </button>
