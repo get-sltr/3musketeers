@@ -45,7 +45,7 @@ export default function NotificationPrompt() {
 
   return (
     <div className="fixed bottom-24 left-4 right-4 z-50 animate-slide-up">
-      <div className="bg-gradient-to-r from-purple-900/95 to-cyan-900/95 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-cyan-500/30">
+      <div className="bg-black/95 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-lime-400/30">
         <div className="flex items-start gap-3">
           <div className="text-3xl">🔔</div>
           <div className="flex-1">
@@ -58,7 +58,7 @@ export default function NotificationPrompt() {
             <div className="flex gap-2">
               <button
                 onClick={requestPermission}
-                className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition"
+                className="flex-1 bg-lime-400 text-black font-semibold px-4 py-2 rounded-lg hover:bg-lime-300 transition"
               >
                 Enable
               </button>
