@@ -167,18 +167,37 @@ export default function UserMenu({ className = '' }: UserMenuProps) {
       {/* SLTR Logo Button */}
       <button
         onClick={() => setShowUserMenu(!showUserMenu)}
-        className="text-3xl font-black tracking-wider gradient-text hover:scale-105 transition-all duration-300 cursor-pointer"
-        style={{
-          background: 'linear-gradient(135deg, #00d4ff, #ff00ff)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text',
-          filter: 'drop-shadow(0 0 16px rgba(255, 0, 255, 0.9)) drop-shadow(0 0 32px rgba(0, 217, 255, 0.7)) drop-shadow(0 0 48px rgba(255, 0, 255, 0.5))',
-          fontWeight: 900,
-          letterSpacing: '0.15em'
-        }}
+        className="flex items-center gap-2 hover:scale-105 transition-all duration-300 cursor-pointer"
       >
-        SLTR
+        {/* Dot Grid */}
+        <svg width="32" height="32" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+          {[0, 1, 2, 3].map((row) =>
+            [0, 1, 2, 3].map((col) => {
+              const x = 15 + col * 20;
+              const y = 15 + row * 20;
+              const isMiddle = (row === 1 || row === 2) && (col === 1 || col === 2);
+              const radius = isMiddle ? 8 : 5;
+              return (
+                <circle
+                  key={`${row}-${col}`}
+                  cx={x}
+                  cy={y}
+                  r={radius}
+                  fill="#ccff00"
+                />
+              );
+            })
+          )}
+        </svg>
+        {/* Text */}
+        <span 
+          className="text-2xl font-black tracking-[0.3em] text-lime-400"
+          style={{
+            filter: 'drop-shadow(0 0 8px rgba(204, 255, 0, 0.6))'
+          }}
+        >
+          sltr
+        </span>
       </button>
       
       {/* User Menu Dropdown */}
@@ -191,7 +210,7 @@ export default function UserMenu({ className = '' }: UserMenuProps) {
               <label className="inline-flex items-center cursor-pointer">
                 <input type="checkbox" className="sr-only" checked={notifySound} onChange={(e) => setNotifySound(e.target.checked)} />
                 <span className="w-10 h-5 bg-white/20 rounded-full relative">
-                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-all ${notifySound ? 'translate-x-5 bg-cyan-400' : 'bg-white'}`}></span>
+                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-all ${notifySound ? 'translate-x-5 bg-lime-400' : 'bg-white'}`}></span>
                 </span>
               </label>
             </div>
@@ -200,7 +219,7 @@ export default function UserMenu({ className = '' }: UserMenuProps) {
               <label className="inline-flex items-center cursor-pointer">
                 <input type="checkbox" className="sr-only" checked={notifyVibrate} onChange={(e) => setNotifyVibrate(e.target.checked)} />
                 <span className="w-10 h-5 bg-white/20 rounded-full relative">
-                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-all ${notifyVibrate ? 'translate-x-5 bg-cyan-400' : 'bg-white'}`}></span>
+                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-all ${notifyVibrate ? 'translate-x-5 bg-lime-400' : 'bg-white'}`}></span>
                 </span>
               </label>
             </div>
@@ -211,7 +230,7 @@ export default function UserMenu({ className = '' }: UserMenuProps) {
                 disabled={isPending}
               >
                 <span>Language</span>
-                <span className="flex items-center gap-1 text-cyan-400">
+                <span className="flex items-center gap-1 text-lime-400">
                   {localeNames[locale as Locale]}
                   <svg className={`w-4 h-4 transition-transform ${showLanguageMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -226,7 +245,7 @@ export default function UserMenu({ className = '' }: UserMenuProps) {
                       onClick={() => handleLanguageChange(loc)}
                       className={`w-full px-3 py-2 text-left text-sm transition-all duration-300 ${
                         locale === loc
-                          ? 'bg-cyan-500/20 text-cyan-400'
+                          ? 'bg-lime-400/20 text-lime-400'
                           : 'text-white hover:bg-white/10'
                       }`}
                       disabled={isPending}

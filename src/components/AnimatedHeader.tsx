@@ -37,10 +37,10 @@ export default function AnimatedHeader({ viewMode, onViewModeChange }: AnimatedH
           : 'linear-gradient(180deg, rgba(10, 10, 15, 0.95) 0%, rgba(26, 10, 46, 0.92) 100%)',
         backdropFilter: `blur(${backdropBlur}px)`,
         borderBottom: '2px solid transparent',
-        borderImage: 'linear-gradient(90deg, rgba(255, 0, 255, 0.3), rgba(0, 217, 255, 0.3), rgba(255, 0, 255, 0.3)) 1',
+        borderImage: 'linear-gradient(90deg, rgba(204, 255, 0, 0.3), rgba(204, 255, 0, 0.3), rgba(204, 255, 0, 0.3)) 1',
         boxShadow: isScrolled
-          ? '0 4px 24px rgba(0, 0, 0, 0.6), 0 0 40px rgba(255, 0, 255, 0.15)'
-          : '0 2px 16px rgba(0, 0, 0, 0.4), 0 0 30px rgba(255, 0, 255, 0.1)',
+          ? '0 4px 24px rgba(0, 0, 0, 0.6), 0 0 40px rgba(204, 255, 0, 0.15)'
+          : '0 2px 16px rgba(0, 0, 0, 0.4), 0 0 30px rgba(204, 255, 0, 0.1)',
         opacity: headerOpacity,
         paddingTop: 'env(safe-area-inset-top)'
       }}
@@ -56,7 +56,7 @@ export default function AnimatedHeader({ viewMode, onViewModeChange }: AnimatedH
           {viewMode === 'map' && (
             <button
               onClick={() => window.dispatchEvent(new Event('toggle_map_session_menu'))}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-black/70 border border-white/10 flex items-center justify-center hover:border-cyan-400 transition flex-shrink-0"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-black/70 border border-white/10 flex items-center justify-center hover:border-lime-400 transition flex-shrink-0"
               title="Session Menu"
             >
               <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h12"/></svg>
@@ -75,7 +75,7 @@ export default function AnimatedHeader({ viewMode, onViewModeChange }: AnimatedH
               onClick={() => onViewModeChange('grid')}
               className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all duration-300 ${
                 viewMode === 'grid'
-                  ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white'
+                  ? 'bg-lime-400 text-black'
                   : 'text-white/60 hover:text-white hover:bg-white/10'
               }`}
               whileTap={{ scale: 0.95 }}
@@ -91,7 +91,7 @@ export default function AnimatedHeader({ viewMode, onViewModeChange }: AnimatedH
               onClick={() => onViewModeChange('map')}
               className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all duration-300 ${
                 viewMode === 'map'
-                  ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white'
+                  ? 'bg-lime-400 text-black'
                   : 'text-white/60 hover:text-white hover:bg-white/10'
               }`}
               whileTap={{ scale: 0.95 }}

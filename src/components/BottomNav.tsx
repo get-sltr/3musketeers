@@ -93,7 +93,14 @@ export default function BottomNav() {
       id: 'map',
       icon: '🗺️',
       label: 'Map',
-      action: () => router.push('/map'),
+      action: () => {
+        if (pathname === '/app') {
+          window.dispatchEvent(new Event('sltr_switch_to_map'))
+        } else {
+          router.push('/app')
+          setTimeout(() => window.dispatchEvent(new Event('sltr_switch_to_map')), 100)
+        }
+      },
     },
     {
       id: 'messages',
@@ -230,7 +237,7 @@ export default function BottomNav() {
             onClick={item.action}
             className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${
               activeTab === item.id
-                ? 'text-cyan-400'
+                ? 'text-lime-400'
                 : 'text-white/50 hover:text-white/70'
             }`}
           >
