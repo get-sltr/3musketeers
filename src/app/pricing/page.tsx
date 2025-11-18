@@ -246,7 +246,7 @@ export default function PricingPage() {
             >
               Get sltr∝ - $4.99/mo
             </CheckoutButton>
-            <p className="text-xs text-center text-gray-500 mt-2">Cancel anytime</p>
+            <p className="text-xs text-center text-gray-500 mt-2">Billed monthly. Cancel anytime, no commitments.</p>
           </motion.div>
         </div>
 

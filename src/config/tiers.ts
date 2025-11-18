@@ -42,7 +42,7 @@ export const TIER_CONFIG: Record<TierType, TierConfig> = {
     displayName: 'sltr∝',
     description: 'Unlock the full SLTR experience',
     price: 4.99,
-    priceId: 'price_PLACEHOLDER', // Update with new Stripe price ID
+    priceId: 'price_1SUj5Y3Au54W8cq83oP3eOpR',
     interval: 'month',
     features: [
       'Unlimited Profile Views',

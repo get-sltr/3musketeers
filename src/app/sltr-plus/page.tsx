@@ -88,7 +88,7 @@ export default function SLTRPlusPage() {
         </button>
 
         <p className="text-center text-white/40 text-sm mt-4">
-          sltr<span className="text-lime-400">∝</span> Subscription. Cancel any time.
+          $4.99 billed monthly. Cancel anytime with no penalties.
         </p>
       </div>
     </div>
