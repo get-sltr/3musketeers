@@ -439,7 +439,7 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
                   setUploading(false)
                   setPanelMode('create')
                 }}
-                className="rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 px-3 py-2 text-sm font-semibold text-white transition hover:scale-105"
+                className="rounded-xl bg-lime-400 text-black px-3 py-2 text-sm font-semibold transition hover:scale-105"
               >
                 + New
               </button>
@@ -448,7 +448,7 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-10 text-white/60">
-                  <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-cyan-500 border-t-transparent" />
+                  <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-lime-400 border-t-transparent" />
                   <p>Loading albums...</p>
                 </div>
               ) : albums.length === 0 ? (
@@ -463,7 +463,7 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
                       setUploading(false)
                       setPanelMode('create')
                     }}
-                    className="rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 px-4 py-2 text-sm font-semibold text-white transition hover:scale-105"
+                    className="rounded-xl bg-lime-400 text-black px-4 py-2 text-sm font-semibold transition hover:scale-105"
                   >
                     Create your first album
                   </button>
@@ -476,7 +476,7 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
                   return (
                     <div
                       key={album.id}
-                      className={`rounded-2xl border ${isActive ? 'border-cyan-400/70 bg-cyan-500/10 shadow-lg shadow-cyan-500/10' : 'border-white/10 bg-white/[0.04] hover:border-white/20'} transition`}
+                      className={`rounded-2xl border ${isActive ? 'border-lime-400/70 bg-lime-400/10 shadow-lg shadow-lime-400/10' : 'border-white/10 bg-white/[0.04] hover:border-white/20'} transition`}
                     >
                       <button
                         onClick={() => handleAlbumSelect(album)}
@@ -508,7 +508,7 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
                           <div className="mt-2 text-xs text-white/50">
                             {album.photos.length} photo{album.photos.length === 1 ? '' : 's'}
                             {album.permissions.length > 0 && (
-                              <span className="ml-2 text-cyan-300">
+                              <span className="ml-2 text-lime-300">
                                 • {album.permissions.length} shared
                               </span>
                             )}
@@ -559,7 +559,7 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
                         type="text"
                         value={newAlbumName}
                         onChange={(e) => setNewAlbumName(e.target.value)}
-                        className="w-full rounded-xl border border-white/15 bg-black/40 px-4 py-3 text-white placeholder-white/40 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/60"
+                        className="w-full rounded-xl border border-white/15 bg-black/40 px-4 py-3 text-white placeholder-white/40 focus:border-lime-400 focus:outline-none focus:ring-2 focus:ring-lime-400/60"
                         placeholder="e.g., Beach Nights, Pride Weekend"
                         required
                       />
@@ -568,7 +568,7 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
                       <label className="mb-2 block text-sm font-semibold text-white/80">
                         Upload Photos (Optional)
                       </label>
-                      <div className="rounded-2xl border border-dashed border-cyan-500/40 bg-black/20 px-4 py-6 text-center">
+                      <div className="rounded-2xl border border-dashed border-lime-400/40 bg-black/20 px-4 py-6 text-center">
                         <input
                           type="file"
                           accept="image/*"
@@ -578,7 +578,7 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
                               setCreateFormPhotos(Array.from(e.target.files))
                             }
                           }}
-                          className="block w-full text-sm text-white/70 file:mr-3 file:rounded-full file:border-0 file:bg-cyan-500/20 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-cyan-100 hover:file:bg-cyan-500/30"
+                          className="block w-full text-sm text-white/70 file:mr-3 file:rounded-full file:border-0 file:bg-lime-400/20 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-lime-100 hover:file:bg-lime-400/30"
                         />
                         <p className="mt-3 text-xs text-white/50">You can select multiple files at once.</p>
                         {createFormPhotos.length > 0 && (
@@ -609,7 +609,7 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
                       <button
                         type="submit"
                         disabled={uploading || photoUploading || !newAlbumName.trim()}
-                        className="rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 px-5 py-3 text-sm font-semibold text-white transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="rounded-xl bg-lime-400 text-black px-5 py-3 text-sm font-semibold transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {uploading || photoUploading ? (photoUploading ? 'Uploading Photos…' : 'Creating…') : 'Create Album'}
                       </button>
@@ -652,7 +652,7 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
                           type="text"
                           value={albumFormName}
                           onChange={(e) => setAlbumFormName(e.target.value)}
-                          className="w-full rounded-xl border border-white/15 bg-black/40 px-4 py-3 text-white placeholder-white/40 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/60"
+                          className="w-full rounded-xl border border-white/15 bg-black/40 px-4 py-3 text-white placeholder-white/40 focus:border-lime-400 focus:outline-none focus:ring-2 focus:ring-lime-400/60"
                           placeholder="Album title"
                         />
                       </div>
@@ -675,7 +675,7 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
                             checked={albumFormPublic}
                             onChange={(e) => setAlbumFormPublic(e.target.checked)}
                           />
-                          <div className={`h-6 w-12 rounded-full transition ${albumFormPublic ? 'bg-cyan-500' : 'bg-white/20'}`}>
+                          <div className={`h-6 w-12 rounded-full transition ${albumFormPublic ? 'bg-lime-400' : 'bg-white/20'}`}>
                             <div
                               className={`h-6 w-6 rounded-full bg-white shadow transition ${albumFormPublic ? 'translate-x-6' : ''}`}
                             />
@@ -686,14 +686,14 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
                       <button
                         onClick={handleAlbumSave}
                         disabled={albumSaving}
-                        className="w-full rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 px-4 py-3 text-sm font-semibold text-white transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60"
+                        className="w-full rounded-xl bg-lime-400 text-black px-4 py-3 text-sm font-semibold transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {albumSaving ? 'Saving…' : 'Save Changes'}
                       </button>
 
                       <div className="border-t border-white/10 pt-5">
                         <label className="mb-3 block text-sm font-semibold text-white/80">Upload photos</label>
-                        <div className="rounded-2xl border border-dashed border-cyan-500/40 bg-black/20 px-4 py-6 text-center">
+                        <div className="rounded-2xl border border-dashed border-lime-400/40 bg-black/20 px-4 py-6 text-center">
                           <input
                             type="file"
                             accept="image/*"
@@ -703,7 +703,7 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
                                 setQueuedPhotos(Array.from(e.target.files))
                               }
                             }}
-                            className="block w-full text-sm text-white/70 file:mr-3 file:rounded-full file:border-0 file:bg-cyan-500/20 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-cyan-100 hover:file:bg-cyan-500/30"
+                            className="block w-full text-sm text-white/70 file:mr-3 file:rounded-full file:border-0 file:bg-lime-400/20 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-lime-100 hover:file:bg-lime-400/30"
                           />
                           <p className="mt-3 text-xs text-white/50">You can select multiple files at once.</p>
                           {queuedPhotos.length > 0 && (
@@ -719,7 +719,7 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
                           <button
                             onClick={handleQueuedUpload}
                             disabled={photoUploading || queuedPhotos.length === 0}
-                            className="mt-4 w-full rounded-xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="mt-4 w-full rounded-xl bg-lime-400 text-black px-4 py-2 text-sm font-semibold transition hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             {photoUploading ? 'Uploading…' : 'Upload Selected Photos'}
                           </button>
@@ -808,7 +808,7 @@ export default function AlbumsManager({ isOpen, onClose, onAlbumShare }: AlbumsM
               </div>
             ) : loading ? (
               <div className="flex h-full flex-col items-center justify-center gap-4 text-white/60">
-                <div className="h-10 w-10 animate-spin rounded-full border-4 border-cyan-500 border-t-transparent" />
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-lime-400 border-t-transparent" />
                 <p>Loading albums…</p>
               </div>
             ) : albums.length === 0 ? (

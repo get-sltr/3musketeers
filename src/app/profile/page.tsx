@@ -82,7 +82,7 @@ export default function ProfilePage() {
         e.preventDefault()
         onChange(!checked)
       }}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${checked ? 'bg-cyan-400/80' : 'bg-white/20'}`}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${checked ? 'bg-lime-400/80' : 'bg-white/20'}`}
     >
       <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-300 ${checked ? 'translate-x-5' : 'translate-x-1'}`} />
     </button>
@@ -556,7 +556,7 @@ export default function ProfilePage() {
                       </span>
                     )}
                     {profileData.position && (
-                      <span className="px-3 py-1 rounded-full text-sm font-semibold bg-cyan-400/30 text-cyan-100">
+                      <span className="px-3 py-1 rounded-full text-sm font-semibold bg-lime-400/30 text-lime-100">
                         {profileData.position}
                       </span>
                     )}
@@ -602,7 +602,7 @@ export default function ProfilePage() {
                     type="text"
                     value={profileData.display_name}
                     onChange={(e) => setProfileData(prev => ({ ...prev, display_name: e.target.value }))}
-                    className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                    className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-lime-400"
                     placeholder="Choose your stage name"
                     required
                   />
@@ -613,7 +613,7 @@ export default function ProfilePage() {
                     type="number"
                     value={profileData.age}
                     onChange={(e) => setProfileData(prev => ({ ...prev, age: e.target.value }))}
-                    className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                    className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-lime-400"
                     placeholder="Age"
                     min={18}
                     max={100}
@@ -629,7 +629,7 @@ export default function ProfilePage() {
                         type="button"
                         onClick={() => setProfileData(prev => ({ ...prev, position: pos }))}
                         className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
-                          profileData.position === pos ? 'bg-cyan-400/30 text-cyan-100 shadow' : 'bg-white/10 text-white/60 hover:bg-white/20'
+                          profileData.position === pos ? 'bg-lime-400/30 text-lime-100 shadow' : 'bg-white/10 text-white/60 hover:bg-white/20'
                         }`}
                       >
                         {pos}
@@ -747,7 +747,7 @@ export default function ProfilePage() {
                   autoComplete="off"
                   spellCheck="true"
                   placeholder="Let SLTR know your vibe, your boundaries, or your invite."
-                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-400 resize-none"
+                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-lime-400 resize-none"
                 />
                 <div className="text-right text-xs text-white/40">{profileData.bio.length}/500 characters</div>
               </div>
@@ -769,8 +769,8 @@ export default function ProfilePage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 gradient-button py-4 rounded-2xl text-white font-semibold text-lg hover:scale-[1.02] transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ background: 'linear-gradient(135deg, #00d4ff, #ff00ff)', boxShadow: '0 0 30px rgba(0, 212, 255, 0.25)' }}
+                className="flex-1 gradient-button py-4 rounded-2xl text-black font-semibold text-lg hover:scale-[1.02] transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ background: '#ccff00', boxShadow: '0 0 30px rgba(204, 255, 0, 0.25)' }}
               >
                 {saving ? 'Saving…' : 'Save Changes'}
               </button>
@@ -847,7 +847,7 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={() => setShowAlbumsManager(true)}
-                  className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-xl font-semibold hover:scale-105 transition-all duration-300"
+                  className="px-4 py-2 bg-lime-400 text-black rounded-xl font-semibold hover:scale-105 transition-all duration-300"
                 >
                   Manage Albums
                 </button>
@@ -866,7 +866,7 @@ export default function ProfilePage() {
                             {album.is_public ? 'Public' : 'Private'}
                           </span>
                           {album.permissions.length > 0 && (
-                            <span className="text-xs text-cyan-300">{album.permissions.length} shared</span>
+                            <span className="text-xs text-lime-300">{album.permissions.length} shared</span>
                           )}
                         </div>
                       </div>
@@ -899,7 +899,7 @@ export default function ProfilePage() {
                         <button
                           type="button"
                           onClick={() => openPhotoViewer(album, 0)}
-                          className="text-cyan-300 hover:text-cyan-200 transition-colors duration-300"
+                          className="text-lime-300 hover:text-lime-200 transition-colors duration-300"
                         >
                           View All
                         </button>
@@ -915,7 +915,7 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     onClick={() => setShowAlbumsManager(true)}
-                    className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-xl font-semibold hover:scale-105 transition-all duration-300"
+                    className="px-6 py-3 bg-lime-400 text-black rounded-xl font-semibold hover:scale-105 transition-all duration-300"
                   >
                     Create First Album
                   </button>

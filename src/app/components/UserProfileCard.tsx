@@ -122,7 +122,7 @@ export default function UserProfileCard({
             <div>
               <h2 className="text-3xl font-bold text-white mb-1">
                 {user.display_name}
-                {user.age && <span className="text-2xl font-bold text-cyan-400 ml-2">{user.age}</span>}
+                {user.age && <span className="text-2xl font-bold text-lime-400 ml-2">{user.age}</span>}
               </h2>
               
               {/* Stats - bold and bright */}
@@ -139,7 +139,7 @@ export default function UserProfileCard({
                   <span className="text-white/90 font-semibold">{user.height}</span>
                 )}
                 {user.distance && (
-                  <span className="text-cyan-400 font-bold">{user.distance}</span>
+                  <span className="text-lime-400 font-bold">{user.distance}</span>
                 )}
               </div>
             </div>
@@ -151,7 +151,7 @@ export default function UserProfileCard({
                   e.stopPropagation()
                   onMessage(user.id)
                 }}
-                className="w-12 h-12 rounded-full bg-cyan-500/80 backdrop-blur-md flex items-center justify-center hover:bg-cyan-500 transition-all shadow-lg text-2xl"
+                className="w-12 h-12 rounded-full bg-lime-400/90 backdrop-blur-md flex items-center justify-center hover:bg-lime-400 transition-all shadow-lg text-2xl"
               >
                 💬
               </button>
@@ -202,7 +202,7 @@ export default function UserProfileCard({
                 {user.kinks.map((kink, idx) => (
                   <span
                     key={idx}
-                    className="px-3 py-1.5 bg-cyan-500/30 border border-cyan-400/50 rounded-full text-cyan-300 text-sm font-bold backdrop-blur-sm"
+                    className="px-3 py-1.5 bg-lime-400/30 border border-lime-400/50 rounded-full text-lime-300 text-sm font-bold backdrop-blur-sm"
                   >
                     {kink}
                   </span>
@@ -269,7 +269,7 @@ export default function UserProfileCard({
                   }}
                   className={`transition-all ${
                     idx === currentPhotoIndex 
-                      ? 'w-8 h-2 bg-cyan-400 rounded-full' 
+                      ? 'w-8 h-2 bg-lime-400 rounded-full' 
                       : 'w-2 h-2 bg-white/50 rounded-full hover:bg-white/70'
                   }`}
                 />

@@ -27,7 +27,7 @@ import FoundersCircleAd from './FoundersCircleAd'
 
 // A simple spinner component
 const LoadingSpinner = () => (
-  <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+  <div className="w-12 h-12 border-4 border-lime-400 border-t-transparent rounded-full animate-spin" />
 )
 
 // A placeholder for your new Report Modal
@@ -538,8 +538,8 @@ export default function GridViewProduction() {
                   <>
                     {/* Quick Stats */}
                     {fullProfile.dtfn && (
-                      <div className="bg-cyan-500/20 border border-cyan-500 rounded-lg p-4">
-                        <span className="text-cyan-400 font-bold text-lg">⚡ Down To Fuck Now</span>
+                      <div className="bg-lime-400/20 border border-lime-400 rounded-lg p-4">
+                        <span className="text-lime-400 font-bold text-lg">⚡ Down To Fuck Now</span>
                       </div>
                     )}
                     {fullProfile.hosting && (
@@ -551,14 +551,14 @@ export default function GridViewProduction() {
                     {/* About */}
                     {fullProfile.about && (
                       <div>
-                        <h3 className="text-lg font-bold mb-2 text-cyan-400">About</h3>
+                        <h3 className="text-lg font-bold mb-2 text-lime-400">About</h3>
                         <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{fullProfile.about}</p>
                       </div>
                     )}
 
                     {/* Stats Section */}
                     <div>
-                      <h3 className="text-lg font-bold mb-3 text-cyan-400">Stats</h3>
+                      <h3 className="text-lg font-bold mb-3 text-lime-400">Stats</h3>
                       <div className="space-y-2">
                         {fullProfile.age && (
                           <div className="flex justify-between py-2 border-b border-gray-800">
@@ -602,7 +602,7 @@ export default function GridViewProduction() {
                     {/* Kinks */}
                     {fullProfile.kinks && fullProfile.kinks.length > 0 && (
                       <div>
-                        <h3 className="text-lg font-bold mb-3 text-cyan-400">Kinks</h3>
+                        <h3 className="text-lg font-bold mb-3 text-lime-400">Kinks</h3>
                         <div className="flex flex-wrap gap-2">
                           {fullProfile.kinks.map((kink, i) => (
                             <span key={i} className="bg-gray-800 px-3 py-1 rounded-full text-sm text-gray-300">
@@ -616,7 +616,7 @@ export default function GridViewProduction() {
                     {/* Tags */}
                     {fullProfile.tags && fullProfile.tags.length > 0 && (
                       <div>
-                        <h3 className="text-lg font-bold mb-3 text-cyan-400">Tags</h3>
+                        <h3 className="text-lg font-bold mb-3 text-lime-400">Tags</h3>
                         <div className="flex flex-wrap gap-2">
                           {fullProfile.tags.map((tag, i) => (
                             <span key={i} className="bg-gray-800 px-3 py-1 rounded-full text-sm text-gray-300">
@@ -629,7 +629,7 @@ export default function GridViewProduction() {
 
                     {/* Health & Safety */}
                     <div>
-                      <h3 className="text-lg font-bold mb-3 text-cyan-400">Health & Safety</h3>
+                      <h3 className="text-lg font-bold mb-3 text-lime-400">Health & Safety</h3>
                       <div className="space-y-2">
                         {fullProfile.hiv_status && (
                           <div className="flex justify-between py-2 border-b border-gray-800">
@@ -672,7 +672,7 @@ export default function GridViewProduction() {
               <div className="flex gap-3">
                 <button
                   onClick={() => router.push(`/messages?conversation=${selectedUser.id}`)}
-                  className="flex-1 bg-cyan-500 text-black font-bold py-4 rounded-xl hover:bg-cyan-400 transition"
+                  className="flex-1 bg-lime-400 text-black font-bold py-4 rounded-xl hover:bg-lime-300 transition"
                   disabled={!fullProfile} // Disabled until profile is loaded
                 >
                   Message
