@@ -36,7 +36,7 @@ export function HoloPinHoverCard({
         </div>
       </div>
       <div className="mt-3 grid grid-cols-4 gap-2">
-        <button onClick={() => handlers.onChat(user.id)} className="px-2 py-1 text-xs rounded-md bg-cyan-500/20 text-cyan-200 border border-cyan-400/40">Chat</button>
+        <button onClick={() => handlers.onChat(user.id)} className="px-2 py-1 text-xs rounded-md bg-lime-400/20 text-lime-200 border border-lime-400/40">Chat</button>
         <button onClick={() => handlers.onVideo(user.id)} className="px-2 py-1 text-xs rounded-md bg-fuchsia-500/20 text-fuchsia-200 border border-fuchsia-400/40">Video</button>
         <button onClick={() => handlers.onTap(user.id)} className="px-2 py-1 text-xs rounded-md bg-amber-500/20 text-amber-200 border border-amber-400/40">Tap</button>
         <a onClick={() => handlers.onNav({ lat: user.latitude, lng: user.longitude })} className="px-2 py-1 text-xs rounded-md bg-emerald-500/20 text-emerald-200 border border-emerald-400/40 text-center cursor-pointer">Nav</a>
@@ -45,7 +45,7 @@ export function HoloPinHoverCard({
         <div className="mt-2 text-[10px] uppercase tracking-widest text-red-300">DTFN</div>
       )}
       {user.badge === 'NOW' && (
-        <div className="mt-1 text-[10px] uppercase tracking-widest text-cyan-300">NOW</div>
+        <div className="mt-1 text-[10px] uppercase tracking-widest text-lime-300">NOW</div>
       )}
     </div>
   )
