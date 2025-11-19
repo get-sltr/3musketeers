@@ -19,6 +19,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '../lib/supabase/client'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
+import GridFilterBar, { GridFilters } from './GridFilterBar'
 
 // --- Import our new shared types and utils ---
 import { UserGridProfile, UserFullProfile } from '../lib/types/profile'
@@ -99,6 +100,12 @@ export default function GridViewProduction({
   const [currentUserPhoto, setCurrentUserPhoto] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
+  const [filters, setFilters] = useState<GridFilters>({
+    tab: 'all',
+    genderIdentity: [],
+    bodyTypes: [],
+    lookingFor: []
+  })
 
   // --- DATA FETCHING ---
 
@@ -353,12 +360,20 @@ export default function GridViewProduction({
     )
   }
 
-  // Filter users based on search query
-  const filteredUsers = searchQuery
-    ? users.filter(u => 
-        u.display_name?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : users
+  // Filter users based on search query and filters
+  const filteredUsers = users
+    .filter(u => {
+      // Search query filter
+      if (searchQuery && !u.display_name?.toLowerCase().includes(searchQuery.toLowerCase())) {
+        return false
+      }
+      // Tab filters
+      if (filters.tab === 'online' && !u.is_online) return false
+      if (filters.tab === 'dtfn' && !u.dtfn) return false
+      if (filters.tab === 'hosting' && !u.party_friendly) return false
+      
+      return true
+    })
 
   return (
     <div className="min-h-screen bg-black">
@@ -366,6 +381,7 @@ export default function GridViewProduction({
       <div className="fixed left-0 right-0 z-50 bg-black border-b border-white/5" style={{ 
         top: 'calc(max(env(safe-area-inset-top), 20px) + 56px)'
       }}>
+        {/* Search Bar */}
         <div className="flex items-center gap-3 px-3 py-2.5">
           {/* Profile Photo - Smaller like Grindr */}
           <button
@@ -406,6 +422,9 @@ export default function GridViewProduction({
             )}
           </div>
         </div>
+        
+        {/* Filter Bar */}
+        <GridFilterBar onFilterChange={setFilters} />
       </div>
       
       {/* 3-Column Grid with Gaps - Like Grindr */}
