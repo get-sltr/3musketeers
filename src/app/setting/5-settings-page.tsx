@@ -12,6 +12,7 @@ export default function SettingsPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
   const [user, setUser] = useState<any>(null)
+  const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   // Change Email States
@@ -37,6 +38,15 @@ export default function SettingsPage() {
         return
       }
       setUser(user)
+      
+      // Load profile data to get subscription info
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('subscription_tier, subscription_expires_at')
+        .eq('id', user.id)
+        .single()
+      
+      setProfile(profileData)
       setLoading(false)
     }
     getUser()
@@ -164,10 +174,38 @@ export default function SettingsPage() {
           <p className="text-gray-400">Manage your account preferences</p>
         </div>
 
-        {/* Current Email */}
-        <div className="mb-12 bg-black/40 backdrop-blur-xl border border-cyan-500/20 p-6">
-          <p className="text-gray-400 text-sm mb-2">Current Email</p>
-          <p className="text-white text-lg font-semibold">{user.email}</p>
+        {/* Current Email & Subscription Status */}
+        <div className="mb-12 grid md:grid-cols-2 gap-6">
+          <div className="bg-black/40 backdrop-blur-xl border border-cyan-500/20 p-6">
+            <p className="text-gray-400 text-sm mb-2">Current Email</p>
+            <p className="text-white text-lg font-semibold">{user.email}</p>
+          </div>
+          
+          <div className={`backdrop-blur-xl border p-6 ${
+            profile?.subscription_tier === 'plus'
+              ? 'bg-gradient-to-br from-lime-500/10 to-cyan-500/10 border-lime-500/30'
+              : 'bg-black/40 border-cyan-500/20'
+          }`}>
+            <p className="text-gray-400 text-sm mb-2">Subscription Status</p>
+            <div className="flex items-center gap-2">
+              {profile?.subscription_tier === 'plus' ? (
+                <>
+                  <span className="text-2xl">∝</span>
+                  <span className="text-lime-400 text-lg font-bold">sltr∝ PRO</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-2xl">🔥</span>
+                  <span className="text-white text-lg font-semibold">Free Tier</span>
+                </>
+              )}
+            </div>
+            {profile?.subscription_expires_at && (
+              <p className="text-gray-400 text-xs mt-2">
+                Expires: {new Date(profile.subscription_expires_at).toLocaleDateString()}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Change Email Section */}

@@ -29,6 +29,9 @@ export default function ProfilePage() {
     age: '',
     bio: '',
     position: '',
+    gender_identity: 'cis_man',
+    body_type: '',
+    looking_for: [] as string[],
     kinks: [] as string[],
     tags: [] as string[],
     party_friendly: false,
@@ -53,6 +56,33 @@ export default function ProfilePage() {
   const supabase = createClient()
 
   const POSITIONS = ['Top', 'Top/Vers', 'Vers', 'Btm/Vers', 'Bottom', 'Side']
+  const GENDER_OPTIONS = [
+    { value: 'cis_man', label: 'Cis Man' },
+    { value: 'trans_man', label: 'Trans Man' },
+    { value: 'non_binary', label: 'Non-Binary' },
+    { value: 'gender_fluid', label: 'Gender Fluid' },
+    { value: 'other', label: 'Other' }
+  ]
+  const BODY_TYPE_OPTIONS = [
+    { value: 'athletic', label: 'Athletic' },
+    { value: 'average', label: 'Average' },
+    { value: 'bear', label: 'Bear' },
+    { value: 'cub', label: 'Cub' },
+    { value: 'dad_bod', label: 'Dad Bod' },
+    { value: 'husky', label: 'Husky' },
+    { value: 'jock', label: 'Jock' },
+    { value: 'muscle', label: 'Muscle' },
+    { value: 'otter', label: 'Otter' },
+    { value: 'slim', label: 'Slim' },
+    { value: 'stocky', label: 'Stocky' },
+    { value: 'thick', label: 'Thick' }
+  ]
+  const LOOKING_FOR_OPTIONS = [
+    { value: 'men', label: 'Men' },
+    { value: 'trans_men', label: 'Trans Men' },
+    { value: 'non_binary', label: 'Non-Binary' },
+    { value: 'everyone', label: 'Everyone' }
+  ]
   const KINKS_OPTIONS = ['BDSM', 'Fetish', 'Roleplay', 'Voyeurism', 'Exhibitionism', 'Group Sex', 'Anal', 'Oral', 'Toys', 'Leather', 'Bondage', 'Spanking', 'Domination', 'Submission', 'Edging', 'Public Play', 'Feet', 'Watersports', 'Rimming', 'Body Worship', 'Spit', 'Rough']
   const TAGS_OPTIONS = ['Adventurous', 'Chill', 'Direct', 'Curious', 'Beard', 'Jock', 'Bear', 'Rugged', 'Daddy', 'Pup', 'Twink', 'Otter', 'Wolf', 'Muscle', 'Fit', 'Discreet', 'Kinky', 'Vanilla', 'Wild', 'Gentleman', 'Playful', 'Passionate']
 
@@ -179,6 +209,9 @@ export default function ProfilePage() {
             age: profile.age?.toString() || '',
             bio: profile.about || '',
             position: profile.position || '',
+            gender_identity: profile.gender_identity || 'cis_man',
+            body_type: profile.body_type || '',
+            looking_for: profile.looking_for || [],
             kinks: profile.kinks || [],
             tags: profile.tags || [],
             party_friendly: profile.party_friendly || false,
@@ -283,6 +316,9 @@ export default function ProfilePage() {
         display_name: profileData.display_name || null,
         about: profileData.bio || null,
         position: profileData.position || null,
+        gender_identity: profileData.gender_identity || 'cis_man',
+        body_type: profileData.body_type || null,
+        looking_for: profileData.looking_for.length > 0 ? profileData.looking_for : null,
         kinks: profileData.kinks.length > 0 ? profileData.kinks : null,
         tags: profileData.tags.length > 0 ? profileData.tags : null,
         party_friendly: profileData.party_friendly,
@@ -623,6 +659,67 @@ export default function ProfilePage() {
                     max={100}
                     required
                   />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-white/60 mb-2">Gender Identity</label>
+                  <div className="flex flex-wrap gap-2">
+                    {GENDER_OPTIONS.map(option => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setProfileData(prev => ({ ...prev, gender_identity: option.value }))}
+                        className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
+                          profileData.gender_identity === option.value ? 'bg-purple-400/30 text-purple-100 shadow' : 'bg-white/10 text-white/60 hover:bg-white/20'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-white/60 mb-2">Body Type</label>
+                  <div className="flex flex-wrap gap-2">
+                    {BODY_TYPE_OPTIONS.map(option => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setProfileData(prev => ({ ...prev, body_type: option.value }))}
+                        className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
+                          profileData.body_type === option.value ? 'bg-cyan-400/30 text-cyan-100 shadow' : 'bg-white/10 text-white/60 hover:bg-white/20'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-white/60 mb-2">Looking For (select all that apply)</label>
+                  <div className="flex flex-wrap gap-2">
+                    {LOOKING_FOR_OPTIONS.map(option => {
+                      const active = profileData.looking_for.includes(option.value)
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() =>
+                            setProfileData(prev => ({
+                              ...prev,
+                              looking_for: active
+                                ? prev.looking_for.filter(l => l !== option.value)
+                                : [...prev.looking_for, option.value]
+                            }))
+                          }
+                          className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
+                            active ? 'bg-pink-400/30 text-pink-100 shadow' : 'bg-white/10 text-white/60 hover:bg-white/20'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-white/60 mb-2">Position</label>
