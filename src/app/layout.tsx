@@ -17,7 +17,30 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "SLTR",
   description: "Rules Don't Apply",
+  metadataBase: new URL('https://www.getsltr.com'),
   manifest: '/manifest.json',
+  openGraph: {
+    title: 'SLTR',
+    description: "Rules Don't Apply",
+    url: 'https://www.getsltr.com',
+    siteName: 'SLTR',
+    images: [
+      {
+        url: '/icon-512.png',
+        width: 512,
+        height: 512,
+        alt: 'SLTR Logo',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'SLTR',
+    description: "Rules Don't Apply",
+    images: ['/icon-512.png'],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
