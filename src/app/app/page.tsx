@@ -160,23 +160,62 @@ export default function AppPage() {
     checkFirstLogin()
   }, [setShowWelcomeModal])
 
-  // Keep user online with polling (bypass failing WebSockets)
+  // Keep user online with Supabase Presence (scalable for 100k+ users)
   useEffect(() => {
-    const updateOnlineStatus = async () => {
+    let presenceChannel: any
+
+    const setupPresence = async () => {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        await supabase
-          .from('profiles')
-          .update({ online: true, last_active: new Date().toISOString() })
-          .eq('id', user.id)
-      }
+      if (!user) return
+
+      // Create presence channel
+      presenceChannel = supabase.channel('online-users', {
+        config: { presence: { key: user.id } }
+      })
+
+      // Track presence state
+      presenceChannel
+        .on('presence', { event: 'sync' }, () => {
+          const state = presenceChannel.presenceState()
+          // Presence is synced across all clients
+        })
+        .subscribe(async (status: string) => {
+          if (status === 'SUBSCRIBED') {
+            // Track this user as online
+            await presenceChannel.track({
+              user_id: user.id,
+              online_at: new Date().toISOString()
+            })
+
+            // Update database once on connect
+            await supabase
+              .from('profiles')
+              .update({ online: true, last_active: new Date().toISOString() })
+              .eq('id', user.id)
+          }
+        })
     }
 
-    updateOnlineStatus() // Set online immediately
-    const interval = setInterval(updateOnlineStatus, 30000) // Keep alive every 30s
+    setupPresence()
 
-    return () => clearInterval(interval)
+    // Cleanup: set offline on unmount
+    return () => {
+      if (presenceChannel) {
+        const cleanup = async () => {
+          const supabase = createClient()
+          const { data: { user } } = await supabase.auth.getUser()
+          if (user) {
+            await supabase
+              .from('profiles')
+              .update({ online: false, last_active: new Date().toISOString() })
+              .eq('id', user.id)
+          }
+          presenceChannel.unsubscribe()
+        }
+        cleanup()
+      }
+    }
   }, [])
 
   // Listen for bottom nav map button click - toggle between grid and map
