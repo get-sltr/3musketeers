@@ -31,7 +31,7 @@ export default function UpgradeModal({
   const featureName = feature ? FEATURE_NAMES[feature] : 'this feature'
   const displayTitle = title || (
     <>
-      Upgrade to sltr<span className="text-lime-400" style={{ verticalAlign: 'super', fontSize: '0.7em', position: 'relative', top: '-0.3em' }}>∝</span>
+      Upgrade to sltr<span className="text-lime-400" style={{ verticalAlign: 'super', fontSize: '1.2em', position: 'relative', top: '-0.3em' }}>∝</span>
     </>
   )
   const displayMessage =
@@ -54,7 +54,7 @@ export default function UpgradeModal({
                 className="text-lime-400"
                 style={{
                   verticalAlign: 'super',
-                  fontSize: '0.7em',
+                  fontSize: '1.2em',
                   position: 'relative',
                   top: '-0.3em',
                 }}

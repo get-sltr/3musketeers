@@ -69,8 +69,8 @@ export async function requirePlus(
   if (!profile || profile.subscription_tier !== 'plus') {
     return NextResponse.json(
       {
-        error: 'Plus subscription required',
-        message: 'This feature requires SLTR Plus',
+        error: 'sltr∝ subscription required',
+        message: 'This feature requires sltr∝',
         upgrade_url: '/sltr-plus',
       },
       { status: 403 }

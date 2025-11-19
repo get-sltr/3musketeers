@@ -6,19 +6,20 @@ import Link from 'next/link'
 
 
 const features = [
-  { icon: '🔓', text: 'Unlimited Profile Views' },
-  { icon: '👁️', text: 'See Who Viewed Your Profile' },
+  { icon: '📹', text: 'Video Calls' },
+  { icon: '👥', text: 'Create Groups & Channels' },
+  { icon: '✈️', text: 'Travel Mode (worldwide)' },
+  { icon: '⚡', text: 'Unlimited DTFN' },
+  { icon: '👁️', text: 'See Who Viewed You' },
   { icon: '💬', text: 'Unlimited Messaging' },
+  { icon: '🔓', text: 'Unlimited Profile Views' },
   { icon: '🚫', text: 'Ad-Free Experience' },
-  { icon: '⚡', text: 'Priority DTFN Badge' },
-  { icon: '📌', text: 'Pin Favorite Users' },
   { icon: '✓', text: 'Read Receipts' },
-  { icon: '👥', text: 'Advanced Filters' },
+  { icon: '🎯', text: 'Advanced Filters' },
   { icon: '🗺️', text: 'Extended Map Range' },
-  { icon: '✈️', text: 'Travel Mode' },
   { icon: '🔒', text: 'Enhanced Privacy Controls' },
   { icon: '📍', text: 'Location Spoofing' },
-  { icon: '🎭', text: 'Incognito Browsing' },
+  { icon: '🎭', text: 'Incognito Mode' },
   { icon: '📸', text: 'Private Photo Albums' },
   { icon: '🏆', text: 'Profile Boost' }
 ]
@@ -42,7 +43,7 @@ export default function SLTRPlusPage() {
           </Link>
           <h1 className="text-2xl font-black">
             <span className="text-white">sltr</span>
-            <span className="text-lime-400" style={{ verticalAlign: 'super', fontSize: '0.7em', position: 'relative', top: '-0.3em' }}>∝</span>
+            <span className="text-lime-400" style={{ verticalAlign: 'super', fontSize: '1.2em', position: 'relative', top: '-0.3em' }}>∝</span>
           </h1>
           <div className="w-6" />
         </div>

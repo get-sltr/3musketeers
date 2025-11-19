@@ -104,7 +104,7 @@ export async function canUseFeature(
   if (featureConfig.tier === 'plus' && tier !== 'plus') {
     return {
       allowed: false,
-      reason: `${feature} requires SLTR Plus`,
+      reason: `${feature} requires sltr∝`,
       upgradeRequired: true,
     }
   }
@@ -215,11 +215,11 @@ export async function checkDTFNLimit(
   // Check if user is Plus subscriber
   const { data: profile } = await supabase
     .from('profiles')
-    .select('subscription_tier, subscription_expires_at, is_super_admin')
+    .select('id, subscription_tier, subscription_expires_at, is_super_admin')
     .eq('id', userId)
     .single()
 
-  const tier = getActiveTier(profile)
+  const tier = getActiveTier(profile as Profile | null)
 
   // Plus users have unlimited
   if (tier === 'plus') {
@@ -265,13 +265,13 @@ export async function recordFeatureUsage(userId: string, feature: Feature): Prom
 
   // Optional: Create a feature_usage table for analytics
   // This is helpful for understanding what features users want
-  await supabase.from('feature_usage').insert({
-    user_id: userId,
-    feature,
-    used_at: new Date().toISOString(),
-  }).then(() => {
-    // Silently fail if table doesn't exist
-  }).catch(() => {
-    // Feature tracking is optional
-  })
+  try {
+    await supabase.from('feature_usage').insert({
+      user_id: userId,
+      feature,
+      used_at: new Date().toISOString(),
+    })
+  } catch {
+    // Silently fail if table doesn't exist - feature tracking is optional
+  }
 }

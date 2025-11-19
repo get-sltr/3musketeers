@@ -661,7 +661,11 @@ export default function AppPage() {
       <main className={viewMode === 'grid' ? 'pt-0' : 'pt-0'}>
         {/* Grid or Map view based on viewMode */}
         {viewMode === 'grid' ? (
-          <GridViewProduction />
+          <GridViewProduction
+            onUserClick={(userId) => {
+              router.push(`/profile/${userId}`)
+            }}
+          />
         ) : (
           <div className="fixed inset-0 top-[64px]" style={{
             paddingBottom: 'env(safe-area-inset-bottom)'

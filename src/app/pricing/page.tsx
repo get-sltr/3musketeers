@@ -136,7 +136,7 @@ export default function PricingPage() {
             className="text-5xl md:text-7xl font-bold text-center mb-6"
           >
             <span className="text-white">sltr</span>
-            <span className="text-lime-400" style={{ verticalAlign: 'super', fontSize: '0.6em', position: 'relative', top: '-0.5em' }}>∝</span>
+            <span className="text-lime-400" style={{ verticalAlign: 'super', fontSize: '1.2em', position: 'relative', top: '-0.5em' }}>∝</span>
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -170,11 +170,11 @@ export default function PricingPage() {
 
             <ul className="space-y-4 mb-8">
               {[
-                '5 daily likes',
-                'Basic EROS AI',
-                'View nearby users',
-                'Standard messaging',
-                'Basic filters',
+                '100 profile views/day',
+                '50 messages/day',
+                'Basic search & filters',
+                'DTFN badge (4 activations)',
+                'Basic map (10 mile radius)',
               ].map((feature) => (
                 <li key={feature} className="flex items-start">
                   <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -183,12 +183,19 @@ export default function PricingPage() {
                   <span className="text-gray-300">{feature}</span>
                 </li>
               ))}
-              <li className="flex items-start">
-                <svg className="w-5 h-5 text-gray-500 mr-3 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                <span className="text-gray-500">Contains ads</span>
-              </li>
+              {[
+                'No video calls',
+                'No groups & channels',
+                'No travel mode',
+                'Contains ads',
+              ].map((feature) => (
+                <li key={feature} className="flex items-start">
+                  <svg className="w-5 h-5 text-gray-500 mr-3 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  <span className="text-gray-500">{feature}</span>
+                </li>
+              ))}
             </ul>
 
             <button className="w-full py-3 bg-white/10 rounded-xl font-semibold text-gray-400">
@@ -209,7 +216,7 @@ export default function PricingPage() {
             
             <h3 className="text-2xl font-bold mb-2">
               <span className="text-white">sltr</span>
-              <span className="text-lime-400" style={{ verticalAlign: 'super', fontSize: '0.7em', position: 'relative', top: '-0.3em' }}>∝</span>
+              <span className="text-lime-400" style={{ verticalAlign: 'super', fontSize: '1.2em', position: 'relative', top: '-0.3em' }}>∝</span>
             </h3>
             <p className="text-gray-400 mb-6">Everything you need to connect</p>
             
@@ -220,16 +227,22 @@ export default function PricingPage() {
 
             <ul className="space-y-4 mb-8">
               {[
-                'Unlimited Profile Views',
-                'See Who Viewed Your Profile',
-                'Unlimited Messaging',
-                'Ad-Free Experience',
-                'Priority DTFN Badge',
-                'Read Receipts',
-                'Advanced Filters',
-                'Extended Map Range',
-                'Enhanced Privacy Controls',
-                'Profile Boost'
+                '📹 Video Calls',
+                '👥 Create Groups & Channels',
+                '✈️ Travel Mode (worldwide)',
+                '⚡ Unlimited DTFN',
+                '👁️ See Who Viewed You',
+                '💬 Unlimited Messaging',
+                '🔓 Unlimited Profile Views',
+                '🚫 Ad-Free Experience',
+                '✓ Read Receipts',
+                '🎯 Advanced Filters',
+                '🗺️ Extended Map Range',
+                '🔒 Enhanced Privacy Controls',
+                '📍 Location Spoofing',
+                '🎭 Incognito Mode',
+                '📸 Private Photo Albums',
+                '🏆 Profile Boost'
               ].map((feature) => (
                 <li key={feature} className="flex items-start">
                   <svg className="w-5 h-5 text-lime-400 mr-3 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">

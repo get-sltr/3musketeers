@@ -25,7 +25,11 @@ export function useIntersectionObserver(
     if (!enabled || !ref.current) return
 
     const observer = new IntersectionObserver(
-      ([entry]) => setIsIntersecting(entry.isIntersecting),
+      ([entry]) => {
+        if (entry) {
+          setIsIntersecting(entry.isIntersecting)
+        }
+      },
       { threshold, root, rootMargin }
     )
 
