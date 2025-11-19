@@ -40,6 +40,7 @@ ALTER TABLE public.group_messages ENABLE ROW LEVEL SECURITY;
 
 -- Groups RLS Policies
 -- Anyone can view public groups
+DROP POLICY IF EXISTS "Public groups are viewable by everyone" ON public.groups;
 CREATE POLICY "Public groups are viewable by everyone"
   ON public.groups FOR SELECT
   USING (is_private = false OR auth.uid() IN (

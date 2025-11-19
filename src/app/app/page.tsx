@@ -160,6 +160,25 @@ export default function AppPage() {
     checkFirstLogin()
   }, [setShowWelcomeModal])
 
+  // Keep user online with polling (bypass failing WebSockets)
+  useEffect(() => {
+    const updateOnlineStatus = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        await supabase
+          .from('profiles')
+          .update({ online: true, last_active: new Date().toISOString() })
+          .eq('id', user.id)
+      }
+    }
+
+    updateOnlineStatus() // Set online immediately
+    const interval = setInterval(updateOnlineStatus, 30000) // Keep alive every 30s
+
+    return () => clearInterval(interval)
+  }, [])
+
   // Listen for bottom nav map button click - toggle between grid and map
   useEffect(() => {
     const handleSwitchToMap = () => {

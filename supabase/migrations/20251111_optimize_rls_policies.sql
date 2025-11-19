@@ -103,6 +103,8 @@ CREATE POLICY "Users can manage their own subscriptions"
 -- ============================================
 -- GROUPS - Optimized Policies
 -- ============================================
+-- Note: These policies may already exist from 20251021000000_create_groups_table.sql
+-- Using DROP IF EXISTS to handle both cases
 
 DROP POLICY IF EXISTS "Public groups are viewable by everyone" ON public.groups;
 CREATE POLICY "Public groups are viewable by everyone"

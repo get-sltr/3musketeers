@@ -27,7 +27,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<UserStat[]>([])
   const [recentUsers, setRecentUsers] = useState<RecentUser[]>([])
-  const [selectedTab, setSelectedTab] = useState<'stats' | 'users'>('stats')
+  const [selectedTab, setSelectedTab] = useState<'stats' | 'users' | 'actions'>('stats')
 
   useEffect(() => {
     checkAdminStatus()
@@ -44,11 +44,19 @@ export default function AdminDashboard() {
     }
 
     // Check if user is super admin
-    const { data: profile } = await supabase
+    const { data: profile, error } = await supabase
       .from('profiles')
       .select('is_super_admin')
       .eq('id', session.user.id)
       .single()
+
+    console.log('🔍 Admin check:', { 
+      userId: session.user.id, 
+      email: session.user.email,
+      profile, 
+      error,
+      isAdmin: profile?.is_super_admin === true 
+    })
 
     setIsAdmin(profile?.is_super_admin === true)
     setLoading(false)
@@ -178,7 +186,17 @@ export default function AdminDashboard() {
                         : 'bg-white/10 text-white/60 hover:bg-white/20'
                     }`}
                   >
-                    👥 Recent Users
+                    👥 Users
+                  </button>
+                  <button
+                    onClick={() => setSelectedTab('actions')}
+                    className={`flex-1 px-4 py-2 rounded-lg font-semibold transition ${
+                      selectedTab === 'actions'
+                        ? 'bg-gradient-to-r from-red-500 to-purple-500 text-white'
+                        : 'bg-white/10 text-white/60 hover:bg-white/20'
+                    }`}
+                  >
+                    ⚡ Actions
                   </button>
                 </div>
 
@@ -201,6 +219,51 @@ export default function AdminDashboard() {
                         </div>
                       </motion.div>
                     ))}
+                  </div>
+                )}
+
+                {selectedTab === 'actions' && (
+                  <div className="space-y-3">
+                    <motion.a
+                      href="/admin/black-cards"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="block p-6 rounded-xl bg-gradient-to-br from-yellow-900/20 to-amber-900/20 border border-yellow-500/30 hover:border-yellow-500/50 transition-all group"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-500 to-amber-600 flex items-center justify-center text-2xl">
+                          👑
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-white font-bold text-lg group-hover:text-yellow-400 transition">Black Card System</h3>
+                          <p className="text-white/60 text-sm">Manage Founder's Circle cards</p>
+                        </div>
+                        <svg className="w-6 h-6 text-white/60 group-hover:text-yellow-400 group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </motion.a>
+
+                    <motion.a
+                      href="/sltr-plus"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.05 }}
+                      className="block p-6 rounded-xl bg-gradient-to-br from-purple-900/20 to-pink-900/20 border border-purple-500/30 hover:border-purple-500/50 transition-all group"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-2xl">
+                          ∝
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-white font-bold text-lg group-hover:text-purple-400 transition">SLTR Plus Dashboard</h3>
+                          <p className="text-white/60 text-sm">View subscription analytics</p>
+                        </div>
+                        <svg className="w-6 h-6 text-white/60 group-hover:text-purple-400 group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </motion.a>
                   </div>
                 )}
 

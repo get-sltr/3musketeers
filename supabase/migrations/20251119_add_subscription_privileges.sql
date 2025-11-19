@@ -215,6 +215,9 @@ $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 -- ==================== RLS POLICIES FOR PRIVILEGES ====================
 
 -- Only Plus users can create groups
+DROP POLICY IF EXISTS "Plus users can create groups" ON groups;
+DROP POLICY IF EXISTS "Authenticated users can create groups" ON groups;
+
 CREATE POLICY "Plus users can create groups" ON groups
 FOR INSERT
 WITH CHECK (

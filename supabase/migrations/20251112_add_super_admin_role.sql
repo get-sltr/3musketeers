@@ -14,7 +14,7 @@ SELECT
   COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '24 hours') AS users_last_24h,
   COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days') AS users_last_week,
   COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days') AS users_last_month,
-  COUNT(*) FILTER (WHERE is_online = true) AS users_online_now,
+  COUNT(*) FILTER (WHERE online = true) AS users_online_now,
   COUNT(*) FILTER (WHERE photo_url IS NOT NULL) AS users_with_photos,
   COUNT(*) FILTER (WHERE latitude IS NOT NULL AND longitude IS NOT NULL) AS users_with_location,
   AVG(EXTRACT(YEAR FROM AGE(NOW(), created_at))) AS avg_account_age_years
@@ -31,7 +31,7 @@ RETURNS TABLE (
   display_name TEXT,
   photo_url TEXT,
   created_at TIMESTAMPTZ,
-  is_online BOOLEAN,
+  online BOOLEAN,
   founder_number INT,
   latitude FLOAT,
   longitude FLOAT
@@ -58,7 +58,7 @@ BEGIN
     p.display_name,
     p.photo_url,
     p.created_at,
-    p.is_online,
+    p.online AS is_online,
     p.founder_number,
     p.latitude,
     p.longitude
@@ -100,7 +100,7 @@ BEGIN
   UNION ALL
   SELECT 'New This Month'::TEXT, COUNT(*)::BIGINT FROM public.profiles WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
   UNION ALL
-  SELECT 'Online Now'::TEXT, COUNT(*)::BIGINT FROM public.profiles WHERE is_online = true
+  SELECT 'Online Now'::TEXT, COUNT(*)::BIGINT FROM public.profiles WHERE online = true
   UNION ALL
   SELECT 'With Photos'::TEXT, COUNT(*)::BIGINT FROM public.profiles WHERE photo_url IS NOT NULL
   UNION ALL

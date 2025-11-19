@@ -42,7 +42,7 @@ AS $function$
       THEN (SELECT array_agg(value::text) FROM jsonb_array_elements_text(prof.photos))
       ELSE ARRAY[]::text[]
     END AS photos,
-    prof.is_online,
+    prof.online AS is_online,
     prof.dtfn,
     prof.party_friendly,
     prof.latitude,
