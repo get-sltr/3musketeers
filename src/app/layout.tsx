@@ -26,10 +26,10 @@ export const metadata: Metadata = {
     siteName: 'SLTR',
     images: [
       {
-        url: '/icon-512.png',
-        width: 512,
-        height: 512,
-        alt: 'SLTR Logo',
+        url: 'https://opengraph.b-cdn.net/production/images/73a42f99-c28c-41f2-8c7f-dfd9b945287d.png?token=O4JDmAwYLCiwSk5rRY90SGWM0wqmPzhF2bskIYofhMc&height=722&width=1200&expires=33299560831',
+        width: 1200,
+        height: 722,
+        alt: 'SLTR',
       },
     ],
     locale: 'en_US',
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'SLTR',
     description: "Rules Don't Apply",
-    images: ['/icon-512.png'],
+    images: ['https://opengraph.b-cdn.net/production/images/73a42f99-c28c-41f2-8c7f-dfd9b945287d.png?token=O4JDmAwYLCiwSk5rRY90SGWM0wqmPzhF2bskIYofhMc&height=722&width=1200&expires=33299560831'],
   },
   appleWebApp: {
     capable: true,
