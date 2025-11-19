@@ -49,3 +49,5 @@ The SLTR V.01.11/
 
 # Sentry Config File
 .env.sentry-build-plugin
+sltr-backend/node_modules/
+sltr-backend/dist/
