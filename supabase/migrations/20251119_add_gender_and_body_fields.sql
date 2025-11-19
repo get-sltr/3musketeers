@@ -1,6 +1,9 @@
 -- Add gender identity, looking for, and body type fields
 -- Inspired by Grindr and Sniffies for inclusive options
 
+-- Enable extension for text array GIN indexing
+CREATE EXTENSION IF NOT EXISTS btree_gin;
+
 -- ============================================
 -- GENDER IDENTITY & PREFERENCES
 -- ============================================
