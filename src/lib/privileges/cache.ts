@@ -15,8 +15,8 @@ import { Profile } from './types'
 // ==================== MULTI-TIER CACHE ====================
 
 // Tier 1: In-memory cache (fastest, 0ms latency)
-// Stores last 10,000 active users
-const MAX_MEMORY_CACHE_SIZE = 10000
+// Stores last 50,000 active users for 300k scale
+const MAX_MEMORY_CACHE_SIZE = 50000
 const MEMORY_CACHE_TTL = 60 * 1000 // 1 minute
 
 interface MemoryCacheEntry {

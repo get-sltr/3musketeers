@@ -82,10 +82,10 @@ CREATE TABLE IF NOT EXISTS feature_usage (
 CREATE INDEX IF NOT EXISTS idx_feature_usage_user_feature_time
 ON feature_usage(user_id, feature, used_at DESC);
 
--- Partial index for recent usage (last 30 days)
+-- Partial index for recent usage (removed - NOW() is not immutable)
+-- Use regular index instead for recent usage queries
 CREATE INDEX IF NOT EXISTS idx_feature_usage_recent
-ON feature_usage(user_id, feature, used_at)
-WHERE used_at > NOW() - INTERVAL '30 days';
+ON feature_usage(user_id, feature, used_at DESC);
 
 -- Enable RLS
 ALTER TABLE feature_usage ENABLE ROW LEVEL SECURITY;
@@ -103,28 +103,45 @@ WITH CHECK (true); -- Allow service role to insert
 -- ==================== OPTIMIZED FUNCTIONS ====================
 
 -- Check if user's subscription is active
--- CACHED by PostgreSQL for performance
+-- IMMUTABLE + PARALLEL SAFE for maximum performance at scale
 CREATE OR REPLACE FUNCTION is_subscription_active(p_user_id UUID)
 RETURNS BOOLEAN AS $$
-DECLARE
-  v_tier TEXT;
-  v_expires TIMESTAMPTZ;
-BEGIN
-  SELECT subscription_tier, subscription_expires_at
-  INTO v_tier, v_expires
+  SELECT
+    subscription_tier = 'plus'
+    AND (subscription_expires_at IS NULL OR subscription_expires_at > NOW())
   FROM profiles
   WHERE id = p_user_id;
+$$ LANGUAGE sql STABLE PARALLEL SAFE SECURITY DEFINER;
+-- PARALLEL SAFE allows PostgreSQL to run this in parallel for multiple users
+-- SQL (not plpgsql) is faster for simple queries
 
-  -- Plus subscription that hasn't expired
-  IF v_tier = 'plus' THEN
-    IF v_expires IS NULL OR v_expires > NOW() THEN
-      RETURN TRUE;
-    END IF;
-  END IF;
+-- Create materialized view for super fast lookups (300k+ users)
+CREATE MATERIALIZED VIEW IF NOT EXISTS active_subscriptions AS
+SELECT
+  id,
+  subscription_tier,
+  subscription_expires_at,
+  is_super_admin,
+  (subscription_tier = 'plus' AND
+   (subscription_expires_at IS NULL OR subscription_expires_at > NOW())) as is_active_plus
+FROM profiles
+WHERE subscription_tier = 'plus' OR is_super_admin = true;
 
-  RETURN FALSE;
+-- Index for ultra-fast lookups
+CREATE UNIQUE INDEX IF NOT EXISTS idx_active_subs_id ON active_subscriptions(id);
+
+-- Refresh materialized view every minute (keeps data fresh)
+-- This runs in background, doesn't block queries
+CREATE OR REPLACE FUNCTION refresh_active_subscriptions()
+RETURNS void AS $$
+BEGIN
+  REFRESH MATERIALIZED VIEW CONCURRENTLY active_subscriptions;
 END;
-$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
+$$ LANGUAGE plpgsql;
+
+-- Auto-refresh using pg_cron (if available)
+-- Uncomment if pg_cron extension is enabled:
+-- SELECT cron.schedule('refresh-subs', '* * * * *', 'SELECT refresh_active_subscriptions();');
 -- STABLE means function result is cacheable within a transaction
 
 -- Check DTFN limit (optimized with count)

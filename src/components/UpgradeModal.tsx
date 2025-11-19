@@ -6,6 +6,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import { Feature } from '@/lib/privileges/types'
 import { FEATURE_NAMES } from '@/lib/privileges/config'
 
@@ -26,6 +27,17 @@ export default function UpgradeModal({
 }: UpgradeModalProps) {
   const router = useRouter()
 
+  // ESC key to close
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    if (isOpen) {
+      window.addEventListener('keydown', handleEsc)
+    }
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [isOpen, onClose])
+
   if (!isOpen) return null
 
   const featureName = feature ? FEATURE_NAMES[feature] : 'this feature'
@@ -43,8 +55,14 @@ export default function UpgradeModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="relative w-full max-w-md mx-4 bg-black border border-lime-400/20 rounded-2xl shadow-2xl overflow-hidden">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-md mx-4 bg-black border border-lime-400/20 rounded-2xl shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="p-6 border-b border-white/10">
           <div className="flex items-center justify-between">
