@@ -63,7 +63,7 @@ export async function POST(request: Request) {
 
   // Handle subscription updates (AUTO-RENEW happens here!)
   if (event.type === 'customer.subscription.updated') {
-    const subscription = event.data.object as Stripe.Subscription
+    const subscription = event.data.object as any // Stripe types don't expose all fields
     const userId = subscription.metadata?.userId
 
     if (userId) {
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
 
   // Handle subscription deletion/cancellation (USER CANCELS)
   if (event.type === 'customer.subscription.deleted') {
-    const subscription = event.data.object as Stripe.Subscription
+    const subscription = event.data.object as any
     const userId = subscription.metadata?.userId
 
     if (userId) {
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
 
   // Handle payment failures (CARD DECLINED)
   if (event.type === 'invoice.payment_failed') {
-    const invoice = event.data.object as Stripe.Invoice
+    const invoice = event.data.object as any
     const subscription = invoice.subscription
     const userId = invoice.subscription_details?.metadata?.userId
 
