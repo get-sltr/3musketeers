@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { erosScheduler } from '@/lib/eros-scheduler';
 
 interface Position {
   x: number;
@@ -223,18 +222,16 @@ export function ErosAssistiveTouch() {
       action: async () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          // Trigger EROS analysis with battery awareness
-          erosScheduler.scheduleAnalysis(async () => {
-            try {
-              await fetch('/api/eros/analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: user.id, analysisType: 'ultimate' })
-              });
-            } catch (e) {
-              console.error('EROS analysis failed:', e);
-            }
-          }, 'high');  // High priority for manual trigger
+          // Trigger EROS analysis via API
+          try {
+            await fetch('/api/eros/analyze', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: user.id, analysisType: 'ultimate' })
+            });
+          } catch (e) {
+            console.error('EROS analysis failed:', e);
+          }
         }
       }
     },
