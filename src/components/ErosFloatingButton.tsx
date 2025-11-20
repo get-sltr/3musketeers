@@ -42,7 +42,7 @@ export const ErosFloatingButton = () => {
     }
   }, []);
 
-  // Send message to EROS (placeholder - backend integration TBD)
+  // Send message to EROS
   const sendMessage = async () => {
     if (!input.trim()) return;
 
@@ -52,21 +52,34 @@ export const ErosFloatingButton = () => {
     setLoading(true);
 
     try {
-      // Placeholder response - replace with erosAPI.chat() when backend ready
-      setTimeout(() => {
-        const placeholderResponses = [
-          '💚 I\'m EROS, your AI matchmaker. I\'m here to help with dating advice, profile tips, and more!',
-          '✨ Tell me what you\'re looking for and I can help you craft the perfect message.',
-          '🎯 Want to know how to make your profile stand out? I\'ve got tips!',
-          '💬 Ask me anything about dating, connections, or getting that perfect match!'
-        ];
-        const randomResponse = placeholderResponses[Math.floor(Math.random() * placeholderResponses.length)];
-        setMessages(prev => [...prev, { role: 'assistant', content: randomResponse }]);
-        setLoading(false);
-      }, 800);
+      // Call EROS backend API
+      const token = localStorage.getItem('sb-auth-token');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+
+      const response = await fetch('/api/v1/assistant/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          message: userMessage,
+          context: 'chat_widget'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get response from EROS');
+      }
+
+      const data = await response.json();
+      setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
     } catch (error) {
       console.error('Chat error:', error);
-      setMessages(prev => [...prev, { role: 'assistant', content: '❌ Backend not ready yet. Coming soon!' }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: '❌ Error: Could not reach EROS. Please check your connection.' }]);
+    } finally {
       setLoading(false);
     }
   };

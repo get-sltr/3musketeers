@@ -20,6 +20,7 @@ require('dotenv').config();
 // Import Supabase client
 const { createClient } = require('@supabase/supabase-js');
 const webpush = require('web-push');
+const Anthropic = require('@anthropic-ai/sdk');
 
 const app = express();
 const server = http.createServer(app);
@@ -105,6 +106,16 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 );
+
+// Initialize Anthropic Claude
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY
+});
+
+// Check for Claude API key
+if (!process.env.ANTHROPIC_API_KEY) {
+  console.warn('⚠️  WARNING: ANTHROPIC_API_KEY not configured - EROS chat will use placeholder responses');
+}
 
 // Configure web-push
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY && process.env.VAPID_SUBJECT) {
@@ -944,21 +955,64 @@ app.post('/api/v1/assistant/chat', authenticateUser, async (req, res) => {
       console.error('Save conversation error:', saveError);
     }
 
-    // Placeholder response - integrate Claude AI here
-    const placeholderResponses = [
-      'I\'m EROS, your AI matchmaker. How can I help you find your perfect match today?',
-      'Tell me what you\'re looking for and I can help craft the perfect conversation starter!',
-      'Looking for dating advice? I\'ve got tips to make your profile shine!',
-      'Ask me anything about connections, and I\'ll help you understand what you really want.'
-    ];
+    let response;
+    let intent = 'general_query';
+    let confidence = 0.85;
 
-    const response = placeholderResponses[Math.floor(Math.random() * placeholderResponses.length)];
+    // Use Claude AI if API key is configured
+    if (process.env.ANTHROPIC_API_KEY) {
+      try {
+        const systemPrompt = `You are EROS, an AI matchmaker and relationship advisor for SLTR, a queer dating app. Your role is to:
+1. Provide dating advice and relationship tips
+2. Help users craft better profiles and opening messages
+3. Answer questions about connections and compatibility
+4. Encourage authentic self-expression and respectful dating
+5. Be supportive, witty, and empowering
+
+Keep responses concise (1-2 sentences), friendly, and relevant to the dating/matchmaking context. Always respond as EROS.`;
+
+        const result = await anthropic.messages.create({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 256,
+          system: systemPrompt,
+          messages: [
+            {
+              role: 'user',
+              content: message
+            }
+          ]
+        });
+
+        response = result.content[0].type === 'text' ? result.content[0].text : 'Unable to process response';
+        confidence = 0.95;
+      } catch (claudeError) {
+        console.error('Claude API error:', claudeError.message);
+        // Fall back to placeholder if Claude fails
+        const placeholderResponses = [
+          '💚 I\'m EROS, your AI matchmaker. Tell me what you\'re looking for!',
+          '✨ Help me understand your perfect match - what catches your eye?',
+          '🎯 Want dating advice? I\'ve got tips to make your profile shine!',
+          '💬 Ask me anything about connections, and I\'ll help you navigate!'
+        ];
+        response = placeholderResponses[Math.floor(Math.random() * placeholderResponses.length)];
+      }
+    } else {
+      // Use placeholder responses if no API key
+      const placeholderResponses = [
+        '💚 I\'m EROS, your AI matchmaker. Tell me what you\'re looking for!',
+        '✨ Help me understand your perfect match - what catches your eye?',
+        '🎯 Want dating advice? I\'ve got tips to make your profile shine!',
+        '💬 Ask me anything about connections, and I\'ll help you navigate!'
+      ];
+      response = placeholderResponses[Math.floor(Math.random() * placeholderResponses.length)];
+    }
 
     res.json({
       success: true,
       response,
-      intent: 'general_query',
-      confidence: 0.85
+      intent,
+      confidence,
+      powered_by: process.env.ANTHROPIC_API_KEY ? 'Claude' : 'Placeholder'
     });
   } catch (error) {
     console.error('Chat error:', error);
