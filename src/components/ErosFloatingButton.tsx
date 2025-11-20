@@ -2,10 +2,16 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { erosAPI } from '@/lib/eros-api';
 
 interface Position {
   x: number;
   y: number;
+}
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
 }
 
 export const ErosFloatingButton = () => {
@@ -13,7 +19,16 @@ export const ErosFloatingButton = () => {
   const [position, setPosition] = useState<Position>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState<Position>({ x: 0, y: 0 });
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to bottom of messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   // Initialize position on mount
   useEffect(() => {
@@ -24,6 +39,26 @@ export const ErosFloatingButton = () => {
       });
     }
   }, []);
+
+  // Send message to EROS
+  const sendMessage = async () => {
+    if (!input.trim()) return;
+
+    const userMessage = input.trim();
+    setInput('');
+    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setLoading(true);
+
+    try {
+      const response = await erosAPI.chat(userMessage);
+      setMessages(prev => [...prev, { role: 'assistant', content: response.response }]);
+    } catch (error) {
+      console.error('Chat error:', error);
+      setMessages(prev => [...prev, { role: 'assistant', content: '❌ Sorry, I couldn\'t process that. Please try again.' }]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Handle mouse down - start dragging
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -150,11 +185,11 @@ export const ErosFloatingButton = () => {
           {/* Chat Window */}
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm h-96 flex flex-col">
             {/* Header */}
-            <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-4 rounded-t-2xl flex items-center justify-between">
+            <div className="bg-gradient-to-r from-green-700 to-green-800 text-white px-6 py-4 rounded-t-2xl flex items-center justify-between">
               <h3 className="font-semibold text-lg">EROS Assistant</h3>
               <button
                 onClick={() => setIsOpen(false)}
-                className="hover:bg-purple-700 p-1 rounded-full transition"
+                className="hover:bg-green-800 p-1 rounded-full transition"
               >
                 <X size={20} />
               </button>
@@ -162,11 +197,27 @@ export const ErosFloatingButton = () => {
 
             {/* Messages Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {/* Welcome Message */}
-              <div className="bg-purple-50 rounded-lg p-3 text-sm text-gray-700">
-                <p>👋 Hi! I'm EROS. How can I help you today?</p>
-                <p className="text-xs text-gray-500 mt-2">Ask me about matches, dating tips, or anything else!</p>
-              </div>
+              {messages.length === 0 ? (
+                <div className="bg-green-50 rounded-lg p-3 text-sm text-gray-700">
+                  <p>💘 Hi! I'm EROS. How can I help you today?</p>
+                  <p className="text-xs text-gray-500 mt-2">Ask about matches, dating tips, or anything!</p>
+                </div>
+              ) : (
+                messages.map((msg, idx) => (
+                  <div
+                    key={idx}
+                    className={`p-3 rounded-lg text-sm ${
+                      msg.role === 'user'
+                        ? 'bg-green-100 text-gray-900 ml-8'
+                        : 'bg-green-50 text-gray-700 mr-8'
+                    }`}
+                  >
+                    {msg.content}
+                  </div>
+                ))
+              )}
+              {loading && <div className="text-sm text-gray-500 italic">EROS is thinking...</div>}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Input Area */}
@@ -174,9 +225,17 @@ export const ErosFloatingButton = () => {
               <input
                 type="text"
                 placeholder="Type a message..."
-                className="flex-1 bg-gray-100 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && !loading && sendMessage()}
+                disabled={loading}
+                className="flex-1 bg-gray-100 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
               />
-              <button className="bg-purple-500 hover:bg-purple-600 text-white rounded-lg px-4 py-2 transition">
+              <button
+                onClick={sendMessage}
+                disabled={loading || !input.trim()}
+                className="bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 Send
               </button>
             </div>
