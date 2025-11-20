@@ -202,8 +202,10 @@ class ErosAPIClient {
    */
   async getDailyMatches(limit: number = 10): Promise<{
     success: boolean;
-    data: any[];
-    total: number;
+    matches: any[];
+    count?: number;
+    source?: string;
+    date?: string;
   }> {
     return this.request(`/matches/daily?limit=${limit}`);
   }

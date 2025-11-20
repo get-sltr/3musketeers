@@ -12,6 +12,7 @@ import MapViewSimple from '../../components/MapViewSimple'
 import dynamic from 'next/dynamic'
 import AnimatedHeader from '../../components/AnimatedHeader'
 import GradientBackground from '../../components/GradientBackground'
+import ErosDailyMatchesStrip from '../../components/ErosDailyMatchesStrip'
 import UserProfileCard from '../components/UserProfileCard'
 import MapControls from '../components/MapControls'
 import MapSessionMenu from '../components/MapSessionMenu'
@@ -757,6 +758,8 @@ export default function AppPage() {
 
       {/* Main Content */}
       <main className={viewMode === 'grid' ? 'pt-0' : 'pt-0'}>
+        {/* EROS Daily Matches strip */}
+        {viewMode === 'grid' && <ErosDailyMatchesStrip />}
         {/* Grid or Map view based on viewMode */}
         {viewMode === 'grid' ? (
           <GridViewProduction
