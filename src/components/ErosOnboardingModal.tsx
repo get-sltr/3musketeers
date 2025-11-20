@@ -12,7 +12,15 @@ export default function ErosOnboardingModal({ isOpen, onClose }: ErosOnboardingM
 
   if (!isOpen) return null;
 
-  const steps = [
+  type Step = {
+    icon: string;
+    title: string;
+    subtitle: string;
+    description: string;
+    highlight: string;
+  };
+
+  const steps: Step[] = [
     {
       icon: '💘',
       title: 'Meet EROS',
@@ -60,8 +68,10 @@ export default function ErosOnboardingModal({ isOpen, onClose }: ErosOnboardingM
     },
   ];
 
-  const step = steps[currentStep];
-  const progress = ((currentStep + 1) / steps.length) * 100;
+  const clampedIndex = Math.max(0, Math.min(currentStep, steps.length - 1));
+  if (steps.length === 0) return null;
+  const step = steps[clampedIndex]!;
+  const progress = ((clampedIndex + 1) / steps.length) * 100;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -86,7 +96,7 @@ export default function ErosOnboardingModal({ isOpen, onClose }: ErosOnboardingM
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <span className="text-xs text-gray-500 font-medium">
-                Step {currentStep + 1} of {steps.length}
+                Step {clampedIndex + 1} of {steps.length}
               </span>
               <span className="text-xs text-green-400 font-medium">{Math.round(progress)}%</span>
             </div>

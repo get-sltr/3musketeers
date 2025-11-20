@@ -101,7 +101,7 @@ class ErosAPIClient {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
-          errorData?.error?.message || `API error: ${response.statusCode}`
+          errorData?.error?.message || `API error: ${response.status}`
         );
       }
 
