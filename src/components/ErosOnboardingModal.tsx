@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { CupidIcon } from './CupidIcon';
 
 interface ErosOnboardingModalProps {
   isOpen: boolean;
@@ -23,19 +24,19 @@ export default function ErosOnboardingModal({ isOpen, onClose }: ErosOnboardingM
   const steps: Step[] = [
     {
       icon: '💘',
-      title: 'Meet EROS',
-      subtitle: 'Named after the Greek god of love and desire',
+      title: 'Welcome to sltr',
+      subtitle: 'the world\'s first social hookup app with full AI integration',
       description:
-        'EROS—the world\'s first hookup app with full AI integration. We\'re revolutionizing how you find real, authentic matches. Built for people who want genuine connections, not endless swiping.',
+        'We\'re revolutionizing how you find real, authentic connections. Built for what we all deserve: a real good f*ck. We\'re gonna call it a match.',
       highlight:
-        'Your next connection is just smarter matching away.',
+        'No endless swiping. No bad matches. Just EROS finding your next real connection.',
     },
     {
-      icon: '🤖',
-      title: 'Meet EROS. Your Matchmaker.',
-      subtitle: 'EROS Powered by Anthropic\'s Claude AI',
+      icon: '💘',
+      title: 'Meet EROS. Powered by Anthropic\'s Claude AI',
+      subtitle: 'Your Queer Matchmaker',
       description:
-        'EROS isn\'t an algorithm. It\'s a super intelligent system that reads between the lines. EROS understands what makes you authentically compatible—your vibe, values, what you\'re really looking for, and who actually gets you.',
+        'EROS isn\'t your typical AI. He\'s queer, he\'s super smart and can read between the lines! EROS understands your desires—your values, your vibe, and what you\'re really looking for. He gets who actually gets you.',
       highlight:
         'EROS does the thinking. EROS does the matching. No algorithms. No guessing. Just real intelligence finding your real people.',
     },
@@ -74,11 +75,11 @@ export default function ErosOnboardingModal({ isOpen, onClose }: ErosOnboardingM
   const progress = ((clampedIndex + 1) / steps.length) * 100;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="relative w-full max-w-md max-h-[90vh] flex flex-col bg-gray-950 rounded-3xl overflow-hidden shadow-2xl border border-blue-900/40">
         {/* Header with dark blue */}
         <div className="bg-gradient-to-r from-blue-950 to-blue-900 px-6 pt-6 pb-4 flex-shrink-0">
-          <div className="text-5xl mb-3">{step.icon}</div>
+          <div className="mb-3">{step.icon === '💘' ? <CupidIcon size={80} /> : <span className="text-5xl">{step.icon}</span>}</div>
           <h2 className="text-3xl font-bold text-lime-400 mb-1">{step.title}</h2>
           {clampedIndex === 4 ? (
             <p className="text-sm font-medium">

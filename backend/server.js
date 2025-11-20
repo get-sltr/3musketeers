@@ -814,6 +814,189 @@ app.post('/api/push/subscribe', async (req, res) => {
   }
 });
 
+// ========== EROS API ENDPOINTS ==========
+
+// Heartbeat tracking - user activity monitoring
+app.post('/api/v1/heartbeat', authenticateUser, async (req, res) => {
+  try {
+    const { appActive, screenOn } = req.body;
+    const userId = req.user.id;
+    const now = new Date().toISOString();
+
+    // Update user's last activity timestamp
+    await supabase
+      .from('profiles')
+      .update({ 
+        last_active: now,
+        online: appActive !== false
+      })
+      .eq('id', userId);
+
+    // Calculate idle time (simplified - would be enhanced with real tracking)
+    const idleTime = 0; // In production, calculate from last interaction
+    const processingPhase = 'active'; // Simplified - would check actual processing state
+
+    res.json({
+      success: true,
+      idleTime,
+      processingPhase,
+      timestamp: now
+    });
+  } catch (error) {
+    console.error('Heartbeat error:', error);
+    res.status(500).json({ error: 'Heartbeat failed' });
+  }
+});
+
+// Daily matches - pre-computed by EROS AI
+app.get('/api/v1/matches/daily', authenticateUser, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const limit = parseInt(req.query.limit) || 10;
+
+    // Fetch daily matches (would be pre-computed by EROS scheduler)
+    const { data: matches, error } = await supabase
+      .from('matches')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('match_type', 'daily')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('Fetch matches error:', error);
+      return res.status(500).json({ error: 'Failed to fetch matches' });
+    }
+
+    res.json({
+      success: true,
+      matches: matches || [],
+      count: matches?.length || 0,
+      source: 'EROS',
+      date: new Date().toISOString().split('T')[0]
+    });
+  } catch (error) {
+    console.error('Daily matches error:', error);
+    res.status(500).json({ error: 'Failed to fetch daily matches' });
+  }
+});
+
+// Match action - record user interaction with match
+app.post('/api/v1/matches/:matchId/action', authenticateUser, async (req, res) => {
+  try {
+    const { matchId } = req.params;
+    const { action, reason } = req.body;
+    const userId = req.user.id;
+
+    if (!['like', 'skip', 'block', 'report'].includes(action)) {
+      return res.status(400).json({ error: 'Invalid action' });
+    }
+
+    // Record the action
+    const { error } = await supabase
+      .from('match_actions')
+      .insert({
+        user_id: userId,
+        match_id: matchId,
+        action,
+        reason,
+        created_at: new Date().toISOString()
+      });
+
+    if (error) {
+      console.error('Match action error:', error);
+      return res.status(500).json({ error: 'Failed to record action' });
+    }
+
+    res.json({
+      success: true,
+      message: `Match ${action}ed successfully`,
+      action,
+      matchId
+    });
+  } catch (error) {
+    console.error('Match action error:', error);
+    res.status(500).json({ error: 'Failed to process match action' });
+  }
+});
+
+// EROS Assistant Chat
+app.post('/api/v1/assistant/chat', authenticateUser, async (req, res) => {
+  try {
+    const { message, context } = req.body;
+    const userId = req.user.id;
+
+    if (!message || !message.trim()) {
+      return res.status(400).json({ error: 'Message required' });
+    }
+
+    // Save conversation to database
+    const { error: saveError } = await supabase
+      .from('assistant_conversations')
+      .insert({
+        user_id: userId,
+        message,
+        context,
+        created_at: new Date().toISOString()
+      });
+
+    if (saveError) {
+      console.error('Save conversation error:', saveError);
+    }
+
+    // Placeholder response - integrate Claude AI here
+    const placeholderResponses = [
+      'I\'m EROS, your AI matchmaker. How can I help you find your perfect match today?',
+      'Tell me what you\'re looking for and I can help craft the perfect conversation starter!',
+      'Looking for dating advice? I\'ve got tips to make your profile shine!',
+      'Ask me anything about connections, and I\'ll help you understand what you really want.'
+    ];
+
+    const response = placeholderResponses[Math.floor(Math.random() * placeholderResponses.length)];
+
+    res.json({
+      success: true,
+      response,
+      intent: 'general_query',
+      confidence: 0.85
+    });
+  } catch (error) {
+    console.error('Chat error:', error);
+    res.status(500).json({ error: 'Chat failed' });
+  }
+});
+
+// Activity status
+app.get('/api/v1/activity/status', authenticateUser, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('last_active, online')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      return res.status(500).json({ error: 'Failed to fetch activity status' });
+    }
+
+    const lastInteraction = profile?.last_active || new Date().toISOString();
+    const idleTime = Math.floor((Date.now() - new Date(lastInteraction).getTime()) / 1000);
+
+    res.json({
+      userId,
+      lastInteraction,
+      idleTime,
+      processingPhase: 'active',
+      sessionDuration: 0
+    });
+  } catch (error) {
+    console.error('Activity status error:', error);
+    res.status(500).json({ error: 'Failed to fetch activity status' });
+  }
+});
+
 app.use(errorHandler);
 
 // Cleanup for non-Redis mode

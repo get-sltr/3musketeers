@@ -4,6 +4,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { erosAPI } from '@/lib/eros-api';
+import { CupidIcon } from './CupidIcon';
 
 interface Position {
   x: number;
@@ -41,7 +42,7 @@ export const ErosFloatingButton = () => {
     }
   }, []);
 
-  // Send message to EROS
+  // Send message to EROS (placeholder - backend integration TBD)
   const sendMessage = async () => {
     if (!input.trim()) return;
 
@@ -51,12 +52,21 @@ export const ErosFloatingButton = () => {
     setLoading(true);
 
     try {
-      const response = await erosAPI.chat(userMessage);
-      setMessages(prev => [...prev, { role: 'assistant', content: response.response }]);
+      // Placeholder response - replace with erosAPI.chat() when backend ready
+      setTimeout(() => {
+        const placeholderResponses = [
+          '💚 I\'m EROS, your AI matchmaker. I\'m here to help with dating advice, profile tips, and more!',
+          '✨ Tell me what you\'re looking for and I can help you craft the perfect message.',
+          '🎯 Want to know how to make your profile stand out? I\'ve got tips!',
+          '💬 Ask me anything about dating, connections, or getting that perfect match!'
+        ];
+        const randomResponse = placeholderResponses[Math.floor(Math.random() * placeholderResponses.length)];
+        setMessages(prev => [...prev, { role: 'assistant', content: randomResponse }]);
+        setLoading(false);
+      }, 800);
     } catch (error) {
       console.error('Chat error:', error);
-      setMessages(prev => [...prev, { role: 'assistant', content: '❌ Sorry, I couldn\'t process that. Please try again.' }]);
-    } finally {
+      setMessages(prev => [...prev, { role: 'assistant', content: '❌ Backend not ready yet. Coming soon!' }]);
       setLoading(false);
     }
   };
@@ -168,9 +178,9 @@ export const ErosFloatingButton = () => {
         onClick={() => !isDragging && setIsOpen(!isOpen)}
       >
         {isOpen ? (
-          <span className="text-3xl">✕</span>
+          <span className="text-2xl">✕</span>
         ) : (
-          <span className="text-3xl">💘</span>
+          <CupidIcon size={48} />
         )}
       </div>
 
