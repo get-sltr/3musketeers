@@ -23,6 +23,7 @@ import GroupModal from '../components/GroupModal'
 import UserAdvertisingPanel from '../components/UserAdvertisingPanel'
 import LocationSearch from '../components/LocationSearch'
 import WelcomeModal from '../../components/WelcomeModal'
+import ErosOnboardingModal from '../../components/ErosOnboardingModal'
 import '../../styles/mobile-optimization.css'
 import { useRealtime } from '../../hooks/useRealtime'
 import { resolveProfilePhoto } from '@/lib/utils/profile'
@@ -77,6 +78,7 @@ export default function AppPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [currentOrigin, setCurrentOrigin] = useState<[number, number] | null>(null)
   const [isFetching, setIsFetching] = useState(false)
+  const [showErosOnboarding, setShowErosOnboarding] = useState(false)
   const fetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   
   // Use Zustand store for map session state
@@ -135,10 +137,11 @@ export default function AppPage() {
   // Enable full-screen mobile app experience
   useFullScreenMobile()
 
-  // Check if first login and show welcome modal
+  // Check if first login and show welcome/onboarding modals
   useEffect(() => {
     const checkFirstLogin = async () => {
       const hasSeenWelcome = localStorage.getItem('sltr_welcome_shown')
+      const hasSeenErosOnboarding = localStorage.getItem('eros_onboarding_shown')
       if (!hasSeenWelcome) {
         const supabase = createClient()
         const { data: { user } } = await supabase.auth.getUser()
@@ -153,6 +156,14 @@ export default function AppPage() {
           const name = profile?.display_name || profile?.username || ''
           setShowWelcomeModal(true, name)
           localStorage.setItem('sltr_welcome_shown', 'true')
+          
+          // Show EROS onboarding after welcome
+          if (!hasSeenErosOnboarding) {
+            setTimeout(() => {
+              setShowErosOnboarding(true)
+              localStorage.setItem('eros_onboarding_shown', 'true')
+            }, 1000)
+          }
         }
       }
     }
@@ -891,6 +902,12 @@ export default function AppPage() {
         isOpen={showWelcomeModal}
         onClose={() => setShowWelcomeModal(false)}
         userName={userName}
+      />
+
+      {/* EROS Onboarding Modal - Introduces EROS AI */}
+      <ErosOnboardingModal
+        isOpen={showErosOnboarding}
+        onClose={() => setShowErosOnboarding(false)}
       />
 
       {/* Bottom Navigation */}
