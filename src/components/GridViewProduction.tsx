@@ -377,63 +377,16 @@ export default function GridViewProduction({
 
   return (
     <div className="min-h-screen bg-black">
-      {/* Grindr-style Header - Simpler */}
-      <div className="fixed left-0 right-0 z-50 bg-black border-b border-white/5" style={{ 
-        top: 'calc(max(env(safe-area-inset-top), 20px) + 56px)'
-      }}>
-        {/* Search Bar */}
-        <div className="flex items-center gap-3 px-3 py-2.5">
-          {/* Profile Photo - Smaller like Grindr */}
-          <button
-            onClick={() => router.push('/profile')}
-            className="relative w-10 h-10 rounded-full overflow-hidden border border-white/20 flex-shrink-0"
-          >
-            <img
-              src={currentUserPhoto || DEFAULT_PROFILE_IMAGE}
-              alt="Your profile"
-              className="w-full h-full object-cover"
-            />
-          </button>
-          
-          {/* Search Bar - Simpler */}
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Explore more profiles"
-              className="w-full bg-white/10 border-0 rounded-full px-4 py-2 pl-10 text-white placeholder-white/40 text-sm focus:outline-none focus:bg-white/15"
-            />
-            <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white text-sm"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-        </div>
-        
-        {/* Filter Bar */}
-        <GridFilterBar onFilterChange={setFilters} />
-      </div>
+{/* Internal header removed to avoid double header; AnimatedHeader handles this */}
       
       {/* 3-Column Grid with Gaps - Like Grindr */}
       <div className="min-h-screen" style={{ 
-        paddingTop: 'calc(112px + max(env(safe-area-inset-top), 20px))',
+        paddingTop: 'calc(72px + max(env(safe-area-inset-top), 16px))',
         paddingBottom: 'calc(84px + env(safe-area-inset-bottom, 0px))',
         WebkitOverflowScrolling: 'touch',
         overscrollBehavior: 'contain'
       }}>
+        {/* Optional: lightweight search/filter UI can be re-added later */}
         <div className="grid grid-cols-3 gap-0.5 bg-black p-0.5">
           
           {/* --- EMPTY STATE --- */}

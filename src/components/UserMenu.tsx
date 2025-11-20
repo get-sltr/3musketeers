@@ -188,112 +188,110 @@ export default function UserMenu({ className = '' }: UserMenuProps) {
           sltr
         </span>
       </button>
-      
-      {/* User Menu Dropdown */}
-      {showUserMenu && (
-        <div className="absolute top-full left-0 mt-2 w-48 bg-black/60 backdrop-blur-2xl border border-white/20 rounded-xl overflow-hidden z-[9999] animate-fadeIn shadow-2xl">
-          {/* sltr∝ Button */}
-          <div className="px-3 py-3 border-b border-white/10">
-            <SltrButton size="sm" fullWidth />
-          </div>
-          
-          {/* Quick Settings */}
-          <div className="px-4 py-3 border-b border-white/10">
-            <div className="flex items-center justify-between text-white text-sm mb-2">
-              <span>Sound alerts</span>
-              <label className="inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only" checked={notifySound} onChange={(e) => setNotifySound(e.target.checked)} />
-                <span className="w-10 h-5 bg-white/20 rounded-full relative">
-                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-all ${notifySound ? 'translate-x-5 bg-lime-400' : 'bg-white'}`}></span>
-                </span>
-              </label>
-            </div>
-            <div className="flex items-center justify-between text-white text-sm mb-2">
-              <span>Vibration</span>
-              <label className="inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only" checked={notifyVibrate} onChange={(e) => setNotifyVibrate(e.target.checked)} />
-                <span className="w-10 h-5 bg-white/20 rounded-full relative">
-                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-all ${notifyVibrate ? 'translate-x-5 bg-lime-400' : 'bg-white'}`}></span>
-                </span>
-              </label>
-            </div>
-            <div className="relative">
-              <button
-                onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-                className="flex items-center justify-between text-white text-sm w-full"
-                disabled={isPending}
-              >
-                <span>Language</span>
-                <span className="flex items-center gap-1 text-lime-400">
-                  {localeNames[locale as Locale]}
-                  <svg className={`w-4 h-4 transition-transform ${showLanguageMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </span>
-              </button>
-              {showLanguageMenu && (
-                <div className="absolute right-0 top-full mt-2 w-40 bg-black/80 backdrop-blur-2xl border border-white/20 rounded-xl overflow-hidden z-50 animate-fadeIn">
-                  {locales.map((loc) => (
-                    <button
-                      key={loc}
-                      onClick={() => handleLanguageChange(loc)}
-                      className={`w-full px-3 py-2 text-left text-sm transition-all duration-300 ${
-                        locale === loc
-                          ? 'bg-lime-400/20 text-lime-400'
-                          : 'text-white hover:bg-white/10'
-                      }`}
-                      disabled={isPending}
-                    >
-                      {localeNames[loc]}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
 
+      {/* Drawer Overlay */}
+      {showUserMenu && (
+        <div className="fixed inset-0 z-[9998]" aria-hidden>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowUserMenu(false)} />
+        </div>
+      )}
+
+      {/* Slide-out Drawer (mid-screen) */}
+      <div
+        className={`fixed left-0 top-1/2 -translate-y-1/2 z-[9999] w-[280px] sm:w-[320px] bg-black/85 border border-white/15 rounded-r-2xl shadow-2xl backdrop-blur-xl transition-transform duration-300 ${
+          showUserMenu ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
+          <span className="text-white font-bold tracking-widest">SLTR</span>
+          <button onClick={() => setShowUserMenu(false)} className="text-white/70 hover:text-white">✕</button>
+        </div>
+
+        {/* sltr∝ Button */}
+        <div className="px-4 py-3 border-b border-white/10">
+          <SltrButton size="sm" fullWidth />
+        </div>
+
+        {/* Quick Settings */}
+        <div className="px-4 py-3 border-b border-white/10">
+          <div className="flex items-center justify-between text-white text-sm mb-2">
+            <span>Sound alerts</span>
+            <label className="inline-flex items-center cursor-pointer">
+              <input type="checkbox" className="sr-only" checked={notifySound} onChange={(e) => setNotifySound(e.target.checked)} />
+              <span className="w-10 h-5 bg-white/20 rounded-full relative">
+                <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-all ${notifySound ? 'translate-x-5 bg-lime-400' : 'bg-white'}`}></span>
+              </span>
+            </label>
+          </div>
+          <div className="flex items-center justify-between text-white text-sm mb-2">
+            <span>Vibration</span>
+            <label className="inline-flex items-center cursor-pointer">
+              <input type="checkbox" className="sr-only" checked={notifyVibrate} onChange={(e) => setNotifyVibrate(e.target.checked)} />
+              <span className="w-10 h-5 bg-white/20 rounded-full relative">
+                <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-all ${notifyVibrate ? 'translate-x-5 bg-lime-400' : 'bg-white'}`}></span>
+              </span>
+            </label>
+          </div>
+          <div className="mt-2">
+            <button
+              onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+              className="flex items-center justify-between text-white text-sm w-full"
+              disabled={isPending}
+            >
+              <span>Language</span>
+              <span className="flex items-center gap-1 text-lime-400">
+                {localeNames[locale as Locale]}
+                <svg className={`w-4 h-4 transition-transform ${showLanguageMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </span>
+            </button>
+            {showLanguageMenu && (
+              <div className="mt-2 w-full bg-black/80 border border-white/15 rounded-xl overflow-hidden">
+                {locales.map((loc) => (
+                  <button
+                    key={loc}
+                    onClick={() => handleLanguageChange(loc)}
+                    className={`w-full px-3 py-2 text-left text-sm transition-all duration-300 ${
+                      locale === loc
+                        ? 'bg-lime-400/20 text-lime-400'
+                        : 'text-white hover:bg-white/10'
+                    }`}
+                    disabled={isPending}
+                  >
+                    {localeNames[loc]}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Nav Items */}
+        <div className="py-2">
           {menuItems.map((item, index) => (
             <button
               key={index}
-              onClick={item.onClick}
-              className="w-full px-4 py-3 text-left text-white hover:bg-white/10 transition-all duration-300 flex items-center gap-3"
+              onClick={() => { item.onClick(); setShowUserMenu(false) }}
+              className="w-full px-4 py-3 text-left text-white/90 hover:bg-white/10 transition-all duration-300 flex items-center gap-3"
             >
               {item.icon}
               {item.text}
             </button>
           ))}
-          
-          <div className="border-t border-white/10"></div>
-          
-          <button
-            onClick={handleLogout}
-            className="w-full px-4 py-3 text-left text-red-400 hover:bg-red-500/10 transition-all duration-300 flex items-center gap-3"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            Logout
-          </button>
         </div>
-      )}
 
-      {/* Custom Styles */}
-      <style jsx>{`
-        .animate-fadeIn {
-          animation: fadeIn 0.2s ease-out;
-        }
-        
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
+        <div className="border-t border-white/10" />
+        <button
+          onClick={handleLogout}
+          className="w-full px-4 py-3 text-left text-red-400 hover:bg-red-500/10 transition-all duration-300 flex items-center gap-3"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          Logout
+        </button>
+      </div>
     </div>
   )
 }

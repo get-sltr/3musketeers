@@ -66,7 +66,7 @@ export default function GroupsPage() {
         .insert({
           title: groupTitle.trim(),
           description: groupDescription.trim() || null,
-          created_by: user.id,
+          host_id: user.id,
         })
 
       if (error) {

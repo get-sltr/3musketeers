@@ -25,6 +25,7 @@ import UserAdvertisingPanel from '../components/UserAdvertisingPanel'
 import LocationSearch from '../components/LocationSearch'
 import WelcomeModal from '../../components/WelcomeModal'
 import ErosOnboardingModal from '../../components/ErosOnboardingModal'
+import { ErosFloatingButton } from '../../components/ErosFloatingButton'
 import '../../styles/mobile-optimization.css'
 import { useRealtime } from '../../hooks/useRealtime'
 import { resolveProfilePhoto } from '@/lib/utils/profile'
@@ -139,33 +140,34 @@ export default function AppPage() {
   // Enable full-screen mobile app experience
   useFullScreenMobile()
 
-  // Heartbeat tracking - send every 30 seconds
-  useEffect(() => {
-    let heartbeatInterval: ReturnType<typeof setInterval> | null = null
-
-    const startHeartbeat = async () => {
-      heartbeatInterval = setInterval(async () => {
-        try {
-          const response = await erosAPI.sendHeartbeat(true, true)
-          if (response.success) {
-            console.log(`💓 Heartbeat sent - Idle: ${response.idleTime}ms, Phase: ${response.processingPhase}`)
-          }
-        } catch (error) {
-          console.warn('Heartbeat error:', error)
-          // Silently fail - don't interrupt user experience
-        }
-      }, 30000) // Every 30 seconds
-    }
-
-    startHeartbeat()
-
-    // Cleanup on unmount
-    return () => {
-      if (heartbeatInterval) {
-        clearInterval(heartbeatInterval)
-      }
-    }
-  }, [])
+  // Heartbeat tracking - disabled temporarily (backend endpoint not found)
+  // TODO: Re-enable once backend heartbeat endpoint is properly configured
+  // useEffect(() => {
+  //   let heartbeatInterval: ReturnType<typeof setInterval> | null = null
+  //
+  //   const startHeartbeat = async () => {
+  //     heartbeatInterval = setInterval(async () => {
+  //       try {
+  //         const response = await erosAPI.sendHeartbeat(true, true)
+  //         if (response.success) {
+  //           console.log(`💓 Heartbeat sent - Idle: ${response.idleTime}ms, Phase: ${response.processingPhase}`)
+  //         }
+  //       } catch (error) {
+  //         console.warn('Heartbeat error:', error)
+  //         // Silently fail - don't interrupt user experience
+  //       }
+  //     }, 30000) // Every 30 seconds
+  //   }
+  //
+  //   startHeartbeat()
+  //
+  //   // Cleanup on unmount
+  //   return () => {
+  //     if (heartbeatInterval) {
+  //       clearInterval(heartbeatInterval)
+  //     }
+  //   }
+  // }, [])
 
   // Check if first login and show welcome/onboarding modals
   useEffect(() => {
@@ -941,6 +943,9 @@ export default function AppPage() {
         isOpen={showErosOnboarding}
         onClose={() => setShowErosOnboarding(false)}
       />
+
+      {/* EROS Floating Chat Button */}
+      <ErosFloatingButton />
 
       {/* Bottom Navigation */}
       <BottomNav />
