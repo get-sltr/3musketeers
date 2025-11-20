@@ -2,44 +2,43 @@
   <!-- Black background -->
   <rect width="512" height="512" fill="#000000"/>
   
-  <!-- Dot Grid (centered, scaled up) -->
-  <g transform="translate(116, 116)">
+  <!-- Dot Grid (left side) -->
+  <g transform="translate(30, 180)">
     <!-- Row 0 -->
-    <circle cx="40" cy="40" r="20" fill="#ccff00"/>
-    <circle cx="120" cy="40" r="20" fill="#ccff00"/>
-    <circle cx="200" cy="40" r="20" fill="#ccff00"/>
-    <circle cx="280" cy="40" r="20" fill="#ccff00"/>
+    <circle cx="22.5" cy="22.5" r="10" fill="#ccff00"/>
+    <circle cx="67.5" cy="22.5" r="10" fill="#ccff00"/>
+    <circle cx="112.5" cy="22.5" r="10" fill="#ccff00"/>
+    <circle cx="157.5" cy="22.5" r="10" fill="#ccff00"/>
     
     <!-- Row 1 (middle dots larger) -->
-    <circle cx="40" cy="120" r="20" fill="#ccff00"/>
-    <circle cx="120" cy="120" r="32" fill="#ccff00"/>
-    <circle cx="200" cy="120" r="32" fill="#ccff00"/>
-    <circle cx="280" cy="120" r="20" fill="#ccff00"/>
+    <circle cx="22.5" cy="67.5" r="10" fill="#ccff00"/>
+    <circle cx="67.5" cy="67.5" r="20" fill="#ffffff"/>
+    <circle cx="112.5" cy="67.5" r="20" fill="#ccff00"/>
+    <circle cx="157.5" cy="67.5" r="10" fill="#ccff00"/>
     
     <!-- Row 2 (middle dots larger) -->
-    <circle cx="40" cy="200" r="20" fill="#ccff00"/>
-    <circle cx="120" cy="200" r="32" fill="#ccff00"/>
-    <circle cx="200" cy="200" r="32" fill="#ccff00"/>
-    <circle cx="280" cy="200" r="20" fill="#ccff00"/>
+    <circle cx="22.5" cy="112.5" r="10" fill="#ccff00"/>
+    <circle cx="67.5" cy="112.5" r="20" fill="#ccff00"/>
+    <circle cx="112.5" cy="112.5" r="20" fill="#ccff00"/>
+    <circle cx="157.5" cy="112.5" r="10" fill="#ccff00"/>
     
     <!-- Row 3 -->
-    <circle cx="40" cy="280" r="20" fill="#ccff00"/>
-    <circle cx="120" cy="280" r="20" fill="#ccff00"/>
-    <circle cx="200" cy="280" r="20" fill="#ccff00"/>
-    <circle cx="280" cy="280" r="20" fill="#ccff00"/>
+    <circle cx="22.5" cy="157.5" r="10" fill="#ccff00"/>
+    <circle cx="67.5" cy="157.5" r="10" fill="#ccff00"/>
+    <circle cx="112.5" cy="157.5" r="10" fill="#ccff00"/>
+    <circle cx="157.5" cy="157.5" r="10" fill="#ccff00"/>
   </g>
   
-  <!-- "sltr" text below grid -->
+  <!-- "sltr" text (horizontal, right of grid) -->
   <text 
-    x="256" 
-    y="420" 
+    x="240" 
+    y="360"
     font-family="system-ui, -apple-system, sans-serif" 
     font-weight="900" 
-    font-size="72" 
-    letter-spacing="16" 
-    text-anchor="middle" 
-    fill="#ccff00"
-    style="filter: drop-shadow(0 0 12px rgba(204, 255, 0, 0.6))">
-    sltr
+    font-size="140" 
+    letter-spacing="45"
+    text-anchor="start" 
+    fill="#ccff00">
+    <tspan fill="#ccff00">s</tspan><tspan fill="#ccff00"> l</tspan><tspan fill="#ffffff"> t</tspan><tspan fill="#ccff00"> r</tspan>
   </text>
 </svg>
