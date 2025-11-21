@@ -838,9 +838,8 @@ export default function ProfilePage() {
               title="Headlines & Notes"
               description="Leave something memorable."
             >
-              <div className="space-y-3" key="bio-section">
+              <div className="space-y-3">
                 <textarea
-                  key="bio-textarea"
                   value={profileData.bio}
                   onChange={handleBioChange}
                   rows={5}
