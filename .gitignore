@@ -51,3 +51,4 @@ The SLTR V.01.11/
 .env.sentry-build-plugin
 sltr-backend/node_modules/
 sltr-backend/dist/
+node_modules/
