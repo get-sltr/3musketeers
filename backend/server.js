@@ -20,6 +20,7 @@ require('dotenv').config();
 // Import Supabase client
 const { createClient } = require('@supabase/supabase-js');
 const webpush = require('web-push');
+const Anthropic = require('@anthropic-ai/sdk');
 
 const app = express();
 const server = http.createServer(app);
@@ -105,6 +106,17 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 );
+
+// Initialize Anthropic
+let anthropic = null;
+if (process.env.ANTHROPIC_API_KEY) {
+  anthropic = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY
+  });
+  console.log('✅ Claude AI enabled');
+} else {
+  console.warn('⚠️  ANTHROPIC_API_KEY not set - EROS will use placeholder responses');
+}
 
 // Configure web-push
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY && process.env.VAPID_SUBJECT) {
@@ -930,6 +942,65 @@ app.post('/api/v1/assistant/chat', authenticateUser, async (req, res) => {
       return res.status(400).json({ error: 'Message required' });
     }
 
+    // Get conversation history (last 10 messages)
+    const { data: history } = await supabase
+      .from('assistant_conversations')
+      .select('message, response')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    let response;
+    let intent = 'general_query';
+    let confidence = 0.85;
+
+    if (anthropic) {
+      try {
+        // Build conversation history for Claude
+        const messages = [];
+        if (history && history.length > 0) {
+          history.reverse().forEach(msg => {
+            if (msg.message) messages.push({ role: 'user', content: msg.message });
+            if (msg.response) messages.push({ role: 'assistant', content: msg.response });
+          });
+        }
+        messages.push({ role: 'user', content: message });
+
+        // System prompt for EROS
+        const systemPrompt = `You are EROS, a friendly and supportive AI dating assistant for the SLTR app. You help users with:
+- Dating questions and relationship advice
+- Translating messages between languages
+- Profile tips and conversation starters
+- Understanding compatibility and connections
+
+Be concise, warm, supportive, and helpful. Keep responses under 150 words. Focus on actionable advice.`;
+
+        // Call Claude API
+        const claudeResponse = await anthropic.messages.create({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 1024,
+          system: systemPrompt,
+          messages
+        });
+
+        response = claudeResponse.content[0].type === 'text' 
+          ? claudeResponse.content[0].text 
+          : "I'm having trouble right now. Please try again.";
+      } catch (aiError) {
+        console.error('Claude API error:', aiError);
+        response = "I'm having trouble connecting right now. Please try again in a moment.";
+      }
+    } else {
+      // Fallback placeholder responses
+      const placeholderResponses = [
+        'I\'m EROS, your AI matchmaker. How can I help you find your perfect match today?',
+        'Tell me what you\'re looking for and I can help craft the perfect conversation starter!',
+        'Looking for dating advice? I\'ve got tips to make your profile shine!',
+        'Ask me anything about connections, and I\'ll help you understand what you really want.'
+      ];
+      response = placeholderResponses[Math.floor(Math.random() * placeholderResponses.length)];
+    }
+
     // Save conversation to database
     const { error: saveError } = await supabase
       .from('assistant_conversations')
@@ -937,6 +1008,9 @@ app.post('/api/v1/assistant/chat', authenticateUser, async (req, res) => {
         user_id: userId,
         message,
         context,
+        response,
+        intent,
+        confidence,
         created_at: new Date().toISOString()
       });
 
@@ -944,21 +1018,11 @@ app.post('/api/v1/assistant/chat', authenticateUser, async (req, res) => {
       console.error('Save conversation error:', saveError);
     }
 
-    // Placeholder response - integrate Claude AI here
-    const placeholderResponses = [
-      'I\'m EROS, your AI matchmaker. How can I help you find your perfect match today?',
-      'Tell me what you\'re looking for and I can help craft the perfect conversation starter!',
-      'Looking for dating advice? I\'ve got tips to make your profile shine!',
-      'Ask me anything about connections, and I\'ll help you understand what you really want.'
-    ];
-
-    const response = placeholderResponses[Math.floor(Math.random() * placeholderResponses.length)];
-
     res.json({
       success: true,
       response,
-      intent: 'general_query',
-      confidence: 0.85
+      intent,
+      confidence
     });
   } catch (error) {
     console.error('Chat error:', error);
