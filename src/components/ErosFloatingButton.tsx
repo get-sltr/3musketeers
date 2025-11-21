@@ -58,7 +58,8 @@ export const ErosFloatingButton = () => {
         throw new Error('Authentication required');
       }
 
-      const response = await fetch('/api/v1/assistant/chat', {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://sltr-backend.railway.app';
+      const response = await fetch(`${backendUrl}/api/v1/assistant/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
