@@ -559,7 +559,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Main Content */}
-      <div className="pt-20 pb-32 px-4">
+      <div className="pt-24 pb-32 px-4">
         <div className="max-w-6xl mx-auto grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <form onSubmit={handleSave} className="space-y-6">
             <div className="glass-bubble p-6 relative overflow-hidden">
@@ -601,8 +601,8 @@ export default function ProfilePage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-white/70 text-sm leading-relaxed max-w-xl">
-                    {profileData.bio ? profileData.bio.split('\n')[0] : 'Add a headline to let members know your vibe.'}
+                  <p className="text-white/70 text-sm leading-relaxed max-w-xl break-words">
+                    {profileData.bio || 'Add a headline to let members know your vibe.'}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {profileData.party_friendly && (
