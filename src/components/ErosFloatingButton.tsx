@@ -52,8 +52,18 @@ export const ErosFloatingButton = () => {
     setLoading(true);
 
     try {
-      // Call EROS backend API
-      const token = localStorage.getItem('sb-auth-token');
+      // Get Supabase auth token
+      const supabaseAuthKey = Object.keys(localStorage).find(key => 
+        key.startsWith('sb-') && key.includes('-auth-token')
+      );
+      
+      if (!supabaseAuthKey) {
+        throw new Error('Authentication required');
+      }
+      
+      const authData = JSON.parse(localStorage.getItem(supabaseAuthKey) || '{}');
+      const token = authData.access_token;
+      
       if (!token) {
         throw new Error('Authentication required');
       }
