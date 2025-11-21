@@ -97,7 +97,6 @@ export default async function RootLayout({
       <body className="antialiased font-sans touch-pan-y overscroll-none">
         <ClientProviders locale={locale}>
           {children}
-          <ErosAssistiveTouch />
           <NotificationPrompt />
           {/* <TwoFactorSetup /> */}
           <AdminDashboard />
