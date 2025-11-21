@@ -1061,6 +1061,24 @@ app.get('/api/v1/activity/status', authenticateUser, async (req, res) => {
   }
 });
 
+// EROS Scheduler status (admin/monitoring)
+app.get('/api/v1/eros/status', authenticateUser, async (req, res) => {
+  try {
+    const { getScheduler } = require('./services/scheduler');
+    const scheduler = getScheduler();
+    const status = scheduler.getStatus();
+    
+    res.json({
+      success: true,
+      scheduler: status,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('EROS status error:', error);
+    res.status(500).json({ error: 'Failed to fetch EROS status' });
+  }
+});
+
 app.use(errorHandler);
 
 // Cleanup for non-Redis mode
@@ -1133,11 +1151,30 @@ async function ensureErosTables() {
 }
 
 // Start server
+// Import EROS services
+const { getScheduler } = require('./services/scheduler');
+const { getMatcher } = require('./services/matcher');
+
 const PORT = process.env.PORT || 3000;
 
 async function startServer() {
   await ensureErosTables();
   await initSocketIO();
+  
+  // Start EROS Scheduler
+  const erosScheduler = getScheduler({ redis: redisClient });
+  erosScheduler.start();
+  console.log('✅ EROS Scheduler enabled');
+  
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received, shutting down gracefully...');
+    erosScheduler.stop();
+    server.close(() => {
+      console.log('Server closed');
+      process.exit(0);
+    });
+  });
   
   server.listen(PORT, () => {
     console.log(`🚀 SLTR Backend v3.0-PRODUCTION running on port ${PORT}`);
@@ -1146,6 +1183,7 @@ async function startServer() {
     console.log(`✅ All security fixes applied`);
     console.log(`✅ Supabase Storage enabled`);
     console.log(`✅ Redis: ${redisClient ? 'ENABLED - Multi-server ready' : 'NOT CONFIGURED - Single-server mode'}`);
+    console.log(`💘 EROS AI Matchmaker: ACTIVE`);
   });
 }
 
