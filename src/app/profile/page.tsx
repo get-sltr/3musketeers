@@ -165,8 +165,14 @@ export default function ProfilePage() {
 
   const primaryPhoto = profileData.photos[0] || DEFAULT_PROFILE_IMAGE
 
+  const hasLoadedRef = useRef(false)
+
   useEffect(() => {
+    // Only load profile once on mount
+    if (hasLoadedRef.current) return
+    
     const loadProfile = async () => {
+      hasLoadedRef.current = true
       setLoading(true)
       setError(null)
       
@@ -228,7 +234,8 @@ export default function ProfilePage() {
       }
     }
     loadProfile()
-  }, [router, supabase])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Empty deps - only run once on mount
 
   const loadAlbums = async () => {
     try {
