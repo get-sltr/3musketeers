@@ -69,6 +69,22 @@ const formatDistance = (miles?: number | null) => {
   return `${Math.round(miles)} mi`
 }
 
+// Haversine distance calculation (miles)
+const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const toRad = (value: number) => (value * Math.PI) / 180
+  const R = 3958.8 // Earth radius in miles
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
+
 export default function AppPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   // Ensure realtime presence/auth is initialized regardless of view
@@ -301,12 +317,54 @@ export default function AppPage() {
       // In travel mode, use a very large radius (25000 miles = entire world)
       const effectiveRadius = travelMode ? 25000 : radiusMiles
 
-      const { data, error } = await supabase.rpc('get_nearby_profiles', {
-        p_user_id: userId,
-        p_origin_lat: origin[1],
-        p_origin_lon: origin[0],
-        p_radius_miles: effectiveRadius,
-      })
+      // Try RPC function with timeout and retry
+      let data = null
+      let error = null
+      
+      try {
+        // Add timeout wrapper
+        const rpcPromise = supabase.rpc('get_nearby_profiles', {
+          p_user_id: userId,
+          p_origin_lat: origin[1],
+          p_origin_lon: origin[0],
+          p_radius_miles: effectiveRadius,
+        })
+        
+        // 30 second timeout
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('RPC timeout')), 30000)
+        )
+        
+        const result = await Promise.race([rpcPromise, timeoutPromise]) as any
+        data = result.data
+        error = result.error
+      } catch (rpcError: any) {
+        console.warn('RPC get_nearby_profiles failed, using fallback query:', rpcError.message)
+        
+        // Fallback: Direct query if RPC fails
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('profiles')
+          .select('id, display_name, photo_url, photos, online as is_online, dtfn, party_friendly, latitude, longitude, founder_number, about, kinks, tags, position, age, incognito_mode')
+          .not('latitude', 'is', null)
+          .not('longitude', 'is', null)
+          .eq('incognito_mode', false)
+          .limit(500)
+        
+        if (!fallbackError && fallbackData) {
+          // Calculate distances manually
+          data = fallbackData.map((profile: any) => {
+            const distanceMiles = haversineDistance(origin[1], origin[0], profile.latitude, profile.longitude)
+            return {
+              ...profile,
+              distance_miles: distanceMiles,
+              is_self: profile.id === userId
+            }
+          }).filter((p: any) => p.distance_miles <= effectiveRadius)
+            .sort((a: any, b: any) => a.distance_miles - b.distance_miles)
+        } else {
+          error = fallbackError
+        }
+      }
 
       if (error) {
         console.error('Error fetching nearby profiles:', error)
