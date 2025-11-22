@@ -1035,16 +1035,26 @@ Be concise, warm, supportive, and helpful. Keep responses under 150 words. Focus
         console.error('Claude API error:', {
           message: aiError?.message,
           status: aiError?.status,
+          statusCode: aiError?.statusCode,
+          code: aiError?.code,
           error: aiError
         });
         
         // More specific error messages
-        if (aiError?.status === 401 || aiError?.status === 403) {
-          response = "EROS authentication issue. Please contact support.";
-        } else if (aiError?.status === 429) {
+        const status = aiError?.status || aiError?.statusCode;
+        const errorMessage = aiError?.message || '';
+        
+        if (status === 401 || status === 403) {
+          // API key issue - use friendly message but log the real issue
+          console.error('⚠️  Anthropic API authentication failed. Check ANTHROPIC_API_KEY in Railway.');
+          response = "EROS is temporarily unavailable. Our team has been notified. Please try again in a few minutes.";
+        } else if (status === 429) {
           response = "EROS is busy right now. Please try again in a moment.";
-        } else if (aiError?.message?.includes('timeout') || aiError?.message?.includes('network')) {
+        } else if (errorMessage.includes('timeout') || errorMessage.includes('network') || errorMessage.includes('ECONNREFUSED')) {
           response = "Network issue connecting to EROS. Please check your connection and try again.";
+        } else if (errorMessage.includes('API key') || errorMessage.includes('authentication')) {
+          console.error('⚠️  Anthropic API key issue detected.');
+          response = "EROS is temporarily unavailable. Please try again in a few minutes.";
         } else {
           response = "I'm having trouble connecting right now. Please try again in a moment.";
         }
