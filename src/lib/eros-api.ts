@@ -4,6 +4,8 @@
  * Manages authentication, requests, and error handling
  */
 
+import { createClient } from '@/lib/supabase/client';
+
 interface RequestConfig {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   body?: any;
@@ -22,47 +24,38 @@ interface ApiResponse<T = any> {
 
 class ErosAPIClient {
   private baseUrl: string;
-  private token: string | null = null;
-  private refreshToken: string | null = null;
+  private supabase = typeof window !== 'undefined' ? createClient() : null;
 
-  constructor(baseUrl: string = process.env.VITE_API_URL || `${process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_DEV_BACKEND_URL || 'http://localhost:3000'}/api/v1`) {
-    this.baseUrl = baseUrl;
-    this.loadTokenFromStorage();
-  }
-
-  /**
-   * Load tokens from localStorage
-   */
-  private loadTokenFromStorage(): void {
-    if (typeof window !== 'undefined') {
-      this.token = localStorage.getItem('eros_access_token');
-      this.refreshToken = localStorage.getItem('eros_refresh_token');
+  constructor(baseUrl?: string) {
+    // Build base URL from environment variables
+    if (baseUrl) {
+      this.baseUrl = baseUrl;
+    } else {
+      const backendUrl = process.env.NODE_ENV === 'development'
+        ? (process.env.NEXT_PUBLIC_DEV_BACKEND_URL || 'http://localhost:3001')
+        : (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://backend.getsltr.com');
+      this.baseUrl = `${backendUrl}/api/v1`;
     }
   }
 
   /**
-   * Save tokens to localStorage
+   * Get Supabase access token from session
    */
-  private saveTokensToStorage(accessToken: string, refreshToken?: string): void {
-    if (typeof window !== 'undefined') {
-      this.token = accessToken;
-      localStorage.setItem('eros_access_token', accessToken);
-      if (refreshToken) {
-        this.refreshToken = refreshToken;
-        localStorage.setItem('eros_refresh_token', refreshToken);
+  private async getAccessToken(): Promise<string | null> {
+    if (!this.supabase || typeof window === 'undefined') {
+      return null;
+    }
+
+    try {
+      const { data: { session }, error } = await this.supabase.auth.getSession();
+      if (error || !session?.access_token) {
+        console.warn('No Supabase session:', error?.message);
+        return null;
       }
-    }
-  }
-
-  /**
-   * Clear tokens from storage and memory
-   */
-  private clearTokens(): void {
-    this.token = null;
-    this.refreshToken = null;
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('eros_access_token');
-      localStorage.removeItem('eros_refresh_token');
+      return session.access_token;
+    } catch (error) {
+      console.error('Error getting access token:', error);
+      return null;
     }
   }
 
@@ -74,15 +67,19 @@ class ErosAPIClient {
     config: RequestConfig = {}
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
+    
+    // Get fresh token from Supabase session
+    const token = await this.getAccessToken();
+    
+    if (!token) {
+      throw new Error('Authentication required. Please log in.');
+    }
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
       ...config.headers,
     };
-
-    // Add auth token if available
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
-    }
 
     try {
       const response = await fetch(url, {
@@ -91,18 +88,16 @@ class ErosAPIClient {
         body: config.body ? JSON.stringify(config.body) : undefined,
       });
 
-      // Handle token expiration
-      if (response.status === 401 && this.refreshToken) {
-        await this.refreshAccessToken();
-        // Retry request with new token
-        return this.request<T>(endpoint, config);
-      }
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData?.error?.message || `API error: ${response.status}`
-        );
+        const errorMessage = errorData?.error || `API error: ${response.status}`;
+        
+        // If 401, user might need to log in again
+        if (response.status === 401) {
+          throw new Error('Authentication required. Please log in.');
+        }
+        
+        throw new Error(typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage));
       }
 
       const data = await response.json();
@@ -111,51 +106,6 @@ class ErosAPIClient {
       console.error(`API request failed: ${endpoint}`, error);
       throw error;
     }
-  }
-
-  /**
-   * Refresh access token using refresh token
-   */
-  private async refreshAccessToken(): Promise<void> {
-    if (!this.refreshToken) {
-      this.clearTokens();
-      throw new Error('No refresh token available');
-    }
-
-    try {
-      const response = await fetch(`${this.baseUrl}/auth/refresh`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.refreshToken}`,
-        },
-      });
-
-      if (!response.ok) {
-        this.clearTokens();
-        throw new Error('Token refresh failed');
-      }
-
-      const data = await response.json();
-      this.saveTokensToStorage(data.accessToken, data.refreshToken);
-    } catch (error) {
-      this.clearTokens();
-      throw error;
-    }
-  }
-
-  /**
-   * Set authentication token (called after login)
-   */
-  public setTokens(accessToken: string, refreshToken?: string): void {
-    this.saveTokensToStorage(accessToken, refreshToken);
-  }
-
-  /**
-   * Clear authentication
-   */
-  public logout(): void {
-    this.clearTokens();
   }
 
   // ========== HEARTBEAT / ACTIVITY ==========
@@ -344,10 +294,12 @@ class ErosAPIClient {
     timestamp: string;
     uptime: number;
   }> {
-    return fetch(`${this.baseUrl}/..health`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    })
+      // Extract base backend URL (remove /api/v1)
+      const healthUrl = this.baseUrl.replace('/api/v1', '') + '/api/health';
+      return fetch(healthUrl, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      })
       .then(r => r.json())
       .catch(() => ({ status: 'down', timestamp: new Date().toISOString(), uptime: 0 }));
   }

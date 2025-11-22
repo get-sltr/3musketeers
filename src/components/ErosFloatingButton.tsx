@@ -52,49 +52,18 @@ export const ErosFloatingButton = () => {
     setLoading(true);
 
     try {
-      // Get Supabase auth token
-      const supabaseAuthKey = Object.keys(localStorage).find(key => 
-        key.startsWith('sb-') && key.includes('-auth-token')
-      );
-      
-      if (!supabaseAuthKey) {
-        throw new Error('Authentication required');
-      }
-      
-      const authData = JSON.parse(localStorage.getItem(supabaseAuthKey) || '{}');
-      const token = authData.access_token;
-      
-      if (!token) {
-        throw new Error('Authentication required');
-      }
-
-      // EROS-backend runs on port 3000
-      const backendUrl = process.env.NODE_ENV === 'development'
-        ? 'http://localhost:3000'
-        : 'https://sltr-backend.railway.app';
-      
-      console.log('EROS connecting to:', backendUrl);
-      const response = await fetch(`${backendUrl}/api/eros/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          message: userMessage,
-          context: 'chat_widget'
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to get response from EROS');
-      }
-
-      const data = await response.json();
-      setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
-    } catch (error) {
+      // Use erosAPI client which handles authentication
+      const response = await erosAPI.chat(userMessage, { context: 'chat_widget' });
+      setMessages(prev => [...prev, { role: 'assistant', content: response.response }]);
+    } catch (error: any) {
       console.error('Chat error:', error);
-      setMessages(prev => [...prev, { role: 'assistant', content: '❌ Error: Could not reach EROS. Please check your connection.' }]);
+      const errorMessage = error?.message || 'Could not reach EROS. Please check your connection.';
+      
+      if (errorMessage.includes('Authentication required')) {
+        setMessages(prev => [...prev, { role: 'assistant', content: '❌ Please log in to use EROS.' }]);
+      } else {
+        setMessages(prev => [...prev, { role: 'assistant', content: `❌ Error: ${errorMessage}` }]);
+      }
     } finally {
       setLoading(false);
     }

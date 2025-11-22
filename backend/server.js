@@ -835,6 +835,17 @@ app.post('/api/v1/heartbeat', authenticateUser, async (req, res) => {
     const userId = req.user.id;
     const now = new Date().toISOString();
 
+    // Get previous last_active to calculate idle time BEFORE updating
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('last_active')
+      .eq('id', userId)
+      .single();
+
+    // Calculate idle time BEFORE updating last_active
+    const lastActive = profile?.last_active ? new Date(profile.last_active).getTime() : Date.now();
+    const idleTime = Math.max(0, Date.now() - lastActive);
+
     // Update user's last activity timestamp
     await supabase
       .from('profiles')
@@ -844,13 +855,30 @@ app.post('/api/v1/heartbeat', authenticateUser, async (req, res) => {
       })
       .eq('id', userId);
 
-    // Calculate idle time (simplified - would be enhanced with real tracking)
-    const idleTime = 0; // In production, calculate from last interaction
-    const processingPhase = 'active'; // Simplified - would check actual processing state
+    // If user became active, halt any processing
+    let processingPhase = 'active';
+    if (appActive !== false && idleTime < 10 * 60 * 1000) { // Active within 10 min
+      try {
+        const scheduler = getScheduler();
+        const halted = await scheduler.haltUserProcessing(userId);
+        if (halted) {
+          console.log(`⏸️  User ${userId.substring(0, 8)}... became active, halted processing`);
+        }
+      } catch (schedulerError) {
+        // Scheduler might not be initialized yet, ignore
+        console.warn('Scheduler not available:', schedulerError.message);
+      }
+      processingPhase = 'active';
+    } else {
+      // Determine phase based on idle time
+      if (idleTime >= 60 * 60 * 1000) processingPhase = 'phase3';
+      else if (idleTime >= 30 * 60 * 1000) processingPhase = 'phase2';
+      else if (idleTime >= 10 * 60 * 1000) processingPhase = 'phase1';
+    }
 
     res.json({
       success: true,
-      idleTime,
+      idleTime: Math.round(idleTime / 1000), // Return in seconds
       processingPhase,
       timestamp: now
     });
@@ -1155,7 +1183,7 @@ async function ensureErosTables() {
 const { getScheduler } = require('./services/scheduler');
 const { getMatcher } = require('./services/matcher');
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 async function startServer() {
   await ensureErosTables();
