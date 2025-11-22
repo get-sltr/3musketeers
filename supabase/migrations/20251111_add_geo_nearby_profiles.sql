@@ -110,3 +110,9 @@ $function$;
 comment on function public.get_nearby_profiles is
   'Return profiles (excluding blocked/incognito) within the specified radius of the origin coordinates, including distance in miles.';
 
+-- Grant execute permissions to authenticated and anon users
+GRANT EXECUTE ON FUNCTION public.get_nearby_profiles TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_nearby_profiles TO anon;
+GRANT EXECUTE ON FUNCTION public.haversine_miles TO authenticated;
+GRANT EXECUTE ON FUNCTION public.haversine_miles TO anon;
+
