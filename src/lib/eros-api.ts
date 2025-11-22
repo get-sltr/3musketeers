@@ -47,12 +47,30 @@ class ErosAPIClient {
     }
 
     try {
-      const { data: { session }, error } = await this.supabase.auth.getSession();
-      if (error || !session?.access_token) {
-        console.warn('No Supabase session:', error?.message);
-        return null;
+      // Try getSession first (faster, uses cached session)
+      const { data: { session }, error: sessionError } = await this.supabase.auth.getSession();
+      
+      if (session?.access_token) {
+        return session.access_token;
       }
-      return session.access_token;
+
+      // If no session, try getUser (forces refresh)
+      if (sessionError || !session) {
+        const { data: { user }, error: userError } = await this.supabase.auth.getUser();
+        
+        if (userError) {
+          console.warn('No authenticated user:', userError.message);
+          return null;
+        }
+
+        // If user exists but no session token, try to get session again
+        const { data: { session: newSession } } = await this.supabase.auth.getSession();
+        if (newSession?.access_token) {
+          return newSession.access_token;
+        }
+      }
+
+      return null;
     } catch (error) {
       console.error('Error getting access token:', error);
       return null;
@@ -92,8 +110,37 @@ class ErosAPIClient {
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = errorData?.error || `API error: ${response.status}`;
         
-        // If 401, user might need to log in again
+        // If 401, try to refresh the session and retry once
         if (response.status === 401) {
+          console.warn('401 error, attempting to refresh session...');
+          
+          // Try to refresh the session
+          if (this.supabase) {
+            try {
+              const { data: { session: newSession }, error: refreshError } = await this.supabase.auth.refreshSession();
+              
+              if (!refreshError && newSession?.access_token) {
+                // Retry the request with new token
+                const retryHeaders = {
+                  ...headers,
+                  'Authorization': `Bearer ${newSession.access_token}`
+                };
+                
+                const retryResponse = await fetch(url, {
+                  method: config.method || 'GET',
+                  headers: retryHeaders,
+                  body: config.body ? JSON.stringify(config.body) : undefined,
+                });
+                
+                if (retryResponse.ok) {
+                  return await retryResponse.json();
+                }
+              }
+            } catch (refreshErr) {
+              console.error('Session refresh failed:', refreshErr);
+            }
+          }
+          
           throw new Error('Authentication required. Please log in.');
         }
         

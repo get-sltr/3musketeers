@@ -32,6 +32,13 @@ export default function ErosDailyMatchesStrip() {
   useEffect(() => {
     const load = async () => {
       try {
+        // Check if user is logged in first
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setLoading(false);
+          return; // Don't try to load matches if not logged in
+        }
+
         const res = await erosAPI.getDailyMatches(10);
         const list: DailyMatch[] = (res.matches || []).map((m: any) => ({
           id: m.id,
