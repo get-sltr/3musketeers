@@ -317,12 +317,12 @@ export default function AppPage() {
       // In travel mode, use a very large radius (25000 miles = entire world)
       const effectiveRadius = travelMode ? 25000 : radiusMiles
 
-      // Try RPC function with timeout and retry
+      // Try RPC function with timeout, fallback silently on error
       let data = null
       let error = null
       
       try {
-        // Add timeout wrapper
+        // Add timeout wrapper (10 seconds - shorter for faster fallback)
         const rpcPromise = supabase.rpc('get_nearby_profiles', {
           p_user_id: userId,
           p_origin_lat: origin[1],
@@ -330,44 +330,58 @@ export default function AppPage() {
           p_radius_miles: effectiveRadius,
         })
         
-        // 30 second timeout
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('RPC timeout')), 30000)
+          setTimeout(() => reject(new Error('RPC timeout')), 10000)
         )
         
         const result = await Promise.race([rpcPromise, timeoutPromise]) as any
+        if (result.error) {
+          throw result.error
+        }
         data = result.data
-        error = result.error
-      } catch (rpcError: any) {
-        console.warn('RPC get_nearby_profiles failed, using fallback query:', rpcError.message)
-        
+      } catch (rpcError) {
+        // Silently fallback - don't log errors to console (they're expected if RPC not available)
         // Fallback: Direct query if RPC fails
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('profiles')
-          .select('id, display_name, photo_url, photos, online as is_online, dtfn, party_friendly, latitude, longitude, founder_number, about, kinks, tags, position, age, incognito_mode')
-          .not('latitude', 'is', null)
-          .not('longitude', 'is', null)
-          .eq('incognito_mode', false)
-          .limit(500)
-        
-        if (!fallbackError && fallbackData) {
-          // Calculate distances manually
-          data = fallbackData.map((profile: any) => {
-            const distanceMiles = haversineDistance(origin[1], origin[0], profile.latitude, profile.longitude)
-            return {
-              ...profile,
-              distance_miles: distanceMiles,
-              is_self: profile.id === userId
-            }
-          }).filter((p: any) => p.distance_miles <= effectiveRadius)
-            .sort((a: any, b: any) => a.distance_miles - b.distance_miles)
-        } else {
-          error = fallbackError
+        try {
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('profiles')
+            .select('id, display_name, photo_url, photos, online as is_online, dtfn, party_friendly, latitude, longitude, founder_number, about, kinks, tags, position, age, incognito_mode')
+            .not('latitude', 'is', null)
+            .not('longitude', 'is', null)
+            .eq('incognito_mode', false)
+            .limit(500)
+          
+          if (!fallbackError && fallbackData) {
+            // Calculate distances manually
+            data = fallbackData.map((profile: any) => {
+              const distanceMiles = haversineDistance(origin[1], origin[0], profile.latitude, profile.longitude)
+              return {
+                ...profile,
+                distance_miles: distanceMiles,
+                is_self: profile.id === userId
+              }
+            }).filter((p: any) => p.distance_miles <= effectiveRadius)
+              .sort((a: any, b: any) => a.distance_miles - b.distance_miles)
+          } else {
+            error = fallbackError
+          }
+        } catch (fallbackErr) {
+          error = fallbackErr
         }
       }
 
-      if (error) {
-        console.error('Error fetching nearby profiles:', error)
+      // If we have data (from RPC or fallback), continue processing
+      // Only return early if both RPC and fallback failed
+      if (error && !data) {
+        // Only log if both methods failed
+        console.error('Error fetching nearby profiles (both RPC and fallback failed):', error)
+        return
+      }
+      
+      // If no data from either method, return early
+      if (!data || data.length === 0) {
+        setUsers([])
+        setIsFetching(false)
         return
       }
 

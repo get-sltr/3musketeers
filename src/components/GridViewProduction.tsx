@@ -204,7 +204,7 @@ export default function GridViewProduction({
       let error = null
       
       try {
-        // Add timeout wrapper (20 seconds)
+        // Add timeout wrapper (10 seconds - faster fallback)
         const rpcPromise = supabase.rpc('get_nearby_profiles', {
           p_user_id: currentUser.id,
           p_origin_lat: profile.latitude,
@@ -213,77 +213,91 @@ export default function GridViewProduction({
         })
         
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('RPC timeout')), 20000)
+          setTimeout(() => reject(new Error('RPC timeout')), 10000)
         )
         
         const result = await Promise.race([rpcPromise, timeoutPromise]) as any
+        if (result.error) {
+          throw result.error
+        }
         data = result.data
-        error = result.error
-      } catch (rpcError: any) {
-        console.warn('RPC get_nearby_profiles failed, using fallback query:', rpcError.message)
-        
+      } catch (rpcError) {
+        // Silently fallback - don't log errors (expected if RPC not available)
         // Fallback: Direct query if RPC fails
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('profiles')
-          .select('id, display_name, photo_url, photos, online as is_online, dtfn, party_friendly, latitude, longitude, founder_number, about, kinks, tags, position, age, incognito_mode')
-          .not('latitude', 'is', null)
-          .not('longitude', 'is', null)
-          .eq('incognito_mode', false)
-          .limit(200)
-        
-        if (!fallbackError && fallbackData) {
-          // Calculate distances manually
-          const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-            const toRad = (value: number) => (value * Math.PI) / 180
-            const R = 3958.8
-            const dLat = toRad(lat2 - lat1)
-            const dLon = toRad(lon2 - lon1)
-            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-              Math.sin(dLon / 2) * Math.sin(dLon / 2)
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-            return R * c
-          }
+        try {
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('profiles')
+            .select('id, display_name, photo_url, photos, online as is_online, dtfn, party_friendly, latitude, longitude, founder_number, about, kinks, tags, position, age, incognito_mode')
+            .not('latitude', 'is', null)
+            .not('longitude', 'is', null)
+            .eq('incognito_mode', false)
+            .limit(200)
           
-          data = fallbackData.map((p: any) => {
-            const distanceMiles = haversineDistance(profile.latitude, profile.longitude, p.latitude, p.longitude)
-            return {
-              ...p,
-              distance_miles: distanceMiles,
-              is_self: p.id === currentUser.id
+          if (!fallbackError && fallbackData) {
+            // Calculate distances manually
+            const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+              const toRad = (value: number) => (value * Math.PI) / 180
+              const R = 3958.8
+              const dLat = toRad(lat2 - lat1)
+              const dLon = toRad(lon2 - lon1)
+              const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2)
+              const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+              return R * c
             }
-          }).filter((p: any) => p.distance_miles <= 10 && p.id !== currentUser.id)
-            .sort((a: any, b: any) => a.distance_miles - b.distance_miles)
-        } else {
-          error = fallbackError
+            
+            data = fallbackData.map((p: any) => {
+              const distanceMiles = haversineDistance(profile.latitude, profile.longitude, p.latitude, p.longitude)
+              return {
+                ...p,
+                distance_miles: distanceMiles,
+                is_self: p.id === currentUser.id
+              }
+            }).filter((p: any) => p.distance_miles <= 10 && p.id !== currentUser.id)
+              .sort((a: any, b: any) => a.distance_miles - b.distance_miles)
+          } else {
+            error = fallbackError
+          }
+        } catch (fallbackErr) {
+          error = fallbackErr
         }
       }
 
-      if (error) {
-        console.error('Error from get_nearby_profiles:', error)
-        throw error
+      // If we have data (from RPC or fallback), use it
+      if (data && data.length > 0) {
+        // Filter and transform data
+        const filteredUsers = data
+          .filter((u: any) => u.id !== currentUser.id) // Exclude self
+          .map((u: any) => ({
+            id: u.id,
+            display_name: u.display_name || 'Anonymous',
+            photo_url: u.photo_url || u.photos?.[0] || null,
+            photos: u.photos || [],
+            age: u.age,
+            position: u.position,
+            dtfn: u.dtfn,
+            party_friendly: u.party_friendly,
+            distance_miles: u.distance_miles,
+            is_online: u.is_online,
+          }))
+
+        setUsers(filteredUsers)
+      } else if (error) {
+        // Only show error if both RPC and fallback failed
+        console.error('Error fetching nearby profiles (both RPC and fallback failed):', error)
+        // Don't show toast - just set empty array
+        setUsers([])
+      } else {
+        // No data and no error - set empty array
+        setUsers([])
       }
-
-      // Filter and transform data
-      const filteredUsers = (data || [])
-        .filter((u: any) => u.id !== currentUser.id) // Exclude self
-        .map((u: any) => ({
-          id: u.id,
-          display_name: u.display_name || 'Anonymous',
-          photo_url: u.photo_url || u.photos?.[0] || null,
-          photos: u.photos || [],
-          age: u.age,
-          position: u.position,
-          dtfn: u.dtfn,
-          party_friendly: u.party_friendly,
-          distance_miles: u.distance_miles,
-          is_online: u.is_online,
-        }))
-
-      setUsers(filteredUsers)
     } catch (error: any) {
-      console.error('Error fetching grid users:', error)
-      toast.error(`Error fetching users: ${error.message}`)
+      // Only log unexpected errors (not RPC failures which are handled above)
+      if (!error?.message?.includes('RPC') && !error?.message?.includes('get_nearby_profiles')) {
+        console.error('Unexpected error fetching grid users:', error)
+      }
+      setUsers([])
     } finally {
       setGridLoading(false)
     }
