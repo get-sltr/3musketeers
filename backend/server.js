@@ -1031,12 +1031,27 @@ Be concise, warm, supportive, and helpful. Keep responses under 150 words. Focus
         response = claudeResponse.content[0].type === 'text' 
           ? claudeResponse.content[0].text 
           : "I'm having trouble right now. Please try again.";
-      } catch (aiError) {
-        console.error('Claude API error:', aiError);
-        response = "I'm having trouble connecting right now. Please try again in a moment.";
+      } catch (aiError: any) {
+        console.error('Claude API error:', {
+          message: aiError?.message,
+          status: aiError?.status,
+          error: aiError
+        });
+        
+        // More specific error messages
+        if (aiError?.status === 401 || aiError?.status === 403) {
+          response = "EROS authentication issue. Please contact support.";
+        } else if (aiError?.status === 429) {
+          response = "EROS is busy right now. Please try again in a moment.";
+        } else if (aiError?.message?.includes('timeout') || aiError?.message?.includes('network')) {
+          response = "Network issue connecting to EROS. Please check your connection and try again.";
+        } else {
+          response = "I'm having trouble connecting right now. Please try again in a moment.";
+        }
       }
     } else {
-      // Fallback placeholder responses
+      // Fallback placeholder responses (when ANTHROPIC_API_KEY not set)
+      console.warn('⚠️  EROS chat: ANTHROPIC_API_KEY not configured, using placeholder response');
       const placeholderResponses = [
         'I\'m EROS, your AI matchmaker. How can I help you find your perfect match today?',
         'Tell me what you\'re looking for and I can help craft the perfect conversation starter!',
