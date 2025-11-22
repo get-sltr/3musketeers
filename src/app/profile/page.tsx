@@ -102,9 +102,7 @@ export default function ProfilePage() {
     }))
   }, [])
 
-  const handleBioChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setProfileData(prev => ({ ...prev, bio: e.target.value }))
-  }, [])
+  // Bio change handler removed - using inline onChange like other fields
 
   const Switch = ({ checked, onChange }: { checked: boolean; onChange: (value: boolean) => void }) => (
     <button
@@ -841,7 +839,7 @@ export default function ProfilePage() {
               <div className="space-y-3">
                 <textarea
                   value={profileData.bio}
-                  onChange={handleBioChange}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
                   rows={5}
                   maxLength={500}
                   autoComplete="off"

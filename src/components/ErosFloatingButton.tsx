@@ -68,7 +68,12 @@ export const ErosFloatingButton = () => {
         throw new Error('Authentication required');
       }
 
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://sltr-backend.railway.app';
+      // Use dev URL in development, production URL in production
+      const backendUrl = process.env.NODE_ENV === 'development'
+        ? (process.env.NEXT_PUBLIC_DEV_BACKEND_URL || 'http://localhost:3001')
+        : (process.env.NEXT_PUBLIC_BACKEND_URL || 'https://sltr-backend.railway.app');
+      
+      console.log('EROS connecting to:', backendUrl);
       const response = await fetch(`${backendUrl}/api/v1/assistant/chat`, {
         method: 'POST',
         headers: {
