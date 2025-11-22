@@ -1031,7 +1031,7 @@ Be concise, warm, supportive, and helpful. Keep responses under 150 words. Focus
         response = claudeResponse.content[0].type === 'text' 
           ? claudeResponse.content[0].text 
           : "I'm having trouble right now. Please try again.";
-      } catch (aiError: any) {
+      } catch (aiError) {
         console.error('Claude API error:', {
           message: aiError?.message,
           status: aiError?.status,
