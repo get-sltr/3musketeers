@@ -802,6 +802,74 @@ app.get('/api/v1/eros/diagnostic', (req, res) => {
   });
 });
 
+// Test Anthropic API key directly
+app.get('/api/v1/eros/test-api-key', async (req, res) => {
+  if (!anthropic) {
+    return res.status(500).json({
+      error: 'Anthropic client not initialized',
+      api_key_present: !!process.env.ANTHROPIC_API_KEY
+    });
+  }
+
+  try {
+    // Make a minimal test API call
+    const testResponse = await anthropic.messages.create({
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: 10,
+      messages: [
+        { role: 'user', content: 'Say "test" if you can read this.' }
+      ]
+    });
+
+    const responseText = testResponse.content[0]?.type === 'text' 
+      ? testResponse.content[0].text 
+      : 'No text response';
+
+    res.json({
+      status: 'success',
+      api_key_valid: true,
+      test_response: responseText,
+      message: 'API key is working correctly!'
+    });
+  } catch (error) {
+    const status = error?.status || error?.statusCode;
+    const errorMessage = error?.message || '';
+    
+    let errorType = 'unknown';
+    let solution = 'Check Anthropic console for account status';
+    
+    if (status === 401 || status === 403) {
+      errorType = 'authentication_failed';
+      solution = 'API key is invalid, expired, or revoked. Go to https://console.anthropic.com/ to: 1) Check if key is active, 2) Verify billing is set up, 3) Create a new API key if needed';
+    } else if (status === 429) {
+      errorType = 'rate_limit';
+      solution = 'Rate limit exceeded. Wait a few minutes and try again, or upgrade your Anthropic plan';
+    } else if (status === 402) {
+      errorType = 'payment_required';
+      solution = 'Billing issue - payment method required or account suspended. Go to https://console.anthropic.com/ to add payment method';
+    } else if (errorMessage.includes('quota') || errorMessage.includes('billing')) {
+      errorType = 'billing_quota';
+      solution = 'Billing/quota issue. Check Anthropic console for: 1) Payment method, 2) Usage limits, 3) Account status';
+    }
+
+    res.status(status || 500).json({
+      status: 'error',
+      api_key_valid: false,
+      error_type: errorType,
+      http_status: status,
+      error_message: errorMessage,
+      solution: solution,
+      full_error: {
+        message: errorMessage,
+        status: status,
+        statusCode: error?.statusCode,
+        code: error?.code,
+        type: error?.type
+      }
+    });
+  }
+});
+
 // FIXED: File upload with Supabase Storage
 app.post('/api/upload', authenticateUser, upload.single('file'), async (req, res, next) => {
   try {
