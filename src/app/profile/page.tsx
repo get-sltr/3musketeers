@@ -851,6 +851,9 @@ export default function ProfilePage() {
                   maxLength={500}
                   autoComplete="off"
                   spellCheck="true"
+                  data-gramm="false"
+                  data-gramm_editor="false"
+                  data-enable-grammarly="false"
                   placeholder="Let SLTR know your vibe, your boundaries, or your invite."
                   className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-lime-400 resize-none"
                 />
