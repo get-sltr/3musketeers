@@ -227,7 +227,10 @@ export default function MapWithProfiles({ onUserClick }: MapWithProfilesProps) {
           setMapZoom(12)
         },
         (error) => {
-          console.error('Location error:', error)
+          // Silently handle geolocation errors (expected when permission denied/unavailable)
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('Geolocation unavailable, using default location:', error.code)
+          }
           setUserLocation({ lat: 34.0522, lng: -118.2437 })
           setMapCenter([-118.2437, 34.0522])
         },

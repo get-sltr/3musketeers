@@ -709,8 +709,12 @@ export default function AppPage() {
           setMapCenter([position.coords.longitude, position.coords.latitude])
         },
         (error) => {
-          console.error('Error getting location:', error)
-          alert('Unable to get your location. Please enable location services.')
+          // Silently handle geolocation errors - don't spam console
+          // Only show alert for user-initiated actions (not on page load)
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('Geolocation unavailable:', error.code)
+          }
+          // Don't show alert - user can use location search instead
         }
       )
     }

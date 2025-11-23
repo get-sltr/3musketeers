@@ -182,7 +182,11 @@ function MapViewSimple({ pinStyle = 1, center }: { pinStyle?: number; center?: [
           }
         },
         (error) => {
-          console.error('Error getting location:', error)
+          // Silently handle geolocation errors (permission denied, unavailable, etc.)
+          // Only log in development
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('Geolocation unavailable, using default location:', error.code)
+          }
           // Default to LA if location fails
           if (isMounted) {
             setCurrentLocation([-118.2437, 34.0522])
