@@ -262,9 +262,10 @@ function MapViewSimple({ pinStyle = 1, center }: { pinStyle?: number; center?: [
     }
   }, [supabase])
 
-  // Initialize map
+  // Initialize map - ONLY ONCE on mount
+  const mapInitialized = useRef(false)
   useEffect(() => {
-    if (!mapContainer.current || map.current) return
+    if (!mapContainer.current || map.current || mapInitialized.current) return
     
     // Use center prop if available, otherwise use currentLocation, otherwise default to LA
     const initialCenter = center || currentLocation || [-0.1276, 51.5074] // Default to London if neither set
@@ -286,6 +287,8 @@ function MapViewSimple({ pinStyle = 1, center }: { pinStyle?: number; center?: [
           bearing: 0
         })
         
+        mapInitialized.current = true
+        
         // Wait for map to load before adding markers
         map.current.once('load', () => {
           console.log('🗺️ Map loaded')
@@ -293,14 +296,6 @@ function MapViewSimple({ pinStyle = 1, center }: { pinStyle?: number; center?: [
 
         // Add navigation controls
         map.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
-
-        // Add current user marker (blue) - only if we have currentLocation
-        if (currentLocation) {
-          new mapboxgl.Marker({ color: '#00d4ff' })
-            .setLngLat(currentLocation)
-            .setPopup(new mapboxgl.Popup().setHTML('<strong>You are here</strong>'))
-            .addTo(map.current)
-        }
 
         // Add CSS animation for pulse effect (Style 3)
         if (!document.getElementById('pulse-animation')) {
@@ -315,53 +310,6 @@ function MapViewSimple({ pinStyle = 1, center }: { pinStyle?: number; center?: [
           `
           document.head.appendChild(style)
         }
-
-        // Function to create marker using SLTR Map Pin
-        const createMarker = (user: any) => {
-          const primaryPhoto = resolveProfilePhoto(user.profile_photo_url, user.photos)
-          
-          const markerEl = createSLTRMapboxMarker(
-            {
-              id: user.id,
-              display_name: user.display_name || 'Anonymous',
-              avatar_url: primaryPhoto || null,
-              age: user.age ?? 0,
-              position: user.position || 'Unknown',
-              dtfn: !!user.dtfn,
-              party_friendly: !!user.party_friendly,
-              latitude: user.latitude,
-              longitude: user.longitude,
-              distance: user.distance,
-              is_online: user.is_online ?? user.online,
-              online: user.online ?? user.is_online,
-            },
-            (id) => window.location.href = `/messages?user=${id}`,
-            (id) => window.location.href = `/messages?user=${id}&startVideo=1`,
-            (id) => {
-              // Handle tap - you can add tap logic here
-              console.log('Tap:', id)
-            },
-            (id) => window.location.href = `/profile/${id}`
-          )
-
-          return markerEl
-        }
-
-        // Add other users as markers
-        users.forEach((user) => {
-          if (user.latitude && user.longitude) {
-            const el = createMarker(user)
-
-            const marker = new mapboxgl.Marker({
-              element: el,
-              anchor: 'bottom'  // SLTR pins use bottom anchor
-            })
-              .setLngLat([user.longitude, user.latitude])
-              .addTo(map.current)
-
-            markers.current.push(marker)
-          }
-        })
       } else {
         // Retry if mapboxgl not loaded yet
         setTimeout(initMap, 100)
@@ -374,9 +322,11 @@ function MapViewSimple({ pinStyle = 1, center }: { pinStyle?: number; center?: [
       if (map.current) {
         map.current.remove()
         map.current = null
+        mapInitialized.current = false
       }
     }
-  }, [currentLocation, users, pinStyle, center])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run once on mount
 
   // Fly to center when center prop changes (from location search)
   useEffect(() => {
@@ -412,9 +362,36 @@ function MapViewSimple({ pinStyle = 1, center }: { pinStyle?: number; center?: [
     }
   }, [center])
 
-  // Refresh markers when pin style changes
+  // Add/update user marker when currentLocation changes
+  const userMarkerRef = useRef<any>(null)
   useEffect(() => {
-    if (!map.current || !users.length) return
+    if (!map.current || !currentLocation) {
+      // Remove marker if location is cleared
+      if (userMarkerRef.current) {
+        userMarkerRef.current.remove()
+        userMarkerRef.current = null
+      }
+      return
+    }
+
+    const mapboxgl = (window as any).mapboxgl
+    if (mapboxgl && map.current) {
+      // Remove old marker
+      if (userMarkerRef.current) {
+        userMarkerRef.current.remove()
+      }
+      
+      // Add new marker
+      userMarkerRef.current = new mapboxgl.Marker({ color: '#00d4ff' })
+        .setLngLat(currentLocation)
+        .setPopup(new mapboxgl.Popup().setHTML('<strong>You are here</strong>'))
+        .addTo(map.current)
+    }
+  }, [currentLocation])
+
+  // Refresh markers when users or pin style changes
+  useEffect(() => {
+    if (!map.current) return
 
     // Remove old markers with proper cleanup
     markers.current.forEach(marker => {
@@ -428,7 +405,7 @@ function MapViewSimple({ pinStyle = 1, center }: { pinStyle?: number; center?: [
 
     // Add new markers with SLTR style
     const mapboxgl = (window as any).mapboxgl
-    if (mapboxgl) {
+    if (mapboxgl && map.current && users.length > 0) {
       users.forEach((user) => {
         if (user.latitude && user.longitude) {
           const primaryPhoto = resolveProfilePhoto(user.profile_photo_url, user.photos)
