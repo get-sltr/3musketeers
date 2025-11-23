@@ -1032,27 +1032,42 @@ Be concise, warm, supportive, and helpful. Keep responses under 150 words. Focus
           ? claudeResponse.content[0].text 
           : "I'm having trouble right now. Please try again.";
       } catch (aiError) {
+        // Log full error details for debugging
+        const status = aiError?.status || aiError?.statusCode;
+        const errorMessage = aiError?.message || '';
+        const errorType = aiError?.type || '';
+        
         console.error('Claude API error:', {
-          message: aiError?.message,
-          status: aiError?.status,
+          message: errorMessage,
+          status: status,
           statusCode: aiError?.statusCode,
           code: aiError?.code,
+          type: errorType,
           error: aiError
         });
         
-        // More specific error messages
-        const status = aiError?.status || aiError?.statusCode;
-        const errorMessage = aiError?.message || '';
+        // Check if API key is actually set
+        const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
+        const apiKeyLength = process.env.ANTHROPIC_API_KEY?.length || 0;
+        console.error('API Key check:', {
+          hasApiKey,
+          apiKeyLength,
+          apiKeyPrefix: process.env.ANTHROPIC_API_KEY?.substring(0, 10) + '...' || 'NOT SET'
+        });
         
+        // More specific error messages
         if (status === 401 || status === 403) {
           // API key issue - use friendly message but log the real issue
           console.error('⚠️  Anthropic API authentication failed. Check ANTHROPIC_API_KEY in Railway.');
+          console.error('   - Is ANTHROPIC_API_KEY set?', hasApiKey);
+          console.error('   - Key length:', apiKeyLength, '(should be ~50+ characters)');
+          console.error('   - Key should start with: sk-ant-api03-');
           response = "EROS is temporarily unavailable. Our team has been notified. Please try again in a few minutes.";
         } else if (status === 429) {
           response = "EROS is busy right now. Please try again in a moment.";
         } else if (errorMessage.includes('timeout') || errorMessage.includes('network') || errorMessage.includes('ECONNREFUSED')) {
           response = "Network issue connecting to EROS. Please check your connection and try again.";
-        } else if (errorMessage.includes('API key') || errorMessage.includes('authentication')) {
+        } else if (errorMessage.includes('API key') || errorMessage.includes('authentication') || errorMessage.includes('Invalid')) {
           console.error('⚠️  Anthropic API key issue detected.');
           response = "EROS is temporarily unavailable. Please try again in a few minutes.";
         } else {
