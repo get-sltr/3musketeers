@@ -264,7 +264,10 @@ function MapViewSimple({ pinStyle = 1, center }: { pinStyle?: number; center?: [
 
   // Initialize map
   useEffect(() => {
-    if (!mapContainer.current || !currentLocation || map.current) return
+    if (!mapContainer.current || map.current) return
+    
+    // Use center prop if available, otherwise use currentLocation, otherwise default to LA
+    const initialCenter = center || currentLocation || [-0.1276, 51.5074] // Default to London if neither set
 
     // Wait for mapboxgl to be available from CDN
     const initMap = () => {
@@ -277,20 +280,27 @@ function MapViewSimple({ pinStyle = 1, center }: { pinStyle?: number; center?: [
         map.current = new mapboxgl.Map({
           container: mapContainer.current!,
           style: 'mapbox://styles/mapbox/dark-v11',
-          center: currentLocation,
+          center: initialCenter,
           zoom: 13,
           pitch: 45,
           bearing: 0
+        })
+        
+        // Wait for map to load before adding markers
+        map.current.once('load', () => {
+          console.log('🗺️ Map loaded')
         })
 
         // Add navigation controls
         map.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
 
-        // Add current user marker (blue)
-        new mapboxgl.Marker({ color: '#00d4ff' })
-          .setLngLat(currentLocation)
-          .setPopup(new mapboxgl.Popup().setHTML('<strong>You are here</strong>'))
-          .addTo(map.current)
+        // Add current user marker (blue) - only if we have currentLocation
+        if (currentLocation) {
+          new mapboxgl.Marker({ color: '#00d4ff' })
+            .setLngLat(currentLocation)
+            .setPopup(new mapboxgl.Popup().setHTML('<strong>You are here</strong>'))
+            .addTo(map.current)
+        }
 
         // Add CSS animation for pulse effect (Style 3)
         if (!document.getElementById('pulse-animation')) {
@@ -366,7 +376,7 @@ function MapViewSimple({ pinStyle = 1, center }: { pinStyle?: number; center?: [
         map.current = null
       }
     }
-  }, [currentLocation, users, pinStyle])
+  }, [currentLocation, users, pinStyle, center])
 
   // Fly to center when center prop changes (from location search)
   useEffect(() => {
@@ -374,12 +384,31 @@ function MapViewSimple({ pinStyle = 1, center }: { pinStyle?: number; center?: [
     
     const mapboxgl = (window as any).mapboxgl
     if (mapboxgl && map.current) {
-      map.current.flyTo({
-        center: center,
-        zoom: 13,
-        duration: 2000,
-        essential: true
-      })
+      // Wait for map to be loaded before flying
+      const flyToLocation = () => {
+        if (map.current && map.current.loaded()) {
+          map.current.flyTo({
+            center: center,
+            zoom: 13,
+            duration: 2000,
+            essential: true
+          })
+        } else {
+          // If map not loaded yet, wait for load event
+          map.current.once('load', () => {
+            if (map.current) {
+              map.current.flyTo({
+                center: center,
+                zoom: 13,
+                duration: 2000,
+                essential: true
+              })
+            }
+          })
+        }
+      }
+      
+      flyToLocation()
     }
   }, [center])
 
