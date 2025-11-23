@@ -745,6 +745,63 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// EROS diagnostic endpoint (for debugging Anthropic API issues)
+app.get('/api/v1/eros/diagnostic', (req, res) => {
+  const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
+  const apiKeyLength = process.env.ANTHROPIC_API_KEY?.length || 0;
+  const apiKeyPrefix = process.env.ANTHROPIC_API_KEY?.substring(0, 15) || 'NOT SET';
+  const anthropicInitialized = !!anthropic;
+  
+  // Determine possible issues
+  const issues = [];
+  if (!hasApiKey) {
+    issues.push('ANTHROPIC_API_KEY environment variable not set in Railway');
+  }
+  if (hasApiKey && apiKeyLength < 40) {
+    issues.push(`API key appears too short (${apiKeyLength} chars, should be 50+ characters)`);
+  }
+  if (hasApiKey && !apiKeyPrefix.startsWith('sk-ant-')) {
+    issues.push(`API key format may be incorrect (starts with "${apiKeyPrefix}", should start with "sk-ant-")`);
+  }
+  if (hasApiKey && !anthropicInitialized) {
+    issues.push('API key set but Anthropic client not initialized - check server startup logs');
+  }
+  
+  // Determine root cause
+  let rootCause = 'unknown';
+  let recommendation = 'Check Railway logs for detailed error messages';
+  
+  if (!hasApiKey) {
+    rootCause = 'missing_api_key';
+    recommendation = 'Set ANTHROPIC_API_KEY in Railway environment variables with your Anthropic API key';
+  } else if (apiKeyLength < 40) {
+    rootCause = 'invalid_api_key_length';
+    recommendation = 'API key appears invalid - verify key in Anthropic console (https://console.anthropic.com/)';
+  } else if (!apiKeyPrefix.startsWith('sk-ant-')) {
+    rootCause = 'invalid_api_key_format';
+    recommendation = 'API key format incorrect - should start with "sk-ant-api03-". Get new key from Anthropic console';
+  } else if (!anthropicInitialized) {
+    rootCause = 'initialization_failed';
+    recommendation = 'API key present but Anthropic client failed to initialize - check server startup logs';
+  } else {
+    rootCause = 'api_authentication_failure';
+    recommendation = 'API key appears valid but API calls are failing. Possible causes: 1) Key expired/revoked, 2) Billing/quota issue, 3) Network/firewall blocking Anthropic API. Check Anthropic console for account status.';
+  }
+  
+  res.json({
+    eros_status: anthropicInitialized ? 'configured' : 'not_configured',
+    anthropic_initialized: anthropicInitialized,
+    api_key_present: hasApiKey,
+    api_key_length: apiKeyLength,
+    api_key_prefix: apiKeyPrefix,
+    expected_key_format: 'sk-ant-api03-... (50+ characters)',
+    root_cause: rootCause,
+    issues: issues.length > 0 ? issues : ['No obvious configuration issues - check API key validity and Anthropic account status'],
+    recommendation: recommendation,
+    is_subscription_issue: rootCause === 'api_authentication_failure' && hasApiKey && apiKeyLength >= 40 && apiKeyPrefix.startsWith('sk-ant-')
+  });
+});
+
 // FIXED: File upload with Supabase Storage
 app.post('/api/upload', authenticateUser, upload.single('file'), async (req, res, next) => {
   try {
