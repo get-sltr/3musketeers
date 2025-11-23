@@ -50,8 +50,7 @@ export default function ViewedPage() {
             display_name,
             photo_url,
             age,
-            location,
-            is_online
+            online
           )
         `)
         .eq('viewed_user_id', user.id)
@@ -69,8 +68,8 @@ export default function ViewedPage() {
           display_name: row.viewer?.display_name ?? 'Member',
           photo_url: row.viewer?.photo_url ?? '',
           age: row.viewer?.age ?? 0,
-          location: row.viewer?.location ?? '',
-          is_online: row.viewer?.is_online ?? false,
+          location: '', // Removed - not in profiles table
+          is_online: row.viewer?.online ?? false,
         },
       }))
 

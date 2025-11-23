@@ -851,7 +851,7 @@ export default function AppPage() {
               onToggle={() => toggleAdvertisingPanel()}
             />
             
-            <MapViewSimple pinStyle={pinStyle} />
+            <MapViewSimple pinStyle={pinStyle} center={mapCenter} />
 
             {/* Location Search Bar */}
             <div className="absolute top-16 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-20">

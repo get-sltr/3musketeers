@@ -162,7 +162,7 @@ const createPinStyle5 = (user: any) => {
 }
 
 // Simple Mapbox map component using CDN approach
-function MapViewSimple({ pinStyle = 1 }: { pinStyle?: number }) {
+function MapViewSimple({ pinStyle = 1, center }: { pinStyle?: number; center?: [number, number] | null }) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<any>(null)
   const [users, setUsers] = useState<any[]>([])
@@ -363,6 +363,21 @@ function MapViewSimple({ pinStyle = 1 }: { pinStyle?: number }) {
       }
     }
   }, [currentLocation, users, pinStyle])
+
+  // Fly to center when center prop changes (from location search)
+  useEffect(() => {
+    if (!map.current || !center) return
+    
+    const mapboxgl = (window as any).mapboxgl
+    if (mapboxgl && map.current) {
+      map.current.flyTo({
+        center: center,
+        zoom: 13,
+        duration: 2000,
+        essential: true
+      })
+    }
+  }, [center])
 
   // Refresh markers when pin style changes
   useEffect(() => {
