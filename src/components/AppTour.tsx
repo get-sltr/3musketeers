@@ -91,6 +91,8 @@ export default function AppTour({ isOpen, onClose, steps }: AppTourProps) {
   if (!isOpen || steps.length === 0) return null
 
   const step = steps[currentStep]
+  if (!step) return null
+  
   const progress = ((currentStep + 1) / steps.length) * 100
 
   const handleNext = () => {
