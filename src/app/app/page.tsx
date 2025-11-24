@@ -468,17 +468,12 @@ export default function AppPage() {
         return
       }
 
-      // Check if current user has location set - use maybeSingle to handle missing profiles
-      const { data: profile, error: profileError } = await supabase
+      // Check if current user has location set
+      const { data: profile } = await supabase
         .from('profiles')
         .select('latitude, longitude')
         .eq('id', session.user.id)
-        .maybeSingle() // Use maybeSingle instead of single to handle missing profiles gracefully
-
-      // If profile query fails, don't block the page - just show location prompt
-      if (profileError && profileError.code !== 'PGRST116') { // PGRST116 = no rows returned (expected)
-        console.warn('Profile query error (non-critical):', profileError.message)
-      }
+        .single()
 
       let originLat = profile?.latitude ?? null
       let originLon = profile?.longitude ?? null
@@ -865,7 +860,6 @@ export default function AppPage() {
         {/* Grid or Map view based on viewMode */}
         {viewMode === 'grid' ? (
           <GridViewProduction
-            users={users}
             onUserClick={(userId) => {
               router.push(`/profile/${userId}`)
             }}

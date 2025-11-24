@@ -119,7 +119,7 @@ export default function GridViewProduction({
         .from('profiles')
         .select('photos, photo_url')
         .eq('id', user.id)
-        .maybeSingle() // Use maybeSingle to handle missing profiles gracefully
+        .single()
       
       if (profile) {
         const photo = resolveProfilePhoto(profile.photo_url, profile.photos)
@@ -186,21 +186,14 @@ export default function GridViewProduction({
       if (!currentUser) return
 
       // Get current user's location to pass to our new function
-      const { data: profile, error: profileError } = await supabase
+      const { data: profile } = await supabase
         .from('profiles')
         .select('latitude, longitude')
         .eq('id', currentUser.id)
-        .maybeSingle() // Use maybeSingle to handle missing profiles gracefully
-
-      // Handle profile query errors gracefully
-      if (profileError && profileError.code !== 'PGRST116') {
-        // PGRST116 = no rows (expected), other errors are real issues
-        console.error('Profile query error:', profileError.message)
-      }
+        .single()
 
       if (!profile?.latitude || !profile?.longitude) {
         toast.error("Please set your location in your profile to see nearby users.");
-        setGridLoading(false)
         return
       }
 

@@ -226,41 +226,19 @@ function MapViewSimple({
   // Load nearby users with 10-mile radius
   useEffect(() => {
     let isMounted = true
-    let loadingRef = false // Prevent concurrent loads
     
     async function loadUsers() {
-      // Prevent concurrent calls
-      if (loadingRef) return
-      loadingRef = true
-      
       try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
-        if (authError || !user || !isMounted) {
-          loadingRef = false
-          return
-        }
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user || !isMounted) return
 
-        // Check if user has location set - with better error handling
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile } = await supabase
           .from('profiles')
           .select('latitude, longitude')
           .eq('id', user.id)
-          .maybeSingle() // Use maybeSingle instead of single to handle missing profiles
+          .single()
 
-        // If profile query fails with 500 error, it's a server issue - don't spam console
-        if (profileError) {
-          // Only log non-500 errors (500s are server-side issues we can't fix client-side)
-          if (profileError.code !== 'PGRST301' && !profileError.message?.includes('500')) {
-            console.warn('Profile query error:', profileError.message)
-          }
-          loadingRef = false
-          return
-        }
-
-        if (!profile || !profile.latitude || !profile.longitude || !isMounted) {
-          loadingRef = false
-          return
-        }
+        if (!profile?.latitude || !profile?.longitude || !isMounted) return
 
         // Use get_nearby_profiles with 10-mile radius
         const { data, error } = await supabase.rpc('get_nearby_profiles', {
@@ -271,24 +249,15 @@ function MapViewSimple({
         })
 
         if (error) {
-          // Only log if it's not a common/expected error
-          if (!error.message?.includes('permission') && !error.message?.includes('RLS')) {
-            console.error('Error loading nearby users:', error.message)
-          }
-          loadingRef = false
+          console.error('Error loading nearby users:', error)
           return
         }
 
         if (data && isMounted) {
           setUsers(data)
         }
-      } catch (error: any) {
-        // Only log unexpected errors
-        if (error?.message && !error.message.includes('cancelled')) {
-          console.error('Error loading users:', error.message)
-        }
-      } finally {
-        loadingRef = false
+      } catch (error) {
+        console.error('Error loading users:', error)
       }
     }
 
@@ -296,10 +265,15 @@ function MapViewSimple({
     
     // Auto-refresh every 30 seconds (reduced from 15 to save connections)
     const interval = setInterval(() => {
-      if (isMounted && !loadingRef) {
+      if (isMounted) {
+        console.log('🗺️ Refreshing map users...')
         loadUsers()
       }
     }, 30000) // 30 seconds
+    
+    // REMOVED realtime subscription - it was creating too many connections
+    // Map auto-refreshes every 30 seconds instead
+    // If you need realtime back, use a single global channel with user-specific filters
 
     return () => {
       isMounted = false
