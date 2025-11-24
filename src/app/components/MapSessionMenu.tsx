@@ -30,6 +30,10 @@ interface MapSessionMenuProps {
   onHostGroup: () => void
   showVenues: boolean
   onToggleVenues: (enabled: boolean) => void
+  showRestaurants: boolean
+  onToggleRestaurants: (enabled: boolean) => void
+  showBars: boolean
+  onToggleBars: (enabled: boolean) => void
   showHeatmap: boolean
   onToggleHeatmap: (enabled: boolean) => void
   pinStyle?: number
@@ -60,6 +64,10 @@ export default function MapSessionMenu({
   onHostGroup,
   showVenues,
   onToggleVenues,
+  showRestaurants,
+  onToggleRestaurants,
+  showBars,
+  onToggleBars,
   showHeatmap,
   onToggleHeatmap,
   pinStyle = 1,
@@ -161,17 +169,48 @@ export default function MapSessionMenu({
           </div>
 
 
-          {/* LGBTQ Venues */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-white/80">{t('lgbtqVenues')} 🍸</span>
+          {/* Venues Section */}
+          <div className="space-y-2 border-t border-white/10 pt-3">
+            <div className="text-xs text-white/60 mb-2">Venues</div>
+            
+            {/* Restaurants */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-white/80">🍽️ Restaurants</span>
+              </div>
+              <button
+                onClick={() => onToggleRestaurants(!showRestaurants)}
+                className={`px-3 py-2 rounded-xl text-sm border transition ${showRestaurants ? "bg-orange-500/20 border-orange-400 text-orange-200" : "bg-white/5 border-white/10 text-white/80"}`}
+              >
+                {showRestaurants ? tCommon('on') : tCommon('off')}
+              </button>
             </div>
-            <button
-              onClick={() => onToggleVenues(!showVenues)}
-              className={`px-3 py-2 rounded-xl text-sm border transition ${showVenues ? "bg-pink-500/20 border-pink-400 text-pink-200" : "bg-white/5 border-white/10 text-white/80"}`}
-            >
-              {showVenues ? tCommon('on') : tCommon('off')}
-            </button>
+
+            {/* Bars */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-white/80">🍺 Bars</span>
+              </div>
+              <button
+                onClick={() => onToggleBars(!showBars)}
+                className={`px-3 py-2 rounded-xl text-sm border transition ${showBars ? "bg-amber-500/20 border-amber-400 text-amber-200" : "bg-white/5 border-white/10 text-white/80"}`}
+              >
+                {showBars ? tCommon('on') : tCommon('off')}
+              </button>
+            </div>
+
+            {/* LGBTQ Venues */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-white/80">{t('lgbtqVenues')} 🏳️‍🌈</span>
+              </div>
+              <button
+                onClick={() => onToggleVenues(!showVenues)}
+                className={`px-3 py-2 rounded-xl text-sm border transition ${showVenues ? "bg-pink-500/20 border-pink-400 text-pink-200" : "bg-white/5 border-white/10 text-white/80"}`}
+              >
+                {showVenues ? tCommon('on') : tCommon('off')}
+              </button>
+            </div>
           </div>
 
           {/* Testing Centres Toggle */}

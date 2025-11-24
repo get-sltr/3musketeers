@@ -111,6 +111,8 @@ export default function AppPage() {
     vanillaMode,
     travelMode,
     showVenues,
+    showRestaurants,
+    showBars,
     showHeatmap,
     pinStyle,
     setRadiusMiles,
@@ -122,6 +124,8 @@ export default function AppPage() {
     setVanillaMode,
     setTravelMode,
     setShowVenues,
+    setShowRestaurants,
+    setShowBars,
     setShowHeatmap,
     setPinStyle,
     resetMapSettings,
@@ -855,7 +859,10 @@ export default function AppPage() {
               onToggle={() => toggleAdvertisingPanel()}
             />
             
-            <MapViewSimple pinStyle={pinStyle} center={mapCenter} />
+            <MapViewSimple 
+              pinStyle={pinStyle} 
+              center={mapCenter}
+            />
 
             {/* Location Search Bar */}
             <div className="absolute top-16 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-20">
@@ -894,6 +901,10 @@ export default function AppPage() {
               onHostGroup={() => toggleHostingGroup(true)}
               showVenues={showVenues}
               onToggleVenues={setShowVenues}
+              showRestaurants={showRestaurants}
+              onToggleRestaurants={setShowRestaurants}
+              showBars={showBars}
+              onToggleBars={setShowBars}
               showHeatmap={showHeatmap}
               onToggleHeatmap={setShowHeatmap}
               pinStyle={pinStyle}

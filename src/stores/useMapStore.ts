@@ -15,6 +15,8 @@ interface MapSessionState {
   vanillaMode: boolean
   travelMode: boolean
   showVenues: boolean
+  showRestaurants: boolean
+  showBars: boolean
   showHeatmap: boolean
   pinStyle: number
 }
@@ -30,6 +32,8 @@ interface MapSessionActions {
   setVanillaMode: (enabled: boolean) => void
   setTravelMode: (enabled: boolean) => void
   setShowVenues: (enabled: boolean) => void
+  setShowRestaurants: (enabled: boolean) => void
+  setShowBars: (enabled: boolean) => void
   setShowHeatmap: (enabled: boolean) => void
   setPinStyle: (style: number) => void
   resetMapSettings: () => void
@@ -49,6 +53,8 @@ const initialState: MapSessionState = {
   vanillaMode: false,
   travelMode: false,
   showVenues: false,
+  showRestaurants: false,
+  showBars: false,
   showHeatmap: false,
   pinStyle: 1,
 }
@@ -69,6 +75,8 @@ export const useMapStore = create<MapSessionState & MapSessionActions>((set) => 
   setVanillaMode: (enabled) => set({ vanillaMode: enabled }),
   setTravelMode: (enabled) => set({ travelMode: enabled }),
   setShowVenues: (enabled) => set({ showVenues: enabled }),
+  setShowRestaurants: (enabled) => set({ showRestaurants: enabled }),
+  setShowBars: (enabled) => set({ showBars: enabled }),
   setShowHeatmap: (enabled) => set({ showHeatmap: enabled }),
   setPinStyle: (style) => set({ pinStyle: style }),
   
