@@ -33,7 +33,7 @@ async function handleSetup() {
     let groupId: string
     let isNew = false
 
-    if (existingGroups && existingGroups.length > 0) {
+    if (existingGroups && existingGroups.length > 0 && existingGroups[0]) {
       // Group already exists, use it
       groupId = existingGroups[0].id
     } else {
