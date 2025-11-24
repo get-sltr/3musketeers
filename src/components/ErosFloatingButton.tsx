@@ -32,13 +32,32 @@ export const ErosFloatingButton = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Initialize position on mount
+  // Initialize position on mount - sticky above bottom nav
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setPosition({
-        x: window.innerWidth - 80,
-        y: window.innerHeight - 100
-      });
+      const updatePosition = () => {
+        // Bottom nav height is ~70px + safe area, so position button above it
+        const bottomNavHeight = 70 + (parseInt(getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-bottom)')) || 0);
+        const buttonSize = 64;
+        const padding = 16; // Space above bottom nav
+        
+        setPosition({
+          x: window.innerWidth - buttonSize - padding,
+          y: window.innerHeight - bottomNavHeight - buttonSize - padding
+        });
+      };
+      
+      updatePosition();
+      window.addEventListener('resize', updatePosition);
+      
+      // Also update when safe area changes (mobile rotation)
+      const mediaQuery = window.matchMedia('(orientation: portrait)');
+      mediaQuery.addEventListener('change', updatePosition);
+      
+      return () => {
+        window.removeEventListener('resize', updatePosition);
+        mediaQuery.removeEventListener('change', updatePosition);
+      };
     }
   }, []);
 
@@ -54,6 +73,16 @@ export const ErosFloatingButton = () => {
     try {
       // Use erosAPI client which handles authentication
       const response = await erosAPI.chat(userMessage, { context: 'chat_widget' });
+      
+      // Log full response for debugging
+      console.log('🔍 EROS API Response:', {
+        success: response.success,
+        response: response.response?.substring(0, 100) + '...',
+        intent: response.intent,
+        confidence: response.confidence
+      });
+      
+      // Display the response from EROS
       setMessages(prev => [...prev, { role: 'assistant', content: response.response }]);
     } catch (error: any) {
       console.error('Chat error:', error);
@@ -61,6 +90,11 @@ export const ErosFloatingButton = () => {
       
       if (errorMessage.includes('Authentication required')) {
         setMessages(prev => [...prev, { role: 'assistant', content: '❌ Please log in to use EROS.' }]);
+      } else if (errorMessage.includes('placeholder') || errorMessage.includes('not configured')) {
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: '⚠️ EROS AI needs configuration. Set ANTHROPIC_API_KEY in backend environment variables.' 
+        }]);
       } else {
         setMessages(prev => [...prev, { role: 'assistant', content: `❌ Error: ${errorMessage}` }]);
       }
@@ -86,13 +120,17 @@ export const ErosFloatingButton = () => {
       const newX = e.clientX - dragOffset.x;
       const newY = e.clientY - dragOffset.y;
 
-      // Keep within viewport
-      const maxX = typeof window !== 'undefined' ? window.innerWidth - 60 : 0;
-      const maxY = typeof window !== 'undefined' ? window.innerHeight - 60 : 0;
+      // Keep within viewport, but above bottom nav
+      const bottomNavHeight = 70 + (parseInt(getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-bottom)')) || 0);
+      const buttonSize = 64;
+      const padding = 16;
+      const maxX = typeof window !== 'undefined' ? window.innerWidth - buttonSize - padding : 0;
+      const maxY = typeof window !== 'undefined' ? window.innerHeight - bottomNavHeight - buttonSize - padding : 0;
+      const minY = padding; // Don't go above top of screen
 
       setPosition({
-        x: Math.max(0, Math.min(newX, maxX)),
-        y: Math.max(0, Math.min(newY, maxY))
+        x: Math.max(padding, Math.min(newX, maxX)),
+        y: Math.max(minY, Math.min(newY, maxY))
       });
     };
 
@@ -129,12 +167,17 @@ export const ErosFloatingButton = () => {
       const newX = touch.clientX - dragOffset.x;
       const newY = touch.clientY - dragOffset.y;
 
-      const maxX = typeof window !== 'undefined' ? window.innerWidth - 60 : 0;
-      const maxY = typeof window !== 'undefined' ? window.innerHeight - 60 : 0;
+      // Keep within viewport, but above bottom nav
+      const bottomNavHeight = 70 + (parseInt(getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-bottom)')) || 0);
+      const buttonSize = 64;
+      const padding = 16;
+      const maxX = typeof window !== 'undefined' ? window.innerWidth - buttonSize - padding : 0;
+      const maxY = typeof window !== 'undefined' ? window.innerHeight - bottomNavHeight - buttonSize - padding : 0;
+      const minY = padding;
 
       setPosition({
-        x: Math.max(0, Math.min(newX, maxX)),
-        y: Math.max(0, Math.min(newY, maxY))
+        x: Math.max(padding, Math.min(newX, maxX)),
+        y: Math.max(minY, Math.min(newY, maxY))
       });
     };
 
@@ -155,7 +198,7 @@ export const ErosFloatingButton = () => {
 
   return (
     <>
-      {/* Floating Button */}
+      {/* Floating Button - Sticky above bottom nav */}
       <div
         ref={buttonRef}
         className={`fixed flex items-center justify-center cursor-grab active:cursor-grabbing transition-all duration-200 z-[9999] ${
@@ -169,7 +212,9 @@ export const ErosFloatingButton = () => {
           borderRadius: '50%',
           background: '#ccff00',
           boxShadow: '0 4px 12px rgba(204, 255, 0, 0.4)',
-          userSelect: 'none'
+          userSelect: 'none',
+          // Ensure it stays above bottom nav (z-index 50)
+          position: 'fixed'
         }}
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
@@ -191,8 +236,14 @@ export const ErosFloatingButton = () => {
             onClick={() => setIsOpen(false)}
           />
 
-          {/* Slide-out Panel */}
-          <div className="fixed right-0 top-0 bottom-0 z-[9999] w-full max-w-md flex flex-col animate-slideInRight">
+          {/* Slide-out Panel - Sticky above bottom nav */}
+          <div 
+            className="fixed right-0 top-0 z-[9999] w-full max-w-md flex flex-col animate-slideInRight"
+            style={{
+              bottom: 'calc(70px + env(safe-area-inset-bottom, 0px))', // Above bottom nav (70px) + safe area
+              maxHeight: 'calc(100vh - 70px - env(safe-area-inset-bottom, 0px))'
+            }}
+          >
             {/* Header - Black with Lime Text */}
             <div className="bg-black/80 backdrop-blur-xl border-b border-white/10 px-6 py-4 flex items-center justify-between flex-shrink-0">
               <h3 className="font-bold text-lg text-lime-400">EROS Assistant</h3>
