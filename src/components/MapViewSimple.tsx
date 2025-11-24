@@ -247,9 +247,12 @@ function MapViewSimple({
           .eq('id', user.id)
           .maybeSingle() // Use maybeSingle instead of single to handle missing profiles
 
-        // If profile doesn't exist or has no location, don't try to load users
+        // If profile query fails with 500 error, it's a server issue - don't spam console
         if (profileError) {
-          console.warn('Profile query error (non-critical):', profileError.message)
+          // Only log non-500 errors (500s are server-side issues we can't fix client-side)
+          if (profileError.code !== 'PGRST301' && !profileError.message?.includes('500')) {
+            console.warn('Profile query error:', profileError.message)
+          }
           loadingRef = false
           return
         }

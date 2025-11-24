@@ -867,6 +867,7 @@ export default function AppPage() {
         {/* Grid or Map view based on viewMode */}
         {viewMode === 'grid' ? (
           <GridViewProduction
+            users={users}
             onUserClick={(userId) => {
               router.push(`/profile/${userId}`)
             }}
