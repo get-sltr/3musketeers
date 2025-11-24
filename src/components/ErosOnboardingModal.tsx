@@ -63,7 +63,7 @@ export default function ErosOnboardingModal({ isOpen, onClose }: ErosOnboardingM
       title: 'EROS Is Now Available',
       subtitle: 'To All SLTR^' + String.fromCharCode(945) + ' Members',
       description:
-        'EROS is now available to all SLTR members. Experience the future of intelligent matching.',
+        'EROS is now available to all premium users. Experience the future of intelligent matching.',
       highlight:
         'Your experience increases in proportion to your membership. Free to browse. Pro to connect. EROS to match.',
     },
