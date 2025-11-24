@@ -26,6 +26,7 @@ import LocationSearch from '../components/LocationSearch'
 import WelcomeModal from '../../components/WelcomeModal'
 import ErosOnboardingModal from '../../components/ErosOnboardingModal'
 import { ErosFloatingButton } from '../../components/ErosFloatingButton'
+import AppTour, { useAppTour, APP_TOUR_STEPS } from '../../components/AppTour'
 import '../../styles/mobile-optimization.css'
 import { useRealtime } from '../../hooks/useRealtime'
 import { resolveProfilePhoto } from '@/lib/utils/profile'
@@ -98,6 +99,7 @@ export default function AppPage() {
   const [currentOrigin, setCurrentOrigin] = useState<[number, number] | null>(null)
   const [isFetching, setIsFetching] = useState(false)
   const [showErosOnboarding, setShowErosOnboarding] = useState(false)
+  const [showTour, setShowTour] = useState(false)
   const fetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   
   // Use Zustand store for map session state
@@ -215,6 +217,19 @@ export default function AppPage() {
               setShowErosOnboarding(true)
               localStorage.setItem('eros_onboarding_shown', 'true')
             }, 1000)
+          }
+          
+          // Show app tour after onboarding (check if tour not completed)
+          const tourCompleted = localStorage.getItem('app_tour_completed')
+          if (!tourCompleted) {
+            // Wait a bit after EROS onboarding potentially shows
+            setTimeout(() => {
+              if (!hasSeenErosOnboarding) {
+                // Will show after EROS onboarding closes
+              } else {
+                setShowTour(true)
+              }
+            }, 2000)
           }
         }
       }
@@ -838,10 +853,12 @@ export default function AppPage() {
         paddingBottom: viewMode === 'map' ? '0' : 'calc(80px + env(safe-area-inset-bottom))'
       }}>
         {/* Animated Header with transparency */}
-        <AnimatedHeader 
-          viewMode={viewMode} 
-          onViewModeChange={setViewMode} 
-        />
+        <div data-tour={viewMode === 'grid' ? 'grid-view' : 'map-view'}>
+          <AnimatedHeader 
+            viewMode={viewMode} 
+            onViewModeChange={setViewMode} 
+          />
+        </div>
 
       {/* Main Content */}
       <main className={viewMode === 'grid' ? 'pt-0' : 'pt-0'}>
@@ -870,7 +887,7 @@ export default function AppPage() {
             />
 
             {/* Location Search Bar */}
-            <div className="absolute top-16 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-20">
+            <div className="absolute top-16 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-20" data-tour="location-search">
               <LocationSearch
                 onLocationSelect={(lat, lng, placeName) => {
                   setMapCenter([lng, lat])
@@ -1033,14 +1050,32 @@ export default function AppPage() {
       {/* EROS Onboarding Modal - Introduces EROS AI */}
       <ErosOnboardingModal
         isOpen={showErosOnboarding}
-        onClose={() => setShowErosOnboarding(false)}
+        onClose={() => {
+          setShowErosOnboarding(false)
+          // Show tour after EROS onboarding closes (if not already completed)
+          const tourCompleted = localStorage.getItem('app_tour_completed')
+          if (!tourCompleted) {
+            setTimeout(() => setShowTour(true), 500)
+          }
+        }}
+      />
+
+      {/* App Tour - Spotlight guide */}
+      <AppTour
+        isOpen={showTour}
+        onClose={() => setShowTour(false)}
+        steps={APP_TOUR_STEPS}
       />
 
       {/* EROS Floating Chat Button */}
-      <ErosFloatingButton />
+      <div data-tour="eros-button">
+        <ErosFloatingButton />
+      </div>
 
       {/* Bottom Navigation */}
-      <BottomNav />
+      <nav data-tour="bottom-nav">
+        <BottomNav />
+      </nav>
       </div>
     </MobileLayout>
   )
