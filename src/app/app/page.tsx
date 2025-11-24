@@ -483,32 +483,30 @@ export default function AppPage() {
       let originLat = profile?.latitude ?? null
       let originLon = profile?.longitude ?? null
 
-      // If no location, request it and save BEFORE showing page
+      // If no location, request it silently in background
       if (!originLat || !originLon) {
         console.log('📍 No location found, requesting permission...')
         if (navigator.geolocation) {
-          await new Promise<void>((resolve) => {
-            navigator.geolocation.getCurrentPosition(
-              async (position) => {
-                console.log('✅ Location granted:', position.coords.latitude, position.coords.longitude)
-                originLat = position.coords.latitude
-                originLon = position.coords.longitude
-                await supabase
-                  .from('profiles')
-                  .update({
-                    latitude: originLat,
-                    longitude: originLon
-                  })
-                  .eq('id', session.user.id)
-                resolve()
-              },
-              (error) => {
-                console.warn('⚠️ Location denied or unavailable:', error)
-                alert('Location access is required to use SLTR. Please enable location to see other users nearby!')
-                resolve()
-              }
-            )
-          })
+          navigator.geolocation.getCurrentPosition(
+            async (position) => {
+              console.log('✅ Location granted:', position.coords.latitude, position.coords.longitude)
+              originLat = position.coords.latitude
+              originLon = position.coords.longitude
+              await supabase
+                .from('profiles')
+                .update({
+                  latitude: originLat,
+                  longitude: originLon
+                })
+                .eq('id', session.user.id)
+              // Refresh users with new location
+              const origin: [number, number] = [originLon, originLat]
+              await fetchUsers(session.user.id, origin, { immediate: true })
+            },
+            (error) => {
+              console.warn('⚠️ Location denied or unavailable:', error)
+            }
+          )
         }
       }
 
