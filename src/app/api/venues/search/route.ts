@@ -111,3 +111,4 @@ function getVenueType(categoryName: string, categoryId: string): 'restaurant' | 
   return 'restaurant' // default
 }
 
+
