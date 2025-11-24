@@ -81,13 +81,7 @@ export default function ErosOnboardingModal({ isOpen, onClose }: ErosOnboardingM
         <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-white/10">
           <div className="mb-3">{step.icon === '💘' ? <CupidIcon size={80} /> : <span className="text-5xl">{step.icon}</span>}</div>
           <h2 className="text-3xl font-bold text-lime-400 mb-1">{step.title}</h2>
-          {clampedIndex === 4 ? (
-            <p className="text-sm font-medium text-white/80">
-              To All <span className="text-white">SLTR</span><span className="text-lime-400">∝</span> Members
-            </p>
-          ) : (
-            <p className="text-white/60 text-sm font-medium">{step.subtitle}</p>
-          )}
+          <p className="text-white/60 text-sm font-medium">{step.subtitle}</p>
         </div>
 
         {/* Scrollable Content */}
