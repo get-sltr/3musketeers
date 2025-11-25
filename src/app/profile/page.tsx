@@ -155,7 +155,11 @@ export default function ProfilePage() {
           </div>
         </button>
         {isOpen && (
-          <div className="px-5 pb-5 pt-1 border-t border-white/10 space-y-5" onClick={(e) => e.stopPropagation()}>
+          <div 
+            className="px-5 pb-5 pt-1 border-t border-white/10 space-y-5" 
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+          >
             {children}
           </div>
         )}
@@ -843,25 +847,18 @@ export default function ProfilePage() {
               title="Headlines & Notes"
               description="Leave something memorable."
             >
-              <div className="space-y-3">
+              <div className="space-y-3" onMouseDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
                 <textarea
                   value={profileData.bio || ''}
                   onChange={(e) => {
-                    e.stopPropagation();
                     setProfileData(prev => ({ ...prev, bio: e.target.value }));
                   }}
-                  onFocus={(e) => e.stopPropagation()}
-                  onClick={(e) => e.stopPropagation()}
                   rows={5}
                   maxLength={500}
                   autoComplete="off"
                   spellCheck="true"
-                  data-gramm="false"
-                  data-gramm_editor="false"
-                  data-enable-grammarly="false"
                   placeholder="Let SLTR know your vibe, your boundaries, or your invite."
                   className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-lime-400 resize-none"
-                  style={{ pointerEvents: 'auto' }}
                 />
                 <div className="text-right text-xs text-white/40">{(profileData.bio || '').length}/500 characters</div>
               </div>
