@@ -168,8 +168,11 @@ interface MapViewSimpleProps {
   center?: [number, number] | null
 }
 
-function MapViewSimple({ 
-  pinStyle = 1, 
+// Create supabase client outside component to prevent re-creation on every render
+const supabase = createClient()
+
+function MapViewSimple({
+  pinStyle = 1,
   center
 }: MapViewSimpleProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
@@ -178,9 +181,9 @@ function MapViewSimple({
   const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null)
   const [venues, setVenues] = useState<any[]>([])
   const [mapLoaded, setMapLoaded] = useState(false)
+  const [mapError, setMapError] = useState<string | null>(null)
   const markers = useRef<any[]>([])
   const venueMarkers = useRef<any[]>([])
-  const supabase = createClient()
   const centerManuallySet = useRef(false) // Track if center was manually set (from search)
   const lastCenterRef = useRef<[number, number] | null>(null) // Track last center to prevent unnecessary updates
 
@@ -296,50 +299,71 @@ function MapViewSimple({
       lastCenterRef.current = center
     }
 
-    // Wait for mapboxgl to be available from CDN
+    // Wait for mapboxgl to be available from CDN with timeout
+    let retryCount = 0
+    const maxRetries = 50 // 5 seconds max (50 * 100ms)
+
     const initMap = () => {
       if (typeof window !== 'undefined' && (window as any).mapboxgl) {
         const mapboxgl = (window as any).mapboxgl
         // Use token directly - process.env doesn't always work in client components
-        mapboxgl.accessToken = 'pk.eyJ1Ijoic2x0ciIsImEiOiJjbWh6Z3p3c2kwOTIyMmptenNid3lnbG8zIn0.NqKpGPFkrbUWoS0-rYfzhA'
+        mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 'pk.eyJ1Ijoic2x0ciIsImEiOiJjbWh6Z3p3c2kwOTIyMmptenNid3lnbG8zIn0.NqKpGPFkrbUWoS0-rYfzhA'
         console.log('🗺️ Mapbox initialized')
 
-        map.current = new mapboxgl.Map({
-          container: mapContainer.current!,
-          style: 'mapbox://styles/mapbox/dark-v11',
-          center: initialCenter,
-          zoom: 13,
-          pitch: 45,
-          bearing: 0
-        })
-        
-        mapInitialized.current = true
-        
-        // Wait for map to load before adding markers
-        map.current.once('load', () => {
-          console.log('🗺️ Map loaded')
-          setMapLoaded(true)
-        })
+        try {
+          map.current = new mapboxgl.Map({
+            container: mapContainer.current!,
+            style: 'mapbox://styles/mapbox/dark-v11',
+            center: initialCenter,
+            zoom: 13,
+            pitch: 45,
+            bearing: 0
+          })
 
-        // Add navigation controls
-        map.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
+          mapInitialized.current = true
 
-        // Add CSS animation for pulse effect (Style 3)
-        if (!document.getElementById('pulse-animation')) {
-          const style = document.createElement('style')
-          style.id = 'pulse-animation'
-          style.textContent = `
-            @keyframes pulse {
-              0% { box-shadow: 0 0 0 0 rgba(0, 217, 255, 0.7), 0 4px 8px rgba(0, 0, 0, 0.3); }
-              50% { box-shadow: 0 0 0 15px rgba(0, 217, 255, 0), 0 4px 8px rgba(0, 0, 0, 0.3); }
-              100% { box-shadow: 0 0 0 0 rgba(0, 217, 255, 0), 0 4px 8px rgba(0, 0, 0, 0.3); }
-            }
-          `
-          document.head.appendChild(style)
+          // Handle map errors
+          map.current.on('error', (e: any) => {
+            console.error('🗺️ Map error:', e.error)
+            setMapError('Map failed to load. Please refresh.')
+          })
+
+          // Wait for map to load before adding markers
+          map.current.once('load', () => {
+            console.log('🗺️ Map loaded')
+            setMapLoaded(true)
+            setMapError(null)
+          })
+
+          // Add navigation controls
+          map.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
+
+          // Add CSS animation for pulse effect (Style 3)
+          if (!document.getElementById('pulse-animation')) {
+            const style = document.createElement('style')
+            style.id = 'pulse-animation'
+            style.textContent = `
+              @keyframes pulse {
+                0% { box-shadow: 0 0 0 0 rgba(0, 217, 255, 0.7), 0 4px 8px rgba(0, 0, 0, 0.3); }
+                50% { box-shadow: 0 0 0 15px rgba(0, 217, 255, 0), 0 4px 8px rgba(0, 0, 0, 0.3); }
+                100% { box-shadow: 0 0 0 0 rgba(0, 217, 255, 0), 0 4px 8px rgba(0, 0, 0, 0.3); }
+              }
+            `
+            document.head.appendChild(style)
+          }
+        } catch (error) {
+          console.error('🗺️ Failed to initialize map:', error)
+          setMapError('Failed to initialize map')
         }
       } else {
-        // Retry if mapboxgl not loaded yet
-        setTimeout(initMap, 100)
+        retryCount++
+        if (retryCount < maxRetries) {
+          // Retry if mapboxgl not loaded yet
+          setTimeout(initMap, 100)
+        } else {
+          console.error('🗺️ Mapbox GL JS failed to load after 5 seconds')
+          setMapError('Map library failed to load. Please refresh.')
+        }
       }
     }
 
@@ -575,7 +599,8 @@ function MapViewSimple({
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
 
-      {!currentLocation && (
+      {/* Show loading state while map is initializing */}
+      {!mapLoaded && !mapError && (
         <div style={{
           position: 'absolute',
           top: '50%',
@@ -584,9 +609,52 @@ function MapViewSimple({
           background: 'rgba(0,0,0,0.8)',
           padding: '20px',
           borderRadius: '10px',
-          color: 'white'
+          color: 'white',
+          textAlign: 'center'
         }}>
-          Loading map...
+          <div style={{ marginBottom: '10px' }}>Loading map...</div>
+          <div style={{
+            width: '30px',
+            height: '30px',
+            border: '3px solid rgba(255,255,255,0.3)',
+            borderTop: '3px solid #00ff88',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto'
+          }} />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      )}
+
+      {/* Show error state if map failed to load */}
+      {mapError && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: 'rgba(0,0,0,0.9)',
+          padding: '20px',
+          borderRadius: '10px',
+          color: 'white',
+          textAlign: 'center',
+          maxWidth: '300px'
+        }}>
+          <div style={{ color: '#ff6b6b', marginBottom: '10px' }}>{mapError}</div>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              background: '#00ff88',
+              color: '#000',
+              border: 'none',
+              padding: '10px 20px',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}
+          >
+            Refresh Page
+          </button>
         </div>
       )}
     </div>
