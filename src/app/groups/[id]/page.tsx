@@ -298,7 +298,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                                 />
                               ) : (
                                 <div className="w-6 h-6 rounded-full bg-lime-400/30 flex items-center justify-center text-xs text-lime-300">
-                                  {(msg.sender_profile?.display_name || 'U')[0].toUpperCase()}
+                                  {(msg.sender_profile?.display_name || 'U').charAt(0).toUpperCase()}
                                 </div>
                               )}
                               <span className="text-white/60 text-xs">
