@@ -101,6 +101,7 @@ export default function AppPage() {
   const [showErosOnboarding, setShowErosOnboarding] = useState(false)
   const [showTour, setShowTour] = useState(false)
   const fetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const locationRequestedRef = useRef(false)
   
   // Use Zustand store for map session state
   const {
@@ -478,8 +479,9 @@ export default function AppPage() {
       let originLat = profile?.latitude ?? null
       let originLon = profile?.longitude ?? null
 
-      // If no location, request it silently in background
-      if (!originLat || !originLon) {
+      // If no location, request it silently in background (only once)
+      if ((!originLat || !originLon) && !locationRequestedRef.current) {
+        locationRequestedRef.current = true // Prevent multiple requests
         console.log('📍 No location found, requesting permission...')
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
@@ -487,6 +489,7 @@ export default function AppPage() {
               console.log('✅ Location granted:', position.coords.latitude, position.coords.longitude)
               originLat = position.coords.latitude
               originLon = position.coords.longitude
+              
               await supabase
                 .from('profiles')
                 .update({
@@ -494,12 +497,14 @@ export default function AppPage() {
                   longitude: originLon
                 })
                 .eq('id', session.user.id)
+              
               // Refresh users with new location
               const origin: [number, number] = [originLon, originLat]
               await fetchUsers(session.user.id, origin, { immediate: true })
             },
             (error) => {
               console.warn('⚠️ Location denied or unavailable:', error)
+              locationRequestedRef.current = false // Allow retry if denied
             }
           )
         }
