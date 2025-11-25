@@ -23,11 +23,11 @@ async function handleSetup() {
       )
     }
 
-    // Check if "THE CLUB" group already exists
+    // Check if "The Club sltr" group already exists
     const { data: existingGroups } = await supabase
       .from('groups')
       .select('id, title')
-      .ilike('title', 'THE CLUB')
+      .ilike('title', 'The Club sltr')
       .limit(1)
 
     let groupId: string
@@ -37,12 +37,12 @@ async function handleSetup() {
       // Group already exists, use it
       groupId = existingGroups[0].id
     } else {
-      // Create "THE CLUB" group
+      // Create "The Club sltr" group
       const { data: newGroup, error: groupError } = await supabase
         .from('groups')
         .insert({
-          title: 'THE CLUB',
-          description: 'The premier group for video conferencing, voice chats, and messaging. Join the conversation!',
+          title: 'The Club sltr',
+          description: 'The premier club for video conferencing, voice chats, and messaging. Connect, chat, and vibe with the community!',
           host_id: user.id,
         })
         .select('id')
@@ -73,21 +73,61 @@ async function handleSetup() {
       .select('id, name, type, description')
       .eq('group_id', groupId)
 
+    // The Club sltr channels - each with video conferencing, chat, and messaging
     const channelsToCreate = [
+      // The Club P'n'P - Video
       {
-        name: 'General Chat',
-        description: 'Text messaging and group chat',
-        type: 'text' as const,
+        name: "The Club P'n'P",
+        description: 'Video conferencing room - Party and Play with the community',
+        type: 'video' as const,
       },
+      // The Club P'n'P - Voice
       {
-        name: 'Voice Room',
-        description: 'Join voice calls with the group',
+        name: "The Club P'n'P Voice",
+        description: 'Voice chat room - Party and Play audio',
         type: 'voice' as const,
       },
+      // The Club P'n'P - Text
       {
-        name: 'Video Conference',
-        description: 'Join video calls and conferences',
+        name: "The Club P'n'P Chat",
+        description: 'Text chat room - Party and Play messaging',
+        type: 'text' as const,
+      },
+      // The Club H'n'H - Video
+      {
+        name: "The Club H'n'H",
+        description: 'Video conferencing room - High and Horny with the community',
         type: 'video' as const,
+      },
+      // The Club H'n'H - Voice
+      {
+        name: "The Club H'n'H Voice",
+        description: 'Voice chat room - High and Horny audio',
+        type: 'voice' as const,
+      },
+      // The Club H'n'H - Text
+      {
+        name: "The Club H'n'H Chat",
+        description: 'Text chat room - High and Horny messaging',
+        type: 'text' as const,
+      },
+      // The Club Smoke N' Stroke - Video
+      {
+        name: "The Club Smoke N' Stroke",
+        description: 'Video conferencing room - Smoke and Stroke with the community',
+        type: 'video' as const,
+      },
+      // The Club Smoke N' Stroke - Voice
+      {
+        name: "The Club Smoke N' Stroke Voice",
+        description: 'Voice chat room - Smoke and Stroke audio',
+        type: 'voice' as const,
+      },
+      // The Club Smoke N' Stroke - Text
+      {
+        name: "The Club Smoke N' Stroke Chat",
+        description: 'Text chat room - Smoke and Stroke messaging',
+        type: 'text' as const,
       },
     ]
 
@@ -134,18 +174,18 @@ async function handleSetup() {
       success: true,
       group: {
         id: groupId,
-        title: 'THE CLUB',
-        description: 'The premier group for video conferencing, voice chats, and messaging.',
+        title: 'The Club sltr',
+        description: 'The premier club for video conferencing, voice chats, and messaging.',
       },
       channels: createdChannels,
-      message: isNew 
-        ? 'THE CLUB group created successfully!' 
-        : 'THE CLUB group already exists. Channels verified.',
+      message: isNew
+        ? 'The Club sltr created successfully with all channels!'
+        : 'The Club sltr already exists. Channels verified.',
     })
   } catch (error: any) {
-    console.error('Error setting up THE CLUB:', error)
+    console.error('Error setting up The Club sltr:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to setup THE CLUB' },
+      { error: error.message || 'Failed to setup The Club sltr' },
       { status: 500 }
     )
   }
