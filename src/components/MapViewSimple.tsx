@@ -283,7 +283,13 @@ function MapViewSimple({
 
   // Initialize map - ONLY ONCE on mount
   const mapInitialized = useRef(false)
+  const isMountedRef = useRef(true)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  
   useEffect(() => {
+    // Reset mounted state on each mount
+    isMountedRef.current = true
+    
     if (!mapContainer.current || map.current || mapInitialized.current) return
     
     // Use center prop if available, otherwise use currentLocation, otherwise default to LA
@@ -296,16 +302,25 @@ function MapViewSimple({
       lastCenterRef.current = center
     }
 
-    // Wait for mapboxgl to be available from CDN
+    // Wait for mapboxgl to be available from CDN with timeout
+    let retryCount = 0
+    const maxRetries = 50 // 5 seconds max (50 * 100ms)
+    
     const initMap = () => {
+      // Abort if component unmounted during retry cycle
+      if (!isMountedRef.current) return
+      
       if (typeof window !== 'undefined' && (window as any).mapboxgl) {
         const mapboxgl = (window as any).mapboxgl
         // Use token directly - process.env doesn't always work in client components
         mapboxgl.accessToken = 'pk.eyJ1Ijoic2x0ciIsImEiOiJjbWh6Z3p3c2kwOTIyMmptenNid3lnbG8zIn0.NqKpGPFkrbUWoS0-rYfzhA'
         console.log('🗺️ Mapbox initialized')
 
+        // Guard against unmounted component
+        if (!mapContainer.current || !isMountedRef.current) return
+
         map.current = new mapboxgl.Map({
-          container: mapContainer.current!,
+          container: mapContainer.current,
           style: 'mapbox://styles/mapbox/dark-v11',
           center: initialCenter,
           zoom: 13,
@@ -317,8 +332,10 @@ function MapViewSimple({
         
         // Wait for map to load before adding markers
         map.current.once('load', () => {
-          console.log('🗺️ Map loaded')
-          setMapLoaded(true)
+          if (isMountedRef.current) {
+            console.log('🗺️ Map loaded')
+            setMapLoaded(true)
+          }
         })
 
         // Add navigation controls
@@ -338,19 +355,35 @@ function MapViewSimple({
           document.head.appendChild(style)
         }
       } else {
-        // Retry if mapboxgl not loaded yet
-        setTimeout(initMap, 100)
+        retryCount++
+        if (retryCount < maxRetries && isMountedRef.current) {
+          // Retry if mapboxgl not loaded yet
+          timeoutRef.current = setTimeout(initMap, 100)
+        } else if (retryCount >= maxRetries) {
+          console.error('🗺️ Mapbox GL JS failed to load after 5 seconds')
+        }
       }
     }
 
     initMap()
 
     return () => {
+      // Mark as unmounted FIRST to prevent race conditions
+      isMountedRef.current = false
+      
+      // Clear pending timeout to prevent stale callbacks
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
+      
       if (map.current) {
         map.current.remove()
         map.current = null
-        mapInitialized.current = false
       }
+      
+      // Reset for potential remount
+      mapInitialized.current = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Only run once on mount

@@ -23,11 +23,69 @@ interface Album {
   }[]
 }
 
+type SectionKey = 'identity' | 'interaction' | 'interests' | 'bio'
+
+// Moved outside ProfilePage to prevent re-creation on every render (fixes typing bug)
+function SectionCard({
+  id,
+  title,
+  description,
+  rightSlot,
+  children,
+  isOpen,
+  onToggle,
+}: {
+  id: SectionKey
+  title: string
+  description?: string
+  rightSlot?: ReactNode
+  children: ReactNode
+  isOpen: boolean
+  onToggle: (id: SectionKey) => void
+}) {
+  return (
+    <div className="glass-bubble p-0 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => onToggle(id)}
+        className="w-full flex items-center justify-between px-5 py-4 text-left text-white/80 hover:bg-white/5 transition-colors duration-300"
+      >
+        <div>
+          <h3 className="text-lg font-semibold text-white">{title}</h3>
+          {description && <p className="text-sm text-white/60 mt-0.5">{description}</p>}
+        </div>
+        <div className="flex items-center gap-3">
+          {rightSlot}
+          <svg
+            className={`w-5 h-5 text-white/60 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </button>
+      {isOpen && (
+        <div 
+          className="px-5 pb-5 pt-1 border-t border-white/10 space-y-5" 
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+        >
+          {children}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function ProfilePage() {
   const [profileData, setProfileData] = useState({
     display_name: '',
     age: '',
+    headline: '',
     bio: '',
+    looking_for_text: '',
     position: '',
     gender_identity: 'cis_man',
     body_type: '',
@@ -86,8 +144,6 @@ export default function ProfilePage() {
   const KINKS_OPTIONS = ['BDSM', 'Fetish', 'Roleplay', 'Voyeurism', 'Exhibitionism', 'Group Sex', 'Anal', 'Oral', 'Toys', 'Leather', 'Bondage', 'Spanking', 'Domination', 'Submission', 'Edging', 'Public Play', 'Feet', 'Watersports', 'Rimming', 'Body Worship', 'Spit', 'Rough']
   const TAGS_OPTIONS = ['Adventurous', 'Chill', 'Direct', 'Curious', 'Beard', 'Jock', 'Bear', 'Rugged', 'Daddy', 'Pup', 'Twink', 'Otter', 'Wolf', 'Muscle', 'Fit', 'Discreet', 'Kinky', 'Vanilla', 'Wild', 'Gentleman', 'Playful', 'Passionate']
 
-  type SectionKey = 'identity' | 'interaction' | 'interests' | 'bio'
-
   const [expandedSections, setExpandedSections] = useState<Record<SectionKey, boolean>>({
     identity: true,
     interaction: true,
@@ -116,56 +172,6 @@ export default function ProfilePage() {
       <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-300 ${checked ? 'translate-x-5' : 'translate-x-1'}`} />
     </button>
   )
-
-  const SectionCard = ({
-    id,
-    title,
-    description,
-    rightSlot,
-    children,
-  }: {
-    id: SectionKey
-    title: string
-    description?: string
-    rightSlot?: ReactNode
-    children: ReactNode
-  }) => {
-    const isOpen = expandedSections[id]
-    return (
-      <div className="glass-bubble p-0 overflow-hidden">
-        <button
-          type="button"
-          onClick={() => toggleSection(id)}
-          className="w-full flex items-center justify-between px-5 py-4 text-left text-white/80 hover:bg-white/5 transition-colors duration-300"
-        >
-          <div>
-            <h3 className="text-lg font-semibold text-white">{title}</h3>
-            {description && <p className="text-sm text-white/60 mt-0.5">{description}</p>}
-          </div>
-          <div className="flex items-center gap-3">
-            {rightSlot}
-            <svg
-              className={`w-5 h-5 text-white/60 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
-        </button>
-        {isOpen && (
-          <div 
-            className="px-5 pb-5 pt-1 border-t border-white/10 space-y-5" 
-            onMouseDown={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
-          >
-            {children}
-          </div>
-        )}
-      </div>
-    )
-  }
 
   const primaryPhoto = profileData.photos[0] || DEFAULT_PROFILE_IMAGE
 
@@ -215,7 +221,9 @@ export default function ProfilePage() {
           setProfileData({
             display_name: profile.display_name || '',
             age: profile.age?.toString() || '',
+            headline: profile.headline || '',
             bio: profile.about || '',
+            looking_for_text: profile.looking_for_text || '',
             position: profile.position || '',
             gender_identity: profile.gender_identity || 'cis_man',
             body_type: profile.body_type || '',
@@ -323,7 +331,9 @@ export default function ProfilePage() {
       const updateData: any = {
         id: user.id,
         display_name: profileData.display_name || null,
+        headline: profileData.headline || null,
         about: profileData.bio || null,
+        looking_for_text: profileData.looking_for_text || null,
         position: profileData.position || null,
         gender_identity: profileData.gender_identity || 'cis_man',
         body_type: profileData.body_type || null,
@@ -611,7 +621,7 @@ export default function ProfilePage() {
                     )}
                   </div>
                   <p className="text-white/70 text-sm leading-relaxed max-w-xl break-words">
-                    {profileData.bio || 'Add a headline to let members know your vibe.'}
+                    {profileData.headline || 'Add a headline to let members know your vibe.'}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {profileData.party_friendly && (
@@ -643,6 +653,8 @@ export default function ProfilePage() {
               id="identity"
               title="Identity & Stats"
               description="Shape what others learn about you."
+              isOpen={expandedSections.identity}
+              onToggle={toggleSection}
             >
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
@@ -754,6 +766,8 @@ export default function ProfilePage() {
               id="interaction"
               title="Energy & Interaction"
               description="Signal how you like to connect."
+              isOpen={expandedSections.interaction}
+              onToggle={toggleSection}
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between rounded-2xl bg-white/5 px-4 py-3 border border-white/10">
@@ -783,6 +797,8 @@ export default function ProfilePage() {
               id="interests"
               title="Kinks & Interests"
               description="Curate your vibe with quick taps."
+              isOpen={expandedSections.interests}
+              onToggle={toggleSection}
             >
               <div className="space-y-4">
                 <div>
@@ -846,21 +862,51 @@ export default function ProfilePage() {
               id="bio"
               title="Headlines & Notes"
               description="Leave something memorable."
+              isOpen={expandedSections.bio}
+              onToggle={toggleSection}
             >
-              <div className="space-y-3" onMouseDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
-                <textarea
-                  value={profileData.bio || ''}
-                  onChange={(e) => {
-                    setProfileData(prev => ({ ...prev, bio: e.target.value }));
-                  }}
-                  rows={5}
-                  maxLength={500}
-                  autoComplete="off"
-                  spellCheck="true"
-                  placeholder="Let SLTR know your vibe, your boundaries, or your invite."
-                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-lime-400 resize-none"
-                />
-                <div className="text-right text-xs text-white/40">{(profileData.bio || '').length}/500 characters</div>
+              <div className="space-y-4" onMouseDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
+                {/* Headline - Short punchy tagline */}
+                <div>
+                  <label className="block text-xs font-medium text-white/50 mb-1.5 uppercase tracking-wider">Headline</label>
+                  <input
+                    type="text"
+                    value={profileData.headline || ''}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, headline: e.target.value }))}
+                    maxLength={50}
+                    placeholder="Your one-liner hook..."
+                    className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-lime-400/50 focus:border-lime-400/50"
+                  />
+                  <div className="text-right text-[10px] text-white/30 mt-1">{(profileData.headline || '').length}/50</div>
+                </div>
+
+                {/* About You - Bio/personality */}
+                <div>
+                  <label className="block text-xs font-medium text-white/50 mb-1.5 uppercase tracking-wider">About You</label>
+                  <textarea
+                    value={profileData.bio || ''}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
+                    rows={3}
+                    maxLength={500}
+                    placeholder="Your vibe, your energy..."
+                    className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-lime-400/50 focus:border-lime-400/50 resize-none"
+                  />
+                  <div className="text-right text-[10px] text-white/30 mt-1">{(profileData.bio || '').length}/500</div>
+                </div>
+
+                {/* Looking For - What you want */}
+                <div>
+                  <label className="block text-xs font-medium text-white/50 mb-1.5 uppercase tracking-wider">Looking For</label>
+                  <textarea
+                    value={profileData.looking_for_text || ''}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, looking_for_text: e.target.value }))}
+                    rows={2}
+                    maxLength={200}
+                    placeholder="What you're seeking..."
+                    className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-lime-400/50 focus:border-lime-400/50 resize-none"
+                  />
+                  <div className="text-right text-[10px] text-white/30 mt-1">{(profileData.looking_for_text || '').length}/200</div>
+                </div>
               </div>
             </SectionCard>
 

@@ -201,7 +201,7 @@ export default function GridViewProduction({
       if (!profile?.latitude || !profile?.longitude) {
         // Only show error once to prevent toast spam
         if (!locationErrorShown) {
-          toast.error("Please set your location in your profile to see nearby users.");
+        toast.error("Please set your location in your profile to see nearby users.");
           setLocationErrorShown(true)
         }
         setGridLoading(false)
