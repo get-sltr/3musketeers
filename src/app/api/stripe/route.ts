@@ -2,17 +2,21 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY
-const stripe = stripeSecretKey
-  ? new Stripe(stripeSecretKey, {
-      apiVersion: '2025-10-29.clover'
-})
-  : null
+function getStripe() {
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY
+  return stripeSecretKey
+    ? new Stripe(stripeSecretKey, {
+        apiVersion: '2025-10-29.clover'
+    })
+    : null
+}
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+}
 
 // Price IDs - these should be created in Stripe Dashboard
 const PRICE_IDS = {
@@ -24,6 +28,7 @@ const FOUNDER_LIMIT = 2000
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = getSupabase()
     const { searchParams } = new URL(request.url)
     const action = searchParams.get('action')
 
@@ -56,6 +61,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = getSupabase()
+    const stripe = getStripe()
     const { priceType, userId, email } = await request.json()
 
     if (!priceType || !userId || !email) {

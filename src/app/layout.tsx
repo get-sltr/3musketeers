@@ -1,17 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from 'next/font/google';
 import "./globals.css";
 import '../styles/SLTRMapPin.css';
 import ClientProviders from '@/components/ClientProviders';
 import NotificationPrompt from '@/components/NotificationPrompt';
 import AdminDashboard from '@/components/AdminDashboard';
 // import TwoFactorSetup from '@/components/TwoFactorSetup'; // Temporarily disabled - causing login issues
-
-const inter = Inter({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
-  variable: '--font-inter',
-});
 
 export const metadata: Metadata = {
   title: "SLTR",
@@ -80,7 +73,7 @@ export default async function RootLayout({
   const locale = await getLocale()
 
   return (
-    <html lang={locale} className={inter.variable}>
+    <html lang={locale}>
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

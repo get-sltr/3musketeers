@@ -3,16 +3,18 @@
 import { createClient } from '@/lib/supabase/server'
 import Stripe from 'stripe'
 
-// Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-10-29.clover',
-})
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2025-10-29.clover',
+  })
+}
 
 /**
  * Creates a Stripe Identity verification session
  * This is called from the client to start the verification process
  */
 export async function createVerificationSession() {
+  const stripe = getStripe()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -38,6 +40,7 @@ export async function handleVerificationWebhook(
   status: 'verified' | 'unverified' | 'requires_input'
 ) {
   try {
+    const stripe = getStripe()
     const supabase = await createClient()
 
     // Get the verification session from Stripe to get user metadata
