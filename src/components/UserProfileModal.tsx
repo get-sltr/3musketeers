@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { blockUser } from '@/lib/safety'
 import ReportModal from './ReportModal'
 import { recordTap } from '@/lib/profileTracking'
+import { createClient } from '@/lib/supabase/client'
 
 interface User {
   id: string
@@ -52,9 +53,68 @@ export default function UserProfileModal({
   const [blocked, setBlocked] = useState(false)
   const [isTapping, setIsTapping] = useState(false)
   const [hasTapped, setHasTapped] = useState(false)
+  const [viewLimitReached, setViewLimitReached] = useState(false)
+  const [viewsRemaining, setViewsRemaining] = useState<number | null>(null)
   const router = useRouter()
+  const supabase = createClient()
+
+  // 🔒 Track profile view for usage limits (free tier)
+  useEffect(() => {
+    if (!isOpen || !user || isOwnProfile) return
+
+    const trackProfileView = async () => {
+      try {
+        const { data: { user: currentUser } } = await supabase.auth.getUser()
+        if (!currentUser) return
+
+        const { data: result } = await supabase.rpc('record_usage', {
+          p_user_id: currentUser.id,
+          p_action_type: 'profile_viewed',
+          p_target_id: user.id
+        })
+
+        if (result) {
+          setViewLimitReached(!result.success)
+          setViewsRemaining(result.usage?.remaining ?? null)
+        }
+      } catch (err) {
+        console.error('Error tracking profile view:', err)
+      }
+    }
+
+    trackProfileView()
+  }, [isOpen, user?.id, isOwnProfile, supabase])
 
   if (!isOpen || !user) return null
+
+  // 🔒 If view limit reached, show upgrade prompt
+  if (viewLimitReached) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div className="bg-[#1a1a1a] rounded-2xl max-w-sm w-full p-6 text-center border border-white/10">
+          <div className="text-4xl mb-4">🔒</div>
+          <h3 className="text-xl font-bold text-white mb-2">Daily Limit Reached</h3>
+          <p className="text-white/70 text-sm mb-4">
+            You've viewed 20 profiles today. Upgrade to SLTR Pro for unlimited profile views.
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-3 rounded-xl bg-white/10 text-white font-medium"
+            >
+              Close
+            </button>
+            <button
+              onClick={() => router.push('/settings/subscription')}
+              className="flex-1 px-4 py-3 rounded-xl bg-lime-400 text-black font-bold"
+            >
+              Upgrade
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const photos: string[] = (user.photos?.length ?? 0) > 0 ? user.photos! : ['data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23222" width="100" height="100"/%3E%3Ctext fill="%23aaa" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"%3E?%3C/text%3E%3C/svg%3E']
 

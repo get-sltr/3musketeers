@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { createClient } from '../../lib/supabase/client'
 import BottomNav from '../../components/BottomNav'
 import MobileLayout from '../../components/MobileLayout'
+import { useHasFeature } from '@/hooks/usePrivileges'
+import UpgradePrompt from '@/components/UpgradePrompt'
 
 interface Group {
   id: string
@@ -19,9 +21,13 @@ export default function GroupsPage() {
   const [loading, setLoading] = useState(true)
   const [groups, setGroups] = useState<Group[]>([])
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
   const [groupTitle, setGroupTitle] = useState('')
   const [groupDescription, setGroupDescription] = useState('')
   const [creating, setCreating] = useState(false)
+  
+  // 🔒 Check if user can create/join groups (Plus only)
+  const { allowed: canCreateGroups, loading: privilegeLoading } = useHasFeature('create_groups')
 
   useEffect(() => {
     const init = async () => {
@@ -127,9 +133,16 @@ export default function GroupsPage() {
                 <p className="text-white/60 text-sm">Connect with your community</p>
               </div>
               <button
-                onClick={() => setShowCreateModal(true)}
-                className="px-4 py-2 rounded-xl bg-lime-400 text-black text-sm font-semibold hover:scale-105 transition-all"
+                onClick={() => {
+                  if (canCreateGroups) {
+                    setShowCreateModal(true)
+                  } else {
+                    setShowUpgradePrompt(true)
+                  }
+                }}
+                className="px-4 py-2 rounded-xl bg-lime-400 text-black text-sm font-semibold hover:scale-105 transition-all flex items-center gap-2"
               >
+                {!canCreateGroups && <span>🔒</span>}
                 + Create Group
               </button>
             </div>
@@ -190,11 +203,23 @@ export default function GroupsPage() {
                 Start a group to connect with your community through video calls, voice chats, and messaging.
               </p>
               <button
-                onClick={() => setShowCreateModal(true)}
-                className="px-6 py-3 rounded-xl bg-lime-400 text-black font-semibold hover:scale-105 transition-all"
+                onClick={() => {
+                  if (canCreateGroups) {
+                    setShowCreateModal(true)
+                  } else {
+                    setShowUpgradePrompt(true)
+                  }
+                }}
+                className="px-6 py-3 rounded-xl bg-lime-400 text-black font-semibold hover:scale-105 transition-all flex items-center gap-2"
               >
+                {!canCreateGroups && <span>🔒</span>}
                 + Create Your First Group
               </button>
+              {!canCreateGroups && (
+                <p className="text-white/50 text-sm mt-4">
+                  Groups are a SLTR Pro feature
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -270,6 +295,14 @@ export default function GroupsPage() {
               </form>
             </div>
           </div>
+        )}
+
+        {/* 🔒 Upgrade Prompt for Free Users */}
+        {showUpgradePrompt && (
+          <UpgradePrompt
+            feature="Groups"
+            onClose={() => setShowUpgradePrompt(false)}
+          />
         )}
 
         {/* Bottom Navigation */}

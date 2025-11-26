@@ -14,6 +14,8 @@ export type Feature =
 
   // Plus-only features
   | 'video_calls'
+  | 'voice_calls'
+  | 'eros_ai'
   | 'create_groups'
   | 'create_channels'
   | 'join_groups'

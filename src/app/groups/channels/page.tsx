@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/client'
 import BottomNav from '@/components/BottomNav'
 import MobileLayout from '@/components/MobileLayout'
 import Link from 'next/link'
+import { useHasFeature } from '@/hooks/usePrivileges'
+import UpgradePrompt from '@/components/UpgradePrompt'
 
 interface Channel {
   id: string
@@ -31,10 +33,14 @@ export default function ChannelsPage() {
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [showCreateChannel, setShowCreateChannel] = useState(false)
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
   const [newChannelName, setNewChannelName] = useState('')
   const [newChannelDescription, setNewChannelDescription] = useState('')
   const [newChannelType, setNewChannelType] = useState<'text' | 'voice' | 'video'>('text')
   const [creatingChannel, setCreatingChannel] = useState(false)
+  
+  // 🔒 Check if user can create channels (Plus only)
+  const { allowed: canCreateChannels, loading: privilegeLoading } = useHasFeature('create_channels')
 
   useEffect(() => {
     const loadGroups = async () => {
@@ -203,9 +209,16 @@ export default function ChannelsPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setShowCreateChannel(true)}
-                  className="px-4 py-2 rounded-xl bg-lime-400 text-black text-sm font-semibold hover:scale-105 transition-all"
+                  onClick={() => {
+                    if (canCreateChannels) {
+                      setShowCreateChannel(true)
+                    } else {
+                      setShowUpgradePrompt(true)
+                    }
+                  }}
+                  className="px-4 py-2 rounded-xl bg-lime-400 text-black text-sm font-semibold hover:scale-105 transition-all flex items-center gap-1"
                 >
+                  {!canCreateChannels && <span>🔒</span>}
                   + Create Channel
                 </button>
                 <Link
@@ -407,6 +420,14 @@ export default function ChannelsPage() {
               </form>
             </div>
           </div>
+        )}
+
+        {/* 🔒 Upgrade Prompt for Free Users */}
+        {showUpgradePrompt && (
+          <UpgradePrompt
+            feature="Channels"
+            onClose={() => setShowUpgradePrompt(false)}
+          />
         )}
       </div>
       <BottomNav />

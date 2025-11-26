@@ -60,12 +60,12 @@ export default function ErosOnboardingModal({ isOpen, onClose }: ErosOnboardingM
     },
     {
       icon: '🎯',
-      title: 'EROS Is Now Available',
-      subtitle: 'To All SLTR Pro Members',
+      title: 'EROS Is Exclusive',
+      subtitle: 'For SLTR Pro Members Only',
       description:
-        'EROS is now available to all SLTR Pro members. Experience the future of intelligent matching.',
+        'EROS is exclusively available to SLTR Pro members. Upgrade to unlock the future of intelligent matching and personalized connections.',
       highlight:
-        'Your experience increases in proportion to your membership. Free to browse. Pro to connect. EROS to match.',
+        'Free tier: Browse profiles. Pro tier: Unlimited messaging, video calls, travel mode, and EROS AI. Upgrade now to unlock everything.',
     },
   ];
 

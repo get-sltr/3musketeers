@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { getTierConfig, TierType } from '@/config/tiers'
+import { invalidateProfileCache } from '@/hooks/usePrivileges'
 
 export default function PaymentSuccessPage() {
   const router = useRouter()
@@ -29,6 +30,9 @@ export default function PaymentSuccessPage() {
           router.push('/login')
           return
         }
+
+        // 🔓 INSTANT UNLOCK: Clear cached profile to ensure fresh tier data
+        invalidateProfileCache(user.id)
 
         // Get user's profile to see their tier
         const { data: profile } = await supabase

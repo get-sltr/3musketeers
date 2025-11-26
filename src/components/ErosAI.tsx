@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { erosAPI } from '@/lib/eros-api'
+import { useHasFeature } from '@/hooks/usePrivileges'
+import UpgradePrompt from './UpgradePrompt'
 
 interface ErosAIProps {
   conversationId: string
@@ -10,6 +12,10 @@ interface ErosAIProps {
 
 export default function ErosAI({ conversationId, onAIMessage }: ErosAIProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [showUpgrade, setShowUpgrade] = useState(false)
+  
+  // 🔒 Check if user has EROS AI access
+  const { allowed: hasErosAccess, loading: checkingAccess } = useHasFeature('eros_ai')
   const [aiMessage, setAiMessage] = useState('')
   const [isThinking, setIsThinking] = useState(false)
   const [aiHistory, setAiHistory] = useState<string[]>([])
@@ -99,8 +105,22 @@ export default function ErosAI({ conversationId, onAIMessage }: ErosAIProps) {
     }
   }
 
+  // 🔒 Handle opening EROS - check access first
+  const handleOpenEros = () => {
+    if (!hasErosAccess && !checkingAccess) {
+      setShowUpgrade(true)
+      return
+    }
+    setIsOpen(!isOpen)
+  }
+
   return (
     <>
+      {/* 🔒 Upgrade prompt for free users */}
+      {showUpgrade && (
+        <UpgradePrompt feature="EROS AI Assistant" onClose={() => setShowUpgrade(false)} />
+      )}
+
       {/* EROS floating mini button (draggable) */}
       {pos && (
         <div
@@ -115,10 +135,10 @@ export default function ErosAI({ conversationId, onAIMessage }: ErosAIProps) {
         >
           <button
             aria-label="Open EROS Assistant"
-            onClick={() => setIsOpen(!isOpen)}
+            onClick={handleOpenEros}
             className="w-14 h-14 rounded-full backdrop-blur-xl bg-white/10 border border-white/20 shadow-xl flex items-center justify-center text-2xl hover:bg-white/15 active:scale-95 transition"
           >
-            🏹
+            {hasErosAccess ? '🏹' : '🔒'}
           </button>
         </div>
       )}

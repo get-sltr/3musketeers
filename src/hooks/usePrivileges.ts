@@ -6,7 +6,7 @@
 
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Feature, Profile, PrivilegeCheckResult } from '@/lib/privileges/types'
 import {
@@ -50,45 +50,95 @@ function setCachedProfile(userId: string, profile: Profile): void {
   })
 }
 
+// 🔓 INSTANT UNLOCK: Clear cache when subscription changes
+export function invalidateProfileCache(userId?: string): void {
+  if (userId) {
+    profileCache.delete(userId)
+  } else {
+    profileCache.clear()
+  }
+}
+
 // ==================== HOOKS ====================
 
 /**
  * Get current user's profile with caching
  * Optimized: Only fetches once, then caches
+ * 🔓 INSTANT UNLOCK: Realtime subscription for immediate updates after payment
  */
 export function useUserProfile() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
+  const userIdRef = useRef<string | null>(null)
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
 
   useEffect(() => {
     let isMounted = true
 
-    async function loadProfile() {
+    async function loadProfile(skipCache = false) {
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user || !isMounted) {
           setLoading(false)
           return
         }
-
-        // Check cache first (PERFORMANCE OPTIMIZATION)
-        const cached = getCachedProfile(user.id)
-        if (cached) {
-          setProfile(cached)
-          setLoading(false)
-          return
+        
+        // Set up realtime subscription for this user if not already done
+        if (userIdRef.current !== user.id) {
+          userIdRef.current = user.id
+          
+          // Clean up old channel
+          if (channelRef.current) {
+            supabase.removeChannel(channelRef.current)
+          }
+          
+          // 🔓 INSTANT UNLOCK: Realtime subscription for profile changes
+          // This triggers immediately when Stripe webhook updates subscription_tier
+          channelRef.current = supabase
+            .channel(`profile-${user.id}`)
+            .on(
+              'postgres_changes',
+              {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'profiles',
+                filter: `id=eq.${user.id}`
+              },
+              (payload) => {
+                console.log('🔓 Profile updated - refreshing subscription status:', payload.new)
+                // Clear cache and reload with fresh data
+                invalidateProfileCache(user.id)
+                loadProfile(true) // Skip cache, reload immediately
+              }
+            )
+            .subscribe()
         }
 
-        // Fetch from database only if not cached
+        // Check cache first (PERFORMANCE OPTIMIZATION)
+        // Skip cache when called from realtime update
+        if (!skipCache) {
+          const cached = getCachedProfile(user.id)
+          if (cached) {
+            setProfile(cached)
+            setLoading(false)
+            return
+          }
+        }
+
+        // Fetch from database - include founder status for unlimited access
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, subscription_tier, subscription_expires_at, is_super_admin')
+          .select('id, subscription_tier, subscription_expires_at, is_super_admin, founder')
           .eq('id', user.id)
           .single()
 
         if (data && isMounted) {
-          const profileData = data as Profile
+          const profileData = {
+            ...data,
+            // Map founder status to effectively "plus" tier for privilege checks
+            subscription_tier: data.founder ? 'plus' : (data.subscription_tier || 'free')
+          } as Profile
           setProfile(profileData)
           setCachedProfile(user.id, profileData) // Cache it
         }
@@ -102,17 +152,42 @@ export function useUserProfile() {
     loadProfile()
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(() => {
       loadProfile()
     })
 
     return () => {
       isMounted = false
-      subscription?.unsubscribe()
+      authSub?.unsubscribe()
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current)
+      }
     }
   }, [supabase])
 
-  return { profile, loading }
+  // 🔓 Function to force refresh (call after upgrade success page)
+  const refreshProfile = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      invalidateProfileCache(user.id)
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, subscription_tier, subscription_expires_at, is_super_admin, founder')
+        .eq('id', user.id)
+        .single()
+      
+      if (data) {
+        const profileData = {
+          ...data,
+          subscription_tier: data.founder ? 'plus' : (data.subscription_tier || 'free')
+        } as Profile
+        setProfile(profileData)
+        setCachedProfile(user.id, profileData)
+      }
+    }
+  }, [supabase])
+
+  return { profile, loading, refreshProfile }
 }
 
 /**

@@ -13,14 +13,22 @@ interface UseUniversalChatOptions {
   enabled?: boolean
 }
 
+interface MessageLimitInfo {
+  allowed: boolean
+  remaining: number
+  limit: number
+}
+
 /**
  * Universal chat hook that works for conversations, groups, and channels
  * Provides a unified interface for sending messages and receiving real-time updates
+ * 🔒 Includes message limit enforcement for free tier users
  */
 export function useUniversalChat({ type, id, enabled = true }: UseUniversalChatOptions) {
   const [messages, setMessages] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isSending, setIsSending] = useState(false)
+  const [messageLimitInfo, setMessageLimitInfo] = useState<MessageLimitInfo | null>(null)
   const supabase = createClient()
 
   // Use appropriate realtime hook based on type
@@ -77,6 +85,7 @@ export function useUniversalChat({ type, id, enabled = true }: UseUniversalChatO
   }, [type, id, enabled, supabase])
 
   // Send message based on type
+  // 🔒 With usage limit enforcement for free tier
   const sendMessage = useCallback(
     async (content: string, metadata?: Record<string, any>) => {
       if (!id || !enabled || isSending) return
@@ -86,6 +95,28 @@ export function useUniversalChat({ type, id, enabled = true }: UseUniversalChatO
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
           throw new Error('User not authenticated')
+        }
+
+        // 🔒 Check message limit for DMs (not groups/channels)
+        if (type === 'conversation') {
+          const { data: limitResult, error: limitError } = await supabase.rpc('record_usage', {
+            p_user_id: user.id,
+            p_action_type: 'message_sent',
+            p_target_id: null
+          })
+
+          if (!limitError && limitResult) {
+            const usage = limitResult.usage
+            setMessageLimitInfo({
+              allowed: limitResult.success,
+              remaining: usage?.remaining ?? 999,
+              limit: usage?.limit ?? 999
+            })
+
+            if (!limitResult.success) {
+              throw new Error(`Daily message limit reached (${usage?.limit}/day). Upgrade to SLTR Pro for unlimited messaging.`)
+            }
+          }
         }
 
         let insertData: any = {
@@ -193,6 +224,7 @@ export function useUniversalChat({ type, id, enabled = true }: UseUniversalChatO
     isSending,
     sendMessage,
     reloadMessages: loadMessages,
+    messageLimitInfo, // 🔒 Usage limit info for UI display
     sendTypingStart:
       type === 'conversation'
         ? () => chatRealtime.sendTypingStart(id!)
