@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import AlbumsManager from '../../components/AlbumsManager'
 import { DEFAULT_PROFILE_IMAGE } from '@/lib/utils/profile'
-import SltrButton from '../../components/SltrButton'
 
 interface Album {
   id: string
@@ -556,29 +555,26 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-black">
-      {/* Header */}
-      <div className="fixed top-0 w-full bg-black/95 backdrop-blur-xl border-b border-white/10 p-4 z-50">
+      {/* Header - Clean and compact */}
+      <div className="fixed top-0 w-full bg-black/95 backdrop-blur-xl border-b border-white/10 px-4 py-3 z-50">
         <div className="flex items-center justify-between">
-          <Link href="/app" className="glass-bubble p-2 hover:bg-white/10 transition-all duration-300">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <Link href="/app" className="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-all">
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
-          <h1 className="text-2xl font-bold text-lime-400">Edit Profile</h1>
-          <div className="flex items-center gap-2">
-            <SltrButton size="sm" />
-            <button
-              onClick={() => setShowAlbumsManager(true)}
-              className="glass-bubble px-4 py-2 text-white hover:bg-white/10 transition-all duration-300 flex items-center gap-2"
-            >
-              📸 Albums
-            </button>
-          </div>
+          <h1 className="text-xl font-bold text-lime-400">Edit Profile</h1>
+          <button
+            onClick={() => setShowAlbumsManager(true)}
+            className="px-3 py-2 rounded-xl bg-white/5 text-white text-sm hover:bg-white/10 transition-all flex items-center gap-1.5"
+          >
+            📸 <span className="hidden sm:inline">Albums</span>
+          </button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="pt-24 pb-32 px-4">
+      <div className="pt-16 pb-32 px-4">
         <div className="max-w-6xl mx-auto grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <form onSubmit={handleSave} className="space-y-6">
             <div className="glass-bubble p-6 relative overflow-hidden">
