@@ -437,9 +437,17 @@ export default function ProfilePage() {
         reader.readAsDataURL(file)
       })
 
+      // Get current user ID for storage path
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setError('Not authenticated')
+        return
+      }
+
       const fileExt = 'jpg'
       const fileName = `${Date.now()}.${fileExt}`
-      const filePath = `profiles/${fileName}`
+      // Path must be: profiles/{user_id}/{filename} to match RLS policy
+      const filePath = `profiles/${user.id}/${fileName}`
 
       console.log('Uploading photo:', filePath)
 
