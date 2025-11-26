@@ -75,90 +75,92 @@ export default function ErosOnboardingModal({ isOpen, onClose }: ErosOnboardingM
   const progress = ((clampedIndex + 1) / steps.length) * 100;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-hidden">
-      <div 
-        className="relative w-full max-w-sm mx-auto flex flex-col bg-black/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20"
-        style={{ 
-          maxHeight: 'min(calc(100dvh - 80px), calc(100vh - 80px))',
-        }}
-      >
-        {/* Header - compact for mobile */}
-        <div className="px-5 pt-5 pb-3 flex-shrink-0 text-center">
-          <div className="mb-2">
-            {step.icon === '💘' ? <CupidIcon size={60} /> : <span className="text-4xl">{step.icon}</span>}
+    <div 
+      className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md overflow-y-auto"
+      style={{ WebkitOverflowScrolling: 'touch' }}
+    >
+      <div className="min-h-full flex items-center justify-center p-6 py-12">
+        <div 
+          className="relative w-full max-w-sm flex flex-col bg-[#111] rounded-3xl shadow-2xl border border-white/20"
+        >
+          {/* Header */}
+          <div className="px-6 pt-6 pb-4 text-center">
+            <div className="mb-3">
+              {step.icon === '💘' ? <CupidIcon size={64} /> : <span className="text-5xl">{step.icon}</span>}
+            </div>
+            <h2 className="text-2xl font-bold text-lime-400 mb-1">{step.title}</h2>
+            <p className="text-white/60 text-sm">{step.subtitle}</p>
           </div>
-          <h2 className="text-2xl font-bold text-lime-400 mb-1">{step.title}</h2>
-          <p className="text-white/60 text-xs font-medium">{step.subtitle}</p>
-        </div>
 
-        {/* Content - scrollable if needed */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 min-h-0">
-          <p className="text-white/90 text-sm leading-relaxed">{step.description}</p>
+          {/* Content */}
+          <div className="px-6 py-4 space-y-4">
+            <p className="text-white/90 text-sm leading-relaxed">{step.description}</p>
 
-          {/* Highlight box */}
-          <div className="bg-lime-400/10 border border-lime-400/30 rounded-xl px-4 py-3">
-            <p className="text-lime-400 font-medium text-xs leading-relaxed">{step.highlight}</p>
+            {/* Highlight box */}
+            <div className="bg-lime-400/10 border border-lime-400/30 rounded-xl px-4 py-3">
+              <p className="text-lime-400 font-medium text-sm leading-relaxed">{step.highlight}</p>
+            </div>
           </div>
-        </div>
 
-        {/* Progress bar */}
-        <div className="px-5 py-3 flex-shrink-0">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-[10px] text-white/50 font-medium">
-              {clampedIndex + 1} of {steps.length}
-            </span>
-            <span className="text-[10px] text-lime-400 font-bold">{Math.round(progress)}%</span>
+          {/* Progress bar */}
+          <div className="px-6 py-3">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs text-white/50">
+                {clampedIndex + 1} of {steps.length}
+              </span>
+              <span className="text-xs text-lime-400 font-bold">{Math.round(progress)}%</span>
+            </div>
+            <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-lime-400 rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
           </div>
-          <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-lime-400 rounded-full transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            />
+
+          {/* Footer with buttons */}
+          <div className="px-6 pb-4 flex gap-3">
+            {currentStep > 0 && (
+              <button
+                onClick={() => setCurrentStep(prev => prev - 1)}
+                className="flex-1 px-4 py-3.5 rounded-xl bg-white/10 border border-white/20 text-white font-semibold active:scale-95 transition"
+              >
+                Back
+              </button>
+            )}
+
+            {currentStep < steps.length - 1 ? (
+              <button
+                onClick={() => setCurrentStep(prev => prev + 1)}
+                className="flex-1 px-4 py-3.5 rounded-xl bg-lime-400 text-black font-bold active:scale-95 transition"
+              >
+                Next
+              </button>
+            ) : (
+              <button
+                onClick={onClose}
+                className="flex-1 px-4 py-3.5 rounded-xl bg-lime-400 text-black font-bold active:scale-95 transition"
+              >
+                Let's Go
+              </button>
+            )}
           </div>
-        </div>
 
-        {/* Footer with buttons */}
-        <div className="px-5 pb-5 flex gap-3 flex-shrink-0">
-          {currentStep > 0 && (
-            <button
-              onClick={() => setCurrentStep(prev => prev - 1)}
-              className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white font-semibold text-sm active:scale-95 transition"
-            >
-              Back
-            </button>
-          )}
-
-          {currentStep < steps.length - 1 ? (
-            <button
-              onClick={() => setCurrentStep(prev => prev + 1)}
-              className="flex-1 px-4 py-3 rounded-xl bg-lime-400 text-black font-bold text-sm active:scale-95 transition"
-            >
-              Next
-            </button>
-          ) : (
-            <button
-              onClick={onClose}
-              className="flex-1 px-4 py-3 rounded-xl bg-lime-400 text-black font-bold text-sm active:scale-95 transition"
-            >
-              Let's Go
-            </button>
-          )}
-        </div>
-
-        {/* Dots indicator */}
-        <div className="px-5 pb-4 flex justify-center gap-2 flex-shrink-0">
-          {steps.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setCurrentStep(idx)}
-              className={`h-1.5 rounded-full transition-all ${
-                idx === currentStep
-                  ? 'bg-lime-400 w-5'
-                  : 'bg-white/20 w-1.5'
-              }`}
-              aria-label={`Go to step ${idx + 1}`}
-            />
-          ))}
+          {/* Dots indicator */}
+          <div className="px-6 pb-6 flex justify-center gap-2">
+            {steps.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setCurrentStep(idx)}
+                className={`h-2 rounded-full transition-all ${
+                  idx === currentStep
+                    ? 'bg-lime-400 w-6'
+                    : 'bg-white/20 w-2'
+                }`}
+                aria-label={`Go to step ${idx + 1}`}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>
