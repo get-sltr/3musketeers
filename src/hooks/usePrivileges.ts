@@ -136,8 +136,8 @@ export function useUserProfile() {
         if (data && isMounted) {
           const profileData = {
             ...data,
-            // Map founder status to effectively "plus" tier for privilege checks
-            subscription_tier: data.founder ? 'plus' : (data.subscription_tier || 'free')
+            // Map founder/super_admin to effectively "plus" tier for privilege checks
+            subscription_tier: (data.founder || data.is_super_admin) ? 'plus' : (data.subscription_tier || 'free')
           } as Profile
           setProfile(profileData)
           setCachedProfile(user.id, profileData) // Cache it
@@ -179,7 +179,7 @@ export function useUserProfile() {
       if (data) {
         const profileData = {
           ...data,
-          subscription_tier: data.founder ? 'plus' : (data.subscription_tier || 'free')
+          subscription_tier: (data.founder || data.is_super_admin) ? 'plus' : (data.subscription_tier || 'free')
         } as Profile
         setProfile(profileData)
         setCachedProfile(user.id, profileData)
