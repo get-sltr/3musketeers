@@ -20,7 +20,8 @@ interface Channel {
 
 interface Group {
   id: string
-  title: string
+  name: string
+  title?: string
   description?: string
   created_at: string
 }
@@ -257,7 +258,7 @@ export default function ChannelsPage() {
                       : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10'
                   }`}
                 >
-                  {group.title}
+                  {group.title || group.name}
                 </button>
               ))}
             </div>
@@ -268,7 +269,7 @@ export default function ChannelsPage() {
         <div className="px-4 py-4 space-y-2">
           {currentGroup && (
             <div className="mb-4">
-              <h2 className="text-white/60 text-xs uppercase mb-2">{currentGroup.title}</h2>
+              <h2 className="text-white/60 text-xs uppercase mb-2">{currentGroup.title || currentGroup.name}</h2>
               <p className="text-white/40 text-sm">{currentGroup.description || 'No description'}</p>
             </div>
           )}

@@ -11,7 +11,7 @@ import UpgradePrompt from '@/components/UpgradePrompt'
 
 interface Group {
   id: string
-  title: string
+  name: string
   description?: string
   created_at: string
 }
@@ -88,9 +88,9 @@ export default function GroupsPage() {
       const { error } = await supabase
         .from('groups')
         .insert({
-          title: groupTitle.trim(),
+          name: groupTitle.trim(),
           description: groupDescription.trim() || null,
-          host_id: user.id,
+          owner_id: user.id,
         })
 
       if (error) {
@@ -177,7 +177,7 @@ export default function GroupsPage() {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-white font-medium">{group.title}</h3>
+                    <h3 className="text-white font-medium">{group.name}</h3>
                     {group.description && (
                       <p className="text-white/60 text-sm mt-1 line-clamp-2">{group.description}</p>
                     )}
