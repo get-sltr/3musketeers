@@ -53,15 +53,15 @@ export function useUniversalChat({ type, id, enabled = true }: UseUniversalChatO
           break
         case 'group':
           query = supabase
-            .from('group_posts')
-            .select('*, profiles!group_posts_user_id_fkey(display_name, photos)')
+            .from('group_messages')
+            .select('*, profiles!group_messages_sender_id_fkey(display_name, photos)')
             .eq('group_id', id)
             .order('created_at', { ascending: true })
           break
         case 'channel':
           query = supabase
-            .from('channel_posts')
-            .select('*, profiles!channel_posts_user_id_fkey(display_name, photos)')
+            .from('channel_messages')
+            .select('*, profiles!channel_messages_sender_id_fkey(display_name, photos)')
             .eq('channel_id', id)
             .order('created_at', { ascending: true })
           break
@@ -157,8 +157,10 @@ export function useUniversalChat({ type, id, enabled = true }: UseUniversalChatO
 
           case 'group':
             insertData.group_id = id
+            insertData.sender_id = user.id
+            delete insertData.user_id
             const { error: groupError } = await supabase
-              .from('group_posts')
+              .from('group_messages')
               .insert(insertData)
 
             if (groupError) throw groupError
@@ -166,8 +168,10 @@ export function useUniversalChat({ type, id, enabled = true }: UseUniversalChatO
 
           case 'channel':
             insertData.channel_id = id
+            insertData.sender_id = user.id
+            delete insertData.user_id
             const { error: channelError } = await supabase
-              .from('channel_posts')
+              .from('channel_messages')
               .insert(insertData)
 
             if (channelError) throw channelError

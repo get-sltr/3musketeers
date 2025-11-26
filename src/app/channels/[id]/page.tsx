@@ -21,7 +21,7 @@ type Post = {
   id: string
   content: string
   created_at: string
-  author_id: string
+  sender_id: string
   profiles: { // Author's profile
     display_name: string
     photo_url: string
@@ -63,11 +63,11 @@ export default function ChannelDetailPage() {
         .single()
       if (channelData) setChannel(channelData)
 
-      // Fetch channel posts and author profiles
+      // Fetch channel messages and author profiles
       const { data: postData } = await supabase
-        .from('channel_posts')
+        .from('channel_messages')
         .select(`
-          id, content, created_at, author_id,
+          id, content, created_at, sender_id,
           profiles ( display_name, photo_url )
         `)
         .eq('channel_id', channelId)
@@ -96,21 +96,21 @@ export default function ChannelDetailPage() {
     const supabase = createClient()
     
     const channel = supabase
-      .channel(`public:channel_posts:channel_id=eq.${channelId}`)
+      .channel(`public:channel_messages:channel_id=eq.${channelId}`)
       .on(
         'postgres_changes',
-        { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'channel_posts',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'channel_messages',
           filter: `channel_id=eq.${channelId}`
         },
         async (payload) => {
-          // We get the new post, but we need the author's profile
+          // We get the new message, but we need the author's profile
           const { data: profile } = await supabase
             .from('profiles')
             .select('display_name, photo_url')
-            .eq('id', payload.new.author_id)
+            .eq('id', payload.new.sender_id)
             .single()
             
           const newPost = { ...payload.new, profiles: profile } as Post
@@ -160,10 +160,10 @@ export default function ChannelDetailPage() {
     
     const supabase = createClient()
     const { error } = await supabase
-      .from('channel_posts')
+      .from('channel_messages')
       .insert({
         channel_id: channelId,
-        author_id: currentUserId,
+        sender_id: currentUserId,
         content: newPostContent
       })
       
