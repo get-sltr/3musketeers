@@ -282,6 +282,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                 <div className="space-y-4">
                   {messages.map((msg) => {
                     const isOwn = msg.sender_id === currentUserId
+                    const displayName = msg.sender_profile?.display_name || 'U'
                     return (
                       <div
                         key={msg.id}
@@ -298,7 +299,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                                 />
                               ) : (
                                 <div className="w-6 h-6 rounded-full bg-lime-400/30 flex items-center justify-center text-xs text-lime-300">
-                                  {(msg.sender_profile?.display_name || 'U').charAt(0).toUpperCase()}
+                                  {displayName.charAt(0).toUpperCase()}
                                 </div>
                               )}
                               <span className="text-white/60 text-xs">

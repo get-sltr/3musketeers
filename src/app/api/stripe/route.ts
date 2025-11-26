@@ -12,10 +12,12 @@ function getStripe() {
 }
 
 function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !key) {
+    throw new Error('Supabase configuration missing')
+  }
+  return createClient(url, key)
 }
 
 // Price IDs - these should be created in Stripe Dashboard
@@ -34,6 +36,7 @@ export async function GET(request: NextRequest) {
 
     // Get founder count
     if (action === 'founder-count') {
+      const supabase = getSupabase()
       const { count } = await supabase
         .from('profiles')
         .select('id', { count: 'exact', head: true })
