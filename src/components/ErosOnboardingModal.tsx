@@ -79,8 +79,7 @@ export default function ErosOnboardingModal({ isOpen, onClose }: ErosOnboardingM
       <div 
         className="relative w-full max-w-sm mx-auto flex flex-col bg-black/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20"
         style={{ 
-          maxHeight: 'calc(100vh - 80px)',
-          maxHeight: 'calc(100dvh - 80px)',
+          maxHeight: 'min(calc(100dvh - 80px), calc(100vh - 80px))',
         }}
       >
         {/* Header - compact for mobile */}
