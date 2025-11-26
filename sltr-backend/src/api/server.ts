@@ -10,13 +10,40 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const FRONTEND_URL = process.env.FRONTEND_URL || 'https://www.getsltr.com';
 
 const erosService = new ErosAssistantService();
 
+// CORS configuration - allow SLTR domains
+const corsOptions = {
+  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+    const allowedOrigins = [
+      'https://getsltr.com',
+      'https://www.getsltr.com',
+      'http://localhost:3000',
+      'http://localhost:3001',
+    ];
+    
+    // Allow no origin (mobile apps, curl, etc)
+    if (!origin) return callback(null, true);
+    
+    // Allow exact matches
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    
+    // Allow Vercel preview deployments
+    if (origin.includes('vercel.app') && (origin.includes('getsltr') || origin.includes('sltr') || origin.includes('3musketeers'))) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
 // Middleware
 app.use(helmet());
-app.use(cors({ origin: FRONTEND_URL, credentials: true }));
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Rate limiting
@@ -54,16 +81,22 @@ const requireAuth = async (req: any, res: any, next: any) => {
 // Require Pro subscription
 const requirePro = async (req: any, res: any, next: any) => {
   try {
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('subscription_tier')
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('subscription_tier, founder')
       .eq('id', req.user.id)
       .single();
 
-    if (error || !user || !['pro', 'founder'].includes(user.subscription_tier)) {
+    // Founders always have access
+    if (profile?.founder) {
+      return next();
+    }
+
+    // Check subscription tier
+    if (error || !profile || !['plus', 'pro', 'founder'].includes(profile.subscription_tier)) {
       return res.status(403).json({
-        error: 'Pro subscription required',
-        upgrade_url: `${FRONTEND_URL}/upgrade`
+        error: 'SLTR Pro subscription required',
+        upgrade_url: 'https://getsltr.com/sltr-plus'
       });
     }
 

@@ -31,10 +31,10 @@ class ErosAPIClient {
     if (baseUrl) {
       this.baseUrl = baseUrl;
     } else {
-      const backendUrl = process.env.NODE_ENV === 'development'
+      // EROS backend base URL (no /api/v1 - uses /api/eros paths)
+      this.baseUrl = process.env.NODE_ENV === 'development'
         ? (process.env.NEXT_PUBLIC_DEV_BACKEND_URL || 'http://localhost:3001')
         : (process.env.NEXT_PUBLIC_EROS_BACKEND_URL || 'https://eros-backend-production.up.railway.app');
-      this.baseUrl = `${backendUrl}/api/v1`;
     }
   }
 
@@ -248,7 +248,7 @@ class ErosAPIClient {
     intent?: string;
     confidence?: number;
   }> {
-    return this.request('/assistant/chat', {
+    return this.request('/api/eros/chat', {
       method: 'POST',
       body: { message, context },
     });
