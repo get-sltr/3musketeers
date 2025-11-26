@@ -1,6 +1,52 @@
 'use client'
-import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, Suspense, Component, ErrorInfo, ReactNode } from 'react'
 import { useMapStore } from '../../stores/useMapStore'
+
+// Error Boundary to catch rendering errors gracefully
+class AppErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props)
+    this.state = { hasError: false, error: null }
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error }
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('App page error:', error, errorInfo)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4">
+          <div className="text-center max-w-sm">
+            <div className="text-5xl mb-4">🔄</div>
+            <h2 className="text-xl font-bold text-white mb-2">Loading hiccup</h2>
+            <p className="text-white/60 text-sm mb-6">
+              Something didn't load right. This usually fixes itself.
+            </p>
+            <button
+              onClick={() => {
+                this.setState({ hasError: false, error: null })
+                window.location.reload()
+              }}
+              className="px-6 py-3 bg-lime-400 text-black font-bold rounded-xl active:scale-95 transition"
+            >
+              Refresh
+            </button>
+          </div>
+        </div>
+      )
+    }
+
+    return this.props.children
+  }
+}
 import { useUIStore } from '../../stores/useUIStore'
 import { createClient } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -846,6 +892,7 @@ export default function AppPage() {
   }
 
   return (
+    <AppErrorBoundary>
     <MobileLayout>
       <div className="min-h-screen bg-[#0a0a0f]" style={{
         paddingBottom: viewMode === 'map' ? '0' : 'calc(80px + env(safe-area-inset-bottom))'
@@ -1049,11 +1096,23 @@ export default function AppPage() {
       <ErosOnboardingModal
         isOpen={showErosOnboarding}
         onClose={() => {
-          setShowErosOnboarding(false)
-          // Show tour after EROS onboarding closes (if not already completed)
-          const tourCompleted = localStorage.getItem('app_tour_completed')
-          if (!tourCompleted) {
-            setTimeout(() => setShowTour(true), 500)
+          try {
+            setShowErosOnboarding(false)
+            // Show tour after EROS onboarding closes (if not already completed)
+            const tourCompleted = typeof window !== 'undefined' 
+              ? localStorage.getItem('app_tour_completed') 
+              : null
+            if (!tourCompleted) {
+              setTimeout(() => {
+                try {
+                  setShowTour(true)
+                } catch (e) {
+                  console.warn('Tour start error:', e)
+                }
+              }, 500)
+            }
+          } catch (e) {
+            console.warn('EROS onClose error:', e)
           }
         }}
       />
@@ -1076,6 +1135,7 @@ export default function AppPage() {
       </nav>
       </div>
     </MobileLayout>
+    </AppErrorBoundary>
   )
 }
 
