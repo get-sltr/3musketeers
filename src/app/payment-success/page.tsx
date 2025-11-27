@@ -84,8 +84,6 @@ export default function PaymentSuccessPage() {
     <div className="min-h-screen bg-black text-white overflow-hidden">
       <style>
         {`
-          @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap');
-          
           .glass-card {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);

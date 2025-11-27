@@ -26,7 +26,9 @@ import { UserGridProfile, UserFullProfile } from '../lib/types/profile'
 import { resolveProfilePhoto, formatDistance, calculateETA, DEFAULT_PROFILE_IMAGE } from '../lib/utils/profile'
 import FoundersCircleAd from './FoundersCircleAd'
 
-// A simple spinner component
+import { GridSkeleton } from './LoadingSkeleton'
+
+// A simple spinner component (kept for other uses)
 const LoadingSpinner = () => (
   <div className="w-12 h-12 border-4 border-lime-400 border-t-transparent rounded-full animate-spin" />
 )
@@ -430,10 +432,14 @@ export default function GridViewProduction({
 
   // --- RENDER ---
 
+  // Show skeleton while loading - prevents CLS by reserving space
   if (gridLoading) {
     return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center">
-        <LoadingSpinner />
+      <div className="min-h-screen bg-black" style={{ 
+        paddingTop: 'calc(72px + max(env(safe-area-inset-top), 16px))',
+        paddingBottom: 'calc(84px + env(safe-area-inset-bottom, 0px))'
+      }}>
+        <GridSkeleton count={12} />
       </div>
     )
   }
@@ -480,10 +486,12 @@ export default function GridViewProduction({
             </div>
           )}
 
-          {filteredUsers.map((user) => {
+          {filteredUsers.map((user, index) => {
             const photo = resolveProfilePhoto(user.photo_url, user.photos)
             const distance = formatDistance(user.distance_miles)
             const eta = calculateETA(user.distance_miles)
+            // Prioritize first 6 images (above-the-fold) for LCP optimization
+            const isAboveFold = index < 6
 
             return (
               <div
@@ -493,7 +501,14 @@ export default function GridViewProduction({
               >
                   {/* ... Grid card details ... */}
                   {photo ? (
-                    <Image src={photo} alt={user.display_name || 'User'} fill className="object-cover" sizes="33vw" />
+                    <Image 
+                      src={photo} 
+                      alt={user.display_name || 'User'} 
+                      fill 
+                      className="object-cover" 
+                      sizes="33vw"
+                      priority={isAboveFold}
+                    />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900" />
                   )}

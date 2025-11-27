@@ -1,10 +1,27 @@
 import type { Metadata, Viewport } from "next";
+import { Inter, Orbitron } from 'next/font/google';
 import "./globals.css";
 import '../styles/SLTRMapPin.css';
 import ClientProviders from '@/components/ClientProviders';
 import NotificationPrompt from '@/components/NotificationPrompt';
 import AdminDashboard from '@/components/AdminDashboard';
 // import TwoFactorSetup from '@/components/TwoFactorSetup'; // Temporarily disabled - causing login issues
+
+// Optimized font loading - eliminates render-blocking requests
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+  preload: true,
+});
+
+const orbitron = Orbitron({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-orbitron',
+  weight: '900',
+  preload: true,
+});
 
 export const metadata: Metadata = {
   title: "SLTR",
@@ -82,11 +99,17 @@ export default async function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
 
-        {/* Mapbox GL JS CDN */}
-        <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
-        <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+        {/* Mapbox GL JS CDN - async to prevent render blocking */}
+        <link 
+          href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" 
+          rel="stylesheet"
+        />
+        <script 
+          src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"
+          async
+        />
       </head>
-      <body className="antialiased font-sans touch-pan-y overscroll-none">
+      <body className={`${inter.variable} ${orbitron.variable} antialiased font-sans touch-pan-y overscroll-none`}>
         <ClientProviders locale={locale}>
           {children}
           <NotificationPrompt />

@@ -100,3 +100,27 @@ export function MessagesLoadingSkeleton() {
     </div>
   )
 }
+
+// Grid loading skeleton - matches 3-column grid with aspect-[3/4] cards
+// Prevents CLS by reserving exact space for grid items
+export function GridSkeleton({ count = 9 }: { count?: number }) {
+  return (
+    <div className="grid grid-cols-3 gap-0.5 bg-black p-0.5">
+      {Array.from({ length: count }).map((_, i) => (
+        <div 
+          key={i} 
+          className="relative aspect-[3/4] overflow-hidden bg-gray-900"
+        >
+          <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-gray-800 via-gray-700 to-gray-800 bg-[length:200%_200%]" />
+          {/* Simulated content overlay */}
+          <div className="absolute bottom-0 left-0 right-0 p-2">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-gray-600" />
+              <div className="h-2 w-12 rounded bg-gray-600" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}

@@ -29,6 +29,7 @@ export default {
       },
       fontFamily: {
         sans: ['var(--font-inter)', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+        display: ['var(--font-orbitron)', 'Orbitron', 'system-ui', 'sans-serif'],
       },
     },
   },
