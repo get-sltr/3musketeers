@@ -17,19 +17,19 @@ NODE_ENV=production
 ### Critical Environment Variables for Production
 
 ```
-# Supabase (REQUIRED)
-NEXT_PUBLIC_SUPABASE_URL=https://bnzyzkmixfmylviaojbj.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJuenl6a21peGZteWx2aWFvamJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0NDE3ODksImV4cCI6MjA3NTAxNzc4OX0.8WHWwe9ow_nTljMvwVUI70i07pmNBh2mR0yo80EsGMs
+# Supabase (REQUIRED) - Get from Supabase Dashboard > Settings > API
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
 
 # App Configuration (REQUIRED)
-NEXT_PUBLIC_APP_URL=https://3musketeers.vercel.app
+NEXT_PUBLIC_APP_URL=https://your-domain.vercel.app
 NODE_ENV=production
 
-# Mapbox (REQUIRED for maps)
-NEXT_PUBLIC_MAPBOX_TOKEN=pk.eyJ1Ijoic2x0ciIsImEiOiJjbWgwY3cxenUwMTMxMmtvZDFuYTdyN2xiIn0.HlQWna4dS1678IuOU4r8BA
+# Mapbox (REQUIRED for maps) - Get from Mapbox Dashboard
+NEXT_PUBLIC_MAPBOX_TOKEN=pk.your_mapbox_public_token_here
 
 # Railway Backend (REQUIRED for real-time)
-NEXT_PUBLIC_BACKEND_URL=https://sltr-backend.railway.app
+NEXT_PUBLIC_BACKEND_URL=https://your-backend.railway.app
 
 # EROS Deep Learning (REQUIRED for AI features)
 GROQ_API_KEY=your_groq_api_key_here
