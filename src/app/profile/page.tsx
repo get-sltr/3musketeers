@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { createClient } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import dynamic from 'next/dynamic'
 
 // Dynamic import for heavy album component
@@ -604,13 +605,12 @@ export default function ProfilePage() {
               )}
               <div className="relative z-10 flex flex-col sm:flex-row sm:items-start gap-4">
                 <div className="relative w-24 h-24 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border border-white/20 shadow-lg">
-                  <img
-                    src={primaryPhoto}
+                  <Image
+                    src={primaryPhoto || DEFAULT_PROFILE_IMAGE}
                     alt={profileData.display_name || 'Profile photo'}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = DEFAULT_PROFILE_IMAGE
-                    }}
+                    fill
+                    sizes="96px"
+                    className="object-cover"
                   />
                   <button
                     type="button"

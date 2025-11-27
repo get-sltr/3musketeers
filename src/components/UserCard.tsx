@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 
 interface User {
   id: string
@@ -62,11 +63,13 @@ export default function UserCard({ user, onClick, onMessage, className = '' }: U
         {/* User Photo */}
         <div className="relative aspect-square overflow-hidden">
           {!imageError && user.photos?.[0] ? (
-            <img
+            <Image
               src={user.photos[0]}
               alt={`${user.display_name || user.username}`}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-              onError={handleImageError}
+              fill
+              sizes="(max-width: 768px) 50vw, 25vw"
+              className="object-cover transition-transform duration-300 group-hover:scale-110"
+              onError={() => handleImageError()}
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-cyan-500/20 to-pink-500/20 flex items-center justify-center">

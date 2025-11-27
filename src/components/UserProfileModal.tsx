@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { blockUser } from '@/lib/safety'
 import ReportModal from './ReportModal'
 import { recordTap } from '@/lib/profileTracking'
@@ -162,10 +163,13 @@ export default function UserProfileModal({
       {/* Full-screen photo gallery */}
       <div className="relative w-full h-full">
         {/* Current Photo */}
-        <img
+        <Image
           src={photos[currentPhotoIndex]}
           alt={user.username}
-          className="w-full h-full object-contain"
+          fill
+          sizes="100vw"
+          className="object-contain"
+          priority
         />
 
         {/* Top Left - Close button */}

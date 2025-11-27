@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import Image from 'next/image'
 import { DEFAULT_PROFILE_IMAGE } from '@/lib/utils/profile'
 
 interface User {
@@ -89,16 +90,12 @@ export default function ScrollableProfileCard({
     >
       {/* Main Photo */}
       <div className="relative h-full overflow-hidden">
-        <img
+        <Image
           src={user.photo || DEFAULT_PROFILE_IMAGE}
           alt={user.display_name || user.username}
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement
-            if (target.src !== window.location.origin + DEFAULT_PROFILE_IMAGE) {
-              target.src = DEFAULT_PROFILE_IMAGE
-            }
-          }}
+          fill
+          sizes="(max-width: 768px) 100vw, 50vw"
+          className="object-cover"
         />
         
         {/* Top Status Bar */}
