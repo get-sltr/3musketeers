@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, memo, useCallback } from 'react'
+import { useEffect, useRef, useState, memo, useCallback, useMemo } from 'react'
 import { createClient } from '../lib/supabase/client'
 import { createSLTRMapboxMarker, cleanupSLTRMarker } from './SLTRMapPin'
 import { resolveProfilePhoto } from '../lib/utils/profile'
@@ -168,13 +168,12 @@ interface MapViewSimpleProps {
   center?: [number, number] | null
 }
 
-// Create supabase client outside component to prevent re-creation on every render
-const supabase = createClient()
-
 function MapViewSimple({
   pinStyle = 1,
   center
 }: MapViewSimpleProps) {
+  // Create supabase client once per component instance (client-side only)
+  const supabase = useMemo(() => createClient(), [])
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<any>(null)
   const [users, setUsers] = useState<any[]>([])

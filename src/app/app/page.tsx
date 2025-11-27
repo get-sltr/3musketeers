@@ -547,13 +547,21 @@ export default function AppPage() {
               originLat = position.coords.latitude
               originLon = position.coords.longitude
               
-              await supabase
-                .from('profiles')
-                .update({
-                  latitude: originLat,
-                  longitude: originLon
-                })
-                .eq('id', session.user.id)
+              try {
+                const { error } = await supabase
+                  .from('profiles')
+                  .update({
+                    latitude: originLat,
+                    longitude: originLon
+                  })
+                  .eq('id', session.user.id)
+                
+                if (error) {
+                  console.error('Failed to update user location:', error)
+                }
+              } catch (err) {
+                console.error('Error updating location in database:', err)
+              }
               
               // Refresh users with new location
               const origin: [number, number] = [originLon, originLat]

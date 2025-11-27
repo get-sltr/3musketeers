@@ -34,7 +34,7 @@ const nextConfig = {
     // Remove console.log in production (keeps console.error and console.warn)
     if (process.env.NODE_ENV === 'production') {
       config.optimization.minimizer.forEach((minimizer) => {
-        if (minimizer.constructor.name === 'TerserPlugin') {
+        if (minimizer.constructor.name === 'TerserPlugin' && minimizer.options) {
           minimizer.options.terserOptions = {
             ...minimizer.options.terserOptions,
             compress: {

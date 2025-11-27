@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
               <!-- Main Content -->
               <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(57, 255, 20, 0.2); border-radius: 16px; padding: 32px; margin-bottom: 32px;">
                 <p style="color: #ffffff; font-size: 18px; line-height: 1.6; margin: 0 0 20px 0;">
-                  Hey${name || username ? ` ${name || username}` : ''}! 👋
+                  Hey ${name || username || 'there'}! 👋
                 </p>
 
                 <p style="color: rgba(255, 255, 255, 0.85); font-size: 15px; line-height: 1.7; margin: 0 0 20px 0;">
