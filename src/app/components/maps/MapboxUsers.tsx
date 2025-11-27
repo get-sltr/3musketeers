@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
-import '../../styles/map-view.css'
 import '../../styles/map-pin-drawer.css'
 import { getCurrentUserLocation } from '@/app/lib/maps/mapboxUtils'
 import { useMapRealtime } from '@/hooks/useMapRealtime'
