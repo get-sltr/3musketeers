@@ -172,9 +172,8 @@ function MapViewSimple({
   pinStyle = 1,
   center
 }: MapViewSimpleProps) {
-  // Create supabase client per render to ensure fresh auth state
-  // Supabase client handles internal caching, so this is safe
-  const supabase = createClient()
+  // Create supabase client once per component instance
+  const supabase = useMemo(() => createClient(), [])
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<any>(null)
   const [users, setUsers] = useState<any[]>([])
@@ -282,7 +281,7 @@ function MapViewSimple({
       isMounted = false
       clearInterval(interval)
     }
-  }, [supabase])
+  }, [])
 
   // Initialize map - ONLY ONCE on mount
   const mapInitialized = useRef(false)

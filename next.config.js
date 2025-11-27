@@ -39,7 +39,6 @@ const nextConfig = {
             ...minimizer.options.terserOptions,
             compress: {
               ...minimizer.options.terserOptions?.compress,
-              drop_console: false, // Keep console.error/warn
               pure_funcs: ['console.log', 'console.debug', 'console.info'], // Remove only these
             },
           }

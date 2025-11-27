@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { blockUser } from '@/lib/safety'
@@ -59,7 +59,7 @@ export default function UserProfileModal({
   const [viewLimitReached, setViewLimitReached] = useState(false)
   const [viewsRemaining, setViewsRemaining] = useState<number | null>(null)
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   // 🔒 Track profile view for usage limits (free tier)
   useEffect(() => {
@@ -86,7 +86,7 @@ export default function UserProfileModal({
     }
 
     trackProfileView()
-  }, [isOpen, user?.id, isOwnProfile, supabase])
+  }, [isOpen, user?.id, isOwnProfile])
 
   if (!isOpen || !user) return null
 
