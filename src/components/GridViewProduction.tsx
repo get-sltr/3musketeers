@@ -143,40 +143,56 @@ export default function GridViewProduction({
     }
   }, [propsUsers])
   
-  // 4. Auto-refresh every 15 seconds for real-time updates
+  // 4. Auto-refresh every 60 seconds (real-time subscription handles immediate updates)
   useEffect(() => {
-    // Don't auto-refresh if we've shown location error
     if (locationErrorShown) return
     
     const interval = setInterval(() => {
-      console.log('🔄 Auto-refreshing grid...')
       fetchGridUsers()
       setLastRefresh(new Date())
-    }, 15000) // 15 seconds
+    }, 60000) // 60 seconds - reduced frequency since real-time handles updates
 
     return () => clearInterval(interval)
   }, [locationErrorShown])
   
-  // 5. Subscribe to real-time profile updates
+  // 5. Subscribe to real-time profile updates - optimized to update in place
   useEffect(() => {
+    let debounceTimer: NodeJS.Timeout | null = null
+    
     const channel = supabase
       .channel('grid-updates')
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'UPDATE',
           schema: 'public',
           table: 'profiles',
         },
         (payload) => {
-          console.log('📡 Real-time update:', payload)
-          // Refresh grid when any profile changes
-          fetchGridUsers()
+          // Update only the changed profile in state instead of full refetch
+          const updatedProfile = payload.new as UserGridProfile
+          setUsers(prev => prev.map(user => 
+            user.id === updatedProfile.id ? { ...user, ...updatedProfile } : user
+          ))
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'profiles',
+        },
+        () => {
+          // Debounce new user inserts - don't fetch immediately
+          if (debounceTimer) clearTimeout(debounceTimer)
+          debounceTimer = setTimeout(() => fetchGridUsers(), 5000)
         }
       )
       .subscribe()
 
     return () => {
+      if (debounceTimer) clearTimeout(debounceTimer)
       supabase.removeChannel(channel)
     }
   }, [])
