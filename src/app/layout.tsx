@@ -99,11 +99,26 @@ export default async function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
 
-        {/* Mapbox GL JS CDN - async to prevent render blocking */}
+        {/* Preconnect to external domains for faster loading */}
+        <link rel="preconnect" href="https://api.mapbox.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://bnzyzkmixfmylviaojbj.supabase.co" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://api.mapbox.com" />
+        <link rel="dns-prefetch" href="https://bnzyzkmixfmylviaojbj.supabase.co" />
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+
+        {/* Mapbox CSS - loaded with low priority to not block render */}
         <link 
           href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" 
           rel="stylesheet"
+          media="print"
+          // @ts-ignore - media swap trick for non-blocking CSS
+          onLoad={(e: React.SyntheticEvent<HTMLLinkElement>) => { 
+            (e.target as HTMLLinkElement).media = 'all' 
+          }}
         />
+
+        {/* Mapbox JS - async loading */}
         <script 
           src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"
           async

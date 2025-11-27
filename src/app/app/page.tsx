@@ -897,7 +897,24 @@ export default function AppPage() {
   if (loading) {
     return (
       <MobileLayout>
-        <LoadingSkeleton variant="fullscreen" />
+        <div className="min-h-screen bg-[#0a0a0f]">
+          {/* Skeleton header - matches AnimatedHeader dimensions */}
+          <div className="fixed top-0 left-0 right-0 z-40 h-14 bg-[#0a0a0f]/90 backdrop-blur-xl" />
+          
+          {/* Skeleton grid - matches actual grid layout to prevent CLS */}
+          <div className="pt-14" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}>
+            <div className="grid grid-cols-3 gap-0.5 bg-black p-0.5">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="relative aspect-[3/4] overflow-hidden bg-gray-900">
+                  <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-gray-800 via-gray-700 to-gray-800" />
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Skeleton bottom nav */}
+          <div className="fixed bottom-0 left-0 right-0 h-20 bg-[#0a0a0f]/90 backdrop-blur-xl" />
+        </div>
       </MobileLayout>
     )
   }
