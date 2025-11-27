@@ -5,7 +5,17 @@ import type { ReactNode } from 'react'
 import { createClient } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import AlbumsManager from '../../components/AlbumsManager'
+import dynamic from 'next/dynamic'
+
+// Dynamic import for heavy album component
+const AlbumsManager = dynamic(() => import('../../components/AlbumsManager'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-32 bg-white/5 rounded-xl animate-pulse flex items-center justify-center">
+      <span className="text-white/40 text-sm">Loading albums...</span>
+    </div>
+  )
+})
 import { DEFAULT_PROFILE_IMAGE } from '@/lib/utils/profile'
 
 interface Album {

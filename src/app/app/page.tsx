@@ -54,8 +54,17 @@ import MobileLayout from '../../components/MobileLayout'
 import LoadingSkeleton from '../../components/LoadingSkeleton'
 import { LazyGridView } from '../../components/LazyWrapper'
 import GridViewProduction from '../../components/GridViewProduction'
-import MapViewSimple from '../../components/MapViewSimple'
 import dynamic from 'next/dynamic'
+
+// Dynamic imports for heavy components (reduces initial bundle)
+const MapViewSimple = dynamic(() => import('../../components/MapViewSimple'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full bg-[#0a0a0f] flex items-center justify-center">
+      <div className="text-white/40 text-sm">Loading map...</div>
+    </div>
+  )
+})
 import AnimatedHeader from '../../components/AnimatedHeader'
 import GradientBackground from '../../components/GradientBackground'
 import ErosDailyMatchesStrip from '../../components/ErosDailyMatchesStrip'
@@ -63,14 +72,16 @@ import UserProfileCard from '../components/UserProfileCard'
 import MapControls from '../components/MapControls'
 import MapSessionMenu from '../components/MapSessionMenu'
 import CornerButtons from '../components/CornerButtons'
-import MessagingModal from '../../components/MessagingModal'
 import BottomNav from '../../components/BottomNav'
-import PlaceModal from '../components/PlaceModal'
-import GroupModal from '../components/GroupModal'
 import UserAdvertisingPanel from '../components/UserAdvertisingPanel'
 import LocationSearch from '../components/LocationSearch'
-import WelcomeModal from '../../components/WelcomeModal'
-import ErosOnboardingModal from '../../components/ErosOnboardingModal'
+
+// Dynamic imports for modals (loaded only when needed)
+const MessagingModal = dynamic(() => import('../../components/MessagingModal'), { ssr: false })
+const PlaceModal = dynamic(() => import('../components/PlaceModal'), { ssr: false })
+const GroupModal = dynamic(() => import('../components/GroupModal'), { ssr: false })
+const WelcomeModal = dynamic(() => import('../../components/WelcomeModal'), { ssr: false })
+const ErosOnboardingModal = dynamic(() => import('../../components/ErosOnboardingModal'), { ssr: false })
 import { ErosFloatingButton } from '../../components/ErosFloatingButton'
 import AppTour, { useAppTour, APP_TOUR_STEPS } from '../../components/AppTour'
 import '../../styles/mobile-optimization.css'
