@@ -1,11 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Orbitron } from 'next/font/google';
+import dynamic from 'next/dynamic';
 import "./globals.css";
 import '../styles/SLTRMapPin.css';
 import ClientProviders from '@/components/ClientProviders';
-import NotificationPrompt from '@/components/NotificationPrompt';
-import AdminDashboard from '@/components/AdminDashboard';
-// import TwoFactorSetup from '@/components/TwoFactorSetup'; // Temporarily disabled - causing login issues
+
+// Lazy load non-critical components to improve initial load
+const NotificationPrompt = dynamic(() => import('@/components/NotificationPrompt'), { ssr: false });
+const AdminDashboard = dynamic(() => import('@/components/AdminDashboard'), { ssr: false });
 
 // Optimized font loading - eliminates render-blocking requests
 const inter = Inter({
@@ -107,21 +109,16 @@ export default async function RootLayout({
         <link rel="dns-prefetch" href="https://bnzyzkmixfmylviaojbj.supabase.co" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
 
-        {/* Mapbox CSS - loaded with low priority to not block render */}
+        {/* Mapbox resources - deferred to not block initial render */}
         <link 
           href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" 
           rel="stylesheet"
-          media="print"
-          // @ts-ignore - media swap trick for non-blocking CSS
-          onLoad={(e: React.SyntheticEvent<HTMLLinkElement>) => { 
-            (e.target as HTMLLinkElement).media = 'all' 
-          }}
+          fetchPriority="low"
         />
-
-        {/* Mapbox JS - async loading */}
         <script 
           src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"
           async
+          defer
         />
       </head>
       <body className={`${inter.variable} ${orbitron.variable} antialiased font-sans touch-pan-y overscroll-none`}>
