@@ -5,11 +5,11 @@ import { useState } from 'react'
 interface GroupModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (payload: { title: string; time: string; description?: string }) => Promise<void>
+  onSave: (payload: { name: string; time: string; description?: string }) => Promise<void>
 }
 
 export default function GroupModal({ isOpen, onClose, onSave }: GroupModalProps) {
-  const [title, setTitle] = useState('')
+  const [name, setName] = useState('')
   const [time, setTime] = useState('')
   const [description, setDescription] = useState('')
   const [saving, setSaving] = useState(false)
@@ -24,8 +24,8 @@ export default function GroupModal({ isOpen, onClose, onSave }: GroupModalProps)
           <button onClick={onClose} className="text-white/60 hover:text-white">✕</button>
         </div>
         <div>
-          <label className="text-sm text-white/70">Title</label>
-          <input value={title} onChange={e=>setTitle(e.target.value)} className="mt-1 w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 outline-none focus:border-cyan-400"/>
+          <label className="text-sm text-white/70">Group Name</label>
+          <input value={name} onChange={e=>setName(e.target.value)} className="mt-1 w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 outline-none focus:border-cyan-400"/>
         </div>
         <div>
           <label className="text-sm text-white/70">Time</label>
@@ -35,7 +35,7 @@ export default function GroupModal({ isOpen, onClose, onSave }: GroupModalProps)
           <label className="text-sm text-white/70">Description</label>
           <textarea value={description} onChange={e=>setDescription(e.target.value)} rows={3} className="mt-1 w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 outline-none focus:border-cyan-400"/>
         </div>
-        <button disabled={saving} onClick={async()=>{ setSaving(true); try { await onSave({ title, time, description }); onClose(); } finally { setSaving(false); } }} className="w-full py-2 rounded-xl bg-indigo-600/30 border border-indigo-400/40 hover:bg-indigo-600/40 transition disabled:opacity-50">{saving?'Publishing…':'Publish Group'}</button>
+        <button disabled={saving} onClick={async()=>{ setSaving(true); try { await onSave({ name, time, description }); onClose(); } finally { setSaving(false); } }} className="w-full py-2 rounded-xl bg-indigo-600/30 border border-indigo-400/40 hover:bg-indigo-600/40 transition disabled:opacity-50">{saving?'Publishing…':'Publish Group'}</button>
       </div>
     </div>
   )

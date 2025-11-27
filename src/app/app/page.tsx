@@ -1078,14 +1078,14 @@ export default function AppPage() {
       <GroupModal
         isOpen={isHostingGroup}
         onClose={() => toggleHostingGroup(false)}
-        onSave={async ({ title, time, description }) => {
+        onSave={async ({ name: groupName, time, description }) => {
           const supabase = createClient()
           try {
             const { data: { user } } = await supabase.auth.getUser()
             const { data, error } = await supabase
               .from('groups')
               .insert({
-                title,
+                name: groupName,
                 time,
                 description,
                 host_id: user?.id || null,

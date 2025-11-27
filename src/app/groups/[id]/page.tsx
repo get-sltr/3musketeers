@@ -227,7 +227,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                   </svg>
                 </button>
                 <div>
-                  <h1 className="text-white text-lg font-bold">{group.title || group.name}</h1>
+                  <h1 className="text-white text-lg font-bold">{group.name || group.title}</h1>
                   {activeChannel && (
                     <p className="text-white/60 text-sm">#{activeChannel.name}</p>
                   )}
@@ -357,7 +357,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
             <div className="text-center">
               <div className="text-6xl mb-4">📹</div>
               <h2 className="text-white text-xl font-bold mb-2">
-                {group.title || group.name}
+                {group.name || group.title}
               </h2>
               <p className="text-white/60 mb-6">
                 {group.description || 'Join a channel to start chatting or connect via video/voice'}
