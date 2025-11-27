@@ -8,6 +8,8 @@ import ReportModal from './ReportModal'
 import { recordTap } from '@/lib/profileTracking'
 import { createClient } from '@/lib/supabase/client'
 
+const DEFAULT_PHOTO_PLACEHOLDER = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23222" width="100" height="100"/%3E%3Ctext fill="%23aaa" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"%3E?%3C/text%3E%3C/svg%3E'
+
 interface User {
   id: string
   username: string
@@ -117,7 +119,8 @@ export default function UserProfileModal({
     )
   }
 
-  const photos: string[] = (user.photos?.length ?? 0) > 0 ? user.photos! : ['data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23222" width="100" height="100"/%3E%3Ctext fill="%23aaa" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"%3E?%3C/text%3E%3C/svg%3E']
+  const photos: string[] = (user.photos?.length ?? 0) > 0 ? user.photos! : [DEFAULT_PHOTO_PLACEHOLDER]
+  const currentPhotoSrc = photos[currentPhotoIndex] ?? DEFAULT_PHOTO_PLACEHOLDER
 
   const handleMessage = async () => {
     try {
@@ -164,7 +167,7 @@ export default function UserProfileModal({
       <div className="relative w-full h-full">
         {/* Current Photo */}
         <Image
-          src={photos[currentPhotoIndex] ?? photos[0]}
+          src={currentPhotoSrc}
           alt={user.username}
           fill
           sizes="100vw"
