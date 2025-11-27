@@ -164,7 +164,7 @@ export default function UserProfileModal({
       <div className="relative w-full h-full">
         {/* Current Photo */}
         <Image
-          src={photos[currentPhotoIndex]}
+          src={photos[currentPhotoIndex] ?? photos[0]}
           alt={user.username}
           fill
           sizes="100vw"
