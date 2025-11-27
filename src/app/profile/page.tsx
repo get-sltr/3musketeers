@@ -401,7 +401,7 @@ export default function ProfilePage() {
       setError(null)
 
       // Create image to check/resize
-      const img = new Image()
+      const img = new window.Image()
       const reader = new FileReader()
 
       const processedFile = await new Promise<File>((resolve, reject) => {
