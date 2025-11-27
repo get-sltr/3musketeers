@@ -114,51 +114,11 @@ export default function GridViewProduction({
 
   // --- DATA FETCHING ---
 
-  // 1. Fetch current user's profile photo
-  useEffect(() => {
-    const loadCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('photos, photo_url')
-        .eq('id', user.id)
-        .single()
-      
-      if (profile) {
-        const photo = resolveProfilePhoto(profile.photo_url, profile.photos)
-        setCurrentUserPhoto(photo || DEFAULT_PROFILE_IMAGE)
-      }
-    }
-    loadCurrentUser()
-  }, [])
-  
-  // 2. Sync internal state with props if provided
-  useEffect(() => {
-    if (propsUsers.length > 0) {
-      setUsers(propsUsers)
-    } else {
-      fetchGridUsers()
-    }
-  }, [propsUsers, fetchGridUsers])
-  
-  // 4. Auto-refresh every 60 seconds (real-time subscription handles immediate updates)
-  useEffect(() => {
-    if (locationErrorShown) return
-    
-    const interval = setInterval(() => {
-      fetchGridUsers()
-      setLastRefresh(new Date())
-    }, 60000) // 60 seconds - reduced frequency since real-time handles updates
-
-    return () => clearInterval(interval)
-  }, [locationErrorShown, fetchGridUsers])
-  
   // Store latest fetchGridUsers in ref to avoid stale closure
   const fetchGridUsersRef = useRef<() => Promise<void>>()
   
   // Convert fetchGridUsers to useCallback to ensure stable reference
+  // Defined early so it can be used in useEffect hooks below
   const fetchGridUsers = useCallback(async () => {
     try {
       const { data: { user: currentUser } } = await supabase.auth.getUser()
@@ -284,6 +244,47 @@ export default function GridViewProduction({
     fetchGridUsersRef.current = fetchGridUsers
   }, [fetchGridUsers])
 
+  // 1. Fetch current user's profile photo
+  useEffect(() => {
+    const loadCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('photos, photo_url')
+        .eq('id', user.id)
+        .single()
+      
+      if (profile) {
+        const photo = resolveProfilePhoto(profile.photo_url, profile.photos)
+        setCurrentUserPhoto(photo || DEFAULT_PROFILE_IMAGE)
+      }
+    }
+    loadCurrentUser()
+  }, [])
+  
+  // 2. Sync internal state with props if provided
+  useEffect(() => {
+    if (propsUsers.length > 0) {
+      setUsers(propsUsers)
+    } else {
+      fetchGridUsers()
+    }
+  }, [propsUsers, fetchGridUsers])
+  
+  // 4. Auto-refresh every 60 seconds (real-time subscription handles immediate updates)
+  useEffect(() => {
+    if (locationErrorShown) return
+    
+    const interval = setInterval(() => {
+      fetchGridUsers()
+      setLastRefresh(new Date())
+    }, 60000) // 60 seconds - reduced frequency since real-time handles updates
+
+    return () => clearInterval(interval)
+  }, [locationErrorShown, fetchGridUsers])
+
   // 5. Subscribe to real-time profile updates - optimized to update in place
   useEffect(() => {
     let debounceTimer: NodeJS.Timeout | null = null
@@ -335,7 +336,7 @@ export default function GridViewProduction({
     if (selectedUser) {
       fetchFullProfile(selectedUser.id)
     }
-  }, [selectedUser, fetchGridUsers])
+  }, [selectedUser])
 
 
   // This function is new and runs on-demand
