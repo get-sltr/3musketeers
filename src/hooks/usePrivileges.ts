@@ -112,8 +112,11 @@ export function useUserProfile() {
                   filter: `id=eq.${user.id}`
                 },
                 (payload) => {
+                  if (!isMounted) return
                   console.log('🔓 Profile updated - refreshing subscription status:', payload.new)
+                  // Invalidate cache for all instances, then reload
                   invalidateProfileCache(user.id)
+                  // Force reload to ensure all hook instances get fresh data
                   loadProfile(true)
                 }
               )

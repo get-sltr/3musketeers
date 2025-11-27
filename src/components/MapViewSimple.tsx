@@ -172,8 +172,9 @@ function MapViewSimple({
   pinStyle = 1,
   center
 }: MapViewSimpleProps) {
-  // Create supabase client once per component instance (client-side only)
-  const supabase = useMemo(() => createClient(), [])
+  // Create supabase client per render to ensure fresh auth state
+  // Supabase client handles internal caching, so this is safe
+  const supabase = createClient()
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<any>(null)
   const [users, setUsers] = useState<any[]>([])
@@ -289,6 +290,12 @@ function MapViewSimple({
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
   
   useEffect(() => {
+    // Clear any pending timeout FIRST to prevent race conditions
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+      timeoutRef.current = null
+    }
+    
     // Reset mounted state on each mount
     isMountedRef.current = true
     

@@ -13,7 +13,7 @@
  * - Optimistic UI for blocking/favoriting.
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createClient } from '../lib/supabase/client'
@@ -141,7 +141,7 @@ export default function GridViewProduction({
     } else {
       fetchGridUsers()
     }
-  }, [propsUsers])
+  }, [propsUsers, fetchGridUsers])
   
   // 4. Auto-refresh every 60 seconds (real-time subscription handles immediate updates)
   useEffect(() => {
@@ -153,58 +153,13 @@ export default function GridViewProduction({
     }, 60000) // 60 seconds - reduced frequency since real-time handles updates
 
     return () => clearInterval(interval)
-  }, [locationErrorShown])
+  }, [locationErrorShown, fetchGridUsers])
   
-  // 5. Subscribe to real-time profile updates - optimized to update in place
-  useEffect(() => {
-    let debounceTimer: NodeJS.Timeout | null = null
-    
-    const channel = supabase
-      .channel('grid-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'profiles',
-        },
-        (payload) => {
-          // Update only the changed profile in state instead of full refetch
-          const updatedProfile = payload.new as UserGridProfile
-          setUsers(prev => prev.map(user => 
-            user.id === updatedProfile.id ? { ...user, ...updatedProfile } : user
-          ))
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'profiles',
-        },
-        () => {
-          // Debounce new user inserts - don't fetch immediately
-          if (debounceTimer) clearTimeout(debounceTimer)
-          debounceTimer = setTimeout(() => fetchGridUsers(), 5000)
-        }
-      )
-      .subscribe()
-
-    return () => {
-      if (debounceTimer) clearTimeout(debounceTimer)
-      supabase.removeChannel(channel)
-    }
-  }, [])
-
-  // 3. Fetch the full profile *only* when a user is selected
-  useEffect(() => {
-    if (selectedUser) {
-      fetchFullProfile(selectedUser.id)
-    }
-  }, [selectedUser])
-
-  async function fetchGridUsers() {
+  // Store latest fetchGridUsers in ref to avoid stale closure
+  const fetchGridUsersRef = useRef<() => Promise<void>>()
+  
+  // Convert fetchGridUsers to useCallback to ensure stable reference
+  const fetchGridUsers = useCallback(async () => {
     try {
       const { data: { user: currentUser } } = await supabase.auth.getUser()
       if (!currentUser) return
@@ -277,14 +232,9 @@ export default function GridViewProduction({
             }
             
             data = fallbackData.map((p: any) => {
-              const distanceMiles = haversineDistance(profile.latitude, profile.longitude, p.latitude, p.longitude)
-              return {
-                ...p,
-                distance_miles: distanceMiles,
-                is_self: p.id === currentUser.id
-              }
-            }).filter((p: any) => p.distance_miles <= 10 && p.id !== currentUser.id)
-              .sort((a: any, b: any) => a.distance_miles - b.distance_miles)
+              const distance = haversineDistance(profile.latitude, profile.longitude, p.latitude, p.longitude)
+              return { ...p, distance_miles: distance }
+            }).filter((p: any) => p.distance_miles <= 10).slice(0, 50)
           } else {
             error = fallbackError
           }
@@ -293,44 +243,100 @@ export default function GridViewProduction({
         }
       }
 
-      // If we have data (from RPC or fallback), use it
-      if (data && data.length > 0) {
-        // Filter and transform data
-        const filteredUsers = data
-          .filter((u: any) => u.id !== currentUser.id) // Exclude self
-          .map((u: any) => ({
-            id: u.id,
-            display_name: u.display_name || 'Anonymous',
-            photo_url: u.photo_url || u.photos?.[0] || null,
-            photos: u.photos || [],
-            age: u.age,
-            position: u.position,
-            dtfn: u.dtfn,
-            party_friendly: u.party_friendly,
-            distance_miles: u.distance_miles,
-            is_online: u.is_online,
-          }))
+      if (data && Array.isArray(data)) {
+        // Transform to UserGridProfile format
+        const transformedUsers: UserGridProfile[] = data.map((u: any) => ({
+          id: u.id,
+          display_name: u.display_name || u.username || 'Member',
+          username: u.username || '',
+          photo_url: u.photo_url,
+          photos: Array.isArray(u.photos) ? u.photos : (u.photo_url ? [u.photo_url] : []),
+          is_online: u.is_online || false,
+          dtfn: u.dtfn || false,
+          party_friendly: u.party_friendly || false,
+          distance_miles: u.distance_miles || 0,
+          founder_number: u.founder_number,
+          about: u.about,
+          kinks: u.kinks,
+          tags: u.tags,
+          position: u.position,
+          age: u.age,
+        }))
 
-        setUsers(filteredUsers)
+        setUsers(transformedUsers)
+        setGridLoading(false)
       } else if (error) {
-        // Only show error if both RPC and fallback failed
-        console.error('Error fetching nearby profiles (both RPC and fallback failed):', error)
-        // Don't show toast - just set empty array
+        console.error('Failed to fetch users:', error)
         setUsers([])
       } else {
-        // No data and no error - set empty array
         setUsers([])
       }
-    } catch (error: any) {
-      // Only log unexpected errors (not RPC failures which are handled above)
-      if (!error?.message?.includes('RPC') && !error?.message?.includes('get_nearby_profiles')) {
-        console.error('Unexpected error fetching grid users:', error)
-      }
+    } catch (err) {
+      console.error('Error in fetchGridUsers:', err)
       setUsers([])
     } finally {
       setGridLoading(false)
     }
-  }
+  }, [supabase, locationErrorShown])
+  
+  // Update ref whenever fetchGridUsers changes
+  useEffect(() => {
+    fetchGridUsersRef.current = fetchGridUsers
+  }, [fetchGridUsers])
+
+  // 5. Subscribe to real-time profile updates - optimized to update in place
+  useEffect(() => {
+    let debounceTimer: NodeJS.Timeout | null = null
+    
+    const channel = supabase
+      .channel('grid-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+        },
+        (payload) => {
+          // Update only the changed profile in state instead of full refetch
+          const updatedProfile = payload.new as UserGridProfile
+          setUsers(prev => prev.map(user => 
+            user.id === updatedProfile.id ? { ...user, ...updatedProfile } : user
+          ))
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'profiles',
+        },
+        () => {
+          // Debounce new user inserts - use ref to get latest function
+          if (debounceTimer) clearTimeout(debounceTimer)
+          debounceTimer = setTimeout(() => {
+            if (fetchGridUsersRef.current) {
+              fetchGridUsersRef.current()
+            }
+          }, 5000)
+        }
+      )
+      .subscribe()
+
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer)
+      supabase.removeChannel(channel)
+    }
+  }, [supabase])
+
+  // 3. Fetch the full profile *only* when a user is selected
+  useEffect(() => {
+    if (selectedUser) {
+      fetchFullProfile(selectedUser.id)
+    }
+  }, [selectedUser, fetchGridUsers])
+
 
   // This function is new and runs on-demand
   async function fetchFullProfile(userId: string) {

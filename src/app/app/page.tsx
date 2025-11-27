@@ -159,6 +159,7 @@ export default function AppPage() {
   const [showTour, setShowTour] = useState(false)
   const fetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const locationRequestedRef = useRef(false)
+  const geolocationMountedRef = useRef(true)
   
   // Use Zustand store for map session state
   const {
@@ -541,31 +542,37 @@ export default function AppPage() {
         locationRequestedRef.current = true // Prevent multiple requests
         console.log('📍 No location found, requesting permission...')
         if (navigator.geolocation) {
+          // Reset mounted state for this geolocation request
+          geolocationMountedRef.current = true
+          
           navigator.geolocation.getCurrentPosition(
             async (position) => {
+              // Check if component is still mounted before proceeding
+              if (!geolocationMountedRef.current) return
+              
               console.log('✅ Location granted:', position.coords.latitude, position.coords.longitude)
-              originLat = position.coords.latitude
-              originLon = position.coords.longitude
+              const lat = position.coords.latitude
+              const lon = position.coords.longitude
               
               try {
                 const { error } = await supabase
                   .from('profiles')
                   .update({
-                    latitude: originLat,
-                    longitude: originLon
+                    latitude: lat,
+                    longitude: lon
                   })
                   .eq('id', session.user.id)
                 
                 if (error) {
                   console.error('Failed to update user location:', error)
+                } else if (geolocationMountedRef.current) {
+                  // Only refresh if still mounted
+                  const origin: [number, number] = [lon, lat]
+                  await fetchUsers(session.user.id, origin, { immediate: true })
                 }
               } catch (err) {
                 console.error('Error updating location in database:', err)
               }
-              
-              // Refresh users with new location
-              const origin: [number, number] = [originLon, originLat]
-              await fetchUsers(session.user.id, origin, { immediate: true })
             },
             (error) => {
               console.warn('⚠️ Location denied or unavailable:', error)
@@ -585,6 +592,11 @@ export default function AppPage() {
       }
     }
     checkAuth()
+    
+    // Cleanup: Mark as unmounted to prevent callbacks on unmounted component
+    return () => {
+      geolocationMountedRef.current = false
+    }
   }, [router, fetchUsers])
 
   // Re-fetch when radius or travel mode changes

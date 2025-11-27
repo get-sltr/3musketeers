@@ -467,8 +467,14 @@ export default function ProfilePage() {
         .upload(filePath, processedFile)
 
       if (uploadError) {
-        console.error('Upload error:', uploadError)
-        setError(`Upload failed: ${uploadError.message}`)
+        // Check if error is due to RLS policy mismatch
+        if (uploadError.message?.includes('permission') || uploadError.message?.includes('policy')) {
+          setError(`Upload failed: Permission denied. Please check your storage permissions or contact support.`)
+          console.error('RLS policy error - path may not match policy:', filePath, uploadError)
+        } else {
+          console.error('Upload error:', uploadError)
+          setError(`Upload failed: ${uploadError.message}`)
+        }
         return
       }
 

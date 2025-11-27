@@ -30,7 +30,7 @@ export default function AnimatedHeader({ viewMode, onViewModeChange }: AnimatedH
 
   return (
     <motion.header
-      className="fixed top-0 w-full z-30 transition-all duration-300 min-h-[56px]"
+      className="fixed top-0 w-full z-30 min-h-[56px]"
       style={{
         background: isScrolled
           ? 'linear-gradient(180deg, rgba(10, 10, 15, 0.98) 0%, rgba(26, 10, 46, 0.95) 100%)'
