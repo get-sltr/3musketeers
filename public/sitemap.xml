@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+  <!-- Homepage -->
+  <url>
+    <loc>https://www.getsltr.com</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.getsltr.com"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.getsltr.com/es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://www.getsltr.com/fr"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://www.getsltr.com/pt"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://www.getsltr.com/vi"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://www.getsltr.com/zh"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.getsltr.com"/>
+    <lastmod>2025-01-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Login -->
+  <url>
+    <loc>https://www.getsltr.com/login</loc>
+    <lastmod>2025-01-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Signup -->
+  <url>
+    <loc>https://www.getsltr.com/signup</loc>
+    <lastmod>2025-01-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Privacy Policy -->
+  <url>
+    <loc>https://www.getsltr.com/privacy</loc>
+    <lastmod>2025-01-01</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <!-- Terms of Service -->
+  <url>
+    <loc>https://www.getsltr.com/terms</loc>
+    <lastmod>2025-01-01</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+</urlset>

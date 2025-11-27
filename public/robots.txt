@@ -1,0 +1,17 @@
+# SLTR Robots.txt
+# https://www.getsltr.com
+
+User-agent: *
+Allow: /
+
+# Disallow admin and API routes
+Disallow: /admin
+Disallow: /api/
+Disallow: /_next/
+Disallow: /auth/callback
+
+# Sitemap
+Sitemap: https://www.getsltr.com/sitemap.xml
+
+# Crawl-delay for politeness
+Crawl-delay: 1
