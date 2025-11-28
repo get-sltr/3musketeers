@@ -24,7 +24,6 @@ const FOUNDER_LIMIT = 2000
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = getSupabase()
     const { searchParams } = new URL(request.url)
     const action = searchParams.get('action')
 
@@ -57,8 +56,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = getSupabase()
-    const stripe = getStripe()
     const { priceType, userId, email } = await request.json()
 
     if (!priceType || !userId || !email) {
@@ -67,8 +64,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-
-    const supabase = getSupabaseClient()
 
     // Check if user has a profile (optional)
     const { data: user } = await supabase
