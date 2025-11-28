@@ -29,10 +29,16 @@ export async function getCsrfToken(): Promise<string> {
     }
 
     const data = await response.json()
-    cachedToken = data.token
+    const token = data.token as string
+
+    if (!token) {
+      throw new Error('Invalid CSRF token received from server')
+    }
+
+    cachedToken = token
     tokenExpiry = now + (60 * 60 * 1000) // Cache for 1 hour
 
-    return cachedToken
+    return token
   } catch (error) {
     console.error('Error fetching CSRF token:', error)
     throw error
