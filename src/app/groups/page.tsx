@@ -6,10 +6,12 @@ import Link from 'next/link'
 import { createClient } from '../../lib/supabase/client'
 import BottomNav from '../../components/BottomNav'
 import MobileLayout from '../../components/MobileLayout'
+import { useHasFeature } from '@/hooks/usePrivileges'
+import UpgradePrompt from '@/components/UpgradePrompt'
 
 interface Group {
   id: string
-  title: string
+  name: string
   description?: string
   created_at: string
 }
@@ -19,9 +21,13 @@ export default function GroupsPage() {
   const [loading, setLoading] = useState(true)
   const [groups, setGroups] = useState<Group[]>([])
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [groupTitle, setGroupTitle] = useState('')
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
+  const [groupName, setGroupName] = useState('')
   const [groupDescription, setGroupDescription] = useState('')
   const [creating, setCreating] = useState(false)
+  
+  // 🔒 Check if user can create/join groups (Plus only)
+  const { allowed: canCreateGroups, loading: privilegeLoading } = useHasFeature('create_groups')
 
   useEffect(() => {
     const init = async () => {
@@ -50,10 +56,10 @@ export default function GroupsPage() {
       
       if (response.ok) {
         const data = await response.json()
-        console.log('✅ THE CLUB setup:', data.message)
+        console.log('✅ The Club sltr setup:', data.message)
       }
     } catch (error) {
-      console.error('Error setting up THE CLUB:', error)
+      console.error('Error setting up The Club sltr:', error)
     }
   }
 
@@ -71,7 +77,7 @@ export default function GroupsPage() {
 
   const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!groupTitle.trim()) return
+    if (!groupName.trim()) return
 
     setCreating(true)
     try {
@@ -82,7 +88,7 @@ export default function GroupsPage() {
       const { error } = await supabase
         .from('groups')
         .insert({
-          title: groupTitle.trim(),
+          name: groupName.trim(),
           description: groupDescription.trim() || null,
           host_id: user.id,
         })
@@ -95,7 +101,7 @@ export default function GroupsPage() {
 
       await loadGroups()
       setShowCreateModal(false)
-      setGroupTitle('')
+      setGroupName('')
       setGroupDescription('')
     } catch (err: any) {
       console.error('Error:', err)
@@ -127,9 +133,16 @@ export default function GroupsPage() {
                 <p className="text-white/60 text-sm">Connect with your community</p>
               </div>
               <button
-                onClick={() => setShowCreateModal(true)}
-                className="px-4 py-2 rounded-xl bg-lime-400 text-black text-sm font-semibold hover:scale-105 transition-all"
+                onClick={() => {
+                  if (canCreateGroups) {
+                    setShowCreateModal(true)
+                  } else {
+                    setShowUpgradePrompt(true)
+                  }
+                }}
+                className="px-4 py-2 rounded-xl bg-lime-400 text-black text-sm font-semibold hover:scale-105 transition-all flex items-center gap-2"
               >
+                {!canCreateGroups && <span>🔒</span>}
                 + Create Group
               </button>
             </div>
@@ -157,62 +170,59 @@ export default function GroupsPage() {
           <div className="px-4 py-4 space-y-3">
             <h2 className="text-white/60 text-xs uppercase mb-2">Your Groups</h2>
             {groups.map((group) => (
-              <div
+              <Link
                 key={group.id}
-                className="p-4 bg-black/40 border border-white/10 rounded-xl hover:border-lime-400/40 transition"
+                href={`/groups/${group.id}`}
+                className="block p-4 bg-black/40 border border-white/10 rounded-xl hover:border-lime-400/40 transition"
               >
-                <h3 className="text-white font-medium">{group.title}</h3>
-                {group.description && (
-                  <p className="text-white/60 text-sm mt-1">{group.description}</p>
-                )}
-              </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-white font-medium">{group.name}</h3>
+                    {group.description && (
+                      <p className="text-white/60 text-sm mt-1 line-clamp-2">{group.description}</p>
+                    )}
+                  </div>
+                  <div className="text-lime-400/60">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </Link>
             ))}
           </div>
         )}
 
-        {/* Coming Soon Content */}
-        <div className="flex-1 flex items-center justify-center px-4 py-12">
-          <div className="text-center max-w-md">
-            <div className="text-6xl mb-6">👥</div>
-            <h2 className="text-white text-3xl font-bold mb-4">Groups Coming Soon</h2>
-            <p className="text-white/60 text-lg mb-8">
-              Join group chats, events, and connect with your local community. This feature is launching soon!
-            </p>
-            
-            {/* Feature Preview Cards */}
-            <div className="space-y-4 text-left">
-              <div className="glass-bubble p-4">
-                <div className="flex items-start gap-3">
-                  <div className="text-2xl">💬</div>
-                  <div>
-                    <h3 className="text-white font-semibold mb-1">Group Chats</h3>
-                    <p className="text-white/60 text-sm">Chat with multiple people at once</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="glass-bubble p-4">
-                <div className="flex items-start gap-3">
-                  <div className="text-2xl">📍</div>
-                  <div>
-                    <h3 className="text-white font-semibold mb-1">Local Events</h3>
-                    <p className="text-white/60 text-sm">Discover and join nearby meetups</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="glass-bubble p-4">
-                <div className="flex items-start gap-3">
-                  <div className="text-2xl">🎉</div>
-                  <div>
-                    <h3 className="text-white font-semibold mb-1">Interest Groups</h3>
-                    <p className="text-white/60 text-sm">Find people with similar interests</p>
-                  </div>
-                </div>
-              </div>
+        {/* Empty State - Only show if no groups */}
+        {groups.length === 0 && (
+          <div className="flex-1 flex items-center justify-center px-4 py-12">
+            <div className="text-center max-w-md">
+              <div className="text-6xl mb-6">👥</div>
+              <h2 className="text-white text-3xl font-bold mb-4">Create Your First Group</h2>
+              <p className="text-white/60 text-lg mb-8">
+                Start a group to connect with your community through video calls, voice chats, and messaging.
+              </p>
+              <button
+                onClick={() => {
+                  if (canCreateGroups) {
+                    setShowCreateModal(true)
+                  } else {
+                    setShowUpgradePrompt(true)
+                  }
+                }}
+                className="px-6 py-3 rounded-xl bg-lime-400 text-black font-semibold hover:scale-105 transition-all flex items-center gap-2"
+              >
+                {!canCreateGroups && <span>🔒</span>}
+                + Create Your First Group
+              </button>
+              {!canCreateGroups && (
+                <p className="text-white/50 text-sm mt-4">
+                  Groups are a SLTR Pro feature
+                </p>
+              )}
             </div>
           </div>
-        </div>
+        )}
 
         {/* Create Group Modal */}
         {showCreateModal && (
@@ -223,7 +233,7 @@ export default function GroupsPage() {
                 <button
                   onClick={() => {
                     setShowCreateModal(false)
-                    setGroupTitle('')
+                    setGroupName('')
                     setGroupDescription('')
                   }}
                   className="text-white/60 hover:text-white"
@@ -241,8 +251,8 @@ export default function GroupsPage() {
                   </label>
                   <input
                     type="text"
-                    value={groupTitle}
-                    onChange={(e) => setGroupTitle(e.target.value)}
+                    value={groupName}
+                    onChange={(e) => setGroupName(e.target.value)}
                     className="w-full rounded-xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-lime-400"
                     placeholder="e.g., Founders Circle, Tech Group"
                     required
@@ -267,7 +277,7 @@ export default function GroupsPage() {
                     type="button"
                     onClick={() => {
                       setShowCreateModal(false)
-                      setGroupTitle('')
+                      setGroupName('')
                       setGroupDescription('')
                     }}
                     className="flex-1 px-4 py-3 rounded-xl bg-white/10 text-white font-semibold hover:bg-white/20 transition-all"
@@ -276,7 +286,7 @@ export default function GroupsPage() {
                   </button>
                   <button
                     type="submit"
-                    disabled={creating || !groupTitle.trim()}
+                    disabled={creating || !groupName.trim()}
                     className="flex-1 px-4 py-3 rounded-xl bg-lime-400 text-black font-semibold hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {creating ? 'Creating…' : 'Create Group'}
@@ -285,6 +295,14 @@ export default function GroupsPage() {
               </form>
             </div>
           </div>
+        )}
+
+        {/* 🔒 Upgrade Prompt for Free Users */}
+        {showUpgradePrompt && (
+          <UpgradePrompt
+            feature="Groups"
+            onClose={() => setShowUpgradePrompt(false)}
+          />
         )}
 
         {/* Bottom Navigation */}

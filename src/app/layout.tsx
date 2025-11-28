@@ -1,16 +1,28 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from 'next/font/google';
+import { Inter, Orbitron } from 'next/font/google';
+import dynamic from 'next/dynamic';
 import "./globals.css";
 import '../styles/SLTRMapPin.css';
 import ClientProviders from '@/components/ClientProviders';
-import NotificationPrompt from '@/components/NotificationPrompt';
-import AdminDashboard from '@/components/AdminDashboard';
-// import TwoFactorSetup from '@/components/TwoFactorSetup'; // Temporarily disabled - causing login issues
 
+// Lazy load non-critical components to improve initial load
+const NotificationPrompt = dynamic(() => import('@/components/NotificationPrompt'), { ssr: false });
+const AdminDashboard = dynamic(() => import('@/components/AdminDashboard'), { ssr: false });
+
+// Optimized font loading - eliminates render-blocking requests
 const inter = Inter({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
+  display: 'swap',
   variable: '--font-inter',
+  preload: true,
+});
+
+const orbitron = Orbitron({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-orbitron',
+  weight: '900',
+  preload: true,
 });
 
 export const metadata: Metadata = {
@@ -80,7 +92,7 @@ export default async function RootLayout({
   const locale = await getLocale()
 
   return (
-    <html lang={locale} className={inter.variable}>
+    <html lang={locale}>
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -89,11 +101,27 @@ export default async function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
 
-        {/* Mapbox GL JS CDN */}
-        <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
-        <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+        {/* Preconnect to external domains for faster loading */}
+        <link rel="preconnect" href="https://api.mapbox.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://bnzyzkmixfmylviaojbj.supabase.co" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://api.mapbox.com" />
+        <link rel="dns-prefetch" href="https://bnzyzkmixfmylviaojbj.supabase.co" />
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+
+        {/* Mapbox resources - deferred to not block initial render */}
+        <link 
+          href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" 
+          rel="stylesheet"
+          fetchPriority="low"
+        />
+        <script 
+          src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"
+          async
+          defer
+        />
       </head>
-      <body className="antialiased font-sans touch-pan-y overscroll-none">
+      <body className={`${inter.variable} ${orbitron.variable} antialiased font-sans touch-pan-y overscroll-none`}>
         <ClientProviders locale={locale}>
           {children}
           <NotificationPrompt />

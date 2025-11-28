@@ -36,16 +36,16 @@ export default function SLTRPlusPage() {
       {/* Header */}
       <div className="sticky top-0 z-40 bg-black/95 backdrop-blur-xl border-b border-white/10 p-4">
         <div className="flex items-center justify-between max-w-2xl mx-auto">
-          <Link href="/app" className="text-white/60 hover:text-white">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </Link>
+          <div className="w-10" />
           <h1 className="text-2xl font-black">
             <span className="text-white">sltr</span>
             <span className="text-lime-400" style={{ verticalAlign: 'super', fontSize: '1.2em', position: 'relative', top: '-0.3em' }}>∝</span>
           </h1>
-          <div className="w-6" />
+          <Link href="/app" className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 text-white/60 hover:text-white hover:bg-white/20 transition-all">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </Link>
         </div>
       </div>
 

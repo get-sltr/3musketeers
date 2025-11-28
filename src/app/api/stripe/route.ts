@@ -9,17 +9,10 @@ const stripe = stripeSecretKey
 })
   : null
 
-// Don't create Supabase client at module level - create it in handlers
-function getSupabaseClient() {
-  const supabaseUrl = process.env.SUPABASE_URL
-  const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Missing Supabase credentials')
-  }
-  
-  return createClient(supabaseUrl, supabaseKey)
-}
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 // Price IDs - these should be created in Stripe Dashboard
 const PRICE_IDS = {
@@ -31,13 +24,12 @@ const FOUNDER_LIMIT = 2000
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = getSupabase()
     const { searchParams } = new URL(request.url)
     const action = searchParams.get('action')
 
     // Get founder count
     if (action === 'founder-count') {
-      const supabase = getSupabaseClient()
-      
       const { count } = await supabase
         .from('profiles')
         .select('id', { count: 'exact', head: true })
@@ -65,6 +57,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = getSupabase()
+    const stripe = getStripe()
     const { priceType, userId, email } = await request.json()
 
     if (!priceType || !userId || !email) {

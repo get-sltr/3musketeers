@@ -1,6 +1,8 @@
+type VenueType = 'bar' | 'club' | 'sauna' | 'restaurant' | 'lgbtq'
+
 interface VenueMarkerProps {
   name: string
-  type: 'bar' | 'club' | 'sauna' | 'restaurant'
+  type: VenueType
   address: string
   onClick: () => void
 }
@@ -16,6 +18,10 @@ export function VenueMarker({ name, type, address, onClick }: VenueMarkerProps) 
         return '🛁'
       case 'restaurant':
         return '🍽️'
+      case 'lgbtq':
+        return '🏳️‍🌈'
+      default:
+        return '📍'
     }
   }
 
@@ -29,6 +35,10 @@ export function VenueMarker({ name, type, address, onClick }: VenueMarkerProps) 
         return 'rgba(155, 210, 235, 0.65)'
       case 'restaurant':
         return 'rgba(240, 215, 255, 0.65)'
+      case 'lgbtq':
+        return 'rgba(255, 180, 220, 0.65)'
+      default:
+        return 'rgba(200, 200, 200, 0.65)'
     }
   }
 
@@ -65,7 +75,7 @@ export function VenueMarker({ name, type, address, onClick }: VenueMarkerProps) 
 
 export function createVenueMarker(
   name: string,
-  type: 'bar' | 'club' | 'sauna' | 'restaurant',
+  type: VenueType | string,
   address: string,
   onClick: () => void
 ) {
@@ -88,6 +98,8 @@ export function createVenueMarker(
       case 'club': return '💃'
       case 'sauna': return '🛁'
       case 'restaurant': return '🍽️'
+      case 'lgbtq': return '🏳️‍🌈'
+      default: return '📍'
     }
   }
 
@@ -97,6 +109,8 @@ export function createVenueMarker(
       case 'club': return 'rgba(180, 205, 255, 0.65)'
       case 'sauna': return 'rgba(155, 210, 235, 0.65)'
       case 'restaurant': return 'rgba(240, 215, 255, 0.65)'
+      case 'lgbtq': return 'rgba(255, 180, 220, 0.65)'
+      default: return 'rgba(200, 200, 200, 0.65)'
     }
   }
 

@@ -13,7 +13,7 @@
  * - Optimistic UI for blocking/favoriting.
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createClient } from '../lib/supabase/client'
@@ -26,7 +26,9 @@ import { UserGridProfile, UserFullProfile } from '../lib/types/profile'
 import { resolveProfilePhoto, formatDistance, calculateETA, DEFAULT_PROFILE_IMAGE } from '../lib/utils/profile'
 import FoundersCircleAd from './FoundersCircleAd'
 
-// A simple spinner component
+import { GridSkeleton } from './LoadingSkeleton'
+
+// A simple spinner component (kept for other uses)
 const LoadingSpinner = () => (
   <div className="w-12 h-12 border-4 border-lime-400 border-t-transparent rounded-full animate-spin" />
 )
@@ -96,6 +98,9 @@ export default function GridViewProduction({
   // Report modal state
   const [isReporting, setIsReporting] = useState(false)
   
+  // Location error state - prevent toast spam
+  const [locationErrorShown, setLocationErrorShown] = useState(false)
+  
   // Current user state for header
   const [currentUserPhoto, setCurrentUserPhoto] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -109,78 +114,12 @@ export default function GridViewProduction({
 
   // --- DATA FETCHING ---
 
-  // 1. Fetch current user's profile photo
-  useEffect(() => {
-    const loadCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('photos, photo_url')
-        .eq('id', user.id)
-        .single()
-      
-      if (profile) {
-        const photo = resolveProfilePhoto(profile.photo_url, profile.photos)
-        setCurrentUserPhoto(photo || DEFAULT_PROFILE_IMAGE)
-      }
-    }
-    loadCurrentUser()
-  }, [])
+  // Store latest fetchGridUsers in ref to avoid stale closure
+  const fetchGridUsersRef = useRef<() => Promise<void>>()
   
-  // 2. Sync internal state with props if provided
-  useEffect(() => {
-    if (propsUsers.length > 0) {
-      setUsers(propsUsers)
-    } else {
-      fetchGridUsers()
-    }
-  }, [propsUsers])
-  
-  // 4. Auto-refresh every 15 seconds for real-time updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      console.log('🔄 Auto-refreshing grid...')
-      fetchGridUsers()
-      setLastRefresh(new Date())
-    }, 15000) // 15 seconds
-
-    return () => clearInterval(interval)
-  }, [])
-  
-  // 5. Subscribe to real-time profile updates
-  useEffect(() => {
-    const channel = supabase
-      .channel('grid-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'profiles',
-        },
-        (payload) => {
-          console.log('📡 Real-time update:', payload)
-          // Refresh grid when any profile changes
-          fetchGridUsers()
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [])
-
-  // 3. Fetch the full profile *only* when a user is selected
-  useEffect(() => {
-    if (selectedUser) {
-      fetchFullProfile(selectedUser.id)
-    }
-  }, [selectedUser])
-
-  async function fetchGridUsers() {
+  // Convert fetchGridUsers to useCallback to ensure stable reference
+  // Defined early so it can be used in useEffect hooks below
+  const fetchGridUsers = useCallback(async () => {
     try {
       const { data: { user: currentUser } } = await supabase.auth.getUser()
       if (!currentUser) return
@@ -193,7 +132,12 @@ export default function GridViewProduction({
         .single()
 
       if (!profile?.latitude || !profile?.longitude) {
+        // Only show error once to prevent toast spam
+        if (!locationErrorShown) {
         toast.error("Please set your location in your profile to see nearby users.");
+          setLocationErrorShown(true)
+        }
+        setGridLoading(false)
         return
       }
 
@@ -248,14 +192,9 @@ export default function GridViewProduction({
             }
             
             data = fallbackData.map((p: any) => {
-              const distanceMiles = haversineDistance(profile.latitude, profile.longitude, p.latitude, p.longitude)
-              return {
-                ...p,
-                distance_miles: distanceMiles,
-                is_self: p.id === currentUser.id
-              }
-            }).filter((p: any) => p.distance_miles <= 10 && p.id !== currentUser.id)
-              .sort((a: any, b: any) => a.distance_miles - b.distance_miles)
+              const distance = haversineDistance(profile.latitude, profile.longitude, p.latitude, p.longitude)
+              return { ...p, distance_miles: distance }
+            }).filter((p: any) => p.distance_miles <= 10).slice(0, 50)
           } else {
             error = fallbackError
           }
@@ -264,44 +203,141 @@ export default function GridViewProduction({
         }
       }
 
-      // If we have data (from RPC or fallback), use it
-      if (data && data.length > 0) {
-        // Filter and transform data
-        const filteredUsers = data
-          .filter((u: any) => u.id !== currentUser.id) // Exclude self
-          .map((u: any) => ({
-            id: u.id,
-            display_name: u.display_name || 'Anonymous',
-            photo_url: u.photo_url || u.photos?.[0] || null,
-            photos: u.photos || [],
-            age: u.age,
-            position: u.position,
-            dtfn: u.dtfn,
-            party_friendly: u.party_friendly,
-            distance_miles: u.distance_miles,
-            is_online: u.is_online,
-          }))
+      if (data && Array.isArray(data)) {
+        // Transform to UserGridProfile format
+        const transformedUsers: UserGridProfile[] = data.map((u: any) => ({
+          id: u.id,
+          display_name: u.display_name || u.username || 'Member',
+          username: u.username || '',
+          photo_url: u.photo_url,
+          photos: Array.isArray(u.photos) ? u.photos : (u.photo_url ? [u.photo_url] : []),
+          is_online: u.is_online || false,
+          dtfn: u.dtfn || false,
+          party_friendly: u.party_friendly || false,
+          distance_miles: u.distance_miles || 0,
+          founder_number: u.founder_number,
+          about: u.about,
+          kinks: u.kinks,
+          tags: u.tags,
+          position: u.position,
+          age: u.age,
+        }))
 
-        setUsers(filteredUsers)
+        setUsers(transformedUsers)
+        setGridLoading(false)
       } else if (error) {
-        // Only show error if both RPC and fallback failed
-        console.error('Error fetching nearby profiles (both RPC and fallback failed):', error)
-        // Don't show toast - just set empty array
+        console.error('Failed to fetch users:', error)
         setUsers([])
       } else {
-        // No data and no error - set empty array
         setUsers([])
       }
-    } catch (error: any) {
-      // Only log unexpected errors (not RPC failures which are handled above)
-      if (!error?.message?.includes('RPC') && !error?.message?.includes('get_nearby_profiles')) {
-        console.error('Unexpected error fetching grid users:', error)
-      }
+    } catch (err) {
+      console.error('Error in fetchGridUsers:', err)
       setUsers([])
     } finally {
       setGridLoading(false)
     }
-  }
+  }, [supabase, locationErrorShown])
+  
+  // Update ref whenever fetchGridUsers changes
+  useEffect(() => {
+    fetchGridUsersRef.current = fetchGridUsers
+  }, [fetchGridUsers])
+
+  // 1. Fetch current user's profile photo
+  useEffect(() => {
+    const loadCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('photos, photo_url')
+        .eq('id', user.id)
+        .single()
+      
+      if (profile) {
+        const photo = resolveProfilePhoto(profile.photo_url, profile.photos)
+        setCurrentUserPhoto(photo || DEFAULT_PROFILE_IMAGE)
+      }
+    }
+    loadCurrentUser()
+  }, [])
+  
+  // 2. Sync internal state with props if provided
+  useEffect(() => {
+    if (propsUsers.length > 0) {
+      setUsers(propsUsers)
+    } else {
+      fetchGridUsers()
+    }
+  }, [propsUsers, fetchGridUsers])
+  
+  // 4. Auto-refresh every 60 seconds (real-time subscription handles immediate updates)
+  useEffect(() => {
+    if (locationErrorShown) return
+    
+    const interval = setInterval(() => {
+      fetchGridUsers()
+      setLastRefresh(new Date())
+    }, 60000) // 60 seconds - reduced frequency since real-time handles updates
+
+    return () => clearInterval(interval)
+  }, [locationErrorShown, fetchGridUsers])
+
+  // 5. Subscribe to real-time profile updates - optimized to update in place
+  useEffect(() => {
+    let debounceTimer: NodeJS.Timeout | null = null
+    
+    const channel = supabase
+      .channel('grid-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+        },
+        (payload) => {
+          // Update only the changed profile in state instead of full refetch
+          const updatedProfile = payload.new as UserGridProfile
+          setUsers(prev => prev.map(user => 
+            user.id === updatedProfile.id ? { ...user, ...updatedProfile } : user
+          ))
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'profiles',
+        },
+        () => {
+          // Debounce new user inserts - use ref to get latest function
+          if (debounceTimer) clearTimeout(debounceTimer)
+          debounceTimer = setTimeout(() => {
+            if (fetchGridUsersRef.current) {
+              fetchGridUsersRef.current()
+            }
+          }, 5000)
+        }
+      )
+      .subscribe()
+
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer)
+      supabase.removeChannel(channel)
+    }
+  }, [supabase])
+
+  // 3. Fetch the full profile *only* when a user is selected
+  useEffect(() => {
+    if (selectedUser) {
+      fetchFullProfile(selectedUser.id)
+    }
+  }, [selectedUser])
+
 
   // This function is new and runs on-demand
   async function fetchFullProfile(userId: string) {
@@ -419,10 +455,14 @@ export default function GridViewProduction({
 
   // --- RENDER ---
 
+  // Show skeleton while loading - prevents CLS by reserving space
   if (gridLoading) {
     return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center">
-        <LoadingSpinner />
+      <div className="min-h-screen bg-black" style={{ 
+        paddingTop: 'calc(72px + max(env(safe-area-inset-top), 16px))',
+        paddingBottom: 'calc(84px + env(safe-area-inset-bottom, 0px))'
+      }}>
+        <GridSkeleton count={12} />
       </div>
     )
   }
@@ -469,10 +509,12 @@ export default function GridViewProduction({
             </div>
           )}
 
-          {filteredUsers.map((user) => {
+          {filteredUsers.map((user, index) => {
             const photo = resolveProfilePhoto(user.photo_url, user.photos)
             const distance = formatDistance(user.distance_miles)
             const eta = calculateETA(user.distance_miles)
+            // Prioritize first 6 images (above-the-fold) for LCP optimization
+            const isAboveFold = index < 6
 
             return (
               <div
@@ -482,7 +524,14 @@ export default function GridViewProduction({
               >
                   {/* ... Grid card details ... */}
                   {photo ? (
-                    <Image src={photo} alt={user.display_name || 'User'} fill className="object-cover" sizes="33vw" />
+                    <Image 
+                      src={photo} 
+                      alt={user.display_name || 'User'} 
+                      fill 
+                      className="object-cover" 
+                      sizes="33vw"
+                      priority={isAboveFold}
+                    />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900" />
                   )}

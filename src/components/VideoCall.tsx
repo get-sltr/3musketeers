@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react'
 import DailyIframe from '@daily-co/daily-js'
+import { useHasFeature } from '@/hooks/usePrivileges'
+import UpgradePrompt from './UpgradePrompt'
 
 interface VideoCallProps {
   conversationId: string
@@ -22,11 +24,24 @@ export default function VideoCall({
   const [isMuted, setIsMuted] = useState(false)
   const [isVideoOff, setIsVideoOff] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showUpgrade, setShowUpgrade] = useState(false)
 
   const callFrameRef = useRef<any>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
+  // 🔒 Check if user has video call access
+  const { allowed: hasVideoAccess, loading: checkingAccess } = useHasFeature('video_calls')
+
   useEffect(() => {
+    // If not allowed and not loading, show upgrade prompt
+    if (!checkingAccess && !hasVideoAccess) {
+      setShowUpgrade(true)
+      return
+    }
+
+    // Don't initialize if still checking or not allowed
+    if (checkingAccess || !hasVideoAccess) return
+
     const initializeCall = async () => {
       setError(null)
 
@@ -95,7 +110,7 @@ export default function VideoCall({
         callFrameRef.current = null
       }
     }
-  }, [conversationId, currentUserId, onEndCall])
+  }, [conversationId, currentUserId, onEndCall, hasVideoAccess, checkingAccess])
 
   const toggleMute = () => {
     if (callFrameRef.current) {
@@ -118,6 +133,20 @@ export default function VideoCall({
       callFrameRef.current = null
     }
     onEndCall()
+  }
+
+  // 🔒 Show upgrade prompt for free users
+  if (showUpgrade) {
+    return <UpgradePrompt feature="Video Calls" onClose={onEndCall} />
+  }
+
+  // Show loading while checking access
+  if (checkingAccess) {
+    return (
+      <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
+        <div className="text-white">Checking access...</div>
+      </div>
+    )
   }
 
   return (

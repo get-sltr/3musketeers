@@ -5,6 +5,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { erosAPI } from '@/lib/eros-api';
 import { CupidIcon } from './CupidIcon';
+import { useHasFeature } from '@/hooks/usePrivileges';
+import UpgradePrompt from './UpgradePrompt';
 
 interface Position {
   x: number;
@@ -18,6 +20,10 @@ interface Message {
 
 export const ErosFloatingButton = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  
+  // 🔒 Check if user has EROS access (Pro, Founder, or Super Admin)
+  const { allowed: hasErosAccess, loading: checkingAccess } = useHasFeature('eros_ai');
   const [position, setPosition] = useState<Position>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState<Position>({ x: 0, y: 0 });
@@ -198,6 +204,11 @@ export const ErosFloatingButton = () => {
 
   return (
     <>
+      {/* 🔒 Upgrade prompt for free users */}
+      {showUpgrade && (
+        <UpgradePrompt feature="EROS AI Assistant" onClose={() => setShowUpgrade(false)} />
+      )}
+
       {/* Floating Button - Sticky above bottom nav */}
       <div
         ref={buttonRef}
@@ -218,12 +229,23 @@ export const ErosFloatingButton = () => {
         }}
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
-        onClick={() => !isDragging && setIsOpen(!isOpen)}
+        onClick={() => {
+          if (isDragging) return;
+          if (isOpen) {
+            setIsOpen(false);
+          } else if (!hasErosAccess && !checkingAccess) {
+            setShowUpgrade(true);
+          } else {
+            setIsOpen(true);
+          }
+        }}
       >
         {isOpen ? (
           <span className="text-2xl">✕</span>
-        ) : (
+        ) : hasErosAccess ? (
           <CupidIcon size={48} />
+        ) : (
+          <span className="text-2xl">🔒</span>
         )}
       </div>
 

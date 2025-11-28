@@ -37,6 +37,14 @@ export const FEATURE_LIMITS: Record<Feature, FeatureLimit> = {
     feature: 'video_calls',
     tier: 'plus',
   },
+  voice_calls: {
+    feature: 'voice_calls',
+    tier: 'plus',
+  },
+  eros_ai: {
+    feature: 'eros_ai',
+    tier: 'plus',
+  },
   create_groups: {
     feature: 'create_groups',
     tier: 'plus',
@@ -117,13 +125,14 @@ export const FEATURE_LIMITS: Record<Feature, FeatureLimit> = {
 
 /**
  * Special limits for free tier features
+ * STRICT LIMITS - Monetization focused
  */
 export const FREE_TIER_LIMITS = {
   DTFN_ACTIVATIONS: 4, // 4 times lifetime for free users
-  DAILY_MESSAGES: 50,
-  DAILY_PROFILE_VIEWS: 100,
-  MAX_FAVORITES: 50,
-  MAP_RADIUS_MILES: 10,
+  DAILY_MESSAGES: 10, // 10 messages per day for free users
+  DAILY_PROFILE_VIEWS: 20, // 20 profile views per day for free users
+  MAX_FAVORITES: 10,
+  MAP_RADIUS_MILES: 5,
 } as const
 
 /**
@@ -131,6 +140,8 @@ export const FREE_TIER_LIMITS = {
  */
 export const PLUS_FEATURES: Feature[] = [
   'video_calls',
+  'voice_calls',
+  'eros_ai',
   'create_groups',
   'create_channels',
   'travel_mode',
@@ -160,6 +171,8 @@ export const FEATURE_NAMES: Record<Feature, string> = {
   basic_search: 'Basic Search',
   basic_filters: 'Basic Filters',
   video_calls: 'Video Calls',
+  voice_calls: 'Voice Calls',
+  eros_ai: 'EROS AI Assistant',
   create_groups: 'Create Groups',
   create_channels: 'Create Channels',
   join_groups: 'Join Groups',

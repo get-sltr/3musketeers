@@ -1,6 +1,52 @@
 'use client'
-import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, Suspense, Component, ErrorInfo, ReactNode } from 'react'
 import { useMapStore } from '../../stores/useMapStore'
+
+// Error Boundary to catch rendering errors gracefully
+class AppErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props)
+    this.state = { hasError: false, error: null }
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error }
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('App page error:', error, errorInfo)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4">
+          <div className="text-center max-w-sm">
+            <div className="text-5xl mb-4">🔄</div>
+            <h2 className="text-xl font-bold text-white mb-2">Loading hiccup</h2>
+            <p className="text-white/60 text-sm mb-6">
+              Something didn't load right. This usually fixes itself.
+            </p>
+            <button
+              onClick={() => {
+                this.setState({ hasError: false, error: null })
+                window.location.reload()
+              }}
+              className="px-6 py-3 bg-lime-400 text-black font-bold rounded-xl active:scale-95 transition"
+            >
+              Refresh
+            </button>
+          </div>
+        </div>
+      )
+    }
+
+    return this.props.children
+  }
+}
 import { useUIStore } from '../../stores/useUIStore'
 import { createClient } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -8,8 +54,17 @@ import MobileLayout from '../../components/MobileLayout'
 import LoadingSkeleton from '../../components/LoadingSkeleton'
 import { LazyGridView } from '../../components/LazyWrapper'
 import GridViewProduction from '../../components/GridViewProduction'
-import MapViewSimple from '../../components/MapViewSimple'
 import dynamic from 'next/dynamic'
+
+// Dynamic imports for heavy components (reduces initial bundle)
+const MapViewSimple = dynamic(() => import('../../components/MapViewSimple'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full bg-[#0a0a0f] flex items-center justify-center">
+      <div className="text-white/40 text-sm">Loading map...</div>
+    </div>
+  )
+})
 import AnimatedHeader from '../../components/AnimatedHeader'
 import GradientBackground from '../../components/GradientBackground'
 import ErosDailyMatchesStrip from '../../components/ErosDailyMatchesStrip'
@@ -17,14 +72,16 @@ import UserProfileCard from '../components/UserProfileCard'
 import MapControls from '../components/MapControls'
 import MapSessionMenu from '../components/MapSessionMenu'
 import CornerButtons from '../components/CornerButtons'
-import MessagingModal from '../../components/MessagingModal'
 import BottomNav from '../../components/BottomNav'
-import PlaceModal from '../components/PlaceModal'
-import GroupModal from '../components/GroupModal'
 import UserAdvertisingPanel from '../components/UserAdvertisingPanel'
 import LocationSearch from '../components/LocationSearch'
-import WelcomeModal from '../../components/WelcomeModal'
-import ErosOnboardingModal from '../../components/ErosOnboardingModal'
+
+// Dynamic imports for modals (loaded only when needed)
+const MessagingModal = dynamic(() => import('../../components/MessagingModal'), { ssr: false })
+const PlaceModal = dynamic(() => import('../components/PlaceModal'), { ssr: false })
+const GroupModal = dynamic(() => import('../components/GroupModal'), { ssr: false })
+const WelcomeModal = dynamic(() => import('../../components/WelcomeModal'), { ssr: false })
+const ErosOnboardingModal = dynamic(() => import('../../components/ErosOnboardingModal'), { ssr: false })
 import { ErosFloatingButton } from '../../components/ErosFloatingButton'
 import AppTour, { useAppTour, APP_TOUR_STEPS } from '../../components/AppTour'
 import '../../styles/mobile-optimization.css'
@@ -101,6 +158,8 @@ export default function AppPage() {
   const [showErosOnboarding, setShowErosOnboarding] = useState(false)
   const [showTour, setShowTour] = useState(false)
   const fetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const locationRequestedRef = useRef(false)
+  const geolocationMountedRef = useRef(true)
   
   // Use Zustand store for map session state
   const {
@@ -478,28 +537,46 @@ export default function AppPage() {
       let originLat = profile?.latitude ?? null
       let originLon = profile?.longitude ?? null
 
-      // If no location, request it silently in background
-      if (!originLat || !originLon) {
+      // If no location, request it silently in background (only once)
+      if ((!originLat || !originLon) && !locationRequestedRef.current) {
+        locationRequestedRef.current = true // Prevent multiple requests
         console.log('📍 No location found, requesting permission...')
         if (navigator.geolocation) {
+          // Reset mounted state for this geolocation request
+          geolocationMountedRef.current = true
+          
           navigator.geolocation.getCurrentPosition(
             async (position) => {
+              // Check if component is still mounted before proceeding
+              if (!geolocationMountedRef.current) return
+              
               console.log('✅ Location granted:', position.coords.latitude, position.coords.longitude)
-              originLat = position.coords.latitude
-              originLon = position.coords.longitude
-              await supabase
-                .from('profiles')
-                .update({
-                  latitude: originLat,
-                  longitude: originLon
-                })
-                .eq('id', session.user.id)
-              // Refresh users with new location
-              const origin: [number, number] = [originLon, originLat]
-              await fetchUsers(session.user.id, origin, { immediate: true })
+              const lat = position.coords.latitude
+              const lon = position.coords.longitude
+              
+              try {
+                const { error } = await supabase
+                  .from('profiles')
+                  .update({
+                    latitude: lat,
+                    longitude: lon
+                  })
+                  .eq('id', session.user.id)
+                
+                if (error) {
+                  console.error('Failed to update user location:', error)
+                } else if (geolocationMountedRef.current) {
+                  // Only refresh if still mounted
+                  const origin: [number, number] = [lon, lat]
+                  await fetchUsers(session.user.id, origin, { immediate: true })
+                }
+              } catch (err) {
+                console.error('Error updating location in database:', err)
+              }
             },
             (error) => {
               console.warn('⚠️ Location denied or unavailable:', error)
+              locationRequestedRef.current = false // Allow retry if denied
             }
           )
         }
@@ -515,6 +592,11 @@ export default function AppPage() {
       }
     }
     checkAuth()
+    
+    // Cleanup: Mark as unmounted to prevent callbacks on unmounted component
+    return () => {
+      geolocationMountedRef.current = false
+    }
   }, [router, fetchUsers])
 
   // Re-fetch when radius or travel mode changes
@@ -835,12 +917,30 @@ export default function AppPage() {
   if (loading) {
     return (
       <MobileLayout>
-        <LoadingSkeleton variant="fullscreen" />
+        <div className="min-h-screen bg-[#0a0a0f]">
+          {/* Skeleton header - matches AnimatedHeader dimensions */}
+          <div className="fixed top-0 left-0 right-0 z-40 h-14 bg-[#0a0a0f]/90 backdrop-blur-xl" />
+          
+          {/* Skeleton grid - matches actual grid layout to prevent CLS */}
+          <div className="pt-14" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}>
+            <div className="grid grid-cols-3 gap-0.5 bg-black p-0.5">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="relative aspect-[3/4] overflow-hidden bg-gray-900">
+                  <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-gray-800 via-gray-700 to-gray-800" />
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Skeleton bottom nav */}
+          <div className="fixed bottom-0 left-0 right-0 h-20 bg-[#0a0a0f]/90 backdrop-blur-xl" />
+        </div>
       </MobileLayout>
     )
   }
 
   return (
+    <AppErrorBoundary>
     <MobileLayout>
       <div className="min-h-screen bg-[#0a0a0f]" style={{
         paddingBottom: viewMode === 'map' ? '0' : 'calc(80px + env(safe-area-inset-bottom))'
@@ -978,14 +1078,14 @@ export default function AppPage() {
       <GroupModal
         isOpen={isHostingGroup}
         onClose={() => toggleHostingGroup(false)}
-        onSave={async ({ title, time, description }) => {
+        onSave={async ({ name: groupName, time, description }) => {
           const supabase = createClient()
           try {
             const { data: { user } } = await supabase.auth.getUser()
             const { data, error } = await supabase
               .from('groups')
               .insert({
-                title,
+                name: groupName,
                 time,
                 description,
                 host_id: user?.id || null,
@@ -1044,11 +1144,23 @@ export default function AppPage() {
       <ErosOnboardingModal
         isOpen={showErosOnboarding}
         onClose={() => {
-          setShowErosOnboarding(false)
-          // Show tour after EROS onboarding closes (if not already completed)
-          const tourCompleted = localStorage.getItem('app_tour_completed')
-          if (!tourCompleted) {
-            setTimeout(() => setShowTour(true), 500)
+          try {
+            setShowErosOnboarding(false)
+            // Show tour after EROS onboarding closes (if not already completed)
+            const tourCompleted = typeof window !== 'undefined' 
+              ? localStorage.getItem('app_tour_completed') 
+              : null
+            if (!tourCompleted) {
+              setTimeout(() => {
+                try {
+                  setShowTour(true)
+                } catch (e) {
+                  console.warn('Tour start error:', e)
+                }
+              }, 500)
+            }
+          } catch (e) {
+            console.warn('EROS onClose error:', e)
           }
         }}
       />
@@ -1071,6 +1183,7 @@ export default function AppPage() {
       </nav>
       </div>
     </MobileLayout>
+    </AppErrorBoundary>
   )
 }
 

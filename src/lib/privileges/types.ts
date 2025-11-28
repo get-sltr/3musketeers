@@ -14,6 +14,8 @@ export type Feature =
 
   // Plus-only features
   | 'video_calls'
+  | 'voice_calls'
+  | 'eros_ai'
   | 'create_groups'
   | 'create_channels'
   | 'join_groups'
@@ -46,6 +48,7 @@ export interface Profile {
   subscription_tier: SubscriptionTier
   subscription_expires_at?: string | null
   is_super_admin?: boolean
+  founder?: boolean // 🔥 FOUNDERS BYPASS ALL RULES
   premium?: boolean // Backward compatibility
 }
 

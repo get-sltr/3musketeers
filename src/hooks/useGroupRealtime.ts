@@ -20,7 +20,7 @@ export function useGroupRealtime(groupId: string | null) {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'group_posts',
+          table: 'group_messages',
           filter: `group_id=eq.${groupId}`,
         },
         (payload) => {
@@ -83,9 +83,9 @@ export function useGroupRealtime(groupId: string | null) {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const { error } = await supabase.from('group_posts').insert({
+      const { error } = await supabase.from('group_messages').insert({
         group_id: groupId,
-        user_id: user.id,
+        sender_id: user.id,
         content,
       })
 

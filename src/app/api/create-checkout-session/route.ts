@@ -3,11 +3,14 @@ import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
 import { getTierConfig, TierType } from '@/config/tiers'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-10-29.clover',
-})
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2025-10-29.clover',
+  })
+}
 
 export async function POST(request: NextRequest) {
+  const stripe = getStripe()
   try {
     const { tier, userId } = await request.json()
 

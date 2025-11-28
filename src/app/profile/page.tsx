@@ -5,9 +5,19 @@ import type { ReactNode } from 'react'
 import { createClient } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import AlbumsManager from '../../components/AlbumsManager'
+import Image from 'next/image'
+import dynamic from 'next/dynamic'
+
+// Dynamic import for heavy album component
+const AlbumsManager = dynamic(() => import('../../components/AlbumsManager'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-32 bg-white/5 rounded-xl animate-pulse flex items-center justify-center">
+      <span className="text-white/40 text-sm">Loading albums...</span>
+    </div>
+  )
+})
 import { DEFAULT_PROFILE_IMAGE } from '@/lib/utils/profile'
-import SltrButton from '../../components/SltrButton'
 
 interface Album {
   id: string
@@ -23,11 +33,69 @@ interface Album {
   }[]
 }
 
+type SectionKey = 'identity' | 'interaction' | 'interests' | 'bio'
+
+// Moved outside ProfilePage to prevent re-creation on every render (fixes typing bug)
+function SectionCard({
+  id,
+  title,
+  description,
+  rightSlot,
+  children,
+  isOpen,
+  onToggle,
+}: {
+  id: SectionKey
+  title: string
+  description?: string
+  rightSlot?: ReactNode
+  children: ReactNode
+  isOpen: boolean
+  onToggle: (id: SectionKey) => void
+}) {
+  return (
+    <div className="glass-bubble p-0 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => onToggle(id)}
+        className="w-full flex items-center justify-between px-5 py-4 text-left text-white/80 hover:bg-white/5 transition-colors duration-300"
+      >
+        <div>
+          <h3 className="text-lg font-semibold text-white">{title}</h3>
+          {description && <p className="text-sm text-white/60 mt-0.5">{description}</p>}
+        </div>
+        <div className="flex items-center gap-3">
+          {rightSlot}
+          <svg
+            className={`w-5 h-5 text-white/60 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </button>
+      {isOpen && (
+        <div 
+          className="px-5 pb-5 pt-1 border-t border-white/10 space-y-5" 
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+        >
+          {children}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function ProfilePage() {
   const [profileData, setProfileData] = useState({
     display_name: '',
     age: '',
+    headline: '',
     bio: '',
+    looking_for_text: '',
     position: '',
     gender_identity: 'cis_man',
     body_type: '',
@@ -86,8 +154,6 @@ export default function ProfilePage() {
   const KINKS_OPTIONS = ['BDSM', 'Fetish', 'Roleplay', 'Voyeurism', 'Exhibitionism', 'Group Sex', 'Anal', 'Oral', 'Toys', 'Leather', 'Bondage', 'Spanking', 'Domination', 'Submission', 'Edging', 'Public Play', 'Feet', 'Watersports', 'Rimming', 'Body Worship', 'Spit', 'Rough']
   const TAGS_OPTIONS = ['Adventurous', 'Chill', 'Direct', 'Curious', 'Beard', 'Jock', 'Bear', 'Rugged', 'Daddy', 'Pup', 'Twink', 'Otter', 'Wolf', 'Muscle', 'Fit', 'Discreet', 'Kinky', 'Vanilla', 'Wild', 'Gentleman', 'Playful', 'Passionate']
 
-  type SectionKey = 'identity' | 'interaction' | 'interests' | 'bio'
-
   const [expandedSections, setExpandedSections] = useState<Record<SectionKey, boolean>>({
     identity: true,
     interaction: true,
@@ -116,52 +182,6 @@ export default function ProfilePage() {
       <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-300 ${checked ? 'translate-x-5' : 'translate-x-1'}`} />
     </button>
   )
-
-  const SectionCard = ({
-    id,
-    title,
-    description,
-    rightSlot,
-    children,
-  }: {
-    id: SectionKey
-    title: string
-    description?: string
-    rightSlot?: ReactNode
-    children: ReactNode
-  }) => {
-    const isOpen = expandedSections[id]
-    return (
-      <div className="glass-bubble p-0 overflow-hidden">
-        <button
-          type="button"
-          onClick={() => toggleSection(id)}
-          className="w-full flex items-center justify-between px-5 py-4 text-left text-white/80 hover:bg-white/5 transition-colors duration-300"
-        >
-          <div>
-            <h3 className="text-lg font-semibold text-white">{title}</h3>
-            {description && <p className="text-sm text-white/60 mt-0.5">{description}</p>}
-          </div>
-          <div className="flex items-center gap-3">
-            {rightSlot}
-            <svg
-              className={`w-5 h-5 text-white/60 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
-        </button>
-        {isOpen && (
-          <div className="px-5 pb-5 pt-1 border-t border-white/10 space-y-5" onClick={(e) => e.stopPropagation()}>
-            {children}
-          </div>
-        )}
-      </div>
-    )
-  }
 
   const primaryPhoto = profileData.photos[0] || DEFAULT_PROFILE_IMAGE
 
@@ -211,7 +231,9 @@ export default function ProfilePage() {
           setProfileData({
             display_name: profile.display_name || '',
             age: profile.age?.toString() || '',
+            headline: profile.headline || '',
             bio: profile.about || '',
+            looking_for_text: profile.looking_for_text || '',
             position: profile.position || '',
             gender_identity: profile.gender_identity || 'cis_man',
             body_type: profile.body_type || '',
@@ -319,7 +341,9 @@ export default function ProfilePage() {
       const updateData: any = {
         id: user.id,
         display_name: profileData.display_name || null,
+        headline: profileData.headline || null,
         about: profileData.bio || null,
+        looking_for_text: profileData.looking_for_text || null,
         position: profileData.position || null,
         gender_identity: profileData.gender_identity || 'cis_man',
         body_type: profileData.body_type || null,
@@ -377,7 +401,7 @@ export default function ProfilePage() {
       setError(null)
 
       // Create image to check/resize
-      const img = new Image()
+      const img = document.createElement('img')
       const reader = new FileReader()
 
       const processedFile = await new Promise<File>((resolve, reject) => {
@@ -424,9 +448,17 @@ export default function ProfilePage() {
         reader.readAsDataURL(file)
       })
 
+      // Get current user ID for storage path
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setError('Not authenticated')
+        return
+      }
+
       const fileExt = 'jpg'
       const fileName = `${Date.now()}.${fileExt}`
-      const filePath = `profiles/${fileName}`
+      // Path must be: profiles/{user_id}/{filename} to match RLS policy
+      const filePath = `profiles/${user.id}/${fileName}`
 
       console.log('Uploading photo:', filePath)
 
@@ -435,8 +467,14 @@ export default function ProfilePage() {
         .upload(filePath, processedFile)
 
       if (uploadError) {
-        console.error('Upload error:', uploadError)
-        setError(`Upload failed: ${uploadError.message}`)
+        // Check if error is due to RLS policy mismatch
+        if (uploadError.message?.includes('permission') || uploadError.message?.includes('policy')) {
+          setError(`Upload failed: Permission denied. Please check your storage permissions or contact support.`)
+          console.error('RLS policy error - path may not match policy:', filePath, uploadError)
+        } else {
+          console.error('Upload error:', uploadError)
+          setError(`Upload failed: ${uploadError.message}`)
+        }
         return
       }
 
@@ -542,29 +580,26 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-black">
-      {/* Header */}
-      <div className="fixed top-0 w-full bg-black/95 backdrop-blur-xl border-b border-white/10 p-4 z-50">
+      {/* Header - Clean and compact */}
+      <div className="fixed top-0 w-full bg-black/95 backdrop-blur-xl border-b border-white/10 px-4 py-3 z-50">
         <div className="flex items-center justify-between">
-          <Link href="/app" className="glass-bubble p-2 hover:bg-white/10 transition-all duration-300">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <Link href="/app" className="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-all">
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
-          <h1 className="text-2xl font-bold text-lime-400">Edit Profile</h1>
-          <div className="flex items-center gap-2">
-            <SltrButton size="sm" />
-            <button
-              onClick={() => setShowAlbumsManager(true)}
-              className="glass-bubble px-4 py-2 text-white hover:bg-white/10 transition-all duration-300 flex items-center gap-2"
-            >
-              📸 Albums
-            </button>
-          </div>
+          <h1 className="text-xl font-bold text-lime-400">Edit Profile</h1>
+          <button
+            onClick={() => setShowAlbumsManager(true)}
+            className="px-3 py-2 rounded-xl bg-white/5 text-white text-sm hover:bg-white/10 transition-all flex items-center gap-1.5"
+          >
+            📸 <span className="hidden sm:inline">Albums</span>
+          </button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="pt-24 pb-32 px-4">
+      <div className="pt-16 pb-32 px-4">
         <div className="max-w-6xl mx-auto grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <form onSubmit={handleSave} className="space-y-6">
             <div className="glass-bubble p-6 relative overflow-hidden">
@@ -576,13 +611,12 @@ export default function ProfilePage() {
               )}
               <div className="relative z-10 flex flex-col sm:flex-row sm:items-start gap-4">
                 <div className="relative w-24 h-24 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border border-white/20 shadow-lg">
-                  <img
-                    src={primaryPhoto}
+                  <Image
+                    src={primaryPhoto || DEFAULT_PROFILE_IMAGE}
                     alt={profileData.display_name || 'Profile photo'}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = DEFAULT_PROFILE_IMAGE
-                    }}
+                    fill
+                    sizes="96px"
+                    className="object-cover"
                   />
                   <button
                     type="button"
@@ -607,7 +641,7 @@ export default function ProfilePage() {
                     )}
                   </div>
                   <p className="text-white/70 text-sm leading-relaxed max-w-xl break-words">
-                    {profileData.bio || 'Add a headline to let members know your vibe.'}
+                    {profileData.headline || 'Add a headline to let members know your vibe.'}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {profileData.party_friendly && (
@@ -639,6 +673,8 @@ export default function ProfilePage() {
               id="identity"
               title="Identity & Stats"
               description="Shape what others learn about you."
+              isOpen={expandedSections.identity}
+              onToggle={toggleSection}
             >
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
@@ -750,6 +786,8 @@ export default function ProfilePage() {
               id="interaction"
               title="Energy & Interaction"
               description="Signal how you like to connect."
+              isOpen={expandedSections.interaction}
+              onToggle={toggleSection}
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between rounded-2xl bg-white/5 px-4 py-3 border border-white/10">
@@ -779,6 +817,8 @@ export default function ProfilePage() {
               id="interests"
               title="Kinks & Interests"
               description="Curate your vibe with quick taps."
+              isOpen={expandedSections.interests}
+              onToggle={toggleSection}
             >
               <div className="space-y-4">
                 <div>
@@ -842,28 +882,51 @@ export default function ProfilePage() {
               id="bio"
               title="Headlines & Notes"
               description="Leave something memorable."
+              isOpen={expandedSections.bio}
+              onToggle={toggleSection}
             >
-              <div className="space-y-3">
-                <textarea
-                  value={profileData.bio || ''}
-                  onChange={(e) => {
-                    e.stopPropagation();
-                    setProfileData(prev => ({ ...prev, bio: e.target.value }));
-                  }}
-                  onFocus={(e) => e.stopPropagation()}
-                  onClick={(e) => e.stopPropagation()}
-                  rows={5}
-                  maxLength={500}
-                  autoComplete="off"
-                  spellCheck="true"
-                  data-gramm="false"
-                  data-gramm_editor="false"
-                  data-enable-grammarly="false"
-                  placeholder="Let SLTR know your vibe, your boundaries, or your invite."
-                  className="w-full rounded-2xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-lime-400 resize-none"
-                  style={{ pointerEvents: 'auto' }}
-                />
-                <div className="text-right text-xs text-white/40">{(profileData.bio || '').length}/500 characters</div>
+              <div className="space-y-4" onMouseDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
+                {/* Headline - Short punchy tagline */}
+                <div>
+                  <label className="block text-xs font-medium text-white/50 mb-1.5 uppercase tracking-wider">Headline</label>
+                  <input
+                    type="text"
+                    value={profileData.headline || ''}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, headline: e.target.value }))}
+                    maxLength={50}
+                    placeholder="Your one-liner hook..."
+                    className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-lime-400/50 focus:border-lime-400/50"
+                  />
+                  <div className="text-right text-[10px] text-white/30 mt-1">{(profileData.headline || '').length}/50</div>
+                </div>
+
+                {/* About You - Bio/personality */}
+                <div>
+                  <label className="block text-xs font-medium text-white/50 mb-1.5 uppercase tracking-wider">About You</label>
+                  <textarea
+                    value={profileData.bio || ''}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
+                    rows={3}
+                    maxLength={500}
+                    placeholder="Your vibe, your energy..."
+                    className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-lime-400/50 focus:border-lime-400/50 resize-none"
+                  />
+                  <div className="text-right text-[10px] text-white/30 mt-1">{(profileData.bio || '').length}/500</div>
+                </div>
+
+                {/* Looking For - What you want */}
+                <div>
+                  <label className="block text-xs font-medium text-white/50 mb-1.5 uppercase tracking-wider">Looking For</label>
+                  <textarea
+                    value={profileData.looking_for_text || ''}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, looking_for_text: e.target.value }))}
+                    rows={2}
+                    maxLength={200}
+                    placeholder="What you're seeking..."
+                    className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-lime-400/50 focus:border-lime-400/50 resize-none"
+                  />
+                  <div className="text-right text-[10px] text-white/30 mt-1">{(profileData.looking_for_text || '').length}/200</div>
+                </div>
               </div>
             </SectionCard>
 

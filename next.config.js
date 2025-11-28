@@ -16,11 +16,11 @@ const nextConfig = {
 
   // Enable experimental features for better performance
   experimental: {
-    optimizePackageImports: ['react-leaflet', 'leaflet'],
+    optimizePackageImports: ['framer-motion', 'lucide-react', 'date-fns'],
     instrumentationHook: true, // Required for Sentry
   },
   
-  // Configure webpack for Leaflet and path aliases
+  // Configure webpack for path aliases and fallbacks
   webpack: (config, { isServer, webpack }) => {
     if (!isServer) {
       config.resolve.fallback = {
@@ -29,6 +29,21 @@ const nextConfig = {
         net: false,
         tls: false,
       }
+    }
+    
+    // Remove console.log in production (keeps console.error and console.warn)
+    if (process.env.NODE_ENV === 'production') {
+      config.optimization.minimizer.forEach((minimizer) => {
+        if (minimizer.constructor.name === 'TerserPlugin' && minimizer.options) {
+          minimizer.options.terserOptions = {
+            ...minimizer.options.terserOptions,
+            compress: {
+              ...minimizer.options.terserOptions?.compress,
+              pure_funcs: ['console.log', 'console.debug', 'console.info'], // Remove only these
+            },
+          }
+        }
+      })
     }
 
     // Silence known noisy warnings from OTEL/Prisma/Sentry server instrumentation
