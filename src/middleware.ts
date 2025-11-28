@@ -9,6 +9,11 @@ const intlMiddleware = createIntlMiddleware({
 });
 
 export function middleware(request: NextRequest) {
+  // Skip middleware for API routes
+  if (request.nextUrl.pathname.startsWith('/api')) {
+    return;
+  }
+
   // Handle i18n routing
   const response = intlMiddleware(request);
 
