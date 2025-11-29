@@ -128,8 +128,10 @@ export default function SpeechToText({
       let interimText = ''
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript
-        if (event.results[i].isFinal) {
+        const result = event.results[i]
+        if (!result || !result[0]) continue
+        const transcript = result[0].transcript
+        if (result.isFinal) {
           finalTranscript += transcript
         } else {
           interimText += transcript
