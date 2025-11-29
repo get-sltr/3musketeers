@@ -1,4 +1,4 @@
-import type { NextRequest } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { locales, defaultLocale } from './i18n/config';
 
@@ -9,9 +9,9 @@ const intlMiddleware = createIntlMiddleware({
 });
 
 export function middleware(request: NextRequest) {
-  // Skip middleware for API routes
+  // Skip middleware for API routes and webhooks - let them pass through
   if (request.nextUrl.pathname.startsWith('/api')) {
-    return;
+    return NextResponse.next();
   }
 
   // Handle i18n routing
