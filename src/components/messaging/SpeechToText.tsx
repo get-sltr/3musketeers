@@ -210,18 +210,17 @@ export default function SpeechToText({
         onClick={toggleListening}
         disabled={disabled}
         className={`
-          relative z-10 p-3.5 rounded-full transition-all duration-300
+          relative z-10 p-2 rounded-full transition-all duration-200
           ${isListening
-            ? 'bg-red-500 text-white shadow-lg shadow-red-500/50 scale-110'
-            : 'bg-gradient-to-br from-white/10 to-white/5 text-white hover:from-white/15 hover:to-white/10 hover:scale-105'
+            ? 'bg-red-500 text-white shadow-md shadow-red-500/40'
+            : 'bg-white/10 text-white/60 hover:bg-white/15 hover:text-white'
           }
-          disabled:opacity-50 disabled:cursor-not-allowed
-          backdrop-blur-sm border border-white/10
+          disabled:opacity-40 disabled:cursor-not-allowed
         `}
-        title={isListening ? 'Stop listening' : 'Start voice input'}
+        title={isListening ? 'Stop' : 'Voice'}
       >
         <svg
-          className={`w-6 h-6 transition-transform duration-300 ${isListening ? 'scale-110' : ''}`}
+          className={`w-5 h-5 transition-transform duration-200 ${isListening ? 'scale-105' : ''}`}
           fill={isListening ? 'currentColor' : 'none'}
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -229,7 +228,7 @@ export default function SpeechToText({
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={isListening ? 0 : 2}
+            strokeWidth={isListening ? 0 : 1.5}
             d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
           />
         </svg>
