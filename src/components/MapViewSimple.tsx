@@ -320,8 +320,14 @@ function MapViewSimple({
       
       if (typeof window !== 'undefined' && (window as any).mapboxgl) {
         const mapboxgl = (window as any).mapboxgl
-        // Use token directly - process.env doesn't always work in client components
-        mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 'pk.eyJ1Ijoic2x0ciIsImEiOiJjbWh6Z3p3c2kwOTIyMmptenNid3lnbG8zIn0.NqKpGPFkrbUWoS0-rYfzhA'
+        const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+
+        if (!mapboxToken) {
+          console.error('🗺️ Mapbox token not configured - set NEXT_PUBLIC_MAPBOX_TOKEN')
+          return
+        }
+
+        mapboxgl.accessToken = mapboxToken
         console.log('🗺️ Mapbox initialized')
 
         // Guard against unmounted component
