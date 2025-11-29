@@ -77,7 +77,7 @@ import UserAdvertisingPanel from '../components/UserAdvertisingPanel'
 import LocationSearch from '../components/LocationSearch'
 
 // Dynamic imports for modals (loaded only when needed)
-const MessagingModal = dynamic(() => import('../../components/MessagingModal'), { ssr: false })
+const EnhancedMessagingModal = dynamic(() => import('../../components/messaging/EnhancedMessagingModal').then(mod => ({ default: mod.default })), { ssr: false })
 const PlaceModal = dynamic(() => import('../components/PlaceModal'), { ssr: false })
 const GroupModal = dynamic(() => import('../components/GroupModal'), { ssr: false })
 const WelcomeModal = dynamic(() => import('../../components/WelcomeModal'), { ssr: false })
@@ -1124,9 +1124,9 @@ export default function AppPage() {
         isFavorited={selectedUser ? users.find(u => u.id === selectedUser.id)?.isFavorited : false}
       />
 
-      {/* Simple Messaging Modal - Opens on grid, doesn't navigate */}
+      {/* Enhanced Messaging Modal with 5 functions */}
       {messagingUser && (
-        <MessagingModal
+        <EnhancedMessagingModal
           user={messagingUser}
           isOpen={showMessagingModal}
           onClose={closeMessages}

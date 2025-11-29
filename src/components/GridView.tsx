@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '../lib/supabase/client'
 import { resolveProfilePhoto } from '@/lib/utils/profile'
 import UserProfileModal from './UserProfileModal'
-import MessagingModal from './MessagingModal'
+import { EnhancedMessagingModal } from './messaging'
 import AgeFilterModal from '@/app/components/filters/AgeFilterModal'
 import PositionFilterModal from '@/app/components/filters/PositionFilterModal'
 import Modal from '@/app/components/ui/Modal'
@@ -609,7 +609,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
       />
 
       {isMessagingOpen && messagingUser && (
-        <MessagingModal
+        <EnhancedMessagingModal
           user={messagingUser}
           isOpen={isMessagingOpen}
           onClose={() => {
