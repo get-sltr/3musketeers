@@ -57,8 +57,33 @@ export function useNotifications() {
 
       // Get VAPID public key from backend
       const backendUrl = process.env.NEXT_PUBLIC_DEV_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL
-      const response = await fetch(`${backendUrl}/api/push/vapid-public-key`)
-      const { publicKey } = await response.json()
+      if (!backendUrl) {
+        console.warn('⚠️ Backend URL not configured, skipping push subscription')
+        return
+      }
+
+      // Get VAPID key with error handling
+      let publicKey: string
+      try {
+        const response = await fetch(`${backendUrl}/api/push/vapid-public-key`)
+        if (!response.ok) {
+          // 503 means push notifications are not configured on backend
+          if (response.status === 503) {
+            console.warn('⚠️ Push notifications not configured on backend')
+            return
+          }
+          throw new Error(`VAPID key request failed: ${response.status}`)
+        }
+        const data = await response.json()
+        publicKey = data.publicKey
+        if (!publicKey) {
+          console.warn('⚠️ No VAPID public key returned')
+          return
+        }
+      } catch (e) {
+        console.warn('⚠️ Could not get VAPID key, push notifications disabled:', e)
+        return
+      }
 
       // Subscribe to push
       const sub = await reg.pushManager.subscribe({
@@ -68,20 +93,32 @@ export function useNotifications() {
 
       setSubscription(sub)
 
-      // Save subscription to backend
+      // Save subscription to backend with error handling
       const subJson = sub.toJSON()
-      await fetch(`${backendUrl}/api/push/subscribe`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          subscription: subJson
+      try {
+        const saveResponse = await fetch(`${backendUrl}/api/push/subscribe`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            subscription: subJson
+          })
         })
-      })
 
-      console.log('✅ Push subscription saved')
+        if (!saveResponse.ok) {
+          // Non-critical failure - log but don't throw
+          console.warn(`⚠️ Failed to save push subscription: ${saveResponse.status}`)
+          return
+        }
+
+        console.log('✅ Push subscription saved')
+      } catch (saveError) {
+        // Network error saving subscription - non-critical
+        console.warn('⚠️ Could not save push subscription:', saveError)
+      }
     } catch (error) {
-      console.error('❌ Push subscription failed:', error)
+      // Only log, don't break the app
+      console.warn('⚠️ Push subscription setup failed:', error)
     }
   }
 
