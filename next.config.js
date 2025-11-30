@@ -14,10 +14,27 @@ const nextConfig = {
   // Enable standalone output for Docker
   output: 'standalone',
 
+  // Prevent trailing slash redirects (fixes Stripe webhook 301/307)
+  skipTrailingSlashRedirect: true,
+
   // Enable experimental features for better performance
   experimental: {
     optimizePackageImports: ['framer-motion', 'lucide-react', 'date-fns'],
     instrumentationHook: true, // Required for Sentry
+  },
+
+  // Headers for webhooks
+  async headers() {
+    return [
+      {
+        source: '/api/webhooks/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'POST, OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, stripe-signature' },
+        ],
+      },
+    ]
   },
   
   // Configure webpack for path aliases and fallbacks
