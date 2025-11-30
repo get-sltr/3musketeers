@@ -532,6 +532,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
             value={tagSearch}
             onChange={e => setTagSearch(e.target.value)}
             placeholder="Search tags..."
+            aria-label="Search tags"
             className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/30 transition"
           />
           <div className="tag-list">
