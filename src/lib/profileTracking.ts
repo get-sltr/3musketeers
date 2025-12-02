@@ -1,6 +1,14 @@
 import { createClient } from '@/lib/supabase/client'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
-const supabase = createClient()
+// LAZY INITIALIZATION - Don't create client at module load time
+let _supabase: SupabaseClient | null = null
+function getSupabase() {
+  if (!_supabase) {
+    _supabase = createClient()
+  }
+  return _supabase
+}
 
 const viewCooldown = new Map<string, number>()
 const VIEW_COOLDOWN_MS = 30_000
@@ -21,7 +29,7 @@ export async function recordProfileView(
   viewCooldown.set(viewedUserId, now)
 
   try {
-    const { error } = await supabase.rpc('record_profile_view', {
+    const { error } = await getSupabase().rpc('record_profile_view', {
       viewed_user: viewedUserId,
       photos_viewed: options.viewedPhotos ?? false,
       full_profile_viewed: options.viewedFullProfile ?? false,
@@ -37,7 +45,7 @@ export async function recordProfileView(
 
 export async function recordTap(targetUserId: string) {
   try {
-    const { data, error } = await supabase.rpc('tap_user', {
+    const { data, error } = await getSupabase().rpc('tap_user', {
       target_user_id: targetUserId,
     })
     if (error) throw error
@@ -50,7 +58,7 @@ export async function recordTap(targetUserId: string) {
 
 export async function removeTap(targetUserId: string) {
   try {
-    const { error } = await supabase.rpc('untap_user', {
+    const { error } = await getSupabase().rpc('untap_user', {
       target_user_id: targetUserId,
     })
     if (error) throw error
@@ -62,10 +70,10 @@ export async function removeTap(targetUserId: string) {
 }
 
 export async function getMyTaps() {
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await getSupabase().auth.getUser()
   if (!user) return { data: null, error: 'Not authenticated' }
 
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('taps')
     .select(`
       *,
@@ -87,10 +95,10 @@ export async function getMyTaps() {
 }
 
 export async function getTapsReceived() {
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await getSupabase().auth.getUser()
   if (!user) return { data: null, error: 'Not authenticated' }
 
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('taps')
     .select(`
       *,
@@ -112,10 +120,10 @@ export async function getTapsReceived() {
 }
 
 export async function getMutualTaps() {
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await getSupabase().auth.getUser()
   if (!user) return { data: null, error: 'Not authenticated' }
 
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('taps')
     .select(`
       *,
