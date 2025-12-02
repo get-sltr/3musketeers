@@ -78,3 +78,36 @@ export function withCSRFProtection(
     return handler(request)
   }
 }
+
+/**
+ * Middleware-compatible CSRF validation for API routes
+ * Call this from Next.js middleware for centralized CSRF protection
+ * @param request - Next.js request object
+ * @returns NextResponse with 403 error if validation fails, null if valid
+ */
+export async function validateCSRFForMiddleware(
+  request: NextRequest
+): Promise<NextResponse | null> {
+  // Only validate state-changing methods
+  const method = request.method.toUpperCase()
+  if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') {
+    return null
+  }
+
+  // Skip CSRF for webhook endpoints (they use their own authentication)
+  const pathname = request.nextUrl.pathname
+  if (pathname.startsWith('/api/webhooks/')) {
+    return null
+  }
+
+  // Validate CSRF token
+  const isValid = await validateCSRFToken(request)
+  if (!isValid) {
+    return NextResponse.json(
+      { error: 'Invalid or missing CSRF token' },
+      { status: 403 }
+    )
+  }
+
+  return null
+}
