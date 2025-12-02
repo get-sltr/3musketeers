@@ -56,7 +56,7 @@ export default function AnimatedHeader({ viewMode, onViewModeChange }: AnimatedH
 
   const handleSplashComplete = useCallback(() => {
     setShowPulseSplash(false)
-    router.push('/groups')
+    router.push('/groups/channels')
   }, [router])
 
   return (

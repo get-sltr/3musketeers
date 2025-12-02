@@ -34,11 +34,12 @@ export default function ChannelsPage() {
   const [loading, setLoading] = useState(true)
   const [showCreateChannel, setShowCreateChannel] = useState(false)
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
   const [newChannelName, setNewChannelName] = useState('')
   const [newChannelDescription, setNewChannelDescription] = useState('')
   const [newChannelType, setNewChannelType] = useState<'text' | 'voice' | 'video'>('text')
   const [creatingChannel, setCreatingChannel] = useState(false)
-  
+
   // 🔒 Check if user can create channels (Plus only)
   const { allowed: canCreateChannels, loading: privilegeLoading } = useHasFeature('create_channels')
 
@@ -207,38 +208,79 @@ export default function ChannelsPage() {
         <div className="sticky top-0 z-40 bg-black/90 backdrop-blur-xl border-b border-lime-400/20">
           <div className="max-w-screen-xl mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    if (canCreateChannels) {
-                      setShowCreateChannel(true)
-                    } else {
-                      setShowUpgradePrompt(true)
-                    }
-                  }}
-                  className="px-4 py-2 rounded-xl bg-lime-400 text-black text-sm font-semibold hover:scale-105 transition-all flex items-center gap-1"
-                >
-                  {!canCreateChannels && <span>🔒</span>}
-                  + Create Channel
-                </button>
-                <Link
-                  href="/groups"
-                  className="px-4 py-2 rounded-xl bg-lime-400/20 border border-lime-400/40 text-lime-300 text-sm hover:bg-lime-400/30 transition-all"
-                >
-                  All Groups
-                </Link>
-              </div>
+              {/* Left - Title */}
               <div>
                 <h1 className="text-white text-2xl font-bold">Channels & Rooms</h1>
                 <p className="text-white/60 text-sm">Join group conversations</p>
               </div>
-              <button
-                onClick={() => router.push('/app')}
-                className="px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white text-sm font-semibold hover:bg-white/20 transition-all"
-                title="Exit"
-              >
-                ✕
-              </button>
+
+              {/* Right - Menu & Close */}
+              <div className="flex items-center gap-2">
+                {/* Hamburger Menu Button */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowMenu(!showMenu)}
+                    className="w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all"
+                    title="Menu"
+                  >
+                    <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />
+                    </svg>
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {showMenu && (
+                    <>
+                      {/* Backdrop to close menu */}
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setShowMenu(false)}
+                      />
+                      <div className="absolute right-0 top-12 z-50 w-48 bg-black/95 border border-white/20 rounded-xl shadow-xl overflow-hidden">
+                        <button
+                          onClick={() => {
+                            setShowMenu(false)
+                            if (canCreateChannels) {
+                              setShowCreateChannel(true)
+                            } else {
+                              setShowUpgradePrompt(true)
+                            }
+                          }}
+                          className="w-full px-4 py-3 text-left text-white hover:bg-lime-400/20 transition flex items-center gap-3"
+                        >
+                          <span className="text-lime-400">+</span>
+                          <span>Create Channel</span>
+                          {!canCreateChannels && <span className="ml-auto">🔒</span>}
+                        </button>
+                        <div className="border-t border-white/10" />
+                        <Link
+                          href="/groups"
+                          onClick={() => setShowMenu(false)}
+                          className="w-full px-4 py-3 text-left text-white hover:bg-lime-400/20 transition flex items-center gap-3"
+                        >
+                          <svg className="w-4 h-4 text-lime-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+                          </svg>
+                          <span>All Groups</span>
+                        </Link>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Close Button */}
+                <button
+                  onClick={() => router.push('/app')}
+                  className="w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all"
+                  title="Exit"
+                >
+                  <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
