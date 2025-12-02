@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
 import { getTierConfig, TierType } from '@/config/tiers'
+import { withCSRFProtection } from '@/lib/csrf-server'
 
 function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -9,7 +10,7 @@ function getStripe() {
   })
 }
 
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
   const stripe = getStripe()
   try {
     const { tier, userId } = await request.json()
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     // Get tier configuration
     const tierConfig = getTierConfig(tier as TierType)
-    
+
     if (!tierConfig.priceId) {
       return NextResponse.json(
         { error: 'This tier is not available for checkout' },
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user from Supabase to verify they're logged in
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError || !user) {
@@ -90,16 +91,19 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', user.id)
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       sessionId: session.id,
-      url: session.url 
+      url: session.url
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Checkout session error:', error)
+    const message = error instanceof Error ? error.message : 'Failed to create checkout session'
     return NextResponse.json(
-      { error: error.message || 'Failed to create checkout session' },
+      { error: message },
       { status: 500 }
     )
   }
 }
+
+export const POST = withCSRFProtection(handler)

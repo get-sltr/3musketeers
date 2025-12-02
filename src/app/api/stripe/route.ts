@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { withCSRFProtection } from '@/lib/csrf-server'
 
 // ============================================
 // LAZY INITIALIZATION - DO NOT CREATE CLIENTS AT MODULE LOAD TIME
@@ -65,16 +66,19 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Stripe API Error:', error)
+    const message = error instanceof Error ? error.message : 'Request failed'
     return NextResponse.json(
-      { error: error.message || 'Request failed' },
+      { error: message },
       { status: 500 }
     )
   }
 }
 
-export async function POST(request: NextRequest) {
+// TODO: Security review - userId and email should come from authenticated session, not request body
+// An attacker who knows a user's ID could potentially manipulate their Stripe data
+async function postHandler(request: NextRequest) {
   try {
     const { priceType, userId, email } = await request.json()
 
@@ -116,7 +120,7 @@ export async function POST(request: NextRequest) {
     }
 
     const priceId = PRICE_IDS[priceType as keyof typeof PRICE_IDS]
-    
+
     if (!priceId || !priceId.startsWith('price_')) {
       return NextResponse.json(
         { error: 'Price ID not configured. Please set STRIPE_FOUNDER_PRICE_ID and STRIPE_MEMBER_PRICE_ID in environment variables.' },
@@ -154,11 +158,14 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ url: session.url })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Stripe Checkout Error:', error)
+    const message = error instanceof Error ? error.message : 'Checkout failed'
     return NextResponse.json(
-      { error: error.message || 'Checkout failed' },
+      { error: message },
       { status: 500 }
     )
   }
 }
+
+export const POST = withCSRFProtection(postHandler)
