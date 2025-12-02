@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Track, TrackPublication, RemoteTrackPublication } from 'livekit-client'
+import { Track, RemoteTrackPublication, LocalTrackPublication } from 'livekit-client'
 import type { ParticipantState } from '@/types/livekit'
 import { useLiveKitStore } from '@/stores/useLiveKitStore'
 
@@ -48,17 +48,23 @@ export default function ParticipantTile({ participant, isSpotlight = false }: Pa
     }
 
     // Get camera track
-    const cameraTrack = lkParticipant.getTrackPublication(Track.Source.Camera)
+    const cameraPublication = lkParticipant.getTrackPublication(Track.Source.Camera)
+
+    if (!cameraPublication) {
+      setHasVideo(false)
+      return
+    }
 
     const attachTrack = () => {
-      if (cameraTrack?.track && videoElement) {
+      const track = cameraPublication.track
+      if (track && videoElement) {
         // Detach any previously attached track first
-        if (attachedTrackRef.current && attachedTrackRef.current !== cameraTrack.track) {
+        if (attachedTrackRef.current && attachedTrackRef.current !== track) {
           attachedTrackRef.current.detach(videoElement)
         }
 
-        cameraTrack.track.attach(videoElement)
-        attachedTrackRef.current = cameraTrack.track
+        track.attach(videoElement)
+        attachedTrackRef.current = track
         setHasVideo(true)
         console.log('Attached video track for:', participant.identity)
       } else {
@@ -66,17 +72,11 @@ export default function ParticipantTile({ participant, isSpotlight = false }: Pa
       }
     }
 
-    if (!cameraTrack) {
-      setHasVideo(false)
-      return
-    }
-
-    // Check if it's a remote track that needs subscription
-    const isRemoteTrack = 'isSubscribed' in cameraTrack
-
-    if (isRemoteTrack) {
-      const remoteTrack = cameraTrack as RemoteTrackPublication
-      if (remoteTrack.isSubscribed && remoteTrack.track) {
+    // Check if this is a remote publication (has isSubscribed property)
+    const remotePublication = cameraPublication as RemoteTrackPublication
+    if (typeof remotePublication.isSubscribed === 'boolean') {
+      // It's a remote track
+      if (remotePublication.isSubscribed && remotePublication.track) {
         attachTrack()
       } else {
         // Track not yet subscribed, set up listener
@@ -84,21 +84,23 @@ export default function ParticipantTile({ participant, isSpotlight = false }: Pa
           console.log('Track subscribed for:', participant.identity)
           attachTrack()
         }
-        remoteTrack.on('subscribed', handleSubscribed)
+        remotePublication.on('subscribed', handleSubscribed)
 
         return () => {
-          remoteTrack.off('subscribed', handleSubscribed)
+          remotePublication.off('subscribed', handleSubscribed)
           if (attachedTrackRef.current && videoElement) {
             attachedTrackRef.current.detach(videoElement)
             attachedTrackRef.current = null
           }
         }
       }
-    } else if (cameraTrack.track) {
-      // Local track - attach immediately
-      attachTrack()
     } else {
-      setHasVideo(false)
+      // Local track - attach immediately if available
+      if (cameraPublication.track) {
+        attachTrack()
+      } else {
+        setHasVideo(false)
+      }
     }
 
     // Cleanup
