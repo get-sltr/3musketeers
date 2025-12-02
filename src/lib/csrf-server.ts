@@ -28,8 +28,18 @@ export async function validateCSRFToken(request: NextRequest): Promise<boolean> 
       return false
     }
 
-    // Tokens must match exactly
-    return headerToken === cookieToken
+    // Use a constant-time comparison to prevent timing attacks
+    const { timingSafeEqual } = await import('crypto')
+
+    const headerTokenBuffer = Buffer.from(headerToken)
+    const cookieTokenBuffer = Buffer.from(cookieToken)
+
+    // Ensure buffers are the same length to prevent timingSafeEqual from throwing
+    if (headerTokenBuffer.length !== cookieTokenBuffer.length) {
+      return false
+    }
+
+    return timingSafeEqual(headerTokenBuffer, cookieTokenBuffer)
   } catch (error) {
     console.error('Error validating CSRF token:', error)
     return false
