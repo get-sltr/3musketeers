@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { withCSRFProtection } from '@/lib/csrf-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -7,7 +8,7 @@ export const dynamic = 'force-dynamic'
  * POST /api/taps
  * Send a tap to another user
  */
-export async function POST(request: NextRequest) {
+async function postHandler(request: NextRequest) {
   try {
     // 1. Check authentication
     const supabase = await createClient()
@@ -87,14 +88,17 @@ export async function POST(request: NextRequest) {
       tap
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in taps API:', error)
+    const message = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details: message },
       { status: 500 }
     )
   }
 }
+
+export const POST = withCSRFProtection(postHandler)
 
 /**
  * GET /api/taps
@@ -140,7 +144,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ taps })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in taps GET:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
