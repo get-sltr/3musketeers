@@ -14,7 +14,7 @@ interface Channel {
   name: string
   description?: string
   group_id: string
-  type: 'text' | 'voice' | 'video'
+  type: 'video' // Video conferencing only (includes text & voice)
   member_count?: number
 }
 
@@ -37,7 +37,6 @@ export default function ChannelsPage() {
   const [showMenu, setShowMenu] = useState(false)
   const [newChannelName, setNewChannelName] = useState('')
   const [newChannelDescription, setNewChannelDescription] = useState('')
-  const [newChannelType, setNewChannelType] = useState<'text' | 'voice' | 'video'>('text')
   const [creatingChannel, setCreatingChannel] = useState(false)
 
   // 🔒 Check if user can create channels (Plus only)
@@ -82,42 +81,22 @@ export default function ChannelsPage() {
         .order('created_at', { ascending: true })
 
       if (!error && channelsData && channelsData.length > 0) {
-        setChannels(channelsData.map(ch => ({
-          id: ch.id,
-          name: ch.name,
-          description: ch.description,
-          group_id: ch.group_id,
-          type: ch.type as 'text' | 'voice' | 'video',
-          member_count: ch.member_count,
-        })))
+        // Filter to only video channels (or treat all as video)
+        setChannels(channelsData
+          .filter(ch => ch.type === 'video' || !ch.type) // Only video or untyped
+          .map(ch => ({
+            id: ch.id,
+            name: ch.name,
+            description: ch.description,
+            group_id: ch.group_id,
+            type: 'video' as const,
+            member_count: ch.member_count,
+          })))
         return
       }
 
-      // Fallback to default channels if table doesn't exist or is empty
-      const defaultChannels: Channel[] = [
-        {
-          id: `${selectedGroup}-general`,
-          name: 'General',
-          description: 'General discussion',
-          group_id: selectedGroup,
-          type: 'text',
-        },
-        {
-          id: `${selectedGroup}-voice`,
-          name: 'Voice Chat',
-          description: 'Join voice call',
-          group_id: selectedGroup,
-          type: 'voice',
-        },
-        {
-          id: `${selectedGroup}-video`,
-          name: 'Video Room',
-          description: 'Join video call',
-          group_id: selectedGroup,
-          type: 'video',
-        },
-      ]
-      setChannels(defaultChannels)
+      // No default channels - users create their own video rooms
+      setChannels([])
     } catch (err) {
       console.error('Error loading channels:', err)
       // Fallback to empty array
@@ -157,7 +136,7 @@ export default function ChannelsPage() {
           name: newChannelName.trim(),
           description: newChannelDescription.trim() || null,
           group_id: groupId,
-          type: newChannelType,
+          type: 'video', // Always video conferencing (includes text & voice)
           created_by: user.id,
         })
         .select()
@@ -165,7 +144,6 @@ export default function ChannelsPage() {
 
       if (error) {
         console.error('Error creating channel:', error)
-        // Better error messaging
         if (error.code === '42P01') {
           alert('Channels table not set up. Please create it in Supabase.')
         } else {
@@ -179,8 +157,6 @@ export default function ChannelsPage() {
       setShowCreateChannel(false)
       setNewChannelName('')
       setNewChannelDescription('')
-      setNewChannelType('text')
-      alert('Channel created successfully!')
     } catch (err: any) {
       console.error('Error creating channel:', err)
       alert(`Error: ${err.message || 'Failed to create channel'}`)
@@ -317,26 +293,21 @@ export default function ChannelsPage() {
 
           {channels.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-white/60">No channels available</p>
-              <p className="text-white/40 text-sm mt-2">Create a group to get started</p>
+              <div className="text-4xl mb-4">📹</div>
+              <p className="text-white/60">No video rooms yet</p>
+              <p className="text-white/40 text-sm mt-2">Create a video room to start conferencing</p>
             </div>
           ) : (
             channels.map((channel) => (
               <Link
                 key={channel.id}
-                href={`/groups/channels/${channel.id}?group=${selectedGroup}&type=${channel.type}`}
-                className="block p-4 bg-black/40 border border-white/10 rounded-xl hover:border-lime-400/40 transition"
+                href={`/groups/channels/${channel.id}?group=${selectedGroup}&type=video`}
+                className="block p-4 bg-black/40 border border-white/10 rounded-xl hover:border-purple-400/40 transition"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                      channel.type === 'text' ? 'bg-blue-500/20' :
-                      channel.type === 'voice' ? 'bg-green-500/20' :
-                      'bg-purple-500/20'
-                    }`}>
-                      {channel.type === 'text' && '💬'}
-                      {channel.type === 'voice' && '🎤'}
-                      {channel.type === 'video' && '📹'}
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-purple-500/20">
+                      📹
                     </div>
                     <div>
                       <h3 className="text-white font-medium">{channel.name}</h3>
@@ -354,29 +325,33 @@ export default function ChannelsPage() {
           )}
         </div>
 
-        {/* Create Channel Modal */}
+        {/* Create Video Room Modal */}
         {showCreateChannel && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xl p-4">
             <div className="w-full max-w-md rounded-2xl bg-black/90 border border-white/20 p-6 relative">
               {!selectedGroup && (
-                <div className="mb-4 p-3 bg-white rounded-lg">
-                  <p className="text-gray-800 text-sm">Please create or select a group first</p>
+                <div className="mb-4 p-3 bg-yellow-500/20 border border-yellow-500/40 rounded-lg">
+                  <p className="text-yellow-200 text-sm">Please create or select a group first</p>
                   <button
                     onClick={() => setShowCreateChannel(false)}
-                    className="mt-2 text-sm text-gray-600 underline"
+                    className="mt-2 text-sm text-yellow-300 underline"
                   >
                     Close
                   </button>
                 </div>
               )}
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-white">Create Channel</h2>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-purple-500/20">
+                    📹
+                  </div>
+                  <h2 className="text-xl font-bold text-white">Create Video Room</h2>
+                </div>
                 <button
                   onClick={() => {
                     setShowCreateChannel(false)
                     setNewChannelName('')
                     setNewChannelDescription('')
-                    setNewChannelType('text')
                   }}
                   className="text-white/60 hover:text-white"
                 >
@@ -386,17 +361,24 @@ export default function ChannelsPage() {
                 </button>
               </div>
 
+              {/* Info banner */}
+              <div className="mb-4 p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                <p className="text-purple-200 text-sm">
+                  Video rooms include text chat and voice - all in one place.
+                </p>
+              </div>
+
               <form onSubmit={handleCreateChannel} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-white/80 mb-2">
-                    Channel Name *
+                    Room Name *
                   </label>
                   <input
                     type="text"
                     value={newChannelName}
                     onChange={(e) => setNewChannelName(e.target.value)}
-                    className="w-full rounded-xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-lime-400"
-                    placeholder="e.g., General, Voice Chat, Video Room"
+                    className="w-full rounded-xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                    placeholder="e.g., Hangout Room, Party Lounge"
                     required
                   />
                 </div>
@@ -409,33 +391,9 @@ export default function ChannelsPage() {
                     type="text"
                     value={newChannelDescription}
                     onChange={(e) => setNewChannelDescription(e.target.value)}
-                    className="w-full rounded-xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-lime-400"
-                    placeholder="What's this channel for?"
+                    className="w-full rounded-xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                    placeholder="What's this room for?"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-white/80 mb-2">
-                    Channel Type *
-                  </label>
-                  <div className="flex gap-2">
-                    {(['text', 'voice', 'video'] as const).map((type) => (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={() => setNewChannelType(type)}
-                        className={`flex-1 px-4 py-3 rounded-xl font-semibold transition-all ${
-                          newChannelType === type
-                            ? 'bg-lime-400 text-black'
-                            : 'bg-white/10 text-white/60 hover:bg-white/20'
-                        }`}
-                      >
-                        {type === 'text' && '💬 Text'}
-                        {type === 'voice' && '🎤 Voice'}
-                        {type === 'video' && '📹 Video'}
-                      </button>
-                    ))}
-                  </div>
                 </div>
 
                 <div className="flex gap-3 pt-2">
@@ -445,7 +403,6 @@ export default function ChannelsPage() {
                       setShowCreateChannel(false)
                       setNewChannelName('')
                       setNewChannelDescription('')
-                      setNewChannelType('text')
                     }}
                     className="flex-1 px-4 py-3 rounded-xl bg-white/10 text-white font-semibold hover:bg-white/20 transition-all"
                   >
