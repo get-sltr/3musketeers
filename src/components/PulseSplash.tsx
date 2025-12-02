@@ -37,11 +37,14 @@ export default function PulseSplash({ isOpen, onComplete, duration = 2500 }: Pul
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0, transition: { duration: 0.3 } }}
-          className="fixed inset-0 z-[100] flex flex-col items-center justify-center"
-          style={{ backgroundColor: '#0a0a12' }}
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-between"
+          style={{ backgroundColor: '#0a0a12', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
         >
-          {/* Main content container */}
-          <div className="flex flex-col items-center justify-center flex-1 px-6">
+          {/* Spacer for top */}
+          <div className="flex-1" />
+
+          {/* Main content container - vertically centered */}
+          <div className="flex flex-col items-center justify-center px-6">
             {/* Animated ECG Line */}
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
@@ -134,6 +137,9 @@ export default function PulseSplash({ isOpen, onComplete, duration = 2500 }: Pul
               Live video groups and channels
             </motion.p>
           </div>
+
+          {/* Spacer for bottom - creates vertical centering */}
+          <div className="flex-1" />
 
           {/* Bottom section - branding */}
           <motion.div

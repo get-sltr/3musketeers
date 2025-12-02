@@ -12,7 +12,6 @@ import { useLiveKitStore } from '@/stores/useLiveKitStore'
 function ChannelRoomContent({ channelId }: { channelId: string }) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const channelType = searchParams?.get('type') || 'text'
   const groupId = searchParams?.get('group') || ''
 
   const [room, setRoom] = useState<Room | null>(null)
@@ -26,12 +25,7 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
   const resetRoom = useLiveKitStore((state) => state.resetRoom)
 
   useEffect(() => {
-    // For text channels, redirect to chat interface
-    if (channelType !== 'video' && channelType !== 'voice') {
-      router.push(`/groups/${groupId}?channel=${channelId}`)
-      return
-    }
-
+    // All channels are now video rooms (includes text & voice)
     const supabase = createClient()
     let isMounted = true
 
@@ -104,10 +98,8 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
           role: 'member',
         }))
 
-        // Enable camera and microphone
-        if (channelType === 'video') {
-          await newRoom.localParticipant.setCameraEnabled(true)
-        }
+        // Enable camera and microphone (all rooms are video now)
+        await newRoom.localParticipant.setCameraEnabled(true)
         await newRoom.localParticipant.setMicrophoneEnabled(true)
 
         setRoom(newRoom)
@@ -146,14 +138,14 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
       }
       resetRoom()
     }
-  }, [channelId, channelType, groupId, router, resetRoom])
+  }, [channelId, groupId, router, resetRoom])
 
   if (connecting) {
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-lime-400 mx-auto mb-4"></div>
-          <p className="text-white">Connecting to {channelType === 'video' ? 'video' : 'voice'} room...</p>
+          <p className="text-white">Connecting to video room...</p>
         </div>
       </div>
     )
