@@ -5,7 +5,7 @@ export async function GET(
   request: Request,
   { params }: { params: { code: string } }
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { code } = params;
 
   try {
