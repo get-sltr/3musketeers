@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import UserMenu from './UserMenu'
+import PulseSplash from './PulseSplash'
 
 // ECG Heartbeat Icon - minimal, clean SVG
 function ECGIcon({ className }: { className?: string }) {
@@ -32,6 +33,7 @@ export default function AnimatedHeader({ viewMode, onViewModeChange }: AnimatedH
   const t = useTranslations('nav')
   const router = useRouter()
   const [isScrolled, setIsScrolled] = useState(false)
+  const [showPulseSplash, setShowPulseSplash] = useState(false)
   const { scrollY } = useScroll()
 
   // Animate opacity based on scroll position
@@ -46,6 +48,16 @@ export default function AnimatedHeader({ viewMode, onViewModeChange }: AnimatedH
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  // Handle Pulse button click - show splash then navigate
+  const handlePulseClick = useCallback(() => {
+    setShowPulseSplash(true)
+  }, [])
+
+  const handleSplashComplete = useCallback(() => {
+    setShowPulseSplash(false)
+    router.push('/groups')
+  }, [router])
 
   return (
     <motion.header
@@ -125,7 +137,7 @@ export default function AnimatedHeader({ viewMode, onViewModeChange }: AnimatedH
 
           {/* Pulse Button - Routes to Groups/Channels */}
           <motion.button
-            onClick={() => router.push('/groups')}
+            onClick={handlePulseClick}
             className="group relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-black/40 border border-white/10 hover:border-rose-400/50 transition-all duration-300"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -142,6 +154,13 @@ export default function AnimatedHeader({ viewMode, onViewModeChange }: AnimatedH
           </motion.button>
         </div>
       </div>
+
+      {/* Pulse Splash Screen */}
+      <PulseSplash
+        isOpen={showPulseSplash}
+        onComplete={handleSplashComplete}
+        duration={2500}
+      />
     </motion.header>
   )
 }
