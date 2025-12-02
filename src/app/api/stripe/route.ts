@@ -14,7 +14,7 @@ function getStripe(): Stripe | null {
   if (!_stripe) {
     const key = process.env.STRIPE_SECRET_KEY
     if (key) {
-      _stripe = new Stripe(key, { apiVersion: '2025-10-29.clover' })
+      _stripe = new Stripe(key, { apiVersion: '2024-12-18.acacia' })
     }
   }
   return _stripe
@@ -35,9 +35,12 @@ function getSupabase(): SupabaseClient {
 }
 
 // Price IDs - these should be created in Stripe Dashboard
-const PRICE_IDS = {
-  founder: process.env.STRIPE_FOUNDER_PRICE_ID || 'price_founder', // One-time $199
-  member: process.env.STRIPE_MEMBER_PRICE_ID || 'price_member', // Monthly $12.99
+// Stripe price IDs are in format: price_1XXXXXXXXXXXXXXXXXXXXXX (28+ chars)
+function getPriceIds() {
+  return {
+    founder: process.env.STRIPE_FOUNDER_PRICE_ID || '',
+    member: process.env.STRIPE_MEMBER_PRICE_ID || process.env.STRIPE_PRICE_MEMBER || '',
+  }
 }
 
 const FOUNDER_LIMIT = 2000
@@ -115,12 +118,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const PRICE_IDS = getPriceIds()
     const priceId = PRICE_IDS[priceType as keyof typeof PRICE_IDS]
-    
-    if (!priceId || !priceId.startsWith('price_')) {
+
+    // Stripe price IDs should be at least 20 characters (e.g., price_1XXXXXXXXX...)
+    if (!priceId || priceId.length < 20) {
+      console.error(`Price ID not configured for ${priceType}. Available: founder=${PRICE_IDS.founder?.slice(0,10)}..., member=${PRICE_IDS.member?.slice(0,10)}...`)
       return NextResponse.json(
-        { error: 'Price ID not configured. Please set STRIPE_FOUNDER_PRICE_ID and STRIPE_MEMBER_PRICE_ID in environment variables.' },
-        { status: 500 }
+        { error: 'Payment system is being configured. Please try again shortly or contact support.' },
+        { status: 503 }
       )
     }
 
