@@ -9,6 +9,7 @@ export interface ParticipantMeta {
 
 export interface ParticipantState {
   sid: string
+  identity: string  // LiveKit identity for lookups
   userId: string
   name: string
   avatar?: string

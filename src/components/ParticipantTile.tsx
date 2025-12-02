@@ -18,12 +18,29 @@ export default function ParticipantTile({ participant, isSpotlight = false }: Pa
   useEffect(() => {
     if (!room || !videoRef.current) return
 
-    // Find the actual LiveKit participant
-    const lkParticipant = participant.sid === room.localParticipant.sid
-      ? room.localParticipant
-      : room.remoteParticipants.get(participant.sid)
+    // Find the actual LiveKit participant by identity (more reliable than sid)
+    let lkParticipant = null
 
-    if (!lkParticipant) return
+    if (participant.identity === room.localParticipant.identity) {
+      lkParticipant = room.localParticipant
+    } else {
+      // Search through remote participants by identity
+      lkParticipant = room.remoteParticipants.get(participant.identity)
+
+      // Fallback: search by sid if identity lookup fails
+      if (!lkParticipant) {
+        room.remoteParticipants.forEach((p) => {
+          if (p.sid === participant.sid) {
+            lkParticipant = p
+          }
+        })
+      }
+    }
+
+    if (!lkParticipant) {
+      console.warn('Could not find LiveKit participant:', participant.identity, participant.sid)
+      return
+    }
 
     // Get camera track
     const cameraTrack = lkParticipant.getTrackPublication(Track.Source.Camera)
@@ -38,7 +55,7 @@ export default function ParticipantTile({ participant, isSpotlight = false }: Pa
         cameraTrack.track.detach(videoRef.current)
       }
     }
-  }, [room, participant.sid, participant.isCameraOff])
+  }, [room, participant.sid, participant.identity, participant.isCameraOff])
 
   if (!participant) return null
 
