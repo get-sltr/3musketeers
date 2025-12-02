@@ -95,10 +95,11 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
         roomRef.current = newRoom
         setRoom(newRoom)
 
-        // Handle disconnection
+        // Handle disconnection - reset everything
         newRoom.on('disconnected', () => {
           setRoom(null)
           roomRef.current = null
+          connectionAttempted.current = false  // Allow reconnection on next visit
           router.back()
         })
 
@@ -118,6 +119,7 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
         roomRef.current.disconnect()
         roomRef.current = null
       }
+      connectionAttempted.current = false  // Reset for next mount
     }
   }, [channelId, channelType, groupId, router])
 

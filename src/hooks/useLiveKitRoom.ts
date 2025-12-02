@@ -9,12 +9,15 @@ export const useLiveKitRoom = (room: Room | null) => {
   const {
     addOrUpdateParticipant,
     removeParticipant,
-    setRoom
+    setRoom,
+    resetRoom
   } = useLiveKitStore()
 
   useEffect(() => {
     if (!room) return
 
+    // CRITICAL: Reset store before setting up new room to clear old participants
+    resetRoom()
     setRoom(room)
 
     const handleParticipantConnected = (p: RemoteParticipant | LocalParticipant) => {
@@ -66,9 +69,10 @@ export const useLiveKitRoom = (room: Room | null) => {
       room.off(RoomEvent.TrackUnmuted, syncAllParticipants)
       room.off(RoomEvent.LocalTrackPublished, syncAllParticipants)
       room.off(RoomEvent.TrackPublished, syncAllParticipants)
-      setRoom(null)
+      // CRITICAL: Reset entire store on cleanup to prevent stale participants
+      resetRoom()
     }
-  }, [room, addOrUpdateParticipant, removeParticipant, setRoom])
+  }, [room, addOrUpdateParticipant, removeParticipant, setRoom, resetRoom])
 }
 
 function extractMetadata(p: RemoteParticipant | LocalParticipant): ParticipantMeta {
