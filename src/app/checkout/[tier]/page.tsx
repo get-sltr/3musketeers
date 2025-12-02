@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { csrfFetch } from '@/lib/csrf-client'
 import { getTierConfig, TierType, formatPrice } from '@/config/tiers'
 import { loadStripe } from '@stripe/stripe-js'
 
@@ -57,7 +58,7 @@ export default function CheckoutPage({
 
     try {
       // Create checkout session
-      const response = await fetch('/api/create-checkout-session', {
+      const response = await csrfFetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

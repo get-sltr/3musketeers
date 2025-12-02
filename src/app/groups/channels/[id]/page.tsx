@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { csrfFetch } from '@/lib/csrf-client'
 import { Room } from 'livekit-client'
 import ConferenceRoom from '@/components/ConferenceRoom'
 import LoadingSkeleton from '@/components/LoadingSkeleton'
@@ -46,7 +47,7 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
         const participantName = profile?.display_name || user.id
 
         // Get LiveKit token from Next.js API route
-        const response = await fetch('/api/livekit-token', {
+        const response = await csrfFetch('/api/livekit-token', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

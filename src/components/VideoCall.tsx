@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import DailyIframe from '@daily-co/daily-js'
 import { useHasFeature } from '@/hooks/usePrivileges'
+import { csrfFetch } from '@/lib/csrf-client'
 import UpgradePrompt from './UpgradePrompt'
 
 interface VideoCallProps {
@@ -46,10 +47,10 @@ export default function VideoCall({
       setError(null)
 
       try {
-        const response = await fetch('/api/daily/create-room', {
+        const response = await csrfFetch('/api/daily/create-room', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             conversationId,
             currentUserId  // ✅ Pass it to the API
           }),

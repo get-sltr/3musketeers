@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { withCSRFProtection } from '@/lib/csrf-server'
 
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
   try {
     const { conversationId, currentUserId } = await request.json()
 
@@ -110,11 +111,14 @@ export async function POST(request: NextRequest) {
       token,
       roomName,
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating Daily.co room:', error)
+    const message = error instanceof Error ? error.message : 'Failed to create video room'
     return NextResponse.json(
-      { error: error.message || 'Failed to create video room' },
+      { error: message },
       { status: 500 }
     )
   }
 }
+
+export const POST = withCSRFProtection(handler)

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { csrfFetch } from '@/lib/csrf-client';
 
 interface VerificationResult {
   valid: boolean;
@@ -60,7 +61,7 @@ export default function VerifyBlackCard() {
 
     setClaiming(true);
     try {
-      const response = await fetch(`/api/verify/${code}/redeem`, {
+      const response = await csrfFetch(`/api/verify/${code}/redeem`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });

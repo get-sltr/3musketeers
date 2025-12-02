@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { csrfFetch } from '@/lib/csrf-client'
 import Modal from '@/app/components/ui/Modal'
 
 interface WelcomeModalProps {
@@ -24,7 +25,7 @@ export default function WelcomeModal({ isOpen, onClose, userName }: WelcomeModal
 
     setSending(true)
     try {
-      await fetch('/api/feedback/welcome', {
+      await csrfFetch('/api/feedback/welcome', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ feedback, email: email || undefined })
