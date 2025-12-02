@@ -14,7 +14,12 @@ import ParticipantsDrawer from './ParticipantsDrawer'
 import ChatSidebar from './ChatSidebar'
 import CameraRequestBanner from './conference/CameraRequestBanner'
 
-export default function ConferenceRoom({ room }: { room: Room }) {
+interface ConferenceRoomProps {
+  room: Room
+  displayName?: string
+}
+
+export default function ConferenceRoom({ room, displayName }: ConferenceRoomProps) {
   const {
     participants,
     spotlight,
@@ -51,7 +56,7 @@ export default function ConferenceRoom({ room }: { room: Room }) {
       {/* Room Header - shows room name and participant count */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[20] px-6 py-2 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full">
         <div className="flex items-center gap-3">
-          <span className="text-lime-400 font-semibold">{room.name || 'Video Room'}</span>
+          <span className="text-lime-400 font-semibold">{displayName || 'Video Room'}</span>
           <span className="text-white/60 text-sm">•</span>
           <span className="text-white/60 text-sm">{participantList.length} {participantList.length === 1 ? 'person' : 'people'}</span>
         </div>

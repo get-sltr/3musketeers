@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Room } from 'livekit-client'
+import { Room, RoomEvent, ConnectionState } from 'livekit-client'
 import ConferenceRoom from '@/components/ConferenceRoom'
 import LoadingSkeleton from '@/components/LoadingSkeleton'
 
@@ -16,10 +16,12 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
   const [room, setRoom] = useState<Room | null>(null)
   const [connecting, setConnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [displayName, setDisplayName] = useState<string>('Video Room')
 
   // Use ref to prevent multiple connection attempts
   const connectionAttempted = useRef(false)
   const roomRef = useRef<Room | null>(null)
+  const isDisconnecting = useRef(false)
 
   useEffect(() => {
     // Prevent multiple connections
@@ -52,6 +54,27 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
           .eq('id', user.id)
           .single()
 
+        // Fetch channel and group info for display name
+        const { data: channelData } = await supabase
+          .from('channels')
+          .select('name, group_id')
+          .eq('id', channelId)
+          .single()
+
+        let roomDisplayName = 'Video Room'
+        if (channelData) {
+          const { data: groupData } = await supabase
+            .from('groups')
+            .select('name')
+            .eq('id', channelData.group_id || groupId)
+            .single()
+
+          roomDisplayName = groupData?.name
+            ? `${groupData.name} - ${channelData.name}`
+            : channelData.name
+        }
+        setDisplayName(roomDisplayName)
+
         const participantName = profile?.display_name || user.id
 
         // Get LiveKit token from Next.js API route
@@ -72,7 +95,21 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
         const { token, url } = await response.json()
 
         // Connect to LiveKit room
-        const newRoom = new Room()
+        const newRoom = new Room({
+          // Adaptive streaming for better performance with many participants
+          adaptiveStream: true,
+          dynacast: true,
+          // Faster reconnection
+          disconnectOnPageLeave: false,
+        })
+
+        // Handle connection state changes
+        newRoom.on(RoomEvent.ConnectionStateChanged, (state: ConnectionState) => {
+          console.log('Connection state:', state)
+          if (state === ConnectionState.Disconnected && !isDisconnecting.current) {
+            console.log('Unexpected disconnect, attempting to stay in room view')
+          }
+        })
 
         await newRoom.connect(url, token, {
           autoSubscribe: true,
@@ -83,7 +120,7 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
           userId: user.id,
           name: participantName,
           avatar: profile?.photo_url,
-          role: 'member', // Default role, can be 'host' if user created the group
+          role: 'member',
         }))
 
         // Enable camera and microphone
@@ -95,18 +132,20 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
         roomRef.current = newRoom
         setRoom(newRoom)
 
-        // Handle disconnection - reset everything
+        // Handle disconnection - only navigate back if intentional
         newRoom.on('disconnected', () => {
-          setRoom(null)
-          roomRef.current = null
-          connectionAttempted.current = false  // Allow reconnection on next visit
-          router.back()
+          if (isDisconnecting.current) {
+            setRoom(null)
+            roomRef.current = null
+            connectionAttempted.current = false
+            router.back()
+          }
         })
 
       } catch (err: any) {
         console.error('Failed to connect to room:', err)
         setError(err.message || 'Failed to connect to video room')
-        connectionAttempted.current = false // Allow retry on error
+        connectionAttempted.current = false
       } finally {
         setConnecting(false)
       }
@@ -116,10 +155,11 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
 
     return () => {
       if (roomRef.current) {
+        isDisconnecting.current = true
         roomRef.current.disconnect()
         roomRef.current = null
       }
-      connectionAttempted.current = false  // Reset for next mount
+      connectionAttempted.current = false
     }
   }, [channelId, channelType, groupId, router])
 
@@ -155,7 +195,7 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
     return null
   }
 
-  return <ConferenceRoom room={room} />
+  return <ConferenceRoom room={room} displayName={displayName} />
 }
 
 export default function ChannelRoomPage({ params }: { params: { id: string } }) {
