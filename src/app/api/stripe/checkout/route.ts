@@ -10,7 +10,7 @@ function getStripe() {
     if (!key) {
       throw new Error('STRIPE_SECRET_KEY not configured')
     }
-    _stripe = new Stripe(key, { apiVersion: '2024-12-18.acacia' })
+    _stripe = new Stripe(key, { apiVersion: '2025-10-29.clover' })
   }
   return _stripe
 }

@@ -14,7 +14,7 @@ function getStripe(): Stripe | null {
   if (!_stripe) {
     const key = process.env.STRIPE_SECRET_KEY
     if (key) {
-      _stripe = new Stripe(key, { apiVersion: '2024-12-18.acacia' })
+      _stripe = new Stripe(key, { apiVersion: '2025-10-29.clover' })
     }
   }
   return _stripe
