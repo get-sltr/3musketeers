@@ -1,18 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY
-const stripe = stripeSecretKey
-  ? new Stripe(stripeSecretKey, {
-      apiVersion: '2025-10-29.clover'
-})
-  : null
+// ============================================
+// LAZY INITIALIZATION - DO NOT CREATE CLIENTS AT MODULE LOAD TIME
+// Clients are created only when first used at RUNTIME
+// ============================================
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+let _stripe: Stripe | null = null
+let _supabase: SupabaseClient | null = null
+
+function getStripe(): Stripe | null {
+  if (!_stripe) {
+    const key = process.env.STRIPE_SECRET_KEY
+    if (key) {
+      _stripe = new Stripe(key, { apiVersion: '2025-10-29.clover' })
+    }
+  }
+  return _stripe
+}
+
+function getSupabase(): SupabaseClient {
+  if (!_supabase) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!url || !key) {
+      throw new Error('Supabase credentials not configured')
+    }
+
+    _supabase = createClient(url, key)
+  }
+  return _supabase
+}
 
 // Price IDs - these should be created in Stripe Dashboard
 const PRICE_IDS = {
@@ -29,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     // Get founder count
     if (action === 'founder-count') {
-      const { count } = await supabase
+      const { count } = await getSupabase()
         .from('profiles')
         .select('id', { count: 'exact', head: true })
         .eq('founder', true)
@@ -66,7 +86,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user has a profile (optional)
-    const { data: user } = await supabase
+    const { data: user } = await getSupabase()
       .from('profiles')
       .select('id, founder, subscription_status')
       .eq('id', userId)
@@ -82,7 +102,7 @@ export async function POST(request: NextRequest) {
 
     // Check founder availability
     if (priceType === 'founder') {
-      const { count } = await supabase
+      const { count } = await getSupabase()
         .from('profiles')
         .select('id', { count: 'exact', head: true })
         .eq('founder', true)
@@ -104,6 +124,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const stripe = getStripe()
     if (!stripe) {
       console.error('Stripe secret key is not configured')
       return NextResponse.json(
