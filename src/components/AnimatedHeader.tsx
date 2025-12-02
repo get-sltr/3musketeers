@@ -3,7 +3,25 @@
 import { useState, useEffect } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { useTranslations } from 'next-intl'
+import { useRouter } from 'next/navigation'
 import UserMenu from './UserMenu'
+
+// ECG Heartbeat Icon - minimal, clean SVG
+function ECGIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 32 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M0 8h6l2-6 3 12 2.5-8 1.5 2h3l2-4 2 4h10" />
+    </svg>
+  )
+}
 
 interface AnimatedHeaderProps {
   viewMode: 'grid' | 'map'
@@ -12,6 +30,7 @@ interface AnimatedHeaderProps {
 
 export default function AnimatedHeader({ viewMode, onViewModeChange }: AnimatedHeaderProps) {
   const t = useTranslations('nav')
+  const router = useRouter()
   const [isScrolled, setIsScrolled] = useState(false)
   const { scrollY } = useScroll()
 
@@ -103,6 +122,24 @@ export default function AnimatedHeader({ viewMode, onViewModeChange }: AnimatedH
               <span className="text-xs sm:text-sm font-medium hidden sm:inline">{t('map')}</span>
             </motion.button>
           </motion.div>
+
+          {/* Pulse Button - Routes to Groups/Channels */}
+          <motion.button
+            onClick={() => router.push('/groups')}
+            className="group relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-black/40 border border-white/10 hover:border-rose-400/50 transition-all duration-300"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            title="Pulse - Groups & Channels"
+          >
+            {/* Heartbeat pulse animation ring */}
+            <span className="absolute inset-0 rounded-lg animate-pulse-ring opacity-0 group-hover:opacity-100" />
+
+            <ECGIcon className="w-5 h-5 sm:w-6 sm:h-6 text-rose-400 group-hover:animate-ecg-beat" />
+            <span className="text-xs sm:text-sm font-medium text-white/80 group-hover:text-rose-400 transition-colors hidden sm:inline">
+              Pulse
+            </span>
+          </motion.button>
         </div>
       </div>
     </motion.header>
