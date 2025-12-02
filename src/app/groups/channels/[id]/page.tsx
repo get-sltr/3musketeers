@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Room } from 'livekit-client'
@@ -12,13 +12,22 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
   const searchParams = useSearchParams()
   const channelType = searchParams?.get('type') || 'text'
   const groupId = searchParams?.get('group') || ''
-  
+
   const [room, setRoom] = useState<Room | null>(null)
   const [connecting, setConnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
+
+  // Use ref to prevent multiple connection attempts
+  const connectionAttempted = useRef(false)
+  const roomRef = useRef<Room | null>(null)
 
   useEffect(() => {
+    // Prevent multiple connections
+    if (connectionAttempted.current) return
+    connectionAttempted.current = true
+
+    const supabase = createClient()
+
     const connectToRoom = async () => {
       if (channelType !== 'video' && channelType !== 'voice') {
         // For text channels, redirect to chat interface
@@ -83,17 +92,20 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
         }
         await newRoom.localParticipant.setMicrophoneEnabled(true)
 
+        roomRef.current = newRoom
         setRoom(newRoom)
 
         // Handle disconnection
         newRoom.on('disconnected', () => {
           setRoom(null)
+          roomRef.current = null
           router.back()
         })
 
       } catch (err: any) {
         console.error('Failed to connect to room:', err)
         setError(err.message || 'Failed to connect to video room')
+        connectionAttempted.current = false // Allow retry on error
       } finally {
         setConnecting(false)
       }
@@ -102,11 +114,12 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
     connectToRoom()
 
     return () => {
-      if (room) {
-        room.disconnect()
+      if (roomRef.current) {
+        roomRef.current.disconnect()
+        roomRef.current = null
       }
     }
-  }, [channelId, channelType, groupId, router, supabase])
+  }, [channelId, channelType, groupId, router])
 
   if (connecting) {
     return (

@@ -1,5 +1,10 @@
+'use client'
+
+import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
+import { Track } from 'livekit-client'
 import type { ParticipantState } from '@/types/livekit'
+import { useLiveKitStore } from '@/stores/useLiveKitStore'
 
 interface ParticipantTileProps {
   participant: ParticipantState
@@ -7,6 +12,34 @@ interface ParticipantTileProps {
 }
 
 export default function ParticipantTile({ participant, isSpotlight = false }: ParticipantTileProps) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const { room } = useLiveKitStore()
+
+  useEffect(() => {
+    if (!room || !videoRef.current) return
+
+    // Find the actual LiveKit participant
+    const lkParticipant = participant.sid === room.localParticipant.sid
+      ? room.localParticipant
+      : room.remoteParticipants.get(participant.sid)
+
+    if (!lkParticipant) return
+
+    // Get camera track
+    const cameraTrack = lkParticipant.getTrackPublication(Track.Source.Camera)
+
+    if (cameraTrack?.track) {
+      cameraTrack.track.attach(videoRef.current)
+    }
+
+    // Cleanup
+    return () => {
+      if (cameraTrack?.track && videoRef.current) {
+        cameraTrack.track.detach(videoRef.current)
+      }
+    }
+  }, [room, participant.sid, participant.isCameraOff])
+
   if (!participant) return null
 
   const speakingGlow = participant.isSpeaking
@@ -17,20 +50,26 @@ export default function ParticipantTile({ participant, isSpotlight = false }: Pa
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      className={`relative flex flex-col items-center justify-center 
-      bg-black/40 backdrop-blur-xl border border-white/10 
+      className={`relative flex flex-col items-center justify-center
+      bg-black/40 backdrop-blur-xl border border-white/10
       rounded-2xl overflow-hidden p-2 transition-all duration-300
       ${speakingGlow}
       ${isSpotlight ? 'w-[70%] h-[70%]' : 'w-full h-full'}
       `}
     >
 
-      {/* Video Placeholder */}
-      <div className="flex-1 w-full flex items-center justify-center text-white/40">
+      {/* Video Element */}
+      <div className="flex-1 w-full flex items-center justify-center text-white/40 relative">
         {participant.isCameraOff ? (
           <div className="text-lg">{participant.name}</div>
         ) : (
-          <div className="text-xs italic text-purple-300/40">[ Video Stream Here ]</div>
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted={participant.sid === room?.localParticipant.sid}
+            className="w-full h-full object-cover rounded-xl"
+          />
         )}
       </div>
 
