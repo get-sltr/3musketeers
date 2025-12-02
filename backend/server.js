@@ -760,8 +760,9 @@ app.get('/api/v1/eros/diagnostic', (req, res) => {
   if (hasApiKey && apiKeyLength < 40) {
     issues.push(`API key appears too short (${apiKeyLength} chars, should be 50+ characters)`);
   }
-  if (hasApiKey && !apiKeyPrefix.startsWith('sk-ant-')) {
-    issues.push(`API key format may be incorrect (starts with "${apiKeyPrefix}", should start with "sk-ant-")`);
+  // Anthropic API keys can be 'sk-ant-...' or just 'sk-...'
+  if (hasApiKey && !apiKeyPrefix.startsWith('sk-')) {
+    issues.push(`API key format may be incorrect (starts with "${apiKeyPrefix}", should start with "sk-")`);
   }
   if (hasApiKey && !anthropicInitialized) {
     issues.push('API key set but Anthropic client not initialized - check server startup logs');
@@ -777,9 +778,9 @@ app.get('/api/v1/eros/diagnostic', (req, res) => {
   } else if (apiKeyLength < 40) {
     rootCause = 'invalid_api_key_length';
     recommendation = 'API key appears invalid - verify key in Anthropic console (https://console.anthropic.com/)';
-  } else if (!apiKeyPrefix.startsWith('sk-ant-')) {
+  } else if (!apiKeyPrefix.startsWith('sk-')) {
     rootCause = 'invalid_api_key_format';
-    recommendation = 'API key format incorrect - should start with "sk-ant-api03-". Get new key from Anthropic console';
+    recommendation = 'API key format incorrect - should start with "sk-". Get new key from Anthropic console';
   } else if (!anthropicInitialized) {
     rootCause = 'initialization_failed';
     recommendation = 'API key present but Anthropic client failed to initialize - check server startup logs';
@@ -794,11 +795,11 @@ app.get('/api/v1/eros/diagnostic', (req, res) => {
     api_key_present: hasApiKey,
     api_key_length: apiKeyLength,
     api_key_prefix: apiKeyPrefix,
-    expected_key_format: 'sk-ant-api03-... (50+ characters)',
+    expected_key_format: 'sk-... (40+ characters)',
     root_cause: rootCause,
     issues: issues.length > 0 ? issues : ['No obvious configuration issues - check API key validity and Anthropic account status'],
     recommendation: recommendation,
-    is_subscription_issue: rootCause === 'api_authentication_failure' && hasApiKey && apiKeyLength >= 40 && apiKeyPrefix.startsWith('sk-ant-')
+    is_subscription_issue: rootCause === 'api_authentication_failure' && hasApiKey && apiKeyLength >= 40 && apiKeyPrefix.startsWith('sk-')
   });
 });
 
