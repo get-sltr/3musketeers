@@ -66,8 +66,15 @@ export default function ParticipantTile({ participant, isSpotlight = false }: Pa
       }
     }
 
-    // If it's a remote track, wait for subscription
-    if (cameraTrack && 'isSubscribed' in cameraTrack) {
+    if (!cameraTrack) {
+      setHasVideo(false)
+      return
+    }
+
+    // Check if it's a remote track that needs subscription
+    const isRemoteTrack = 'isSubscribed' in cameraTrack
+
+    if (isRemoteTrack) {
       const remoteTrack = cameraTrack as RemoteTrackPublication
       if (remoteTrack.isSubscribed && remoteTrack.track) {
         attachTrack()
@@ -87,7 +94,7 @@ export default function ParticipantTile({ participant, isSpotlight = false }: Pa
           }
         }
       }
-    } else if (cameraTrack?.track) {
+    } else if (cameraTrack.track) {
       // Local track - attach immediately
       attachTrack()
     } else {
