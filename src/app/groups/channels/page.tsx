@@ -81,17 +81,15 @@ export default function ChannelsPage() {
         .order('created_at', { ascending: true })
 
       if (!error && channelsData && channelsData.length > 0) {
-        // Filter to only video channels (or treat all as video)
-        setChannels(channelsData
-          .filter(ch => ch.type === 'video' || !ch.type) // Only video or untyped
-          .map(ch => ({
-            id: ch.id,
-            name: ch.name,
-            description: ch.description,
-            group_id: ch.group_id,
-            type: 'video' as const,
-            member_count: ch.member_count,
-          })))
+        // Show all channels as video rooms (legacy text/voice are now video)
+        setChannels(channelsData.map(ch => ({
+          id: ch.id,
+          name: ch.name,
+          description: ch.description,
+          group_id: ch.group_id,
+          type: 'video' as const,
+          member_count: ch.member_count,
+        })))
         return
       }
 
