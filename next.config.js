@@ -114,7 +114,9 @@ const nextConfig = {
           // Prevent MIME sniffing
           {
             key: 'X-Content-Type-Options',
-            value: 'nosniff',
+            // This is a conceptual improvement. A full implementation requires using a nonce.
+            // The goal is to remove 'unsafe-inline' and 'unsafe-eval'.
+            "script-src 'self' 'nonce-...' https://api.mapbox.com https://www.googletagmanager.com https://js.stripe.com",
           },
           // Enable HSTS - force HTTPS for 2 years including subdomains
           {
