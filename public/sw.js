@@ -80,28 +80,45 @@ self.addEventListener('push', (event) => {
 // Handle notification click
 self.addEventListener('notificationclick', (event) => {
   console.log('Notification clicked:', event);
-  
+
   event.notification.close();
 
-  if (event.action === 'close') {
+  if (event.action === 'dismiss' || event.action === 'close') {
     return;
   }
 
-  const urlToOpen = event.notification.data?.url || '/messages';
-  
+  // Normalize URL to app origin to prevent cross-origin navigation attacks
+  const data = event.notification.data || {};
+  let path = data.url || '/messages';
+  if (data.conversationId) {
+    path = `/messages/${data.conversationId}`;
+  }
+
+  let targetUrl = new URL('/messages', self.location.origin).toString();
+  try {
+    targetUrl = new URL(path, self.location.origin).toString();
+  } catch {
+    // fallback already set
+  }
+
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then((clientList) => {
-        // Check if there's already a window open
+        // Focus a client already at the target URL
         for (const client of clientList) {
-          if (client.url.includes(urlToOpen) && 'focus' in client) {
+          if (client.url && client.url.startsWith(targetUrl) && 'focus' in client) {
             return client.focus();
           }
         }
-        // Open new window if none exists
-        if (clients.openWindow) {
-          return clients.openWindow(urlToOpen);
+        // Focus any same-origin client and instruct it to navigate
+        for (const client of clientList) {
+          if (client.url && client.url.startsWith(self.location.origin) && 'focus' in client) {
+            client.postMessage({ type: 'NOTIFICATION_CLICK', url: targetUrl });
+            return client.focus();
+          }
         }
+        // Open a new window at the constrained URL
+        return clients.openWindow(targetUrl);
       })
   );
 });
