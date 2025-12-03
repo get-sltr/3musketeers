@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { sendTapNotification } from '@/lib/push-notifications'
 
 export const dynamic = 'force-dynamic'
 
@@ -60,9 +61,18 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // 6. TODO: Add push notification here for new taps
-    // if (tapResult?.is_mutual) { send mutual match notification }
-    // else { send new tap notification }
+    // 6. Get tapper's profile name for notification
+    const { data: tapperProfile } = await supabase
+      .from('profiles')
+      .select('display_name')
+      .eq('id', user.id)
+      .single()
+
+    const tapperName = tapperProfile?.display_name || 'Someone'
+
+    // 7. Send push notification (non-blocking)
+    sendTapNotification(to_user_id, tapperName, tapResult?.is_mutual || false)
+      .catch(err => console.error('Push notification failed:', err))
 
     return NextResponse.json({
       success: true,

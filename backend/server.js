@@ -924,7 +924,7 @@ app.get('/api/push/vapid-public-key', (req, res) => {
 app.post('/api/push/subscribe', async (req, res) => {
   try {
     const { userId, subscription } = req.body;
-    
+
     if (!userId || !subscription) {
       return res.status(400).json({ error: 'Missing userId or subscription' });
     }
@@ -949,6 +949,68 @@ app.post('/api/push/subscribe', async (req, res) => {
   } catch (error) {
     console.error('Subscribe error:', error);
     res.status(500).json({ error: 'Subscription failed' });
+  }
+});
+
+// Generic push notification endpoint (for taps, matches, etc.)
+app.post('/api/push/send', async (req, res) => {
+  try {
+    const { userId, title, body, tag, url, data } = req.body;
+
+    if (!userId || !title || !body) {
+      return res.status(400).json({ error: 'Missing required fields: userId, title, body' });
+    }
+
+    if (!process.env.VAPID_PUBLIC_KEY) {
+      return res.status(503).json({ error: 'Push notifications not configured' });
+    }
+
+    // Get user's push subscriptions
+    const { data: subscriptions, error } = await supabase
+      .from('push_subscriptions')
+      .select('*')
+      .eq('user_id', userId);
+
+    if (error || !subscriptions || subscriptions.length === 0) {
+      return res.json({ success: true, sent: 0, message: 'No subscriptions found' });
+    }
+
+    const payload = JSON.stringify({
+      title,
+      body,
+      icon: '/icon-192.png',
+      badge: '/badge-72.png',
+      tag: tag || 'notification',
+      data: {
+        url: url || '/',
+        ...data
+      }
+    });
+
+    let sent = 0;
+    const sendPromises = subscriptions.map(sub => {
+      const pushSubscription = {
+        endpoint: sub.endpoint,
+        keys: { p256dh: sub.p256dh, auth: sub.auth }
+      };
+
+      return webpush.sendNotification(pushSubscription, payload)
+        .then(() => { sent++; })
+        .catch(err => {
+          // Remove invalid subscriptions
+          if (err.statusCode === 410 || err.statusCode === 404) {
+            supabase.from('push_subscriptions').delete().eq('id', sub.id);
+          }
+          console.error('Push send error:', err.statusCode, err.message);
+        });
+    });
+
+    await Promise.all(sendPromises);
+
+    res.json({ success: true, sent });
+  } catch (error) {
+    console.error('Push send error:', error);
+    res.status(500).json({ error: 'Failed to send notification' });
   }
 });
 
