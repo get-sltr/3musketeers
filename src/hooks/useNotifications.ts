@@ -163,9 +163,9 @@ export function useNotifications() {
         // Use service worker to show notification (works even when tab is closed)
         await registration.showNotification(title, {
           icon: '/icon-192.png',
-          badge: '/badge-72.png',
+          badge: '/icon-96.png', // Use existing icon for badge
           ...options
-        })
+        } as NotificationOptions)
       } else {
         // Fallback to regular notification
         new Notification(title, {
@@ -228,7 +228,7 @@ export function useNotifications() {
           await registration.showNotification('SLTR Test 🔥', {
             body: 'If you see this, notifications work!',
             icon: '/icon-192.png',
-            badge: '/badge-72.png',
+            badge: '/icon-96.png',
             tag: 'test-notification'
           })
           console.log('✅ Service Worker notification sent')

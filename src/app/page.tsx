@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function SLTRLanding() {
   const router = useRouter();
@@ -28,14 +29,14 @@ export default function SLTRLanding() {
     setShowSplash(true);
     setTimeout(() => {
       router.push('/signup?tier=free');
-    }, 1500);
+    }, 600);
   };
 
   const handleSignInClick = () => {
     setShowSplash(true);
     setTimeout(() => {
       router.push('/login');
-    }, 1500);
+    }, 600);
   };
 
   const containerVariants = {
@@ -88,7 +89,8 @@ export default function SLTRLanding() {
         >
           <div className="flex items-center gap-6 mb-2">
             {/* Dot Grid with Bubble Effect */}
-            <svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+            <svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SLTR logo">
+              <title>SLTR Logo</title>
               {/* 4x4 grid with bubble effect (middle dots larger) */}
               {[0, 1, 2, 3].map((row) =>
                 [0, 1, 2, 3].map((col) => {
@@ -195,19 +197,19 @@ export default function SLTRLanding() {
             <p className="text-gray-600">Innovative | Intelligence | Intuitive</p>
           </div>
           <div className="flex items-center justify-center gap-4 text-gray-600">
-            <button
-              onClick={() => router.push('/privacy')}
+            <Link
+              href="/privacy"
               className="hover:text-lime-400 transition-colors"
             >
               Privacy Policy
-            </button>
-            <span>•</span>
-            <button
-              onClick={() => router.push('/terms')}
+            </Link>
+            <span aria-hidden="true">•</span>
+            <Link
+              href="/terms"
               className="hover:text-lime-400 transition-colors"
             >
               Terms of Service
-            </button>
+            </Link>
           </div>
           <p className="text-gray-700">© {new Date().getFullYear()} SLTR Digital LLC. All rights reserved.</p>
         </motion.footer>

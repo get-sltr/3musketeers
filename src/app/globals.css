@@ -94,8 +94,6 @@ html, body {
 * {
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  user-select: none;
 }
 
 /* Allow text selection where needed */
@@ -285,7 +283,7 @@ input, textarea, [contenteditable] {
 body {
   background: #0a1628;
   color: #ffffff;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 500;
   letter-spacing: 0.01em;
   -webkit-font-smoothing: antialiased;

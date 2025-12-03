@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
       canPublish: true,
       canSubscribe: true,
       canPublishData: true,
+      canUpdateOwnMetadata: true,
     })
 
     const token = await at.toJwt()

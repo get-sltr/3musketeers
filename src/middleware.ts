@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { locales, defaultLocale } from './i18n/config';
+import { validateCSRFForMiddleware } from './lib/csrf-server';
 
 const intlMiddleware = createIntlMiddleware({
   locales,
@@ -8,9 +9,14 @@ const intlMiddleware = createIntlMiddleware({
   localePrefix: 'as-needed'
 });
 
-export function middleware(request: NextRequest) {
-  // Skip middleware for API routes and webhooks - let them pass through
+export async function middleware(request: NextRequest) {
+  // Handle API routes with CSRF validation
   if (request.nextUrl.pathname.startsWith('/api')) {
+    // Validate CSRF token for state-changing requests
+    const csrfError = await validateCSRFForMiddleware(request);
+    if (csrfError) {
+      return csrfError;
+    }
     return NextResponse.next();
   }
 
