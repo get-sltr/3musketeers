@@ -40,10 +40,17 @@ export default function ErosDailyMatchesStrip() {
         }
 
         const res = await erosAPI.getDailyMatches(10);
-        const list: DailyMatch[] = (res.matches || []).map((m: any) => ({
+
+        // Gracefully handle empty or failed responses
+        if (!res || !res.success || !res.matches || res.matches.length === 0) {
+          setLoading(false);
+          return;
+        }
+
+        const list: DailyMatch[] = res.matches.map((m: any) => ({
           id: m.id,
           user_id: m.user_id,
-          match_user_id: m.match_user_id,
+          match_user_id: m.match_user_id || m.matched_user_id,
           rank: m.rank,
           compatibility_score: m.compatibility_score,
           eros_insight: m.eros_insight,
@@ -51,7 +58,7 @@ export default function ErosDailyMatchesStrip() {
         setMatches(list);
 
         // fetch profiles for match_user_id
-        const ids = list.map((m) => m.match_user_id);
+        const ids = list.map((m) => m.match_user_id).filter(Boolean);
         if (ids.length) {
           const { data, error } = await supabase
             .from("profiles")
@@ -66,7 +73,8 @@ export default function ErosDailyMatchesStrip() {
           }
         }
       } catch (e) {
-        // ignore
+        // Silently fail - this is a non-essential feature
+        console.warn('Failed to load daily matches:', e);
       } finally {
         setLoading(false);
       }

@@ -1,19 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js'
 
-// ============================================
-// LAZY INITIALIZATION - DO NOT CREATE CLIENTS AT MODULE LOAD TIME
-// Clients are created only when first used at RUNTIME
-// ============================================
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY
+const stripe = stripeSecretKey
+  ? new Stripe(stripeSecretKey, {
+      apiVersion: '2025-10-29.clover'
+})
+  : null
 
-// Lazy initialization to avoid build-time errors
-const getSupabase = () => {
+// Lazy initialization to avoid build-time errors when env vars aren't available
+function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
   if (!url || !key) {
-    throw new Error('Supabase configuration missing')
+    throw new Error('Supabase environment variables are not configured')
   }
+
   return createClient(url, key)
 }
 
@@ -69,7 +73,8 @@ export async function GET(request: NextRequest) {
 
     // Get founder count
     if (action === 'founder-count') {
-      const { count } = await getSupabase()
+      const supabase = getSupabaseClient()
+      const { count } = await supabase
         .from('profiles')
         .select('id', { count: 'exact', head: true })
         .eq('founder', true)
@@ -106,13 +111,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate price type
-    if (!['founder', 'member'].includes(priceType)) {
-      return NextResponse.json(
-        { error: 'Invalid price type' },
-        { status: 400 }
-      )
-    }
+    const supabase = getSupabaseClient()
 
     // Check if user has a profile (optional)
     const supabase = getSupabase()

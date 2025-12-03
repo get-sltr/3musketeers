@@ -57,6 +57,10 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
 
         if (!response.ok) {
           const errorData = await response.json()
+          // Handle service unavailable (LiveKit not configured)
+          if (response.status === 503) {
+            throw new Error('Video calls are temporarily unavailable. Please try again later.')
+          }
           throw new Error(errorData.error || 'Failed to get LiveKit token')
         }
 

@@ -30,12 +30,22 @@ export async function POST(request: NextRequest) {
 
     const apiKey = process.env.LIVEKIT_API_KEY
     const apiSecret = process.env.LIVEKIT_API_SECRET
+    const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL
 
+    // Validate all LiveKit configuration is present and not placeholder values
     if (!apiKey || !apiSecret) {
       console.error('❌ LIVEKIT_API_KEY or LIVEKIT_API_SECRET not configured')
       return NextResponse.json(
-        { error: 'LiveKit not configured' },
-        { status: 500 }
+        { error: 'LiveKit not configured', code: 'LIVEKIT_NOT_CONFIGURED' },
+        { status: 503 }
+      )
+    }
+
+    if (!livekitUrl || livekitUrl.includes('your-livekit-server')) {
+      console.error('❌ NEXT_PUBLIC_LIVEKIT_URL not configured or using placeholder')
+      return NextResponse.json(
+        { error: 'LiveKit server URL not configured', code: 'LIVEKIT_URL_NOT_CONFIGURED' },
+        { status: 503 }
       )
     }
 
@@ -59,7 +69,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       token,
-      url: process.env.NEXT_PUBLIC_LIVEKIT_URL || 'wss://your-livekit-server.livekit.cloud',
+      url: livekitUrl,
     })
 
   } catch (error) {

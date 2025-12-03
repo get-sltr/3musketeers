@@ -197,6 +197,7 @@ class ErosAPIClient {
 
   /**
    * Get daily matches
+   * Returns empty array if service unavailable or user doesn't have premium
    */
   async getDailyMatches(limit: number = 10): Promise<{
     success: boolean;
@@ -205,7 +206,28 @@ class ErosAPIClient {
     source?: string;
     date?: string;
   }> {
-    return this.request(`/api/v1/matches/daily?limit=${limit}`);
+    try {
+      return await this.request(`/matches/daily?limit=${limit}`);
+    } catch (error: any) {
+      // Handle specific error cases gracefully
+      const errorMsg = error?.message || '';
+
+      // If it's a 402 (premium required), 404 (not found), or network error, return empty
+      if (errorMsg.includes('402') || errorMsg.includes('404') ||
+          errorMsg.includes('Pro required') || errorMsg.includes('fetch')) {
+        console.warn('Daily matches unavailable:', errorMsg);
+        return { success: false, matches: [], count: 0 };
+      }
+
+      // For auth errors, rethrow
+      if (errorMsg.includes('Authentication') || errorMsg.includes('401')) {
+        throw error;
+      }
+
+      // Default: return empty matches to prevent UI breakage
+      console.warn('EROS daily matches error:', error);
+      return { success: false, matches: [], count: 0 };
+    }
   }
 
   /**
