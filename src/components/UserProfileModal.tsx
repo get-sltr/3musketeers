@@ -110,7 +110,7 @@ export default function UserProfileModal({
               Close
             </button>
             <button
-              onClick={() => router.push('/settings/subscription')}
+              onClick={() => router.push('/checkout/member')}
               className="flex-1 px-4 py-3 rounded-xl bg-lime-400 text-black font-bold"
             >
               Upgrade
@@ -187,8 +187,9 @@ export default function UserProfileModal({
         <button
           onClick={onClose}
           className="absolute top-6 left-6 z-20 w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all"
+          aria-label="Close profile"
         >
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
@@ -220,6 +221,7 @@ export default function UserProfileModal({
                   handleReport()
                 }}
                 className="w-12 h-12 rounded-2xl bg-black/50 backdrop-blur-xl border border-white/10 flex flex-col items-center justify-center hover:bg-red-500/30 hover:border-red-400/50 transition-all text-xl"
+                aria-label="Report user"
               >
                 ⚠️
               </button>
@@ -231,6 +233,7 @@ export default function UserProfileModal({
                   handleBlock()
                 }}
                 className="w-12 h-12 rounded-2xl bg-black/50 backdrop-blur-xl border border-white/10 flex flex-col items-center justify-center hover:bg-red-500/30 hover:border-red-400/50 transition-all text-xl"
+                aria-label="Block user"
               >
                 🚫
               </button>
@@ -257,6 +260,7 @@ export default function UserProfileModal({
                       onFavorite(user.id)
                     }}
                     className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all text-xl"
+                    aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
                   >
                     {isFavorited ? '✨' : '☆'}
                   </button>
@@ -268,6 +272,7 @@ export default function UserProfileModal({
                   }}
                   className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all shadow-lg text-2xl animate-pulse-glow"
                   style={{ filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.8))' }}
+                  aria-label="Send message"
                 >
                   🫧
                 </button>
@@ -298,6 +303,7 @@ export default function UserProfileModal({
                       : 'bg-black/50 backdrop-blur-md hover:bg-black/70'
                   }`}
                   style={{ filter: 'drop-shadow(0 0 10px rgba(236, 72, 153, 0.6))' }}
+                  aria-label={hasTapped ? 'Tap sent' : 'Send tap'}
                 >
                   {hasTapped ? '💞' : '😈'}
                 </button>
@@ -330,6 +336,7 @@ export default function UserProfileModal({
         <div className="absolute bottom-28 right-4 z-20">
           <button
             className="w-14 h-14 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-orange-500/30 transition-all text-3xl shadow-lg"
+            aria-label="Fire AI"
           >
             🔥
           </button>
@@ -404,8 +411,9 @@ export default function UserProfileModal({
                 setCurrentPhotoIndex((currentPhotoIndex - 1 + photos.length) % photos.length)
               }}
               className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all"
+              aria-label="Previous photo"
             >
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
@@ -417,8 +425,9 @@ export default function UserProfileModal({
                 setCurrentPhotoIndex((currentPhotoIndex + 1) % photos.length)
               }}
               className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all"
+              aria-label="Next photo"
             >
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
@@ -433,10 +442,11 @@ export default function UserProfileModal({
                     setCurrentPhotoIndex(idx)
                   }}
                   className={`transition-all ${
-                    idx === currentPhotoIndex 
-                      ? 'w-8 h-2 bg-cyan-400 rounded-full' 
+                    idx === currentPhotoIndex
+                      ? 'w-8 h-2 bg-cyan-400 rounded-full'
                       : 'w-2 h-2 bg-white/50 rounded-full hover:bg-white/70'
                   }`}
+                  aria-label={`Go to photo ${idx + 1} of ${photos.length}`}
                 />
               ))}
             </div>

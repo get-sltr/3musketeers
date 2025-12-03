@@ -169,14 +169,28 @@ export default function VideoCall({
       )}
 
       {!error && (
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-4">
-          <button onClick={toggleMute} className="glass-bubble px-6 py-3">
-            {isMuted ? '🔇' : '🎤'}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-4" role="toolbar" aria-label="Video call controls">
+          <button
+            onClick={toggleMute}
+            className="glass-bubble px-6 py-3"
+            aria-label={isMuted ? 'Unmute microphone' : 'Mute microphone'}
+            aria-pressed={isMuted}
+          >
+            <span aria-hidden="true">{isMuted ? '🔇' : '🎤'}</span>
           </button>
-          <button onClick={toggleVideo} className="glass-bubble px-6 py-3">
-            {isVideoOff ? '📹' : '📷'}
+          <button
+            onClick={toggleVideo}
+            className="glass-bubble px-6 py-3"
+            aria-label={isVideoOff ? 'Turn on camera' : 'Turn off camera'}
+            aria-pressed={isVideoOff}
+          >
+            <span aria-hidden="true">{isVideoOff ? '📹' : '📷'}</span>
           </button>
-          <button onClick={leaveCall} className="glass-bubble px-6 py-3 bg-red-500">
+          <button
+            onClick={leaveCall}
+            className="glass-bubble px-6 py-3 bg-red-500"
+            aria-label="End call"
+          >
             End Call
           </button>
         </div>

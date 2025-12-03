@@ -1,15 +1,17 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createClient } from '../lib/supabase/client'
 import { resolveProfilePhoto } from '@/lib/utils/profile'
 import UserProfileModal from './UserProfileModal'
-import MessagingModal from './MessagingModal'
+import { EnhancedMessagingModal } from './messaging'
 import AgeFilterModal from '@/app/components/filters/AgeFilterModal'
 import PositionFilterModal from '@/app/components/filters/PositionFilterModal'
 import Modal from '@/app/components/ui/Modal'
+import { useGridKeyboardNav } from '@/hooks/useGridKeyboardNav'
+import { AriaLiveRegion } from '@/components/ui/AriaLiveRegion'
 
 interface User {
   id: string
@@ -117,6 +119,28 @@ export default function GridView({ onUserClick }: GridViewProps) {
   const [showPositionModal, setShowPositionModal] = useState(false)
   const [showTagModal, setShowTagModal] = useState(false)
   const [tagSearch, setTagSearch] = useState('')
+  const [screenReaderMessage, setScreenReaderMessage] = useState('')
+
+  // Grid columns for keyboard navigation (3 columns on mobile, responsive)
+  const GRID_COLUMNS = 3
+
+  // Keyboard navigation for the user grid
+  const handleGridActivate = useCallback((index: number) => {
+    const user = filteredUsers[index]
+    if (user) {
+      setSelectedUser(user)
+      setIsModalOpen(true)
+      onUserClick?.(user.id)
+    }
+  }, [filteredUsers, onUserClick])
+
+  const { getItemProps, getGridProps } = useGridKeyboardNav({
+    columns: GRID_COLUMNS,
+    itemCount: filteredUsers.length,
+    onActivate: handleGridActivate,
+    wrap: true,
+    enabled: !isModalOpen && !isMessagingOpen,
+  })
 
   useEffect(() => {
     const loadUsers = async () => {
@@ -240,6 +264,9 @@ export default function GridView({ onUserClick }: GridViewProps) {
     return Array.from(tagSet).sort((a, b) => a.localeCompare(b))
   }, [users])
 
+  const isDefaultAgeRange =
+    ageRange.min === DEFAULT_AGE_RANGE.min && ageRange.max === DEFAULT_AGE_RANGE.max
+
   useEffect(() => {
     let filtered = [...users]
 
@@ -292,10 +319,17 @@ export default function GridView({ onUserClick }: GridViewProps) {
     }
 
     setFilteredUsers(filtered)
-  }, [users, activeButtons, ageRange, selectedPositions, selectedTags])
-
-  const isDefaultAgeRange =
-    ageRange.min === DEFAULT_AGE_RANGE.min && ageRange.max === DEFAULT_AGE_RANGE.max
+    // Announce filter results to screen readers
+    const hasActiveFilters = activeButtons.length > 0 || !isDefaultAgeRange || selectedPositions.length > 0 || selectedTags.length > 0
+    if (hasActiveFilters) {
+      const message = filtered.length === 0
+        ? 'No users found matching your filters'
+        : filtered.length === 1
+          ? '1 user found'
+          : `${filtered.length} users found`
+      setScreenReaderMessage(message)
+    }
+  }, [users, activeButtons, ageRange, selectedPositions, selectedTags, isDefaultAgeRange])
 
   const toggleFilterButton = (id: string) => {
     if (id === 'age') {
@@ -441,38 +475,60 @@ export default function GridView({ onUserClick }: GridViewProps) {
         </header>
 
         <main className="main-content">
+          {/* Screen reader announcements for filter results */}
+          <AriaLiveRegion
+            message={screenReaderMessage}
+            politeness="polite"
+            clearAfter={5000}
+          />
+
           {filteredUsers.length === 0 ? (
-            <div className="empty-grid">
-              <div className="empty-icon">🛰️</div>
+            <div className="empty-grid" role="status">
+              <div className="empty-icon" aria-hidden="true">🛰️</div>
               <h2>No users match your filters</h2>
               <p>Try resetting or adjusting your filters.</p>
             </div>
           ) : (
-            <div className="profile-grid">
+            <div
+              className="profile-grid"
+              {...getGridProps()}
+              aria-label={`User profiles grid, ${filteredUsers.length} users`}
+            >
               {filteredUsers.map((user, index) => {
                 const colorClass =
                   GLASS_CLASSES[index % GLASS_CLASSES.length]
+                const itemProps = getItemProps(index)
+                const ariaLabel = `${user.username}${user.age ? `, ${user.age} years old` : ''}${user.distance ? `, ${user.distance}` : ''}${user.isOnline ? ', online' : ''}`
+
                 return (
                   <div
                     key={user.id}
-                    className="profile-card"
+                    className={`profile-card ${itemProps['aria-selected'] ? 'ring-2 ring-[var(--sltr-primary,#00ff88)] ring-offset-2 ring-offset-black' : ''}`}
                     onClick={() => handleUserClick(user.id)}
+                    tabIndex={itemProps.tabIndex}
+                    onKeyDown={itemProps.onKeyDown}
+                    onFocus={itemProps.onFocus}
+                    role={itemProps.role}
+                    aria-selected={itemProps['aria-selected']}
+                    aria-label={ariaLabel}
+                    ref={itemProps.ref}
                   >
                     <div className="photo-container">
                       <Image
                         src={user.photo || '/black-white-silhouette-man-600nw-1677576007.webp'}
-                        alt={user.username}
+                        alt=""
                         fill
                         sizes="(max-width: 768px) 45vw, 240px"
                         className="profile-photo"
                         unoptimized
+                        aria-hidden="true"
                       />
 
                       {/* Top left badges */}
-                      {user.isOnline && <div className="online-dot" />}
+                      {user.isOnline && <div className="online-dot" aria-hidden="true" />}
 
                       {/* Bottom left feature badges */}
-                      <div className="feature-badges">
+                      <div className="feature-badges" aria-hidden="true">
                         {user.dtfn && (
                           <div className="feature-badge dtfn">DTFN</div>
                         )}
@@ -482,7 +538,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
                       </div>
 
                       {/* Bottom info bar - distance only */}
-                      <div className="glass-info-bar">
+                      <div className="glass-info-bar" aria-hidden="true">
                         <span className="info-text">{user.distance}</span>
                       </div>
                     </div>
@@ -532,6 +588,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
             value={tagSearch}
             onChange={e => setTagSearch(e.target.value)}
             placeholder="Search tags..."
+            aria-label="Search tags"
             className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/30 transition"
           />
           <div className="tag-list">
@@ -609,7 +666,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
       />
 
       {isMessagingOpen && messagingUser && (
-        <MessagingModal
+        <EnhancedMessagingModal
           user={messagingUser}
           isOpen={isMessagingOpen}
           onClose={() => {

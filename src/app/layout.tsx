@@ -27,13 +27,42 @@ const orbitron = Orbitron({
 });
 
 export const metadata: Metadata = {
-  title: "SLTR",
-  description: "Rules Don't Apply",
+  title: {
+    default: 'SLTR - Connect With People Nearby',
+    template: '%s | SLTR',
+  },
+  description: 'SLTR is a location-based social app to discover and connect with people nearby. Real-time messaging, video calls, and AI-powered matching. Rules don\'t apply.',
+  keywords: ['social app', 'dating app', 'meet people nearby', 'location based', 'real-time chat', 'video calls'],
+  authors: [{ name: 'SLTR' }],
+  creator: 'SLTR',
+  publisher: 'SLTR',
   metadataBase: new URL('https://www.getsltr.com'),
   manifest: '/manifest.json',
+  alternates: {
+    canonical: 'https://www.getsltr.com',
+    languages: {
+      'en': 'https://www.getsltr.com',
+      'es': 'https://www.getsltr.com/es',
+      'fr': 'https://www.getsltr.com/fr',
+      'pt': 'https://www.getsltr.com/pt',
+      'vi': 'https://www.getsltr.com/vi',
+      'zh': 'https://www.getsltr.com/zh',
+    },
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   openGraph: {
-    title: 'SLTR',
-    description: "Rules Don't Apply",
+    title: 'SLTR - Connect With People Nearby',
+    description: 'Discover and connect with people nearby. Real-time messaging, video calls, and AI-powered matching.',
     url: 'https://www.getsltr.com',
     siteName: 'SLTR',
     images: [
@@ -41,7 +70,7 @@ export const metadata: Metadata = {
         url: 'https://opengraph.b-cdn.net/production/images/73a42f99-c28c-41f2-8c7f-dfd9b945287d.png?token=O4JDmAwYLCiwSk5rRY90SGWM0wqmPzhF2bskIYofhMc&height=722&width=1200&expires=33299560831',
         width: 1200,
         height: 722,
-        alt: 'SLTR',
+        alt: 'SLTR - Connect With People Nearby',
       },
     ],
     locale: 'en_US',
@@ -49,8 +78,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SLTR',
-    description: "Rules Don't Apply",
+    title: 'SLTR - Connect With People Nearby',
+    description: 'Discover and connect with people nearby. Real-time messaging, video calls, and AI-powered matching.',
     images: ['https://opengraph.b-cdn.net/production/images/73a42f99-c28c-41f2-8c7f-dfd9b945287d.png?token=O4JDmAwYLCiwSk5rRY90SGWM0wqmPzhF2bskIYofhMc&height=722&width=1200&expires=33299560831'],
   },
   appleWebApp: {
@@ -72,8 +101,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
   themeColor: '#000000',
   viewportFit: 'cover', // Support for notches and safe areas
 };
@@ -95,6 +124,7 @@ export default async function RootLayout({
   return (
     <html lang={locale}>
       <head>
+        <meta charSet="utf-8" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
