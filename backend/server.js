@@ -1017,48 +1017,106 @@ app.post('/api/v1/heartbeat', authenticateUser, async (req, res) => {
 app.get('/api/v1/matches/daily', authenticateUser, async (req, res) => {
   try {
     const userId = req.user.id;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = Math.min(parseInt(req.query.limit) || 8, 20);
+    const today = new Date().toISOString().split('T')[0];
 
-    // Fetch daily matches (would be pre-computed by EROS scheduler)
-    // Note: match_type might be NULL for older matches, so we use .or() to handle both
-    const { data: matches, error } = await supabase
+    // 1. Load user profile for context
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, city, latitude, longitude, subscription_tier, founder, is_super_admin, display_name, age, position, gender_identity, looking_for')
+      .eq('id', userId)
+      .single();
+
+    if (profileError || !profile) {
+      console.error('Daily matches profile error:', profileError);
+      return res.status(400).json({ error: 'Profile incomplete. Please update your profile first.' });
+    }
+
+    const isPremium = profile.founder || profile.is_super_admin || profile.subscription_tier === 'plus';
+    if (!isPremium) {
+      return res.status(402).json({
+        error: 'SLTR Pro required',
+        message: 'Daily Matches is a SLTR Pro feature. Upgrade to unlock curated matches.'
+      });
+    }
+
+    if (!profile.city || !profile.latitude || !profile.longitude) {
+      return res.status(400).json({
+        error: 'Location required',
+        message: 'Set your city/location to receive daily matches.'
+      });
+    }
+
+    // 2. Try cached matches for today
+    const { data: cachedMatches } = await supabase
       .from('matches')
-      .select('*')
+      .select(`
+        *,
+        matched_profile:profiles!matched_user_id (
+          id,
+          display_name,
+          age,
+          position,
+          gender_identity,
+          city,
+          bio:about,
+          photos,
+          photo_url,
+          online,
+          last_active,
+          dtfn,
+          party_friendly,
+          distance_miles,
+          subscription_tier
+        )
+      `)
       .eq('user_id', userId)
-      .or('match_type.eq.daily,match_type.is.null')
-      .order('created_at', { ascending: false })
+      .eq('match_type', 'daily_v2')
+      .gte('created_at', `${today}T00:00:00.000Z`)
+      .order('rank', { ascending: true })
       .limit(limit);
 
-    if (error) {
-      console.error('Fetch matches error:', error);
-      // Return empty array instead of error if table doesn't exist or no matches
+    if (cachedMatches && cachedMatches.length >= Math.min(limit, 3)) {
+      return res.json({
+        success: true,
+        matches: cachedMatches,
+        count: cachedMatches.length,
+        cached: true,
+        date: today,
+        source: 'EROS',
+      });
+    }
+
+    // 3. Need to generate fresh matches
+    const matcher = getMatcher();
+    const generated = await matcher.generateDailyMatches(userId, limit);
+
+    // Ensure we got matches
+    if (!generated?.matches || generated.matches.length === 0) {
       return res.json({
         success: true,
         matches: [],
         count: 0,
+        date: today,
         source: 'EROS',
-        date: new Date().toISOString().split('T')[0],
-        message: 'No matches found yet'
+        message: 'No matches found today. Check back tomorrow!'
       });
     }
 
     res.json({
       success: true,
-      matches: matches || [],
-      count: matches?.length || 0,
+      matches: generated.matches,
+      count: generated.matches.length,
+      cached: false,
+      date: today,
       source: 'EROS',
-      date: new Date().toISOString().split('T')[0]
     });
   } catch (error) {
     console.error('Daily matches error:', error);
-    // Return empty array instead of error for better UX
-    res.json({
-      success: true,
-      matches: [],
-      count: 0,
-      source: 'EROS',
-      date: new Date().toISOString().split('T')[0],
-      error: error.message || 'No matches available yet'
+    res.status(500).json({
+      success: false,
+      error: 'Failed to load daily matches',
+      message: error.message || 'Unknown error',
     });
   }
 });

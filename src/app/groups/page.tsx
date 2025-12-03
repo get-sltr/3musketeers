@@ -22,7 +22,7 @@ export default function GroupsPage() {
   const [groups, setGroups] = useState<Group[]>([])
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
-  const [groupTitle, setGroupTitle] = useState('')
+  const [groupName, setGroupName] = useState('')
   const [groupDescription, setGroupDescription] = useState('')
   const [creating, setCreating] = useState(false)
   
@@ -77,7 +77,7 @@ export default function GroupsPage() {
 
   const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!groupTitle.trim()) return
+    if (!groupName.trim()) return
 
     setCreating(true)
     try {
@@ -101,7 +101,7 @@ export default function GroupsPage() {
 
       await loadGroups()
       setShowCreateModal(false)
-      setGroupTitle('')
+      setGroupName('')
       setGroupDescription('')
     } catch (err: any) {
       console.error('Error:', err)
@@ -233,7 +233,7 @@ export default function GroupsPage() {
                 <button
                   onClick={() => {
                     setShowCreateModal(false)
-                    setGroupTitle('')
+                    setGroupName('')
                     setGroupDescription('')
                   }}
                   className="text-white/60 hover:text-white"
@@ -251,8 +251,8 @@ export default function GroupsPage() {
                   </label>
                   <input
                     type="text"
-                    value={groupTitle}
-                    onChange={(e) => setGroupTitle(e.target.value)}
+                    value={groupName}
+                    onChange={(e) => setGroupName(e.target.value)}
                     className="w-full rounded-xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-lime-400"
                     placeholder="e.g., Founders Circle, Tech Group"
                     required
@@ -277,7 +277,7 @@ export default function GroupsPage() {
                     type="button"
                     onClick={() => {
                       setShowCreateModal(false)
-                      setGroupTitle('')
+                      setGroupName('')
                       setGroupDescription('')
                     }}
                     className="flex-1 px-4 py-3 rounded-xl bg-white/10 text-white font-semibold hover:bg-white/20 transition-all"
@@ -286,7 +286,7 @@ export default function GroupsPage() {
                   </button>
                   <button
                     type="submit"
-                    disabled={creating || !groupTitle.trim()}
+                    disabled={creating || !groupName.trim()}
                     className="flex-1 px-4 py-3 rounded-xl bg-lime-400 text-black font-semibold hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {creating ? 'Creating…' : 'Create Group'}

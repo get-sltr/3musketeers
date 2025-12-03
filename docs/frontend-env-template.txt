@@ -1,9 +1,9 @@
 # Frontend Environment Configuration
 # Copy this to .env.local in the root directory
 
-# Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=https://bnzyzkmixfmylviaojbj.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJuenl6a21peGZteWx2aWFvamJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0NDE3ODksImV4cCI6MjA3NTAxNzc4OX0.8WHWwe9ow_nTljMvwVUI70i07pmNBh2mR0yo80EsGMs
+# Supabase Configuration - Get from Supabase Dashboard > Settings > API
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
 
 # Mapbox Styles
 NEXT_PUBLIC_MAPBOX_TOKEN=your_mapbox_access_token_here

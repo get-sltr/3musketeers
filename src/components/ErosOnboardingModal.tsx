@@ -75,29 +75,38 @@ export default function ErosOnboardingModal({ isOpen, onClose }: ErosOnboardingM
   const progress = ((clampedIndex + 1) / steps.length) * 100;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-md max-h-[90vh] flex flex-col bg-black/40 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl border border-white/15">
-        {/* Header - matching feedback card style */}
-        <div className="px-6 pt-6 pb-4 flex-shrink-0 border-b border-white/10">
-          <div className="mb-3">{step.icon === '💘' ? <CupidIcon size={80} /> : <span className="text-5xl">{step.icon}</span>}</div>
-          <h2 className="text-3xl font-bold text-lime-400 mb-1">{step.title}</h2>
-          <p className="text-white/60 text-sm font-medium">{step.subtitle}</p>
-        </div>
-
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-8 space-y-6">
-          <p className="text-white/90 text-base leading-relaxed">{step.description}</p>
-
-          {/* Highlight box - matching feedback card style */}
-          <div className="bg-black/40 border border-white/15 rounded-xl px-4 py-3">
-            <p className="text-lime-400 font-semibold text-sm leading-relaxed">{step.highlight}</p>
+    <div 
+      className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md overflow-y-auto"
+      style={{ WebkitOverflowScrolling: 'touch' }}
+    >
+      <div className="min-h-full flex items-center justify-center p-6 py-12">
+        <div 
+          className="relative w-full max-w-sm flex flex-col bg-[#111] rounded-3xl shadow-2xl border border-white/20"
+        >
+          {/* Header */}
+          <div className="px-6 pt-6 pb-4 text-center">
+            <div className="mb-3">
+              {step.icon === '💘' ? <CupidIcon size={64} /> : <span className="text-5xl">{step.icon}</span>}
+            </div>
+            <h2 className="text-2xl font-bold text-lime-400 mb-1">{step.title}</h2>
+            <p className="text-white/60 text-sm">{step.subtitle}</p>
           </div>
 
-          {/* Progress bar - matching feedback card style */}
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-white/60 font-medium">
-                Step {clampedIndex + 1} of {steps.length}
+          {/* Content */}
+          <div className="px-6 py-4 space-y-4">
+            <p className="text-white/90 text-sm leading-relaxed">{step.description}</p>
+
+            {/* Highlight box */}
+            <div className="bg-lime-400/10 border border-lime-400/30 rounded-xl px-4 py-3">
+              <p className="text-lime-400 font-medium text-sm leading-relaxed">{step.highlight}</p>
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div className="px-6 py-3">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs text-white/50">
+                {clampedIndex + 1} of {steps.length}
               </span>
               <span className="text-xs text-lime-400 font-bold">{Math.round(progress)}%</span>
             </div>
@@ -108,50 +117,50 @@ export default function ErosOnboardingModal({ isOpen, onClose }: ErosOnboardingM
               />
             </div>
           </div>
-        </div>
 
-        {/* Footer with buttons - matching feedback card style */}
-        <div className="px-6 pb-6 flex gap-3 flex-shrink-0 border-t border-white/10 pt-4">
-          {currentStep > 0 && (
-            <button
-              onClick={() => setCurrentStep(prev => prev - 1)}
-              className="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-semibold hover:bg-white/10 transition"
-            >
-              Back
-            </button>
-          )}
+          {/* Footer with buttons */}
+          <div className="px-6 pb-4 flex gap-3">
+            {currentStep > 0 && (
+              <button
+                onClick={() => setCurrentStep(prev => prev - 1)}
+                className="flex-1 px-4 py-3.5 rounded-xl bg-white/10 border border-white/20 text-white font-semibold active:scale-95 transition"
+              >
+                Back
+              </button>
+            )}
 
-          {currentStep < steps.length - 1 ? (
-            <button
-              onClick={() => setCurrentStep(prev => prev + 1)}
-              className="flex-1 px-4 py-3 rounded-xl bg-lime-400 text-black font-semibold hover:scale-105 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          ) : (
-            <button
-              onClick={onClose}
-              className="flex-1 px-4 py-3 rounded-xl bg-lime-400 text-black font-semibold hover:scale-105 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Start Using EROS
-            </button>
-          )}
-        </div>
+            {currentStep < steps.length - 1 ? (
+              <button
+                onClick={() => setCurrentStep(prev => prev + 1)}
+                className="flex-1 px-4 py-3.5 rounded-xl bg-lime-400 text-black font-bold active:scale-95 transition"
+              >
+                Next
+              </button>
+            ) : (
+              <button
+                onClick={onClose}
+                className="flex-1 px-4 py-3.5 rounded-xl bg-lime-400 text-black font-bold active:scale-95 transition"
+              >
+                Let's Go
+              </button>
+            )}
+          </div>
 
-        {/* Dots indicator - matching feedback card style */}
-        <div className="px-6 pb-4 flex justify-center gap-2 flex-shrink-0">
-          {steps.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setCurrentStep(idx)}
-              className={`h-2 rounded-full transition ${
-                idx === currentStep
-                  ? 'bg-lime-400 w-6'
-                  : 'bg-white/20 hover:bg-white/30 w-2'
-              }`}
-              aria-label={`Go to step ${idx + 1}`}
-            />
-          ))}
+          {/* Dots indicator */}
+          <div className="px-6 pb-6 flex justify-center gap-2">
+            {steps.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setCurrentStep(idx)}
+                className={`h-2 rounded-full transition-all ${
+                  idx === currentStep
+                    ? 'bg-lime-400 w-6'
+                    : 'bg-white/20 w-2'
+                }`}
+                aria-label={`Go to step ${idx + 1}`}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>

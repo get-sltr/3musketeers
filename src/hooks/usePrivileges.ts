@@ -78,8 +78,9 @@ export function useUserProfile() {
 
     async function loadProfile(skipCache = false) {
       try {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user || !isMounted) {
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        
+        if (authError || !user || !isMounted) {
           setLoading(false)
           return
         }
@@ -88,31 +89,41 @@ export function useUserProfile() {
         if (userIdRef.current !== user.id) {
           userIdRef.current = user.id
           
-          // Clean up old channel
-          if (channelRef.current) {
-            supabase.removeChannel(channelRef.current)
+          // Clean up old channel safely
+          try {
+            if (channelRef.current) {
+              supabase.removeChannel(channelRef.current)
+            }
+          } catch (e) {
+            console.warn('Error removing channel:', e)
           }
           
           // 🔓 INSTANT UNLOCK: Realtime subscription for profile changes
-          // This triggers immediately when Stripe webhook updates subscription_tier
-          channelRef.current = supabase
-            .channel(`profile-${user.id}`)
-            .on(
-              'postgres_changes',
-              {
-                event: 'UPDATE',
-                schema: 'public',
-                table: 'profiles',
-                filter: `id=eq.${user.id}`
-              },
-              (payload) => {
-                console.log('🔓 Profile updated - refreshing subscription status:', payload.new)
-                // Clear cache and reload with fresh data
-                invalidateProfileCache(user.id)
-                loadProfile(true) // Skip cache, reload immediately
-              }
-            )
-            .subscribe()
+          // Wrap in try-catch to prevent crashes
+          try {
+            channelRef.current = supabase
+              .channel(`profile-${user.id}`)
+              .on(
+                'postgres_changes',
+                {
+                  event: 'UPDATE',
+                  schema: 'public',
+                  table: 'profiles',
+                  filter: `id=eq.${user.id}`
+                },
+                (payload) => {
+                  if (!isMounted) return
+                  console.log('🔓 Profile updated - refreshing subscription status:', payload.new)
+                  // Invalidate cache for all instances, then reload
+                  invalidateProfileCache(user.id)
+                  // Force reload to ensure all hook instances get fresh data
+                  loadProfile(true)
+                }
+              )
+              .subscribe()
+          } catch (e) {
+            console.warn('Error setting up realtime subscription:', e)
+          }
         }
 
         // Check cache first (PERFORMANCE OPTIMIZATION)
@@ -136,8 +147,8 @@ export function useUserProfile() {
         if (data && isMounted) {
           const profileData = {
             ...data,
-            // Map founder status to effectively "plus" tier for privilege checks
-            subscription_tier: data.founder ? 'plus' : (data.subscription_tier || 'free')
+            // Map founder/super_admin to effectively "plus" tier for privilege checks
+            subscription_tier: (data.founder || data.is_super_admin) ? 'plus' : (data.subscription_tier || 'free')
           } as Profile
           setProfile(profileData)
           setCachedProfile(user.id, profileData) // Cache it
@@ -158,9 +169,17 @@ export function useUserProfile() {
 
     return () => {
       isMounted = false
-      authSub?.unsubscribe()
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current)
+      try {
+        authSub?.unsubscribe()
+      } catch (e) {
+        console.warn('Error unsubscribing from auth:', e)
+      }
+      try {
+        if (channelRef.current) {
+          supabase.removeChannel(channelRef.current)
+        }
+      } catch (e) {
+        console.warn('Error removing realtime channel:', e)
       }
     }
   }, [supabase])
@@ -179,7 +198,7 @@ export function useUserProfile() {
       if (data) {
         const profileData = {
           ...data,
-          subscription_tier: data.founder ? 'plus' : (data.subscription_tier || 'free')
+          subscription_tier: (data.founder || data.is_super_admin) ? 'plus' : (data.subscription_tier || 'free')
         } as Profile
         setProfile(profileData)
         setCachedProfile(user.id, profileData)

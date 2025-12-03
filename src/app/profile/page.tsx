@@ -5,9 +5,19 @@ import type { ReactNode } from 'react'
 import { createClient } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import AlbumsManager from '../../components/AlbumsManager'
+import Image from 'next/image'
+import dynamic from 'next/dynamic'
+
+// Dynamic import for heavy album component
+const AlbumsManager = dynamic(() => import('../../components/AlbumsManager'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-32 bg-white/5 rounded-xl animate-pulse flex items-center justify-center">
+      <span className="text-white/40 text-sm">Loading albums...</span>
+    </div>
+  )
+})
 import { DEFAULT_PROFILE_IMAGE } from '@/lib/utils/profile'
-import SltrButton from '../../components/SltrButton'
 
 interface Album {
   id: string
@@ -391,7 +401,7 @@ export default function ProfilePage() {
       setError(null)
 
       // Create image to check/resize
-      const img = new Image()
+      const img = document.createElement('img')
       const reader = new FileReader()
 
       const processedFile = await new Promise<File>((resolve, reject) => {
@@ -438,9 +448,17 @@ export default function ProfilePage() {
         reader.readAsDataURL(file)
       })
 
+      // Get current user ID for storage path
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setError('Not authenticated')
+        return
+      }
+
       const fileExt = 'jpg'
       const fileName = `${Date.now()}.${fileExt}`
-      const filePath = `profiles/${fileName}`
+      // Path must be: profiles/{user_id}/{filename} to match RLS policy
+      const filePath = `profiles/${user.id}/${fileName}`
 
       console.log('Uploading photo:', filePath)
 
@@ -449,8 +467,14 @@ export default function ProfilePage() {
         .upload(filePath, processedFile)
 
       if (uploadError) {
-        console.error('Upload error:', uploadError)
-        setError(`Upload failed: ${uploadError.message}`)
+        // Check if error is due to RLS policy mismatch
+        if (uploadError.message?.includes('permission') || uploadError.message?.includes('policy')) {
+          setError(`Upload failed: Permission denied. Please check your storage permissions or contact support.`)
+          console.error('RLS policy error - path may not match policy:', filePath, uploadError)
+        } else {
+          console.error('Upload error:', uploadError)
+          setError(`Upload failed: ${uploadError.message}`)
+        }
         return
       }
 
@@ -556,29 +580,26 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-black">
-      {/* Header */}
-      <div className="fixed top-0 w-full bg-black/95 backdrop-blur-xl border-b border-white/10 p-4 z-50">
+      {/* Header - Clean and compact */}
+      <div className="fixed top-0 w-full bg-black/95 backdrop-blur-xl border-b border-white/10 px-4 py-3 z-50">
         <div className="flex items-center justify-between">
-          <Link href="/app" className="glass-bubble p-2 hover:bg-white/10 transition-all duration-300">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <Link href="/app" className="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-all">
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
-          <h1 className="text-2xl font-bold text-lime-400">Edit Profile</h1>
-          <div className="flex items-center gap-2">
-            <SltrButton size="sm" />
-            <button
-              onClick={() => setShowAlbumsManager(true)}
-              className="glass-bubble px-4 py-2 text-white hover:bg-white/10 transition-all duration-300 flex items-center gap-2"
-            >
-              📸 Albums
-            </button>
-          </div>
+          <h1 className="text-xl font-bold text-lime-400">Edit Profile</h1>
+          <button
+            onClick={() => setShowAlbumsManager(true)}
+            className="px-3 py-2 rounded-xl bg-white/5 text-white text-sm hover:bg-white/10 transition-all flex items-center gap-1.5"
+          >
+            📸 <span className="hidden sm:inline">Albums</span>
+          </button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="pt-24 pb-32 px-4">
+      <div className="pt-16 pb-32 px-4">
         <div className="max-w-6xl mx-auto grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <form onSubmit={handleSave} className="space-y-6">
             <div className="glass-bubble p-6 relative overflow-hidden">
@@ -590,13 +611,12 @@ export default function ProfilePage() {
               )}
               <div className="relative z-10 flex flex-col sm:flex-row sm:items-start gap-4">
                 <div className="relative w-24 h-24 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border border-white/20 shadow-lg">
-                  <img
-                    src={primaryPhoto}
+                  <Image
+                    src={primaryPhoto || DEFAULT_PROFILE_IMAGE}
                     alt={profileData.display_name || 'Profile photo'}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = DEFAULT_PROFILE_IMAGE
-                    }}
+                    fill
+                    sizes="96px"
+                    className="object-cover"
                   />
                   <button
                     type="button"

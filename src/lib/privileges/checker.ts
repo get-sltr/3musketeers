@@ -14,6 +14,9 @@ import { FEATURE_LIMITS, requiresPlusSubscription } from './config'
 export function getActiveTier(profile: Profile | null): SubscriptionTier {
   if (!profile) return 'free'
 
+  // 🔥 FOUNDERS BYPASS EVERYTHING - ALWAYS PLUS
+  if (profile.founder === true) return 'plus'
+
   // Super admin always has Plus benefits
   if (profile.is_super_admin) return 'plus'
 
@@ -41,6 +44,9 @@ export function isPlusSubscriber(profile: Profile | null): boolean {
  */
 export function hasFeature(profile: Profile | null, feature: Feature): boolean {
   if (!profile) return false
+
+  // 🔥 FOUNDERS BYPASS EVERYTHING - NO RULES APPLY
+  if (profile.founder === true) return true
 
   // Super admin has all features
   if (profile.is_super_admin) return true
@@ -82,12 +88,21 @@ export async function canUseFeature(
   const profile = await getCachedProfile(userId, async () => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, subscription_tier, subscription_expires_at, is_super_admin')
+      .select('id, subscription_tier, subscription_expires_at, is_super_admin, founder')
       .eq('id', userId)
       .single()
 
     return error ? null : (data as Profile)
   })
+
+  // 🔥 FOUNDERS BYPASS EVERYTHING - NO LIMITS EVER
+  if (profile?.founder === true) {
+    return {
+      allowed: true,
+      remaining: -1, // unlimited
+      upgradeRequired: false,
+    }
+  }
 
   if (!profile) {
     return {
@@ -215,9 +230,18 @@ export async function checkDTFNLimit(
   // Check if user is Plus subscriber
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, subscription_tier, subscription_expires_at, is_super_admin')
+    .select('id, subscription_tier, subscription_expires_at, is_super_admin, founder')
     .eq('id', userId)
     .single()
+
+  // 🔥 FOUNDERS BYPASS EVERYTHING
+  if (profile?.founder === true) {
+    return {
+      canActivate: true,
+      activationsUsed: 0,
+      remaining: -1, // unlimited
+    }
+  }
 
   const tier = getActiveTier(profile)
 

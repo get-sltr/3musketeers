@@ -16,6 +16,8 @@ export default function PaymentSuccessPage() {
   const sessionId = searchParams?.get('session_id')
 
   useEffect(() => {
+    let redirectTimer: ReturnType<typeof setTimeout> | null = null
+    
     async function verifyPayment() {
       if (!sessionId) {
         router.push('/app')
@@ -48,11 +50,9 @@ export default function PaymentSuccessPage() {
         setLoading(false)
 
         // Auto-redirect to app after 5 seconds
-        const redirectTimer = setTimeout(() => {
+        redirectTimer = setTimeout(() => {
           router.push('/app')
         }, 5000)
-
-        return () => clearTimeout(redirectTimer)
 
       } catch (err) {
         console.error('Error verifying payment:', err)
@@ -62,6 +62,13 @@ export default function PaymentSuccessPage() {
     }
 
     verifyPayment()
+    
+    // Cleanup: Clear redirect timer on unmount
+    return () => {
+      if (redirectTimer) {
+        clearTimeout(redirectTimer)
+      }
+    }
   }, [sessionId, router])
 
   if (loading) {
@@ -84,8 +91,6 @@ export default function PaymentSuccessPage() {
     <div className="min-h-screen bg-black text-white overflow-hidden">
       <style>
         {`
-          @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap');
-          
           .glass-card {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);

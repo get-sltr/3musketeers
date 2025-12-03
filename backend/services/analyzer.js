@@ -5,19 +5,69 @@
 const { createClient } = require('@supabase/supabase-js');
 const Anthropic = require('@anthropic-ai/sdk');
 
+/**
+ * Sanitize environment variable - remove quotes, trim whitespace, handle newlines
+ */
+function sanitizeEnvVar(value) {
+  if (!value) return null;
+  return value
+    .replace(/^["']|["']$/g, '')  // Remove surrounding quotes
+    .replace(/\\n/g, '')          // Remove escaped newlines
+    .replace(/\n/g, '')           // Remove actual newlines
+    .trim();                       // Trim whitespace
+}
+
+/**
+ * Create and validate Supabase client
+ */
+function createValidatedSupabaseClient(configUrl, configKey) {
+  const url = sanitizeEnvVar(configUrl || process.env.SUPABASE_URL);
+  const key = sanitizeEnvVar(configKey || process.env.SUPABASE_ANON_KEY);
+
+  if (!url || !key) {
+    console.error('❌ EROS Analyzer: Missing Supabase credentials');
+    return null;
+  }
+
+  if (!url.includes('supabase') || !key.startsWith('eyJ')) {
+    console.error('❌ EROS Analyzer: Invalid Supabase credential format');
+    return null;
+  }
+
+  return createClient(url, key);
+}
+
+/**
+ * Create and validate Anthropic client
+ */
+function createValidatedAnthropicClient() {
+  const apiKey = sanitizeEnvVar(process.env.ANTHROPIC_API_KEY);
+
+  if (!apiKey) {
+    console.warn('⚠️  EROS Analyzer: ANTHROPIC_API_KEY not set - AI analysis disabled');
+    return null;
+  }
+
+  if (!apiKey.startsWith('sk-ant-')) {
+    console.error('❌ EROS Analyzer: Invalid ANTHROPIC_API_KEY format (should start with sk-ant-)');
+    return null;
+  }
+
+  console.log('✅ EROS Analyzer: Anthropic API key validated');
+  return new Anthropic({ apiKey });
+}
+
 class ErosAnalyzer {
   constructor(config = {}) {
-    this.supabase = createClient(
-      config.supabaseUrl || process.env.SUPABASE_URL,
-      config.supabaseKey || process.env.SUPABASE_ANON_KEY
-    );
-    
-    // Initialize Claude AI if API key present
-    this.anthropic = process.env.ANTHROPIC_API_KEY 
-      ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-      : null;
-      
+    this.supabase = createValidatedSupabaseClient(config.supabaseUrl, config.supabaseKey);
+    this.anthropic = createValidatedAnthropicClient();
     this.redis = config.redis || null;
+
+    // Log initialization status
+    console.log('📋 EROS Analyzer initialized:');
+    console.log(`   - Supabase: ${this.supabase ? '✅' : '❌'}`);
+    console.log(`   - Anthropic: ${this.anthropic ? '✅' : '⚠️ Disabled'}`);
+    console.log(`   - Redis: ${this.redis ? '✅' : '⚠️ Not configured'}`);
   }
 
   /**

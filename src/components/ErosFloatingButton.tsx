@@ -5,6 +5,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { erosAPI } from '@/lib/eros-api';
 import { CupidIcon } from './CupidIcon';
+import { useHasFeature } from '@/hooks/usePrivileges';
+import UpgradePrompt from './UpgradePrompt';
 
 interface Position {
   x: number;
@@ -18,6 +20,10 @@ interface Message {
 
 export const ErosFloatingButton = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  
+  // 🔒 Check if user has EROS access (Pro, Founder, or Super Admin)
+  const { allowed: hasErosAccess, loading: checkingAccess } = useHasFeature('eros_ai');
   const [position, setPosition] = useState<Position>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState<Position>({ x: 0, y: 0 });
@@ -198,9 +204,15 @@ export const ErosFloatingButton = () => {
 
   return (
     <>
+      {/* 🔒 Upgrade prompt for free users */}
+      {showUpgrade && (
+        <UpgradePrompt feature="EROS AI Assistant" onClose={() => setShowUpgrade(false)} />
+      )}
+
       {/* Floating Button - Sticky above bottom nav */}
-      <div
+      <button
         ref={buttonRef}
+        type="button"
         className={`fixed flex items-center justify-center cursor-grab active:cursor-grabbing transition-all duration-200 z-[9999] ${
           isDragging ? 'scale-110' : 'scale-100'
         }`}
@@ -218,14 +230,26 @@ export const ErosFloatingButton = () => {
         }}
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
-        onClick={() => !isDragging && setIsOpen(!isOpen)}
+        onClick={() => {
+          if (isDragging) return;
+          if (isOpen) {
+            setIsOpen(false);
+          } else if (!hasErosAccess && !checkingAccess) {
+            setShowUpgrade(true);
+          } else {
+            setIsOpen(true);
+          }
+        }}
+        aria-label={isOpen ? 'Close EROS Assistant' : 'Open EROS Assistant'}
       >
         {isOpen ? (
-          <span className="text-2xl">✕</span>
-        ) : (
+          <span className="text-2xl" aria-hidden="true">✕</span>
+        ) : hasErosAccess ? (
           <CupidIcon size={48} />
+        ) : (
+          <span className="text-2xl" aria-hidden="true">🔒</span>
         )}
-      </div>
+      </button>
 
       {/* Chat Slide-out Modal */}
       {isOpen && (
@@ -250,8 +274,9 @@ export const ErosFloatingButton = () => {
               <button
                 onClick={() => setIsOpen(false)}
                 className="text-white/70 hover:text-white transition"
+                aria-label="Close EROS Assistant"
               >
-                <X size={24} />
+                <X size={24} aria-hidden="true" />
               </button>
             </div>
 
@@ -290,11 +315,13 @@ export const ErosFloatingButton = () => {
                 onKeyPress={(e) => e.key === 'Enter' && !loading && sendMessage()}
                 disabled={loading}
                 className="flex-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl px-4 py-2 text-sm text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-lime-400 disabled:opacity-50"
+                aria-label="Message EROS Assistant"
               />
               <button
                 onClick={sendMessage}
                 disabled={loading || !input.trim()}
                 className="bg-lime-400 hover:bg-lime-300 text-black font-bold rounded-xl px-4 py-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Send message"
               >
                 Send
               </button>

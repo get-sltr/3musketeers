@@ -1,11 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { blockUser } from '@/lib/safety'
 import ReportModal from './ReportModal'
 import { recordTap } from '@/lib/profileTracking'
 import { createClient } from '@/lib/supabase/client'
+
+const DEFAULT_PHOTO_PLACEHOLDER = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23222" width="100" height="100"/%3E%3Ctext fill="%23aaa" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"%3E?%3C/text%3E%3C/svg%3E'
 
 interface User {
   id: string
@@ -56,7 +59,7 @@ export default function UserProfileModal({
   const [viewLimitReached, setViewLimitReached] = useState(false)
   const [viewsRemaining, setViewsRemaining] = useState<number | null>(null)
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   // 🔒 Track profile view for usage limits (free tier)
   useEffect(() => {
@@ -83,7 +86,7 @@ export default function UserProfileModal({
     }
 
     trackProfileView()
-  }, [isOpen, user?.id, isOwnProfile, supabase])
+  }, [isOpen, user?.id, isOwnProfile])
 
   if (!isOpen || !user) return null
 
@@ -105,7 +108,7 @@ export default function UserProfileModal({
               Close
             </button>
             <button
-              onClick={() => router.push('/settings/subscription')}
+              onClick={() => router.push('/checkout/member')}
               className="flex-1 px-4 py-3 rounded-xl bg-lime-400 text-black font-bold"
             >
               Upgrade
@@ -116,7 +119,8 @@ export default function UserProfileModal({
     )
   }
 
-  const photos: string[] = (user.photos?.length ?? 0) > 0 ? user.photos! : ['data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23222" width="100" height="100"/%3E%3Ctext fill="%23aaa" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"%3E?%3C/text%3E%3C/svg%3E']
+  const photos: string[] = (user.photos?.length ?? 0) > 0 ? user.photos! : [DEFAULT_PHOTO_PLACEHOLDER]
+  const currentPhotoSrc = photos[currentPhotoIndex] ?? DEFAULT_PHOTO_PLACEHOLDER
 
   const handleMessage = async () => {
     try {
@@ -162,18 +166,22 @@ export default function UserProfileModal({
       {/* Full-screen photo gallery */}
       <div className="relative w-full h-full">
         {/* Current Photo */}
-        <img
-          src={photos[currentPhotoIndex]}
+        <Image
+          src={currentPhotoSrc}
           alt={user.username}
-          className="w-full h-full object-contain"
+          fill
+          sizes="100vw"
+          className="object-contain"
+          priority
         />
 
         {/* Top Left - Close button */}
         <button
           onClick={onClose}
           className="absolute top-6 left-6 z-20 w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all"
+          aria-label="Close profile"
         >
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
@@ -205,6 +213,7 @@ export default function UserProfileModal({
                   handleReport()
                 }}
                 className="w-12 h-12 rounded-2xl bg-black/50 backdrop-blur-xl border border-white/10 flex flex-col items-center justify-center hover:bg-red-500/30 hover:border-red-400/50 transition-all text-xl"
+                aria-label="Report user"
               >
                 ⚠️
               </button>
@@ -216,6 +225,7 @@ export default function UserProfileModal({
                   handleBlock()
                 }}
                 className="w-12 h-12 rounded-2xl bg-black/50 backdrop-blur-xl border border-white/10 flex flex-col items-center justify-center hover:bg-red-500/30 hover:border-red-400/50 transition-all text-xl"
+                aria-label="Block user"
               >
                 🚫
               </button>
@@ -242,6 +252,7 @@ export default function UserProfileModal({
                       onFavorite(user.id)
                     }}
                     className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all text-xl"
+                    aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
                   >
                     {isFavorited ? '✨' : '☆'}
                   </button>
@@ -253,6 +264,7 @@ export default function UserProfileModal({
                   }}
                   className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all shadow-lg text-2xl animate-pulse-glow"
                   style={{ filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.8))' }}
+                  aria-label="Send message"
                 >
                   🫧
                 </button>
@@ -282,6 +294,7 @@ export default function UserProfileModal({
                       : 'bg-black/50 backdrop-blur-md hover:bg-black/70'
                   }`}
                   style={{ filter: 'drop-shadow(0 0 10px rgba(236, 72, 153, 0.6))' }}
+                  aria-label={hasTapped ? 'Tap sent' : 'Send tap'}
                 >
                   {hasTapped ? '💞' : '😈'}
                 </button>
@@ -314,6 +327,7 @@ export default function UserProfileModal({
         <div className="absolute bottom-28 right-4 z-20">
           <button
             className="w-14 h-14 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-orange-500/30 transition-all text-3xl shadow-lg"
+            aria-label="Fire AI"
           >
             🔥
           </button>
@@ -388,8 +402,9 @@ export default function UserProfileModal({
                 setCurrentPhotoIndex((currentPhotoIndex - 1 + photos.length) % photos.length)
               }}
               className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all"
+              aria-label="Previous photo"
             >
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
@@ -401,8 +416,9 @@ export default function UserProfileModal({
                 setCurrentPhotoIndex((currentPhotoIndex + 1) % photos.length)
               }}
               className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-all"
+              aria-label="Next photo"
             >
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
@@ -417,10 +433,11 @@ export default function UserProfileModal({
                     setCurrentPhotoIndex(idx)
                   }}
                   className={`transition-all ${
-                    idx === currentPhotoIndex 
-                      ? 'w-8 h-2 bg-cyan-400 rounded-full' 
+                    idx === currentPhotoIndex
+                      ? 'w-8 h-2 bg-cyan-400 rounded-full'
                       : 'w-2 h-2 bg-white/50 rounded-full hover:bg-white/70'
                   }`}
+                  aria-label={`Go to photo ${idx + 1} of ${photos.length}`}
                 />
               ))}
             </div>

@@ -234,6 +234,7 @@ export default function ErosAI({ conversationId, onAIMessage }: ErosAIProps) {
                 onChange={(e) => setAiMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Ask EROS anything..."
+                aria-label="Ask EROS Assistant"
                 className="flex-1 bg-white/5 border border-white/20 rounded-xl px-3 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 resize-none"
                 rows={2}
                 disabled={isThinking}
@@ -242,6 +243,7 @@ export default function ErosAI({ conversationId, onAIMessage }: ErosAIProps) {
                 onClick={handleAISend}
                 disabled={!aiMessage.trim() || isThinking}
                 className="px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl font-semibold hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Send message to EROS"
               >
                 🏹
               </button>

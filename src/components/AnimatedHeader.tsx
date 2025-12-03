@@ -30,7 +30,7 @@ export default function AnimatedHeader({ viewMode, onViewModeChange }: AnimatedH
 
   return (
     <motion.header
-      className="fixed top-0 w-full z-30 transition-all duration-300"
+      className="fixed top-0 w-full z-30 min-h-[56px]"
       style={{
         background: isScrolled
           ? 'linear-gradient(180deg, rgba(10, 10, 15, 0.98) 0%, rgba(26, 10, 46, 0.95) 100%)'
@@ -44,9 +44,9 @@ export default function AnimatedHeader({ viewMode, onViewModeChange }: AnimatedH
         opacity: headerOpacity,
         paddingTop: 'env(safe-area-inset-top)'
       }}
-      initial={{ y: -100, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
     >
       <div className="flex items-center justify-between p-2 sm:p-3">
         {/* SLTR Logo with User Menu */}

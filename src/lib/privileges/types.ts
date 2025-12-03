@@ -48,6 +48,7 @@ export interface Profile {
   subscription_tier: SubscriptionTier
   subscription_expires_at?: string | null
   is_super_admin?: boolean
+  founder?: boolean // 🔥 FOUNDERS BYPASS ALL RULES
   premium?: boolean // Backward compatibility
 }
 

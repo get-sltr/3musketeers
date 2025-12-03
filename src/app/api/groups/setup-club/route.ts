@@ -26,8 +26,8 @@ async function handleSetup() {
     // Check if "The Club sltr" group already exists
     const { data: existingGroups } = await supabase
       .from('groups')
-      .select('id, title')
-      .ilike('title', 'The Club sltr')
+      .select('id, name')
+      .ilike('name', 'The Club sltr')
       .limit(1)
 
     let groupId: string
@@ -41,7 +41,7 @@ async function handleSetup() {
       const { data: newGroup, error: groupError } = await supabase
         .from('groups')
         .insert({
-          title: 'The Club sltr',
+          name: 'The Club sltr',
           description: 'The premier club for video conferencing, voice chats, and messaging. Connect, chat, and vibe with the community!',
           host_id: user.id,
         })
@@ -174,7 +174,7 @@ async function handleSetup() {
       success: true,
       group: {
         id: groupId,
-        title: 'The Club sltr',
+        name: 'The Club sltr',
         description: 'The premier club for video conferencing, voice chats, and messaging.',
       },
       channels: createdChannels,

@@ -39,7 +39,6 @@ export default function LazyWrapper({
 }
 
 // Lazy load heavy components
-export const LazyMapWithProfiles = lazy(() => import('./MapWithProfiles'))
 export const LazyGridView = lazy(() => import('./GridView'))
 export const LazyVideoCall = lazy(() => import('./VideoCall'))
 export const LazyFileUpload = lazy(() => import('./FileUpload'))

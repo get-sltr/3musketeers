@@ -96,9 +96,10 @@ export default memo(function GridCard({
                       onQuickMessage(user.id)
                     }}
                     className="rounded-full bg-white/15 p-2 text-sm text-white shadow hover:bg-white/25"
+                    aria-label={`Send message to ${displayName}`}
                   >
                     {/* Use SVG Icon */}
-                    <ChatBubbleLeftIcon className="h-5 w-5" />
+                    <ChatBubbleLeftIcon className="h-5 w-5" aria-hidden="true" />
                   </button>
                 )}
                 {onToggleFavorite && (
@@ -111,12 +112,13 @@ export default memo(function GridCard({
                     className={`rounded-full p-2 text-sm text-white shadow transition-colors ${
                       isFavorited ? 'bg-yellow-400/80 text-black' : 'bg-white/15 hover:bg-white/25'
                     }`}
+                    aria-label={isFavorited ? `Remove ${displayName} from favorites` : `Add ${displayName} to favorites`}
                   >
                     {/* Use SVG Icons */}
                     {isFavorited ? (
-                      <StarIconSolid className="h-5 w-5" />
+                      <StarIconSolid className="h-5 w-5" aria-hidden="true" />
                     ) : (
-                      <StarIcon className="h-5 w-5" />
+                      <StarIcon className="h-5 w-5" aria-hidden="true" />
                     )}
                   </button>
                 )}
