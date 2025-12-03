@@ -739,7 +739,14 @@ SLTR is a location-based social/dating app targeting the LGBTQ+ community. The p
 
    // AFTER (Safe)
    const img = document.createElement('img');
-   img.src = user.profile_photo_url || '/default-avatar.png';
+   const url = user.profile_photo_url || '/default-avatar.png';
+
+   // Prevent XSS by ensuring the URL has a safe protocol.
+   if (url.startsWith('https://') || url.startsWith('http://') || url.startsWith('/')) {
+       img.src = url;
+   } else {
+       img.src = '/default-avatar.png'; // Fallback for invalid protocols
+   }
    img.alt = user.display_name || 'User';
    img.className = 'marker-image';
    el.appendChild(img);
