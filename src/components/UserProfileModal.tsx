@@ -108,7 +108,7 @@ export default function UserProfileModal({
               Close
             </button>
             <button
-              onClick={() => router.push('/settings/subscription')}
+              onClick={() => router.push('/checkout/member')}
               className="flex-1 px-4 py-3 rounded-xl bg-lime-400 text-black font-bold"
             >
               Upgrade
