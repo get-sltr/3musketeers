@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
-import { getStripeOrNull } from '@/lib/stripe'
+import { getStripeOptional } from '@/lib/stripe/client'
 
 // ============================================
 // LAZY INITIALIZATION - DO NOT CREATE CLIENTS AT MODULE LOAD TIME
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const stripe = getStripeOrNull()
+    const stripe = getStripeOptional()
     if (!stripe) {
       console.error('Stripe secret key is not configured')
       return NextResponse.json(
