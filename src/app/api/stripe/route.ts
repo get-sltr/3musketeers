@@ -1,24 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Stripe from 'stripe'
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { getStripeOptional } from '@/lib/stripe/client'
 
 // ============================================
 // LAZY INITIALIZATION - DO NOT CREATE CLIENTS AT MODULE LOAD TIME
 // Clients are created only when first used at RUNTIME
 // ============================================
 
-let _stripe: Stripe | null = null
 let _supabase: SupabaseClient | null = null
-
-function getStripe(): Stripe | null {
-  if (!_stripe) {
-    const key = process.env.STRIPE_SECRET_KEY
-    if (key) {
-      _stripe = new Stripe(key, { apiVersion: '2025-10-29.clover' })
-    }
-  }
-  return _stripe
-}
 
 function getSupabase(): SupabaseClient {
   if (!_supabase) {
@@ -130,7 +119,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const stripe = getStripe()
+    const stripe = getStripeOptional()
     if (!stripe) {
       console.error('Stripe secret key is not configured')
       return NextResponse.json(
