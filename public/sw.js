@@ -79,29 +79,47 @@ self.addEventListener('push', (event) => {
 
 // Handle notification click
 self.addEventListener('notificationclick', (event) => {
-  console.log('Notification clicked:', event);
-  
+  console.log('🔔 Notification clicked:', event.action, event.notification.data);
+
   event.notification.close();
 
-  if (event.action === 'close') {
+  if (event.action === 'dismiss' || event.action === 'close') {
     return;
   }
 
-  const urlToOpen = event.notification.data?.url || '/messages';
-  
+  const notificationData = event.notification.data || {};
+  let path = notificationData.url || '/messages';
+
+  if (notificationData.conversationId) {
+    path = `/messages/${notificationData.conversationId}`;
+  }
+
+  // Normalize to same-origin absolute URL (prevents open redirect)
+  let urlToOpen;
+  try {
+    urlToOpen = new URL(path, self.location.origin).toString();
+  } catch {
+    urlToOpen = new URL('/messages', self.location.origin).toString();
+  }
+
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then((clientList) => {
-        // Check if there's already a window open
+        // Try to focus a client already at the target URL
         for (const client of clientList) {
-          if (client.url.includes(urlToOpen) && 'focus' in client) {
+          if (client.url && urlToOpen && client.url.startsWith(urlToOpen) && 'focus' in client) {
             return client.focus();
           }
         }
-        // Open new window if none exists
-        if (clients.openWindow) {
-          return clients.openWindow(urlToOpen);
+        // Focus any same-origin client and instruct it to navigate
+        for (const client of clientList) {
+          if (client.url && client.url.startsWith(self.location.origin) && 'focus' in client) {
+            client.postMessage({ type: 'NOTIFICATION_CLICK', url: urlToOpen });
+            return client.focus();
+          }
         }
+        // Open a new window
+        return clients.openWindow(urlToOpen);
       })
   );
 });
