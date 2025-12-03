@@ -6,20 +6,20 @@ export const DEFAULT_PROFILE_IMAGE = '/black-white-silhouette-man-600nw-16775760
  */
 function isValidPhotoUrl(url: string): boolean {
   if (!url || url.trim().length === 0) return false
+  // Reject URLs that look malformed (common error patterns)
+  if (url.includes('undefined') || url.includes('null')) return false
 
   // Must be a valid URL format
   try {
-    const parsed = new URL(url, 'https://placeholder.com')
-    // Accept relative URLs (starting with /) and absolute URLs
-    if (url.startsWith('/')) return true
+    // Allow relative URLs starting with /
+    if (url.startsWith('/')) {
+      return true
+    }
+    const parsed = new URL(url)
     // Must be http or https
-    if (!['http:', 'https:'].includes(parsed.protocol)) return false
-    // Reject URLs that look malformed (common error patterns)
-    if (url.includes('undefined') || url.includes('null')) return false
-    return true
+    return ['http:', 'https:'].includes(parsed.protocol)
   } catch {
-    // If it starts with /, treat as valid relative URL
-    return url.startsWith('/')
+    return false
   }
 }
 
