@@ -953,12 +953,13 @@ app.post('/api/push/subscribe', async (req, res) => {
 });
 
 // Generic push notification endpoint (for taps, matches, etc.)
-app.post('/api/push/send', async (req, res) => {
+app.post('/api/push/send', authenticateUser, async (req, res) => {
   try {
-    const { userId, title, body, tag, url, data } = req.body;
+    const { title, body, tag, url, data } = req.body;
+    const userId = req.user.id; // Use authenticated user's ID
 
-    if (!userId || !title || !body) {
-      return res.status(400).json({ error: 'Missing required fields: userId, title, body' });
+    if (!title || !body) {
+      return res.status(400).json({ error: 'Missing required fields: title, body' });
     }
 
     if (!process.env.VAPID_PUBLIC_KEY) {
@@ -1010,6 +1011,152 @@ app.post('/api/push/send', async (req, res) => {
     res.json({ success: true, sent });
   } catch (error) {
     console.error('Push send error:', error);
+    res.status(500).json({ error: 'Failed to send notification' });
+  }
+});
+
+// Internal API key authentication middleware (for server-to-server calls)
+const authenticateInternalKey = (req, res, next) => {
+  const internalKey = req.headers['x-internal-key'];
+  const expectedKey = process.env.INTERNAL_API_KEY;
+
+  if (!expectedKey) {
+    console.error('INTERNAL_API_KEY not configured');
+    return res.status(503).json({ error: 'Internal API not configured' });
+  }
+
+  if (!internalKey || internalKey !== expectedKey) {
+    return res.status(401).json({ error: 'Invalid internal API key' });
+  }
+
+  next();
+};
+
+// Internal endpoint for sending tap notifications (server-to-server only)
+app.post('/api/internal/push/tap', authenticateInternalKey, async (req, res) => {
+  try {
+    const { targetUserId, tapperName, isMutual } = req.body;
+
+    if (!targetUserId || !tapperName) {
+      return res.status(400).json({ error: 'Missing required fields: targetUserId, tapperName' });
+    }
+
+    if (!process.env.VAPID_PUBLIC_KEY) {
+      return res.status(503).json({ error: 'Push notifications not configured' });
+    }
+
+    // Get user's push subscriptions
+    const { data: subscriptions, error } = await supabase
+      .from('push_subscriptions')
+      .select('*')
+      .eq('user_id', targetUserId);
+
+    if (error || !subscriptions || subscriptions.length === 0) {
+      return res.json({ success: true, sent: 0, message: 'No subscriptions found' });
+    }
+
+    const title = isMutual ? 'It\'s a Match! 🎉' : 'Someone tapped you! 👋';
+    const body = isMutual
+      ? `You and ${tapperName} both tapped each other!`
+      : `${tapperName} is interested in you`;
+
+    const payload = JSON.stringify({
+      title,
+      body,
+      icon: '/icon-192.png',
+      badge: '/badge-72.png',
+      tag: isMutual ? 'mutual-tap' : 'new-tap',
+      data: {
+        url: isMutual ? '/matches' : '/taps',
+        type: isMutual ? 'mutual_match' : 'new_tap'
+      }
+    });
+
+    let sent = 0;
+    const sendPromises = subscriptions.map(sub => {
+      const pushSubscription = {
+        endpoint: sub.endpoint,
+        keys: { p256dh: sub.p256dh, auth: sub.auth }
+      };
+
+      return webpush.sendNotification(pushSubscription, payload)
+        .then(() => { sent++; })
+        .catch(err => {
+          if (err.statusCode === 410 || err.statusCode === 404) {
+            supabase.from('push_subscriptions').delete().eq('id', sub.id);
+          }
+          console.error('Push send error:', err.statusCode, err.message);
+        });
+    });
+
+    await Promise.all(sendPromises);
+    res.json({ success: true, sent });
+  } catch (error) {
+    console.error('Internal push tap error:', error);
+    res.status(500).json({ error: 'Failed to send notification' });
+  }
+});
+
+// Internal endpoint for sending message notifications (server-to-server only)
+app.post('/api/internal/push/message', authenticateInternalKey, async (req, res) => {
+  try {
+    const { receiverId, senderName, messagePreview, conversationId } = req.body;
+
+    if (!receiverId || !senderName || !messagePreview || !conversationId) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    if (!process.env.VAPID_PUBLIC_KEY) {
+      return res.status(503).json({ error: 'Push notifications not configured' });
+    }
+
+    const { data: subscriptions, error } = await supabase
+      .from('push_subscriptions')
+      .select('*')
+      .eq('user_id', receiverId);
+
+    if (error || !subscriptions || subscriptions.length === 0) {
+      return res.json({ success: true, sent: 0, message: 'No subscriptions found' });
+    }
+
+    const truncatedPreview = messagePreview.length > 100
+      ? messagePreview.substring(0, 100) + '...'
+      : messagePreview;
+
+    const payload = JSON.stringify({
+      title: `New message from ${senderName}`,
+      body: truncatedPreview,
+      icon: '/icon-192.png',
+      badge: '/badge-72.png',
+      tag: `message-${conversationId}`,
+      data: {
+        url: `/messages/${conversationId}`,
+        type: 'new_message',
+        conversationId
+      }
+    });
+
+    let sent = 0;
+    const sendPromises = subscriptions.map(sub => {
+      const pushSubscription = {
+        endpoint: sub.endpoint,
+        keys: { p256dh: sub.p256dh, auth: sub.auth }
+      };
+
+      return webpush.sendNotification(pushSubscription, payload)
+        .then(() => { sent++; })
+        .catch(err => {
+          if (err.statusCode === 410 || err.statusCode === 404) {
+            supabase.from('push_subscriptions').delete().eq('id', sub.id);
+          }
+          console.error('Push send error:', err.statusCode, err.message);
+        });
+    });
+
+    await Promise.all(sendPromises);
+    res.json({ success: true, sent });
+  } catch (error) {
+    console.error('Internal push message error:', error);
     res.status(500).json({ error: 'Failed to send notification' });
   }
 });

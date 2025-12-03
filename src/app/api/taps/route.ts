@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { sendTapNotification } from '@/lib/push-notifications'
 
 export const dynamic = 'force-dynamic'
 
@@ -70,9 +69,28 @@ export async function POST(request: NextRequest) {
 
     const tapperName = tapperProfile?.display_name || 'Someone'
 
-    // 7. Send push notification (non-blocking)
-    sendTapNotification(to_user_id, tapperName, tapResult?.is_mutual || false)
-      .catch(err => console.error('Push notification failed:', err))
+    // 7. Send push notification via backend socket (server-side only)
+    // Push notifications to other users are handled server-side via socket.io
+    // to ensure proper authentication and prevent unauthorized notification sending
+    if (process.env.NEXT_PUBLIC_SOCKET_URL) {
+      try {
+        const backendUrl = process.env.NEXT_PUBLIC_SOCKET_URL
+        await fetch(`${backendUrl}/api/internal/push/tap`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Internal-Key': process.env.INTERNAL_API_KEY || ''
+          },
+          body: JSON.stringify({
+            targetUserId: to_user_id,
+            tapperName,
+            isMutual: tapResult?.is_mutual || false
+          })
+        }).catch(err => console.error('Push notification failed:', err))
+      } catch (err) {
+        console.error('Push notification failed:', err)
+      }
+    }
 
     return NextResponse.json({
       success: true,

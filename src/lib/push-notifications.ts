@@ -6,7 +6,6 @@
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_DEV_BACKEND_URL || 'https://sltr-backend.railway.app'
 
 interface NotificationPayload {
-  userId: string
   title: string
   body: string
   tag?: string
@@ -15,13 +14,25 @@ interface NotificationPayload {
 }
 
 /**
- * Send a push notification to a user
+ * Send a push notification to the authenticated user's devices
+ * Requires a valid authentication token
  */
-export async function sendPushNotification(payload: NotificationPayload): Promise<boolean> {
+export async function sendPushNotification(
+  payload: NotificationPayload,
+  authToken: string
+): Promise<boolean> {
   try {
+    if (!authToken) {
+      console.error('Push notification failed: authentication token required')
+      return false
+    }
+
     const response = await fetch(`${BACKEND_URL}/api/push/send`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
       body: JSON.stringify(payload)
     })
 
@@ -37,44 +48,6 @@ export async function sendPushNotification(payload: NotificationPayload): Promis
   }
 }
 
-/**
- * Send a tap notification
- */
-export async function sendTapNotification(
-  tappedUserId: string,
-  tapperName: string,
-  isMutual: boolean = false
-): Promise<boolean> {
-  const title = isMutual ? 'It\'s a Match! 🎉' : 'Someone tapped you! 👋'
-  const body = isMutual
-    ? `You and ${tapperName} both tapped each other!`
-    : `${tapperName} is interested in you`
-
-  return sendPushNotification({
-    userId: tappedUserId,
-    title,
-    body,
-    tag: isMutual ? 'mutual-tap' : 'new-tap',
-    url: isMutual ? '/matches' : '/taps',
-    data: { type: isMutual ? 'mutual_match' : 'new_tap' }
-  })
-}
-
-/**
- * Send a new message notification
- */
-export async function sendMessageNotification(
-  receiverId: string,
-  senderName: string,
-  messagePreview: string,
-  conversationId: string
-): Promise<boolean> {
-  return sendPushNotification({
-    userId: receiverId,
-    title: `New message from ${senderName}`,
-    body: messagePreview.length > 100 ? messagePreview.substring(0, 100) + '...' : messagePreview,
-    tag: `message-${conversationId}`,
-    url: `/messages/${conversationId}`,
-    data: { type: 'new_message', conversationId }
-  })
-}
+// Note: Notifications to other users (tap notifications, message notifications)
+// should be triggered server-side in socket.io handlers or webhooks using
+// webpush directly, not through the client-side /api/push/send endpoint.
