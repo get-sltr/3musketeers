@@ -159,7 +159,8 @@ export default function SignupPage() {
         <div className="text-center mb-8 flex flex-col items-center">
           <div className="flex items-center gap-4 mb-2">
             {/* Dot Grid with Bubble Effect */}
-            <svg width="50" height="50" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+            <svg width="50" height="50" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SLTR logo">
+              <title>SLTR Logo</title>
               {[0, 1, 2, 3].map((row) =>
                 [0, 1, 2, 3].map((col) => {
                   const x = 15 + col * 20;
@@ -263,15 +264,18 @@ export default function SignupPage() {
 
           {/* Date of Birth */}
           <div className="glass-bubble p-4">
-            <label className="text-sm text-gray-400 mb-2 block">Date of Birth</label>
+            <label htmlFor="dateOfBirth" className="text-sm text-gray-400 mb-2 block">Date of Birth</label>
             <input
+              id="dateOfBirth"
               type="date"
               value={dateOfBirth}
               onChange={(e) => setDateOfBirth(e.target.value)}
               max={new Date().toISOString().split('T')[0]}
               className="w-full bg-transparent text-white outline-none"
               required
+              aria-describedby="dob-hint"
             />
+            <span id="dob-hint" className="sr-only">You must be 18 or older to use SLTR</span>
           </div>
 
           <div className="glass-bubble p-4">
