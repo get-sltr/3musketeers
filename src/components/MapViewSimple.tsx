@@ -358,6 +358,7 @@ function MapViewSimple({
         const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
         if (!mapboxToken) {
           console.error('❌ NEXT_PUBLIC_MAPBOX_TOKEN not configured - map features disabled')
+          setMapError('Map configuration error. Please contact support.')
           return
         }
         mapboxgl.accessToken = mapboxToken
