@@ -100,7 +100,9 @@ self.addEventListener('notificationclick', (event) => {
   let path = notificationData.url || '/messages';
 
   if (notificationData.conversationId) {
-    path = `/messages/${notificationData.conversationId}`;
+    // Ensure conversationId doesn't contain path traversal characters
+    const safeId = String(notificationData.conversationId).replace(/[^a-zA-Z0-9_-]/g, '');
+    path = `/messages/${safeId}`;
   }
 
   // Normalize to same-origin absolute URL (prevents open redirect)
