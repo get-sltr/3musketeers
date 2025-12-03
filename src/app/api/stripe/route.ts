@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
         userId,
         priceType,
       },
-      success_url: `${request.headers.get('origin') || 'https://getsltr.com'}/pricing?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${request.headers.get('origin') || 'https://getsltr.com'}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${request.headers.get('origin') || 'https://getsltr.com'}/pricing?canceled=true`,
     })
 

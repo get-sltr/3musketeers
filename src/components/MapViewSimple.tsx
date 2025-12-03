@@ -27,6 +27,32 @@ const isFiniteNumber = (v: unknown): v is number => typeof v === 'number' && Num
 const safeStr = (v: unknown, fallback = ''): string => (typeof v === 'string' ? v : fallback)
 
 // PIN STYLE FUNCTIONS
+// Safe image element creation helper to prevent XSS
+const createSafeImage = (src: string | null | undefined, styles: string): HTMLImageElement | null => {
+  if (!src || typeof src !== 'string') return null
+  // Validate URL to prevent javascript: protocol attacks
+  try {
+    const url = new URL(src, window.location.origin)
+    if (!['http:', 'https:', 'data:'].includes(url.protocol)) return null
+  } catch {
+    // If URL is invalid, don't create the image
+    return null
+  }
+  const img = document.createElement('img')
+  img.src = src
+  img.style.cssText = styles
+  img.alt = 'User profile'
+  return img
+}
+
+// Safe text element creation helper to prevent XSS
+const createSafeTextElement = (tag: string, text: string, styles?: string): HTMLElement => {
+  const el = document.createElement(tag)
+  el.textContent = text // textContent is XSS-safe
+  if (styles) el.style.cssText = styles
+  return el
+}
+
 const createPinStyle1 = (user: any) => {
   const el = document.createElement('div')
   el.className = 'custom-marker'
