@@ -1,7 +1,8 @@
-import { NextResponse, type NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { locales, defaultLocale } from './i18n/config';
-import { validateCSRFForMiddleware } from './lib/csrf-server';
+import { requireCsrf } from './lib/csrf';
 
 const intlMiddleware = createIntlMiddleware({
   locales,
@@ -9,18 +10,25 @@ const intlMiddleware = createIntlMiddleware({
   localePrefix: 'as-needed'
 });
 
-export async function middleware(request: NextRequest) {
-  // Handle API routes with CSRF validation
-  if (request.nextUrl.pathname.startsWith('/api')) {
-    // Validate CSRF token for state-changing requests
-    const csrfError = await validateCSRFForMiddleware(request);
-    if (csrfError) {
-      return csrfError;
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Handle API routes with CSRF protection
+  if (pathname.startsWith('/api/')) {
+    // Check CSRF token for state-changing requests
+    if (!requireCsrf(request)) {
+      console.error(`CSRF validation failed for ${request.method} ${pathname}`);
+      return NextResponse.json(
+        { error: 'Invalid or missing CSRF token' },
+        { status: 403 }
+      );
     }
+
+    // CSRF check passed, continue to API handler
     return NextResponse.next();
   }
 
-  // Handle i18n routing
+  // Handle i18n routing for page routes
   const response = intlMiddleware(request);
 
   // Add security headers
@@ -35,5 +43,9 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)']
+  // Include both page routes and API routes
+  matcher: [
+    '/((?!_next|_vercel|.*\\..*).*)', // Page routes (excluding static files)
+    '/api/:path*' // All API routes
+  ]
 };

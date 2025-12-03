@@ -1,43 +1,25 @@
-/**
- * CSRF Token API Route
- * Generates and returns CSRF tokens for client-side requests
- */
-
-import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { randomBytes } from 'crypto'
-
-export const dynamic = 'force-dynamic'
+import { NextRequest, NextResponse } from 'next/server'
+import { generateCsrfToken, getCsrfCookieOptions, CSRF_COOKIE_NAME } from '@/lib/csrf'
 
 /**
  * GET /api/csrf-token
- * Returns a CSRF token for the current session
+ *
+ * Returns a CSRF token for the client to use in state-changing requests
+ * The token is also set as an HTTP-only cookie
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // Generate a cryptographically secure random token
-    const token = randomBytes(32).toString('base64url')
+    const token = generateCsrfToken()
 
-    // Store token in httpOnly cookie for server-side validation
-    const cookieStore = await cookies()
-    cookieStore.set('csrf-token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 60 * 60, // 1 hour
-      path: '/',
+    const response = NextResponse.json({
+      token,
+      headerName: 'x-csrf-token',
     })
 
-    // Return token to client
-    return NextResponse.json(
-      { token },
-      {
-        status: 200,
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate',
-        },
-      }
-    )
+    // Set CSRF token in HTTP-only cookie
+    response.cookies.set(CSRF_COOKIE_NAME, token, getCsrfCookieOptions())
+
+    return response
   } catch (error) {
     console.error('Error generating CSRF token:', error)
     return NextResponse.json(
