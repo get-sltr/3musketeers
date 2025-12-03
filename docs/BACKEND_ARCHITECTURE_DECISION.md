@@ -413,14 +413,23 @@ async function sendPushToUser(userId, payload) {
     process.env.SUPABASE_SERVICE_KEY
   )
 
-  const { data: subscriptions } = await supabase
+  const { data: subscriptions, error } = await supabase
     .from('push_subscriptions')
     .select('*')
     .eq('user_id', userId)
     .eq('is_active', true)
 
+  if (error || !subscriptions) {
+    console.error('Failed to fetch subscriptions:', error)
+    return []
+  }
+
+  if (subscriptions.length === 0) {
+    return []
+  }
+
   const results = await Promise.allSettled(
-    (subscriptions ?? []).map(sub =>
+    subscriptions.map(sub =>
       webpush.sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
         JSON.stringify(payload)
