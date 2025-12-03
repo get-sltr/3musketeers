@@ -190,7 +190,7 @@ export default function FoundersCirclePage() {
           {/* CTA */}
           {spotsRemaining > 0 ? (
             <Link
-              href="/signup?tier=founder"
+              href="/checkout/founder"
               className="inline-block px-8 sm:px-12 py-4 sm:py-5 rounded-2xl text-white text-lg sm:text-xl font-bold transition-all duration-200 hover:scale-105 founder-glow"
               style={{
                 background: 'linear-gradient(135deg, #FF6B35, #FFB347)',
@@ -409,7 +409,7 @@ export default function FoundersCirclePage() {
           </p>
           {spotsRemaining > 0 ? (
             <Link
-              href="/signup?tier=founder"
+              href="/checkout/founder"
               className="inline-block px-8 sm:px-12 py-4 sm:py-5 rounded-2xl text-white text-lg sm:text-xl font-bold transition-all duration-200 hover:scale-105 founder-glow"
               style={{
                 background: 'linear-gradient(135deg, #FF6B35, #FFB347)',

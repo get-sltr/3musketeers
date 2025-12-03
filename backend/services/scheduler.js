@@ -17,13 +17,61 @@ const CPU_LIMITS = {
   PHASE_3: 0.80,  // 80% CPU
 };
 
+/**
+ * Sanitize environment variable - remove quotes, trim whitespace, handle newlines
+ */
+function sanitizeEnvVar(value) {
+  if (!value) return null;
+  return value
+    .replace(/^["']|["']$/g, '')  // Remove surrounding quotes
+    .replace(/\\n/g, '')          // Remove escaped newlines
+    .replace(/\n/g, '')           // Remove actual newlines
+    .trim();                       // Trim whitespace
+}
+
+/**
+ * Validate and create Supabase client with proper error handling
+ */
+function createSupabaseClient(configUrl, configKey) {
+  const url = sanitizeEnvVar(configUrl || process.env.SUPABASE_URL);
+  const key = sanitizeEnvVar(configKey || process.env.SUPABASE_ANON_KEY);
+
+  // Log diagnostics on startup
+  console.log('📋 EROS Scheduler - Supabase Diagnostics:');
+  console.log(`   - SUPABASE_URL: ${url ? '✅ Set (' + url.substring(0, 30) + '...)' : '❌ NOT SET'}`);
+  console.log(`   - SUPABASE_ANON_KEY: ${key ? '✅ Set (' + key.substring(0, 20) + '...)' : '❌ NOT SET'}`);
+
+  if (!url || !key) {
+    console.error('❌ EROS Scheduler: Missing Supabase credentials!');
+    console.error('   Required: SUPABASE_URL and SUPABASE_ANON_KEY');
+    return null;
+  }
+
+  // Validate URL format
+  if (!url.includes('supabase')) {
+    console.error('❌ EROS Scheduler: Invalid SUPABASE_URL format');
+    return null;
+  }
+
+  // Validate key format (should start with eyJ for JWT)
+  if (!key.startsWith('eyJ')) {
+    console.error('❌ EROS Scheduler: Invalid SUPABASE_ANON_KEY format (should be JWT)');
+    return null;
+  }
+
+  console.log('✅ EROS Scheduler: Supabase credentials validated');
+  return createClient(url, key);
+}
+
 class ErosScheduler {
   constructor(config = {}) {
-    this.supabase = createClient(
-      config.supabaseUrl || process.env.SUPABASE_URL,
-      config.supabaseKey || process.env.SUPABASE_ANON_KEY
-    );
-    
+    this.supabase = createSupabaseClient(config.supabaseUrl, config.supabaseKey);
+
+    if (!this.supabase) {
+      console.error('❌ EROS Scheduler: Failed to initialize Supabase client');
+      console.error('   Scheduler will not be able to fetch user activity');
+    }
+
     this.redis = config.redis || null;
     this.running = false;
     this.checkInterval = config.checkInterval || 30000; // 30 seconds
@@ -75,9 +123,15 @@ class ErosScheduler {
   async checkUserActivity() {
     if (!this.running) return;
 
+    // Skip if Supabase client not initialized
+    if (!this.supabase) {
+      console.warn('⚠️  EROS Scheduler: Skipping activity check - Supabase not initialized');
+      return;
+    }
+
     try {
       const now = Date.now();
-      
+
       // Get all users with their last activity
       const { data: profiles, error } = await this.supabase
         .from('profiles')
