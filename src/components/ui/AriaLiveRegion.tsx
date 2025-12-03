@@ -213,7 +213,7 @@ export function AnnouncerProvider({ children }: { children: React.ReactNode }) {
 /**
  * Hook to access the global announcement system
  *
- * @throws Error if used outside of AnnouncerProvider
+ * @returns AnnouncerContextValue - returns no-op functions if used outside AnnouncerProvider
  *
  * @example
  * ```tsx
