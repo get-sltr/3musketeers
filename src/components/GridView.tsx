@@ -264,6 +264,9 @@ export default function GridView({ onUserClick }: GridViewProps) {
     return Array.from(tagSet).sort((a, b) => a.localeCompare(b))
   }, [users])
 
+  const isDefaultAgeRange =
+    ageRange.min === DEFAULT_AGE_RANGE.min && ageRange.max === DEFAULT_AGE_RANGE.max
+
   useEffect(() => {
     let filtered = [...users]
 
@@ -327,9 +330,6 @@ export default function GridView({ onUserClick }: GridViewProps) {
       setScreenReaderMessage(message)
     }
   }, [users, activeButtons, ageRange, selectedPositions, selectedTags, isDefaultAgeRange])
-
-  const isDefaultAgeRange =
-    ageRange.min === DEFAULT_AGE_RANGE.min && ageRange.max === DEFAULT_AGE_RANGE.max
 
   const toggleFilterButton = (id: string) => {
     if (id === 'age') {
