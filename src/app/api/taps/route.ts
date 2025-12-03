@@ -39,52 +39,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 4. Check if tap already exists (prevent spam)
-    const { data: existing } = await supabase
-      .from('taps')
-      .select('id, tapped_at')
-      .eq('tapper_id', user.id)
-      .eq('tapped_user_id', to_user_id)
-      .single()
+    // 4. Use the tap_user database function which handles all edge cases
+    const { data: tapResult, error: tapError } = await supabase
+      .rpc('tap_user', { target_user_id: to_user_id })
 
-    if (existing) {
-      // Check if tap is less than 24 hours old
-      const tapAge = Date.now() - new Date(existing.tapped_at).getTime()
-      const oneDay = 24 * 60 * 60 * 1000
-
-      if (tapAge < oneDay) {
-        return NextResponse.json(
-          { error: 'You already tapped this user recently', tap: existing },
-          { status: 400 }
-        )
-      }
-    }
-
-    // 5. Insert the tap
-    const { data: tap, error: insertError } = await supabase
-      .from('taps')
-      .insert({
-        tapper_id: user.id,
-        tapped_user_id: to_user_id,
-        tapped_at: new Date().toISOString()
-      })
-      .select()
-      .single()
-
-    if (insertError) {
-      console.error('Error inserting tap:', insertError)
+    if (tapError) {
+      console.error('Error calling tap_user:', tapError)
       return NextResponse.json(
-        { error: 'Failed to send tap', details: insertError.message },
+        { error: 'Failed to send tap', details: tapError.message },
         { status: 500 }
       )
     }
 
-    // 6. Optionally send a notification (if you have a notifications system)
-    // TODO: Add push notification here
+    // 5. Check if it was already tapped (the function returns already_exists: true)
+    if (tapResult?.already_exists) {
+      return NextResponse.json({
+        success: true,
+        tap: tapResult,
+        message: 'You already tapped this user'
+      })
+    }
+
+    // 6. TODO: Add push notification here for new taps
+    // if (tapResult?.is_mutual) { send mutual match notification }
+    // else { send new tap notification }
 
     return NextResponse.json({
       success: true,
-      tap
+      tap: tapResult,
+      is_mutual: tapResult?.is_mutual || false
     })
 
   } catch (error: any) {
