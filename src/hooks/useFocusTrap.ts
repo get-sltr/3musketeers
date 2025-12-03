@@ -16,7 +16,7 @@ export interface UseFocusTrapOptions {
   escapeDeactivates?: boolean
   /** Callback function when Escape is pressed (only if escapeDeactivates is true) */
   onEscape?: () => void
-  /** Whether to allow focus to wrap from last to first element and vice versa */
+  /** Whether to allow clicks outside the container (if false, outside clicks are blocked and focus returns to container) */
   allowOutsideClick?: boolean
 }
 
