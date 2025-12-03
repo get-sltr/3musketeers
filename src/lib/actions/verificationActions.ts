@@ -1,20 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import Stripe from 'stripe'
-
-// LAZY INITIALIZATION - avoid creating client at build time
-let _stripe: Stripe | null = null
-function getStripe() {
-  if (!_stripe) {
-    const key = process.env.STRIPE_SECRET_KEY
-    if (!key) {
-      throw new Error('STRIPE_SECRET_KEY not configured')
-    }
-    _stripe = new Stripe(key, { apiVersion: '2025-10-29.clover' })
-  }
-  return _stripe
-}
+import { getStripe } from '@/lib/stripe/client'
 
 /**
  * Creates a Stripe Identity verification session
