@@ -70,7 +70,7 @@ Problem: Users with larger fingers may struggle to tap
 // Current
 <span className="text-[9px] font-medium">{item.label}</span>
 
-// Problem: 9px text is below WCAG AA minimum (12px)
+// Problem: 9px text is below iOS HIG/common accessibility best practice (12px minimum)
 // Hard to read on high-DPI mobile screens
 ```
 
