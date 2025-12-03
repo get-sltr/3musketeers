@@ -31,10 +31,11 @@ class ErosAPIClient {
     if (baseUrl) {
       this.baseUrl = baseUrl;
     } else {
-      // EROS backend base URL (no /api/v1 - uses /api/eros paths)
-      this.baseUrl = process.env.NODE_ENV === 'development'
+      // EROS backend base URL with /api/v1 prefix
+      const backendUrl = process.env.NODE_ENV === 'development'
         ? (process.env.NEXT_PUBLIC_DEV_BACKEND_URL || 'http://localhost:3001')
         : (process.env.NEXT_PUBLIC_EROS_BACKEND_URL || 'https://eros-backend-production.up.railway.app');
+      this.baseUrl = `${backendUrl}/api/v1`;
     }
   }
 
@@ -166,7 +167,7 @@ class ErosAPIClient {
     processingPhase: 'active' | 'phase1' | 'phase2' | 'phase3';
     timestamp: string;
   }> {
-    return this.request('/heartbeat', {
+    return this.request('/api/v1/heartbeat', {
       method: 'POST',
       body: { appActive, screenOn },
     });
@@ -182,7 +183,7 @@ class ErosAPIClient {
     processingPhase: 'active' | 'phase1' | 'phase2' | 'phase3';
     sessionDuration: number;
   }> {
-    return this.request('/activity/status');
+    return this.request('/api/v1/activity/status');
   }
 
   /**
@@ -196,6 +197,7 @@ class ErosAPIClient {
 
   /**
    * Get daily matches
+   * Returns empty array if service unavailable or user doesn't have premium
    */
   async getDailyMatches(limit: number = 10): Promise<{
     success: boolean;
@@ -204,7 +206,28 @@ class ErosAPIClient {
     source?: string;
     date?: string;
   }> {
-    return this.request(`/matches/daily?limit=${limit}`);
+    try {
+      return await this.request(`/matches/daily?limit=${limit}`);
+    } catch (error: any) {
+      // Handle specific error cases gracefully
+      const errorMsg = error?.message || '';
+
+      // If it's a 402 (premium required), 404 (not found), or network error, return empty
+      if (errorMsg.includes('402') || errorMsg.includes('404') ||
+          errorMsg.includes('Pro required') || errorMsg.includes('fetch')) {
+        console.warn('Daily matches unavailable:', errorMsg);
+        return { success: false, matches: [], count: 0 };
+      }
+
+      // For auth errors, rethrow
+      if (errorMsg.includes('Authentication') || errorMsg.includes('401')) {
+        throw error;
+      }
+
+      // Default: return empty matches to prevent UI breakage
+      console.warn('EROS daily matches error:', error);
+      return { success: false, matches: [], count: 0 };
+    }
   }
 
   /**
@@ -231,7 +254,7 @@ class ErosAPIClient {
     success: boolean;
     message: string;
   }> {
-    return this.request(`/matches/${matchId}/action`, {
+    return this.request(`/api/v1/matches/${matchId}/action`, {
       method: 'POST',
       body: { action, reason },
     });
@@ -248,7 +271,7 @@ class ErosAPIClient {
     intent?: string;
     confidence?: number;
   }> {
-    return this.request('/api/eros/chat', {
+    return this.request('/api/v1/assistant/chat', {
       method: 'POST',
       body: { message, context },
     });

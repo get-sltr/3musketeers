@@ -1,12 +1,57 @@
+import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import type { ParticipantState } from '@/types/livekit'
 
 interface ParticipantTileProps {
   participant: ParticipantState
   isSpotlight?: boolean
+  isLocalParticipant?: boolean // Pass true for the local participant
 }
 
-export default function ParticipantTile({ participant, isSpotlight = false }: ParticipantTileProps) {
+export default function ParticipantTile({ 
+  participant, 
+  isSpotlight = false,
+  isLocalParticipant = false
+}: ParticipantTileProps) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const audioRef = useRef<HTMLAudioElement>(null)
+
+  // Attach/detach video track
+  useEffect(() => {
+    const videoElement = videoRef.current
+    const videoTrack = participant.videoTrack
+
+    if (!videoElement) return
+
+    if (videoTrack && !participant.isCameraOff) {
+      // Attach track to video element
+      videoTrack.attach(videoElement)
+      return () => {
+        videoTrack.detach(videoElement)
+      }
+    } else {
+      // Ensure video is cleared when no track
+      videoElement.srcObject = null
+    }
+  }, [participant.videoTrack, participant.isCameraOff])
+
+  // Attach/detach audio track (for remote participants only)
+  useEffect(() => {
+    const audioElement = audioRef.current
+    const audioTrack = participant.audioTrack
+
+    if (!audioElement) return
+
+    // Only attach audio for remote participants to avoid echo/feedback
+    // Local participant audio should not be played back
+    if (audioTrack && !participant.isMuted && !isLocalParticipant) {
+      audioTrack.attach(audioElement)
+      return () => {
+        audioTrack.detach(audioElement)
+      }
+    }
+  }, [participant.audioTrack, participant.isMuted, isLocalParticipant])
+
   if (!participant) return null
 
   const speakingGlow = participant.isSpeaking
@@ -24,24 +69,57 @@ export default function ParticipantTile({ participant, isSpotlight = false }: Pa
       ${isSpotlight ? 'w-[70%] h-[70%]' : 'w-full h-full'}
       `}
     >
+      {/* Hidden audio element for remote participants */}
+      <audio ref={audioRef} autoPlay playsInline />
 
-      {/* Video Placeholder */}
-      <div className="flex-1 w-full flex items-center justify-center text-white/40">
+      {/* Video Element or Placeholder */}
+      <div className="flex-1 w-full flex items-center justify-center text-white/40 relative">
         {participant.isCameraOff ? (
-          <div className="text-lg">{participant.name}</div>
+          <div className="flex flex-col items-center justify-center gap-2">
+            {participant.avatar ? (
+              <img 
+                src={participant.avatar} 
+                alt={participant.name}
+                className="w-16 h-16 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-full bg-purple-500/30 flex items-center justify-center">
+                <span className="text-2xl text-white">
+                  {participant.name.charAt(0).toUpperCase()}
+                </span>
+              </div>
+            )}
+            <div className="text-lg">{participant.name}</div>
+          </div>
         ) : (
-          <div className="text-xs italic text-purple-300/40">[ Video Stream Here ]</div>
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted // Local video should be muted to prevent feedback
+            className="w-full h-full object-cover rounded-xl"
+          />
         )}
       </div>
 
       {/* Bottom status bar */}
       <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/40 backdrop-blur-xl flex items-center justify-between">
-        <div className="text-sm font-medium">{participant.name}</div>
+        <div className="flex items-center gap-2">
+          <div className="text-sm font-medium truncate max-w-[150px]">{participant.name}</div>
+          {participant.isMuted && (
+            <span className="text-red-400" title="Muted">🔇</span>
+          )}
+        </div>
 
         <div className="flex items-center gap-2">
           {participant.role === 'host' && (
             <span className="px-2 py-1 text-xs bg-purple-500/40 border border-purple-500/60 rounded-lg">
               HOST
+            </span>
+          )}
+          {participant.role === 'cohost' && (
+            <span className="px-2 py-1 text-xs bg-blue-500/40 border border-blue-500/60 rounded-lg">
+              CO-HOST
             </span>
           )}
           {participant.isHandRaised && (
