@@ -141,12 +141,17 @@ export default function PricingPage() {
     }
 
     // Show canceled message
+    let timer: NodeJS.Timeout | undefined
     if (canceled === 'true') {
       setShowCanceled(true)
       // Clear the URL param after showing message
-      setTimeout(() => {
+      timer = setTimeout(() => {
         router.replace('/pricing')
       }, 5000)
+    }
+
+    return () => {
+      if (timer) clearTimeout(timer)
     }
   }, [searchParams, router])
 
