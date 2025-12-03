@@ -69,7 +69,7 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
         }
         
         .mobile-portrait {
-          padding-top: env(safe-area-inset-top);
+          padding-top: max(env(safe-area-inset-top), 20px);
           /* padding-bottom handled by individual components for better control */
         }
         
@@ -149,7 +149,7 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
         /* Safe area handling */
         @supports (padding: max(0px)) {
           .mobile-portrait {
-            padding-top: max(env(safe-area-inset-top), 0px);
+            padding-top: max(env(safe-area-inset-top), 20px);
             /* padding-bottom handled by BottomNav component */
           }
 
