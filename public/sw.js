@@ -77,6 +77,43 @@ self.addEventListener('push', (event) => {
   );
 });
 
+// Allowed origins for safe navigation
+const ALLOWED_ORIGINS = [
+  'https://getsltr.com',
+  'https://www.getsltr.com',
+  'https://sltr.vercel.app'
+];
+
+// Check if running in development
+const isDev = self.location.hostname === 'localhost' || 
+              self.location.hostname === '127.0.0.1' ||
+              self.location.hostname.endsWith('.local');
+
+// Validate URL for safe navigation
+function isValidNotificationUrl(url) {
+  if (!url) return false;
+  
+  try {
+    const parsed = new URL(url, self.location.origin);
+    
+    // Allow relative URLs (same origin)
+    if (parsed.origin === self.location.origin) {
+      return true;
+    }
+    
+    // In development, allow localhost
+    if (isDev && (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1')) {
+      return true;
+    }
+    
+    // Check against allowed origins
+    return ALLOWED_ORIGINS.includes(parsed.origin);
+  } catch (e) {
+    console.error('Invalid notification URL:', url);
+    return false;
+  }
+}
+
 // Handle notification click
 self.addEventListener('notificationclick', (event) => {
   console.log('Notification clicked:', event);
@@ -87,18 +124,46 @@ self.addEventListener('notificationclick', (event) => {
     return;
   }
 
-  const urlToOpen = event.notification.data?.url || '/messages';
+  // Get URL from notification data, default to messages
+  let urlToOpen = event.notification.data?.url || '/messages';
+  
+  // Validate URL for security - prevent open redirect
+  if (!isValidNotificationUrl(urlToOpen)) {
+    console.warn('Blocked unsafe notification URL:', urlToOpen);
+    urlToOpen = '/messages'; // Safe fallback
+  }
+  
+  // Ensure URL is absolute for openWindow
+  if (urlToOpen.startsWith('/')) {
+    urlToOpen = self.location.origin + urlToOpen;
+  }
   
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then((clientList) => {
-        // Check if there's already a window open
+        // Check if there's already a window/tab with our app open
         for (const client of clientList) {
-          if (client.url.includes(urlToOpen) && 'focus' in client) {
-            return client.focus();
+          try {
+            const clientUrl = new URL(client.url);
+            const targetUrl = new URL(urlToOpen);
+            
+            // If same origin, navigate existing window
+            if (clientUrl.origin === targetUrl.origin && 'focus' in client) {
+              // Navigate to the target path
+              if (clientUrl.pathname !== targetUrl.pathname) {
+                client.postMessage({
+                  type: 'NAVIGATE',
+                  url: targetUrl.pathname + targetUrl.search
+                });
+              }
+              return client.focus();
+            }
+          } catch (e) {
+            console.error('Error checking client URL:', e);
           }
         }
-        // Open new window if none exists
+        
+        // Open new window if no existing window found
         if (clients.openWindow) {
           return clients.openWindow(urlToOpen);
         }
