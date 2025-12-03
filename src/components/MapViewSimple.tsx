@@ -7,17 +7,39 @@ import { resolveProfilePhoto } from '../lib/utils/profile'
 import { createVenueMarker } from '../app/components/maps/VenueMarker'
 
 // Safe element creation helpers to prevent XSS
+const isHttpUrl = (value: string | null | undefined): boolean => {
+  if (!value) return false
+  try {
+    const u = new URL(value, window.location.origin)
+    return u.protocol === 'http:' || u.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
 const createSafeImageElement = (src: string, styles: string, alt = 'User'): HTMLImageElement => {
   const img = document.createElement('img')
-  img.src = src || ''
   img.alt = alt
   img.style.cssText = styles
+  img.referrerPolicy = 'no-referrer'
+  img.loading = 'lazy'
+  if (isHttpUrl(src)) {
+    img.src = src
+  } else {
+    img.src = '' // fallback to empty to avoid unsafe schemes
+  }
+  img.onerror = () => {
+    // Remove or hide the image on error to avoid broken content
+    if (img.parentElement) {
+      img.parentElement.removeChild(img)
+    }
+  }
   return img
 }
 
 const createSafeTextElement = (tag: string, text: string, styles?: string): HTMLElement => {
   const el = document.createElement(tag)
-  el.textContent = text // textContent is XSS-safe
+  el.textContent = text ?? '' // textContent is XSS-safe
   if (styles) el.style.cssText = styles
   return el
 }
