@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getTierConfig, TierType } from '@/config/tiers'
-import { getStripe } from '@/lib/stripe/client'
+import { getStripe } from '@/lib/stripe'
 
 export async function POST(request: NextRequest) {
   const stripe = getStripe()

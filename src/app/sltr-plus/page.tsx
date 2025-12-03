@@ -28,7 +28,7 @@ export default function SLTRPlusPage() {
   const router = useRouter()
 
   const handleContinue = () => {
-    router.push('/checkout/sltr-plus')
+    router.push('/checkout/member')
   }
 
   return (

@@ -4,7 +4,6 @@ import Stripe from 'stripe'
  * Stripe API version used across the application.
  * Keep this constant to ensure consistent API behavior.
  */
-export const STRIPE_API_VERSION = '2025-10-29.clover' as const
 
 /**
  * Lazy-initialized Stripe client singleton.
@@ -34,7 +33,7 @@ export function getStripe(): Stripe {
  * Get the Stripe client instance, returning null if not configured.
  * Useful for optional Stripe features or graceful degradation.
  *
- * @returns {Stripe | null} The Stripe client instance or null if not configured
+ * @returns {Stripe | null} The Stripe client instance, or null if not configured
  */
 export function getStripeOptional(): Stripe | null {
   if (!_stripe) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getStripe } from '@/lib/stripe/client'
+import { getStripe } from '@/lib/stripe'
 
 export async function POST(req: NextRequest) {
   const stripe = getStripe()

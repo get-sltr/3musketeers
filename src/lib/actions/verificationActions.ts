@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { getStripe } from '@/lib/stripe/client'
+import { getStripe } from '@/lib/stripe'
 
 /**
  * Creates a Stripe Identity verification session
