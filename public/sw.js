@@ -59,7 +59,7 @@ self.addEventListener('push', (event) => {
   const options = {
     body: data.body || 'You have a new message',
     icon: '/icon-192.png',
-    badge: '/icon-96.png', // Use existing smaller icon as badge
+    badge: '/icon-192.png', // Use existing icon as badge
     tag: data.tag || 'message-notification',
     data: {
       url: data.url || '/messages',
