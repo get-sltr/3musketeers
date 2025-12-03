@@ -106,7 +106,11 @@ self.addEventListener('notificationclick', (event) => {
   // Normalize to same-origin absolute URL (prevents open redirect)
   let urlToOpen;
   try {
-    urlToOpen = new URL(path, self.location.origin).toString();
+    const url = new URL(path, self.location.origin);
+    if (url.origin !== self.location.origin) {
+      throw new Error('Cross-origin redirect blocked');
+    }
+    urlToOpen = url.toString();
   } catch {
     urlToOpen = new URL('/messages', self.location.origin).toString();
   }
