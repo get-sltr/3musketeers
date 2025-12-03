@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY
-const stripe = stripeSecretKey
-  ? new Stripe(stripeSecretKey, {
-      apiVersion: '2025-10-29.clover'
-})
-  : null
+// ============================================
+// LAZY INITIALIZATION - DO NOT CREATE CLIENTS AT MODULE LOAD TIME
+// Clients are created only when first used at RUNTIME
+// ============================================
 
 // Lazy initialization to avoid build-time errors
 const getSupabase = () => {
@@ -26,6 +24,43 @@ const PRICE_IDS = {
 }
 
 const FOUNDER_LIMIT = 2000
+
+// Allowed origins for success/cancel URLs to prevent open redirect
+const ALLOWED_ORIGINS = [
+  'https://getsltr.com',
+  'https://www.getsltr.com',
+  'https://sltr.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:3001'
+]
+// Minimum length of the random portion after 'price_' prefix
+// Stripe price IDs typically have 14-24 characters after the prefix
+const STRIPE_PRICE_ID_MIN_LENGTH = 8
+
+/**
+ * Validate that a price ID is properly configured
+ * Must start with 'price_' and be a valid Stripe price ID format
+ */
+function isValidPriceId(priceId: string | undefined): boolean {
+  if (!priceId) return false
+  // Stripe price IDs start with 'price_' followed by alphanumeric characters
+  const pattern = new RegExp(`^price_[a-zA-Z0-9]{${STRIPE_PRICE_ID_MIN_LENGTH},}$`)
+  return pattern.test(priceId)
+}
+
+/**
+ * Get a safe origin for redirect URLs
+ * Returns an allowed origin or falls back to production
+ */
+function getSafeOrigin(requestOrigin: string | null): string {
+  if (requestOrigin && ALLOWED_ORIGINS.includes(requestOrigin)) {
+    return requestOrigin
+  }
+  // Default to production URL
+  return 'https://getsltr.com'
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -50,10 +85,11 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
-  } catch (error: any) {
-    console.error('Stripe API Error:', error)
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Request failed'
+    console.error('Stripe API Error:', message)
     return NextResponse.json(
-      { error: error.message || 'Request failed' },
+      { error: message },
       { status: 500 }
     )
   }
@@ -66,6 +102,14 @@ export async function POST(request: NextRequest) {
     if (!priceType || !userId || !email) {
       return NextResponse.json(
         { error: 'Missing required fields' },
+        { status: 400 }
+      )
+    }
+
+    // Validate price type
+    if (!['founder', 'member'].includes(priceType)) {
+      return NextResponse.json(
+        { error: 'Invalid price type' },
         { status: 400 }
       )
     }
@@ -88,7 +132,7 @@ export async function POST(request: NextRequest) {
 
     // Check founder availability
     if (priceType === 'founder') {
-      const { count } = await supabase
+      const { count } = await getSupabase()
         .from('profiles')
         .select('id', { count: 'exact', head: true })
         .eq('founder', true)
@@ -103,20 +147,33 @@ export async function POST(request: NextRequest) {
 
     const priceId = PRICE_IDS[priceType as keyof typeof PRICE_IDS]
     
-    if (!priceId || !priceId.startsWith('price_')) {
+    // Validate price ID format (must be properly configured)
+    if (!isValidPriceId(priceId)) {
+      console.error(`Invalid price ID for ${priceType}: ${priceId}`)
       return NextResponse.json(
-        { error: 'Price ID not configured. Please set STRIPE_FOUNDER_PRICE_ID and STRIPE_MEMBER_PRICE_ID in environment variables.' },
-        { status: 500 }
-      )
-    }
-
-    if (!stripe) {
-      console.error('Stripe secret key is not configured')
-      return NextResponse.json(
-        { error: 'Payment processing is currently unavailable. Please try again later.' },
+        { 
+          error: 'Payment processing is temporarily unavailable. Price configuration error.',
+          code: 'PRICE_NOT_CONFIGURED'
+        },
         { status: 503 }
       )
     }
+
+    const stripe = getStripe()
+    if (!stripe) {
+      console.error('Stripe secret key is not configured')
+      return NextResponse.json(
+        { 
+          error: 'Payment processing is currently unavailable. Please try again later.',
+          code: 'STRIPE_NOT_CONFIGURED'
+        },
+        { status: 503 }
+      )
+    }
+
+    // Get safe origin for redirect URLs (prevent open redirect)
+    const requestOrigin = request.headers.get('origin')
+    const safeOrigin = getSafeOrigin(requestOrigin)
 
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
@@ -134,15 +191,16 @@ export async function POST(request: NextRequest) {
         userId,
         priceType,
       },
-      success_url: `${request.headers.get('origin') || 'https://getsltr.com'}/pricing?success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${request.headers.get('origin') || 'https://getsltr.com'}/pricing?canceled=true`,
+      success_url: `${safeOrigin}/pricing?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${safeOrigin}/pricing?canceled=true`,
     })
 
     return NextResponse.json({ url: session.url })
-  } catch (error: any) {
-    console.error('Stripe Checkout Error:', error)
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Checkout failed'
+    console.error('Stripe Checkout Error:', message)
     return NextResponse.json(
-      { error: error.message || 'Checkout failed' },
+      { error: message },
       { status: 500 }
     )
   }
