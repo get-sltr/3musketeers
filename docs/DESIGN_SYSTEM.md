@@ -270,7 +270,7 @@ Primary action button.
 | `--header-height` | 64px | Fixed header height |
 | `--bottom-nav-height` | 64px | Bottom navigation height |
 | `--filter-bar-height` | 56px | Filter bar height |
-| `--sticky-ui-height` | calc(header + filter) | Combined sticky elements |
+| `--sticky-ui-height` | calc(var(--header-height) + var(--filter-bar-height)) | Combined sticky elements |
 
 ---
 
