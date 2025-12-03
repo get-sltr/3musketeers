@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import { useUser } from '@/hooks/useUser'
@@ -123,9 +124,56 @@ function FounderCount() {
 // Main Pricing Page
 export default function PricingPage() {
   const user = useUser()
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const [showCanceled, setShowCanceled] = useState(false)
+
+  // Handle success/canceled redirects
+  useEffect(() => {
+    const success = searchParams?.get('success')
+    const sessionId = searchParams?.get('session_id')
+    const canceled = searchParams?.get('canceled')
+
+    // Redirect to payment-success page if coming from old success URL
+    if (success === 'true' && sessionId) {
+      router.replace(`/payment-success?session_id=${sessionId}`)
+      return
+    }
+
+    // Show canceled message
+    if (canceled === 'true') {
+      setShowCanceled(true)
+      // Clear the URL param after showing message
+      setTimeout(() => {
+        router.replace('/pricing')
+      }, 5000)
+    }
+  }, [searchParams, router])
 
   return (
     <div className="min-h-screen bg-black text-white">
+      {/* Canceled Payment Banner */}
+      {showCanceled && (
+        <motion.div
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="fixed top-0 left-0 right-0 z-50 bg-amber-500/20 border-b border-amber-500/50 backdrop-blur-sm px-4 py-3"
+        >
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <p className="text-amber-200">
+              Payment was canceled. No charges were made. You can try again whenever you're ready.
+            </p>
+            <button
+              onClick={() => setShowCanceled(false)}
+              className="text-amber-200 hover:text-white ml-4"
+              aria-label="Dismiss"
+            >
+              ✕
+            </button>
+          </div>
+        </motion.div>
+      )}
+
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-pink-500/20 to-purple-500/20" />
