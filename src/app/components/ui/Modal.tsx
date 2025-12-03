@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useId } from 'react'
-import { useFocusTrap } from '@/hooks/useFocusTrap'
+import { useFocusTrapLegacy } from '@/hooks/useFocusTrap'
 
 interface ModalProps {
   /** Whether the modal is currently open */
@@ -65,7 +65,7 @@ export default function Modal({
   const titleId = useId()
 
   // Use focus trap hook for accessibility
-  useFocusTrap(modalRef, {
+  useFocusTrapLegacy(modalRef, {
     enabled: isOpen,
     initialFocusRef,
     returnFocusOnDeactivate: true,
