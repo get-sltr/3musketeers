@@ -44,7 +44,8 @@ self.addEventListener('activate', (event) => {
 
 // Handle push notifications
 self.addEventListener('push', (event) => {
-  console.log('🔔 Push notification received:', event);
+  // Only log non-sensitive metadata
+  console.log('🔔 Push notification received');
 
   let data = {};
   try {
@@ -88,7 +89,8 @@ self.addEventListener('push', (event) => {
 
 // Handle notification click
 self.addEventListener('notificationclick', (event) => {
-  console.log('🔔 Notification clicked:', event.action, event.notification.data);
+  // Only log action type, not sensitive notification data
+  console.log('🔔 Notification clicked:', event.action || 'default');
 
   event.notification.close();
 
@@ -179,7 +181,13 @@ self.addEventListener('fetch', (event) => {
         return caches.match(event.request)
           .then(cachedResponse => {
             if (cachedResponse) {
-              console.log('📦 Serving from cache:', event.request.url);
+              // Only log pathname, not full URL with potential query params
+              try {
+                const url = new URL(event.request.url);
+                console.log('📦 Serving from cache:', url.pathname);
+              } catch {
+                console.log('📦 Serving from cache');
+              }
               return cachedResponse;
             }
             
