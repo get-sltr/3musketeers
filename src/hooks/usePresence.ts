@@ -3,9 +3,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { usePresenceStore } from '@/stores/usePresenceStore'
-import type { RealtimeChannel } from '@supabase/supabase-js'
+import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js'
 
-const supabase = createClient()
+// LAZY INITIALIZATION - Don't create client at module load time
+let _supabase: SupabaseClient | null = null
+function getSupabase() {
+  if (!_supabase) {
+    _supabase = createClient()
+  }
+  return _supabase
+}
 
 export const usePresence = (currentUserId: string | null) => {
   const channelRef = useRef<RealtimeChannel | null>(null)
@@ -22,7 +29,7 @@ export const usePresence = (currentUserId: string | null) => {
     if (!currentUserId) return
     if (channelRef.current) return // already connected
 
-    const presenceChannel = supabase.channel('global-presence', {
+    const presenceChannel = getSupabase().channel('global-presence', {
       config: {
         presence: {
           key: currentUserId,

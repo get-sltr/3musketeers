@@ -35,6 +35,7 @@ class ErosAPIClient {
       this.baseUrl = process.env.NODE_ENV === 'development'
         ? (process.env.NEXT_PUBLIC_DEV_BACKEND_URL || 'http://localhost:3001')
         : (process.env.NEXT_PUBLIC_EROS_BACKEND_URL || 'https://eros-backend-production.up.railway.app');
+      this.baseUrl = `${backendUrl}/api/v1`;
     }
   }
 

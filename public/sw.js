@@ -44,30 +44,39 @@ self.addEventListener('activate', (event) => {
 
 // Handle push notifications
 self.addEventListener('push', (event) => {
-  console.log('Push notification received:', event);
-  
-  const data = event.data ? event.data.json() : {};
-  const title = data.title || 'New Message';
+  console.log('🔔 Push notification received:', event);
+
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (e) {
+    console.error('Failed to parse push data:', e);
+    // Fallback to text if JSON parsing fails
+    data = { body: event.data?.text() || 'New notification' };
+  }
+
+  const title = data.title || 'SLTR';
   const options = {
     body: data.body || 'You have a new message',
     icon: '/icon-192.png',
-    badge: '/badge-72.png',
+    badge: '/icon-192.png', // Use existing icon as badge
     tag: data.tag || 'message-notification',
     data: {
       url: data.url || '/messages',
-      conversationId: data.conversationId
+      conversationId: data.conversationId,
+      type: data.type || 'message'
     },
     requireInteraction: false,
+    vibrate: [100, 50, 100], // Vibration pattern for mobile
     actions: [
       {
         action: 'open',
-        title: 'Open',
-        icon: '/icons/open.png'
+        title: 'Open'
+        // Removed icon references that don't exist
       },
       {
-        action: 'close',
-        title: 'Close',
-        icon: '/icons/close.png'
+        action: 'dismiss',
+        title: 'Dismiss'
       }
     ]
   };
@@ -77,28 +86,100 @@ self.addEventListener('push', (event) => {
   );
 });
 
+// Allowed origins for safe navigation
+const ALLOWED_ORIGINS = [
+  'https://getsltr.com',
+  'https://www.getsltr.com',
+  'https://sltr.vercel.app'
+];
+
+// Check if running in development
+const isDev = self.location.hostname === 'localhost' || 
+              self.location.hostname === '127.0.0.1' ||
+              self.location.hostname.endsWith('.local');
+
+// Validate URL for safe navigation
+function isValidNotificationUrl(url) {
+  if (!url) return false;
+  
+  try {
+    const parsed = new URL(url, self.location.origin);
+    
+    // Allow relative URLs (same origin)
+    if (parsed.origin === self.location.origin) {
+      return true;
+    }
+    
+    // In development, allow localhost
+    if (isDev && (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1')) {
+      return true;
+    }
+    
+    // Check against allowed origins
+    return ALLOWED_ORIGINS.includes(parsed.origin);
+  } catch (e) {
+    console.error('Invalid notification URL:', url);
+    return false;
+  }
+}
+
 // Handle notification click
 self.addEventListener('notificationclick', (event) => {
-  console.log('Notification clicked:', event);
-  
+  console.log('🔔 Notification clicked:', event.action, event.notification.data);
+
   event.notification.close();
 
-  if (event.action === 'close') {
+  // Handle dismiss action - just close the notification
+  if (event.action === 'dismiss' || event.action === 'close') {
     return;
   }
 
-  const urlToOpen = event.notification.data?.url || '/messages';
+  // Get URL from notification data, default to messages
+  let urlToOpen = event.notification.data?.url || '/messages';
+  
+  // Validate URL for security - prevent open redirect
+  if (!isValidNotificationUrl(urlToOpen)) {
+    console.warn('Blocked unsafe notification URL:', urlToOpen);
+    urlToOpen = '/messages'; // Safe fallback
+  }
+  
+  // Ensure URL is absolute for openWindow
+  if (urlToOpen.startsWith('/')) {
+    urlToOpen = self.location.origin + urlToOpen;
+  }
   
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then((clientList) => {
-        // Check if there's already a window open
+        // Check if there's already a window/tab with our app open
         for (const client of clientList) {
-          if (client.url.includes(urlToOpen) && 'focus' in client) {
-            return client.focus();
+          try {
+            const clientUrl = new URL(client.url);
+            const targetUrl = new URL(urlToOpen);
+            
+            // If same origin, navigate existing window
+            if (clientUrl.origin === targetUrl.origin && 'focus' in client) {
+              // Navigate to the target path if different
+              if (clientUrl.pathname !== targetUrl.pathname) {
+                // Try to post message for client-side navigation
+                // If client doesn't handle NAVIGATE, fall back to direct navigation
+                try {
+                  client.postMessage({
+                    type: 'NAVIGATE',
+                    url: targetUrl.pathname + targetUrl.search
+                  });
+                } catch (messageError) {
+                  console.log('postMessage failed, client will handle via focus');
+                }
+              }
+              return client.focus();
+            }
+          } catch (e) {
+            console.error('Error checking client URL:', e);
           }
         }
-        // Open new window if none exists
+        
+        // Open new window if no existing window found
         if (clients.openWindow) {
           return clients.openWindow(urlToOpen);
         }

@@ -250,11 +250,13 @@ export default function BottomNav() {
                 ? 'text-lime-400'
                 : 'text-white/50 hover:text-white/70'
             }`}
+            aria-label={item.label}
+            aria-current={activeTab === item.id ? 'page' : undefined}
           >
-            <div className="relative text-xl">{item.icon}</div>
+            <div className="relative text-xl" aria-hidden="true">{item.icon}</div>
             <span className="text-[9px] font-medium">{item.label}</span>
             {item.id === 'messages' && unreadCount > 0 && (
-              <span className="absolute top-1 right-1/4 bg-red-500 text-white text-[9px] font-bold leading-none rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center">
+              <span className="absolute top-1 right-1/4 bg-red-500 text-white text-[9px] font-bold leading-none rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center" aria-label={`${unreadCount} unread messages`}>
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}

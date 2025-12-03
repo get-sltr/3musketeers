@@ -4,14 +4,46 @@
 
 const { createClient } = require('@supabase/supabase-js');
 
+/**
+ * Sanitize environment variable - remove quotes, trim whitespace, handle newlines
+ */
+function sanitizeEnvVar(value) {
+  if (!value) return null;
+  return value
+    .replace(/^["']|["']$/g, '')  // Remove surrounding quotes
+    .replace(/\\n/g, '')          // Remove escaped newlines
+    .replace(/\n/g, '')           // Remove actual newlines
+    .trim();                       // Trim whitespace
+}
+
+/**
+ * Create and validate Supabase client
+ */
+function createValidatedSupabaseClient(configUrl, configKey) {
+  const url = sanitizeEnvVar(configUrl || process.env.SUPABASE_URL);
+  const key = sanitizeEnvVar(configKey || process.env.SUPABASE_ANON_KEY);
+
+  if (!url || !key) {
+    console.error('❌ EROS Matcher: Missing Supabase credentials');
+    return null;
+  }
+
+  if (!url.includes('supabase') || !key.startsWith('eyJ')) {
+    console.error('❌ EROS Matcher: Invalid Supabase credential format');
+    return null;
+  }
+
+  return createClient(url, key);
+}
+
 class ErosMatcher {
   constructor(config = {}) {
-    this.supabase = createClient(
-      config.supabaseUrl || process.env.SUPABASE_URL,
-      config.supabaseKey || process.env.SUPABASE_ANON_KEY
-    );
-    
+    this.supabase = createValidatedSupabaseClient(config.supabaseUrl, config.supabaseKey);
     this.redis = config.redis || null;
+
+    console.log('📋 EROS Matcher initialized:');
+    console.log(`   - Supabase: ${this.supabase ? '✅' : '❌'}`);
+    console.log(`   - Redis: ${this.redis ? '✅' : '⚠️ Not configured'}`);
   }
 
   /**
