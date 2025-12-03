@@ -149,12 +149,18 @@ self.addEventListener('notificationclick', (event) => {
             
             // If same origin, navigate existing window
             if (clientUrl.origin === targetUrl.origin && 'focus' in client) {
-              // Navigate to the target path
+              // Navigate to the target path if different
               if (clientUrl.pathname !== targetUrl.pathname) {
-                client.postMessage({
-                  type: 'NAVIGATE',
-                  url: targetUrl.pathname + targetUrl.search
-                });
+                // Try to post message for client-side navigation
+                // If client doesn't handle NAVIGATE, fall back to direct navigation
+                try {
+                  client.postMessage({
+                    type: 'NAVIGATE',
+                    url: targetUrl.pathname + targetUrl.search
+                  });
+                } catch (messageError) {
+                  console.log('postMessage failed, client will handle via focus');
+                }
               }
               return client.focus();
             }

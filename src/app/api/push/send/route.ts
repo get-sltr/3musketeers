@@ -29,8 +29,10 @@ export async function POST(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
     // For internal calls, we'll check for a special header
+    // Both the header AND the environment variable must be present and match
     const internalKey = request.headers.get('x-internal-key')
-    const isInternalCall = internalKey === process.env.INTERNAL_API_KEY
+    const configuredKey = process.env.INTERNAL_API_KEY
+    const isInternalCall = !!(configuredKey && internalKey && internalKey === configuredKey)
     
     if (authError || (!user && !isInternalCall)) {
       return NextResponse.json(

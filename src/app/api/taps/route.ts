@@ -120,12 +120,19 @@ async function sendTapPushNotification(
 ): Promise<void> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://getsltr.com'
+    const internalKey = process.env.INTERNAL_API_KEY
+    
+    // Only send push notification if internal API key is configured
+    if (!internalKey) {
+      console.log('Push notification skipped: INTERNAL_API_KEY not configured')
+      return
+    }
     
     await fetch(`${baseUrl}/api/push/send`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-internal-key': process.env.INTERNAL_API_KEY || ''
+        'x-internal-key': internalKey
       },
       body: JSON.stringify({
         user_id: recipientUserId,

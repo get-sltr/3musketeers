@@ -52,6 +52,9 @@ const ALLOWED_ORIGINS = [
   'http://127.0.0.1:3000',
   'http://127.0.0.1:3001'
 ]
+// Minimum length of the random portion after 'price_' prefix
+// Stripe price IDs typically have 14-24 characters after the prefix
+const STRIPE_PRICE_ID_MIN_LENGTH = 8
 
 /**
  * Validate that a price ID is properly configured
@@ -60,7 +63,8 @@ const ALLOWED_ORIGINS = [
 function isValidPriceId(priceId: string | undefined): boolean {
   if (!priceId) return false
   // Stripe price IDs start with 'price_' followed by alphanumeric characters
-  return /^price_[a-zA-Z0-9]{8,}$/.test(priceId)
+  const pattern = new RegExp(`^price_[a-zA-Z0-9]{${STRIPE_PRICE_ID_MIN_LENGTH},}$`)
+  return pattern.test(priceId)
 }
 
 /**

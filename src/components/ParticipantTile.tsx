@@ -5,9 +5,14 @@ import type { ParticipantState } from '@/types/livekit'
 interface ParticipantTileProps {
   participant: ParticipantState
   isSpotlight?: boolean
+  isLocalParticipant?: boolean // Pass true for the local participant
 }
 
-export default function ParticipantTile({ participant, isSpotlight = false }: ParticipantTileProps) {
+export default function ParticipantTile({ 
+  participant, 
+  isSpotlight = false,
+  isLocalParticipant = false
+}: ParticipantTileProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
 
@@ -30,21 +35,22 @@ export default function ParticipantTile({ participant, isSpotlight = false }: Pa
     }
   }, [participant.videoTrack, participant.isCameraOff])
 
-  // Attach/detach audio track (for remote participants)
+  // Attach/detach audio track (for remote participants only)
   useEffect(() => {
     const audioElement = audioRef.current
     const audioTrack = participant.audioTrack
 
     if (!audioElement) return
 
-    // Only attach audio for remote participants (not local)
-    if (audioTrack && !participant.isMuted && participant.identity !== undefined) {
+    // Only attach audio for remote participants to avoid echo/feedback
+    // Local participant audio should not be played back
+    if (audioTrack && !participant.isMuted && !isLocalParticipant) {
       audioTrack.attach(audioElement)
       return () => {
         audioTrack.detach(audioElement)
       }
     }
-  }, [participant.audioTrack, participant.isMuted, participant.identity])
+  }, [participant.audioTrack, participant.isMuted, isLocalParticipant])
 
   if (!participant) return null
 
