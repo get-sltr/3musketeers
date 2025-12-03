@@ -316,7 +316,6 @@ export default function GridView({ onUserClick }: GridViewProps) {
     }
 
     setFilteredUsers(filtered)
-
     // Announce filter results to screen readers
     const hasActiveFilters = activeButtons.length > 0 || !isDefaultAgeRange || selectedPositions.length > 0 || selectedTags.length > 0
     if (hasActiveFilters) {
@@ -327,7 +326,7 @@ export default function GridView({ onUserClick }: GridViewProps) {
           : `${filtered.length} users found`
       setScreenReaderMessage(message)
     }
-  }, [users, activeButtons, ageRange, selectedPositions, selectedTags])
+  }, [users, activeButtons, ageRange, selectedPositions, selectedTags, isDefaultAgeRange])
 
   const isDefaultAgeRange =
     ageRange.min === DEFAULT_AGE_RANGE.min && ageRange.max === DEFAULT_AGE_RANGE.max
