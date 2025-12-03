@@ -498,3 +498,78 @@ body {
 .typing-dot:nth-child(3) {
   animation-delay: 0.4s;
 }
+
+/* ===== Accessibility: Tap Target Sizes ===== */
+/* Ensure all interactive elements meet minimum 48x48px tap target size */
+@media (pointer: coarse) {
+  button,
+  a,
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  [role="button"],
+  .btn,
+  .clickable {
+    min-height: 48px;
+    min-width: 48px;
+  }
+
+  /* Ensure adequate spacing between tap targets */
+  button + button,
+  a + a,
+  .btn + .btn {
+    margin-left: 8px;
+  }
+
+  /* Icon buttons need padding to reach 48px */
+  .icon-btn,
+  button:has(svg:only-child) {
+    padding: 12px;
+  }
+
+  /* Form inputs should be easily tappable */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="tel"],
+  input[type="number"],
+  input[type="search"],
+  textarea,
+  select {
+    min-height: 48px;
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+
+  /* Checkbox and radio labels */
+  input[type="checkbox"] + label,
+  input[type="radio"] + label {
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    padding: 8px;
+  }
+}
+
+/* ===== Link Accessibility ===== */
+/* Ensure links have visible focus states */
+a:focus-visible {
+  outline: 2px solid var(--sltr-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Skip link for keyboard navigation */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--sltr-primary);
+  color: var(--bg-primary);
+  padding: var(--space-md) var(--space-lg);
+  z-index: 100;
+  transition: top var(--transition-fast);
+}
+
+.skip-link:focus {
+  top: 0;
+}

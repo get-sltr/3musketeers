@@ -2,16 +2,17 @@
 # Copy this to .env in the backend directory
 
 # Supabase Configuration (without NEXT_PUBLIC_ prefix for backend)
-SUPABASE_URL=https://bnzyzkmixfmylviaojbj.supabase.co
-SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJuenl6a21peGZteWx2aWFvamJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0NDE3ODksImV4cCI6MjA3NTAxNzc4OX0.8WHWwe9ow_nTljMvwVUI70i07pmNBh2mR0yo80EsGMs
+# Get from Supabase Dashboard > Settings > API
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_ANON_KEY=your_supabase_anon_key_here
 
 # Server Configuration
 PORT=3001
 NODE_ENV=production
 
 # Application URLs
-FRONTEND_URL=https://getsltr.com
-BACKEND_URL=https://sltr-backend.railway.app
+FRONTEND_URL=https://your-frontend-domain.com
+BACKEND_URL=https://your-backend.railway.app
 
 # Development URLs
 DEV_FRONTEND_URL=http://localhost:3000
