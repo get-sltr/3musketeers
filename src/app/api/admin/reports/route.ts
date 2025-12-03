@@ -82,28 +82,27 @@ export async function GET(request: NextRequest) {
     }
 
     // 5. Get stats
-    const { data: stats } = await adminClient
-      .from('reports')
-      .select('status', { count: 'exact', head: false })
+    const [
+      { count: pendingCount },
+      { count: reviewedCount },
+      { count: resolvedCount },
+      { count: dismissedCount },
+      { count: totalCount }
+    ] = await Promise.all([
+      adminClient.from('reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+      adminClient.from('reports').select('*', { count: 'exact', head: true }).eq('status', 'reviewed'),
+      adminClient.from('reports').select('*', { count: 'exact', head: true }).eq('status', 'resolved'),
+      adminClient.from('reports').select('*', { count: 'exact', head: true }).eq('status', 'dismissed'),
+      adminClient.from('reports').select('*', { count: 'exact', head: true })
+    ]);
 
     const statusCounts = {
-      pending: 0,
-      reviewed: 0,
-      resolved: 0,
-      dismissed: 0,
-      total: reports?.length || 0
-    }
-
-    // Count by status
-    const { data: pendingCount } = await adminClient
-      .from('reports')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'pending')
-
-    const { data: reviewedCount, count: reviewedCountNum } = await adminClient
-      .from('reports')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'reviewed')
+      pending: pendingCount || 0,
+      reviewed: reviewedCount || 0,
+      resolved: resolvedCount || 0,
+      dismissed: dismissedCount || 0,
+      total: totalCount || 0
+    };
 
     return NextResponse.json({
       reports,
