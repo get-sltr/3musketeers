@@ -1,6 +1,6 @@
+import type Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
-import Stripe from 'stripe'
-import { getStripe } from '@/lib/stripe/client'
+import { getStripe } from '@/lib/stripe'
 
 export async function POST(request: Request) {
   const stripe = getStripe()

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
-import { getStripeOrNull } from '@/lib/stripe/client'
+import { getStripeOrNull } from '@/lib/stripe'
 
 // ============================================
 // LAZY INITIALIZATION - DO NOT CREATE CLIENTS AT MODULE LOAD TIME
