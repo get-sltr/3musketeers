@@ -1,20 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
 import { getTierConfig, TierType } from '@/config/tiers'
-
-// LAZY INITIALIZATION - avoid creating client at build time
-let _stripe: Stripe | null = null
-function getStripe() {
-  if (!_stripe) {
-    const key = process.env.STRIPE_SECRET_KEY
-    if (!key) {
-      throw new Error('STRIPE_SECRET_KEY not configured')
-    }
-    _stripe = new Stripe(key, { apiVersion: '2025-10-29.clover' })
-  }
-  return _stripe
-}
+import { getStripe } from '@/lib/stripe'
 
 export async function POST(request: NextRequest) {
   const stripe = getStripe()
