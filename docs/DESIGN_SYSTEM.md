@@ -241,7 +241,7 @@ Primary action button.
 ```css
 /* Sent messages (current user) */
 .sent-bubble {
-  background: linear-gradient(135deg, #00ff88, #00cc6a);
+  background: linear-gradient(135deg, var(--sltr-primary), var(--sltr-primary-dark));
   border-radius: 20px 20px 4px 20px;
   padding: 12px 16px;
   max-width: 70%;
