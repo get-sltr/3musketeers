@@ -83,7 +83,7 @@ This Project Execution Plan prioritizes **immediate security remediation** follo
 | **Quality** | Minimum 60% test coverage on critical paths |
 | **Risk** | No changes to locked files without explicit approval |
 | **Dependency** | Backend decision blocks all feature work |
-| **Technical** | Node.js 22.x, Next.js 14.x (no upgrades) |
+| **Technical** | Node.js 24.x, Next.js 14.x (no upgrades) |
 
 ### 1.3 Assumptions
 
