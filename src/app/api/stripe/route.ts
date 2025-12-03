@@ -7,31 +7,14 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js'
 // Clients are created only when first used at RUNTIME
 // ============================================
 
-let _stripe: Stripe | null = null
-let _supabase: SupabaseClient | null = null
-
-function getStripe(): Stripe | null {
-  if (!_stripe) {
-    const key = process.env.STRIPE_SECRET_KEY
-    if (key) {
-      _stripe = new Stripe(key, { apiVersion: '2025-10-29.clover' })
-    }
+// Lazy initialization to avoid build-time errors
+const getSupabase = () => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !key) {
+    throw new Error('Supabase configuration missing')
   }
-  return _stripe
-}
-
-function getSupabase(): SupabaseClient {
-  if (!_supabase) {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const key = process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-    if (!url || !key) {
-      throw new Error('Supabase credentials not configured')
-    }
-
-    _supabase = createClient(url, key)
-  }
-  return _supabase
+  return createClient(url, key)
 }
 
 // Price IDs - these should be created in Stripe Dashboard
@@ -132,7 +115,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user has a profile (optional)
-    const { data: user } = await getSupabase()
+    const supabase = getSupabase()
+    const { data: user } = await supabase
       .from('profiles')
       .select('id, founder, subscription_status')
       .eq('id', userId)
