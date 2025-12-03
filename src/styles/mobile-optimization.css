@@ -37,8 +37,8 @@
   .logo-button {
     padding: 8px;
     border-radius: 12px;
-    background: linear-gradient(45deg, #00d4ff, #ff00ff);
-    color: white;
+    background: linear-gradient(135deg, var(--sltr-primary, #00ff88), var(--sltr-primary-dark, #00cc6a));
+    color: var(--bg-primary, #0a1628);
     font-weight: bold;
     font-size: 18px;
     min-width: 50px;
@@ -67,8 +67,8 @@
   }
 
   .view-button.active {
-    background: linear-gradient(45deg, #00d4ff, #ff00ff);
-    color: white;
+    background: linear-gradient(135deg, var(--sltr-primary, #00ff88), var(--sltr-primary-dark, #00cc6a));
+    color: var(--bg-primary, #0a1628);
   }
 
   .view-button:not(.active) {
@@ -84,9 +84,9 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: linear-gradient(45deg, #00d4ff, #ff00ff);
+    background: linear-gradient(135deg, var(--sltr-primary, #00ff88), var(--sltr-primary-dark, #00cc6a));
     border: none;
-    color: white;
+    color: var(--bg-primary, #0a1628);
     font-size: 16px;
     display: flex;
     align-items: center;
@@ -220,8 +220,8 @@
   }
 
   .message-button {
-    background: linear-gradient(45deg, #00d4ff, #ff00ff);
-    color: white;
+    background: linear-gradient(135deg, var(--sltr-primary, #00ff88), var(--sltr-primary-dark, #00cc6a));
+    color: var(--bg-primary, #0a1628);
   }
 
   .favorite-button {
@@ -271,8 +271,8 @@
   }
 
   .filter-tab.active {
-    background: linear-gradient(45deg, #00d4ff, #ff00ff);
-    color: white;
+    background: linear-gradient(135deg, var(--sltr-primary, #00ff88), var(--sltr-primary-dark, #00cc6a));
+    color: var(--bg-primary, #0a1628);
   }
 
   .filter-actions {
@@ -428,8 +428,8 @@
 
   .message.sent {
     align-self: flex-end;
-    background: linear-gradient(45deg, #00d4ff, #ff00ff);
-    color: white;
+    background: linear-gradient(135deg, var(--sltr-primary, #00ff88), var(--sltr-primary-dark, #00cc6a));
+    color: var(--bg-primary, #0a1628);
   }
 
   .message.received {
@@ -459,16 +459,16 @@
 
   .message-input-field:focus {
     outline: none;
-    border-color: #00d4ff;
+    border-color: var(--sltr-primary, #00ff88);
   }
 
   .message-send-button {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: linear-gradient(45deg, #00d4ff, #ff00ff);
+    background: linear-gradient(135deg, var(--sltr-primary, #00ff88), var(--sltr-primary-dark, #00cc6a));
     border: none;
-    color: white;
+    color: var(--bg-primary, #0a1628);
     font-size: 18px;
     display: flex;
     align-items: center;
