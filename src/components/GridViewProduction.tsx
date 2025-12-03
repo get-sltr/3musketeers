@@ -171,7 +171,7 @@ export default function GridViewProduction({
         try {
           const { data: fallbackData, error: fallbackError } = await supabase
             .from('profiles')
-            .select('id, display_name, photo_url, photos, online as is_online, dtfn, party_friendly, latitude, longitude, founder_number, about, kinks, tags, position, age, incognito_mode')
+            .select('id, display_name, photo_url, photos, is_online:online, dtfn, party_friendly, latitude, longitude, founder_number, about, kinks, tags, position, age, incognito_mode')
             .not('latitude', 'is', null)
             .not('longitude', 'is', null)
             .eq('incognito_mode', false)

@@ -44,30 +44,39 @@ self.addEventListener('activate', (event) => {
 
 // Handle push notifications
 self.addEventListener('push', (event) => {
-  console.log('Push notification received:', event);
-  
-  const data = event.data ? event.data.json() : {};
-  const title = data.title || 'New Message';
+  console.log('🔔 Push notification received:', event);
+
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (e) {
+    console.error('Failed to parse push data:', e);
+    // Fallback to text if JSON parsing fails
+    data = { body: event.data?.text() || 'New notification' };
+  }
+
+  const title = data.title || 'SLTR';
   const options = {
     body: data.body || 'You have a new message',
     icon: '/icon-192.png',
-    badge: '/badge-72.png',
+    badge: '/icon-192.png', // Use existing icon as badge
     tag: data.tag || 'message-notification',
     data: {
       url: data.url || '/messages',
-      conversationId: data.conversationId
+      conversationId: data.conversationId,
+      type: data.type || 'message'
     },
     requireInteraction: false,
+    vibrate: [100, 50, 100], // Vibration pattern for mobile
     actions: [
       {
         action: 'open',
-        title: 'Open',
-        icon: '/icons/open.png'
+        title: 'Open'
+        // Removed icon references that don't exist
       },
       {
-        action: 'close',
-        title: 'Close',
-        icon: '/icons/close.png'
+        action: 'dismiss',
+        title: 'Dismiss'
       }
     ]
   };
