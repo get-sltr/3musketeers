@@ -1,6 +1,6 @@
 # Archived CSS Files
 
-These CSS files were archived as part of the UX audit consolidation (December 2024).
+These CSS files were archived as part of the UX audit consolidation (December 2025).
 
 ## Reason for Archiving
 
