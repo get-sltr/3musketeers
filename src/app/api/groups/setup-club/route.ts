@@ -43,7 +43,7 @@ async function handleSetup() {
         .insert({
           name: 'The Club sltr',
           description: 'The premier club for video conferencing, voice chats, and messaging. Connect, chat, and vibe with the community!',
-          host_id: user.id,
+          owner_id: user.id,
         })
         .select('id')
         .single()

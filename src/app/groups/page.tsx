@@ -90,7 +90,7 @@ export default function GroupsPage() {
         .insert({
           name: groupName.trim(),
           description: groupDescription.trim() || null,
-          host_id: user.id,
+          owner_id: user.id,
         })
 
       if (error) {
