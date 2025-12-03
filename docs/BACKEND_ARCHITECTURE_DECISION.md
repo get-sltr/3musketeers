@@ -398,7 +398,7 @@ async function sendPushToUser(userId, payload) {
     .eq('is_active', true)
 
   const results = await Promise.allSettled(
-    subscriptions.map(sub =>
+    (subscriptions ?? []).map(sub =>
       webpush.sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
         JSON.stringify(payload)
