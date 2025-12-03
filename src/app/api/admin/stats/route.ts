@@ -137,7 +137,10 @@ export async function GET(request: NextRequest) {
         if (!reportedUserCounts[userId]) {
           reportedUserCounts[userId] = { user: report.reported, count: 0 }
         }
-        reportedUserCounts[userId].count++
+        const userEntry = reportedUserCounts[userId]
+        if (userEntry) {
+          userEntry.count++
+        }
       })
     }
 
