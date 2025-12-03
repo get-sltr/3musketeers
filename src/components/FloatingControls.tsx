@@ -70,6 +70,7 @@ export default function FloatingControls({
         onClick={onToggleParticipants}
         className="p-2 bg-white/10 rounded-full"
         title="Participants"
+        aria-label="View participants"
       >
         👥
       </button>
@@ -79,6 +80,7 @@ export default function FloatingControls({
         onClick={onToggleChat}
         className="p-2 bg-white/10 rounded-full"
         title="Chat"
+        aria-label="Open chat"
       >
         💬
       </button>
@@ -86,8 +88,9 @@ export default function FloatingControls({
       {/* MIC */}
       <button
         onClick={() => toggleMic()}
-        className={`p-3 rounded-full transition 
+        className={`p-3 rounded-full transition
         ${micEnabled ? 'bg-purple-600/50' : 'bg-red-600/70'}`}
+        aria-label={micEnabled ? 'Mute microphone' : 'Unmute microphone'}
       >
         🎤
       </button>
@@ -95,8 +98,9 @@ export default function FloatingControls({
       {/* CAMERA */}
       <button
         onClick={() => toggleCamera()}
-        className={`p-3 rounded-full transition 
+        className={`p-3 rounded-full transition
         ${cameraEnabled ? 'bg-purple-600/50' : 'bg-red-600/70'}`}
+        aria-label={cameraEnabled ? 'Turn off camera' : 'Turn on camera'}
       >
         📷
       </button>
@@ -104,9 +108,10 @@ export default function FloatingControls({
       {/* SCREEN SHARE */}
       <button
         onClick={toggleScreenShare}
-        className={`p-3 rounded-full transition 
+        className={`p-3 rounded-full transition
         ${isLocalScreenSharing ? 'bg-purple-400/70' : 'bg-white/10'}`}
         title="Share screen"
+        aria-label={isLocalScreenSharing ? 'Stop sharing screen' : 'Share screen'}
       >
         🖥
       </button>
@@ -115,6 +120,7 @@ export default function FloatingControls({
       <button
         onClick={() => room.disconnect()}
         className="p-3 bg-red-600/80 rounded-full"
+        aria-label="Leave call"
       >
         🔚
       </button>
@@ -125,6 +131,7 @@ export default function FloatingControls({
           onClick={() => setHardHostMode(!hardHostMode)}
           className="p-3 bg-purple-300/20 border border-purple-400/40 rounded-full"
           title="Hard Host Mode"
+          aria-label={hardHostMode ? 'Disable hard host mode' : 'Enable hard host mode'}
         >
           🛡
         </button>

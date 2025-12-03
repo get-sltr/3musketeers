@@ -167,7 +167,7 @@ class ErosAPIClient {
     processingPhase: 'active' | 'phase1' | 'phase2' | 'phase3';
     timestamp: string;
   }> {
-    return this.request('/heartbeat', {
+    return this.request('/api/v1/heartbeat', {
       method: 'POST',
       body: { appActive, screenOn },
     });
@@ -183,7 +183,7 @@ class ErosAPIClient {
     processingPhase: 'active' | 'phase1' | 'phase2' | 'phase3';
     sessionDuration: number;
   }> {
-    return this.request('/activity/status');
+    return this.request('/api/v1/activity/status');
   }
 
   /**
@@ -205,7 +205,7 @@ class ErosAPIClient {
     source?: string;
     date?: string;
   }> {
-    return this.request(`/matches/daily?limit=${limit}`);
+    return this.request(`/api/v1/matches/daily?limit=${limit}`);
   }
 
   /**
@@ -232,7 +232,7 @@ class ErosAPIClient {
     success: boolean;
     message: string;
   }> {
-    return this.request(`/matches/${matchId}/action`, {
+    return this.request(`/api/v1/matches/${matchId}/action`, {
       method: 'POST',
       body: { action, reason },
     });
@@ -249,7 +249,7 @@ class ErosAPIClient {
     intent?: string;
     confidence?: number;
   }> {
-    return this.request('/assistant/chat', {
+    return this.request('/api/v1/assistant/chat', {
       method: 'POST',
       body: { message, context },
     });
