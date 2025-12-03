@@ -9,6 +9,10 @@ import { useNotifications } from '../../hooks/useNotifications'
 import { MessagesLoadingSkeleton } from '../../components/LoadingSkeleton'
 import LazyWrapper, { LazyVideoCall, LazyFileUpload, LazyErosAI } from '../../components/LazyWrapper'
 import BottomNav from '../../components/BottomNav'
+import MediaActionSheet from '../../components/MediaActionSheet'
+import ShareProfileBottomSheet from '../../components/ShareProfileBottomSheet'
+import SavedPhrasesPicker from '../../components/SavedPhrasesPicker'
+import AlbumsManager from '../../components/AlbumsManager'
 
 interface Profile {
   display_name: string
@@ -25,6 +29,11 @@ interface Message {
   sender_name?: string
   sender_photo?: string
   profiles?: Profile[]
+  message_type?: string
+  metadata?: {
+    type?: string
+    [key: string]: any
+  }
 }
 
 interface Conversation {
@@ -62,6 +71,11 @@ function MessagesPageContent() {
   const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set())
   const [isMuted, setIsMuted] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [showMediaSheet, setShowMediaSheet] = useState(false)
+  const [showShareProfile, setShowShareProfile] = useState(false)
+  const [showSavedPhrases, setShowSavedPhrases] = useState(false)
+  const [showAlbumsManager, setShowAlbumsManager] = useState(false)
+  const [sharingLocation, setSharingLocation] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const router = useRouter()
@@ -758,6 +772,162 @@ function MessagesPageContent() {
     setShowFileUpload(false)
   }
 
+  // Handle share profile
+  const handleShareProfile = async (conversationId: string, userId: string) => {
+    if (!selectedConversation || !currentUserId) return
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Get current user profile data
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, display_name, photo_url, about, age, position')
+        .eq('id', user.id)
+        .single()
+
+      if (!profile) return
+
+      // Send profile as message with metadata
+      const metadata = {
+        type: 'shared_profile',
+        profile_id: profile.id,
+        display_name: profile.display_name,
+        photo_url: profile.photo_url,
+        about: profile.about,
+        age: profile.age,
+        position: profile.position
+      }
+
+      if (isConnected && realtimeSendMessage) {
+        await realtimeSendMessage(
+          conversationId,
+          `👤 Shared profile: ${profile.display_name}`,
+          'shared_profile',
+          undefined,
+          metadata
+        )
+      }
+    } catch (err) {
+      console.error('Error sharing profile:', err)
+    }
+  }
+
+  // Handle location sharing
+  const handleShareLocation = async () => {
+    if (!selectedConversation || !navigator.geolocation) {
+      alert('Location sharing is not available')
+      return
+    }
+
+    setSharingLocation(true)
+    try {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords
+
+          // Reverse geocode to get address
+          let address = 'Unknown location'
+          try {
+            const response = await fetch(
+              `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN || ''}`
+            )
+            const data = await response.json()
+            if (data.features?.[0]) {
+              address = data.features[0].place_name
+            }
+          } catch (err) {
+            console.error('Error reverse geocoding:', err)
+          }
+
+          const metadata = {
+            type: 'shared_location',
+            latitude,
+            longitude,
+            address
+          }
+
+          if (isConnected && realtimeSendMessage) {
+            await realtimeSendMessage(
+              selectedConversation,
+              `📍 Shared location: ${address}`,
+              'shared_location',
+              undefined,
+              metadata
+            )
+          }
+          setSharingLocation(false)
+        },
+        (error) => {
+          console.error('Error getting location:', error)
+          alert('Failed to get your location. Please enable location services.')
+          setSharingLocation(false)
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      )
+    } catch (err) {
+      console.error('Error sharing location:', err)
+      setSharingLocation(false)
+    }
+  }
+
+  // Handle saved phrase selection
+  const handlePhraseSelected = (phrase: string) => {
+    setNewMessage(phrase)
+    setShowSavedPhrases(false)
+  }
+
+  // Handle album share
+  const handleAlbumShare = async (albumId: string, albumName: string) => {
+    if (!selectedConversation) return
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Get album details
+      const { data: album } = await supabase
+        .from('albums')
+        .select('id, name, description, is_public')
+        .eq('id', albumId)
+        .eq('user_id', user.id)
+        .single()
+
+      if (!album) return
+
+      // Get album photos
+      const { data: photos } = await supabase
+        .from('album_photos')
+        .select('photo_url, photo_order')
+        .eq('album_id', albumId)
+        .order('photo_order', { ascending: true })
+
+      const metadata = {
+        type: 'shared_album',
+        album_id: album.id,
+        album_name: album.name,
+        album_description: album.description,
+        is_public: album.is_public,
+        photos: photos?.map(p => p.photo_url) || []
+      }
+
+      if (isConnected && realtimeSendMessage) {
+        await realtimeSendMessage(
+          selectedConversation,
+          `📷 Shared album: ${album.name}`,
+          'shared_album',
+          undefined,
+          metadata
+        )
+      }
+
+      setShowAlbumsManager(false)
+    } catch (err) {
+      console.error('Error sharing album:', err)
+    }
+  }
+
   // Handle archive conversation
   const handleArchiveConversation = async (conversationId: string) => {
     try {
@@ -1358,8 +1528,114 @@ function MessagesPageContent() {
                             </div>
                           </div>
                         )}
+                      {/* Shared Profile Message */}
+                      {message.message_type === 'shared_profile' && message.metadata && message.metadata.type === 'shared_profile' && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="text-2xl">👤</div>
+                            <div>
+                              <p className="text-sm font-medium">Shared Profile</p>
+                              <p className="text-xs opacity-70">{message.metadata.display_name}</p>
+                            </div>
+                          </div>
+                          {message.metadata.photo_url && (
+                            <div className="relative w-32 h-32 rounded-xl overflow-hidden">
+                              <img
+                                src={message.metadata.photo_url}
+                                alt={message.metadata.display_name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                          {message.metadata.about && (
+                            <p className="text-xs opacity-70">{message.metadata.about}</p>
+                          )}
+                          {message.metadata.age && (
+                            <p className="text-xs opacity-70">Age: {message.metadata.age}</p>
+                          )}
+                          {message.metadata?.profile_id && (
+                            <button
+                              onClick={() => {
+                                const profileId = message.metadata?.profile_id
+                                if (profileId) {
+                                  router.push(`/profile/${profileId}`)
+                                }
+                              }}
+                              className="text-xs text-lime-400 hover:underline"
+                            >
+                              View Profile →
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Shared Location Message */}
+                      {message.message_type === 'shared_location' && message.metadata && message.metadata.type === 'shared_location' && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="text-2xl">📍</div>
+                            <div>
+                              <p className="text-sm font-medium">Shared Location</p>
+                              <p className="text-xs opacity-70">{message.metadata.address}</p>
+                            </div>
+                          </div>
+                          {message.metadata.latitude && message.metadata.longitude && (
+                            <div className="w-full h-48 rounded-xl overflow-hidden bg-white/5">
+                              <iframe
+                                width="100%"
+                                height="100%"
+                                frameBorder="0"
+                                style={{ border: 0 }}
+                                src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}&q=${message.metadata.latitude},${message.metadata.longitude}&zoom=15`}
+                                allowFullScreen
+                              />
+                            </div>
+                          )}
+                          <a
+                            href={`https://www.google.com/maps?q=${message.metadata.latitude},${message.metadata.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-lime-400 hover:underline"
+                          >
+                            Open in Maps →
+                          </a>
+                        </div>
+                      )}
+
+                      {/* Shared Album Message */}
+                      {message.message_type === 'shared_album' && message.metadata && message.metadata.type === 'shared_album' && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="text-2xl">📷</div>
+                            <div>
+                              <p className="text-sm font-medium">Shared Album</p>
+                              <p className="text-xs opacity-70">{message.metadata.album_name}</p>
+                            </div>
+                          </div>
+                          {message.metadata.album_description && (
+                            <p className="text-xs opacity-70">{message.metadata.album_description}</p>
+                          )}
+                          {message.metadata.photos && message.metadata.photos.length > 0 && (
+                            <div className="grid grid-cols-3 gap-2">
+                              {message.metadata.photos.slice(0, 6).map((photo: string, idx: number) => (
+                                <div key={idx} className="relative w-full aspect-square rounded-lg overflow-hidden">
+                                  <img
+                                    src={photo}
+                                    alt={`Album photo ${idx + 1}`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <p className="text-xs opacity-70">
+                            {message.metadata.photos?.length || 0} photo{message.metadata.photos?.length !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                      )}
+
                       {/* File Message */}
-                      {message.content.startsWith('📎') && (
+                      {message.content.startsWith('📎') && message.message_type !== 'shared_profile' && message.message_type !== 'shared_location' && message.message_type !== 'shared_album' && (
                         <div className="flex items-center gap-2 mb-2">
                           <div className="text-2xl">📎</div>
                           <div>
@@ -1370,7 +1646,7 @@ function MessagesPageContent() {
                       )}
                       
                       {/* Regular Message */}
-                      {!message.content.startsWith('📎') && (
+                      {!message.content.startsWith('📎') && message.message_type !== 'shared_profile' && message.message_type !== 'shared_location' && message.message_type !== 'shared_album' && (
                         <p className="text-sm">{message.content}</p>
                       )}
                       
@@ -1420,6 +1696,80 @@ function MessagesPageContent() {
 
               {/* Message Input */}
               <div className="border-t border-white/10 p-4">
+                {/* Action Buttons Row */}
+                <div className="flex items-center gap-2 mb-3">
+                  {/* Media Button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowMediaSheet(true)}
+                    className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200"
+                    title="Media"
+                  >
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </button>
+
+                  {/* Share Profile Button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowShareProfile(true)}
+                    className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200"
+                    title="Share Profile"
+                  >
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </button>
+
+                  {/* Location Button */}
+                  <button
+                    type="button"
+                    onClick={handleShareLocation}
+                    disabled={sharingLocation}
+                    className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 disabled:opacity-50"
+                    title="Share Location"
+                  >
+                    {sharingLocation ? (
+                      <svg className="w-5 h-5 text-white animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    )}
+                  </button>
+
+                  {/* Saved Phrases Button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowSavedPhrases(true)}
+                    className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200"
+                    title="Saved Phrases"
+                  >
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                    </svg>
+                  </button>
+
+                  {/* Video Call Button */}
+                  <button
+                    type="button"
+                    onClick={startVideoCall}
+                    className="p-2.5 bg-lime-400/20 hover:bg-lime-400/30 rounded-xl transition-all duration-200 ml-auto"
+                    title="Start Video Call"
+                  >
+                    <svg className="w-5 h-5 text-lime-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Message Input Form */}
                 <form onSubmit={sendMessage} className="flex gap-3">
                   <input
                     type="text"
@@ -1429,17 +1779,6 @@ function MessagesPageContent() {
                     className="flex-1 bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all duration-300"
                     disabled={sending}
                   />
-                  {/* Video Call Button */}
-                  <button
-                    type="button"
-                    onClick={startVideoCall}
-                    className="p-3 bg-lime-400 rounded-xl hover:scale-110 transition-all duration-300 shadow-lg shadow-lime-400/30 flex items-center justify-center"
-                    title="Start Video Call"
-                  >
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                  </button>
                   <button
                     type="submit"
                     disabled={!newMessage.trim() || sending}
@@ -1449,6 +1788,45 @@ function MessagesPageContent() {
                   </button>
                 </form>
               </div>
+
+              {/* Modals and Sheets */}
+              <MediaActionSheet
+                isOpen={showMediaSheet}
+                onClose={() => setShowMediaSheet(false)}
+                onTakePhoto={() => {
+                  // TODO: Implement camera capture
+                  console.log('Take photo')
+                }}
+                onCameraRoll={() => {
+                  setShowFileUpload(true)
+                }}
+                onVideo={() => {
+                  // TODO: Implement video recording/selection
+                  console.log('Video')
+                }}
+                onMyAlbums={() => {
+                  setShowAlbumsManager(true)
+                }}
+              />
+
+              <ShareProfileBottomSheet
+                isOpen={showShareProfile}
+                onClose={() => setShowShareProfile(false)}
+                onShare={handleShareProfile}
+                currentUserId={currentUserId || ''}
+              />
+
+              <SavedPhrasesPicker
+                isOpen={showSavedPhrases}
+                onClose={() => setShowSavedPhrases(false)}
+                onSelect={handlePhraseSelected}
+              />
+
+              <AlbumsManager
+                isOpen={showAlbumsManager}
+                onClose={() => setShowAlbumsManager(false)}
+                onAlbumShare={handleAlbumShare}
+              />
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center">
