@@ -96,89 +96,83 @@ git commit -m "Refactor: Archive experimental backends, confirm backend/ as prod
 
 ### Files Reviewed
 
-| File | Lines Flagged | XSS Risk | Status |
-|------|---------------|----------|--------|
-| `src/components/MapViewSimple.tsx` | 24, 54, 84, 151, 473, 544-548 | 🔴 **HIGH** | Requires Fix |
-| `src/app/coming-soon/page.tsx` | N/A | ✅ **NONE** | Safe |
-| `src/components/AlbumsManager.tsx` | 6-11 | ✅ **NONE** | Safe Pattern |
+| File | XSS Risk | Status |
+|------|----------|--------|
+| `src/components/MapViewSimple.tsx` | ✅ **REMEDIATED** | Fixed |
+| `src/app/coming-soon/page.tsx` | ✅ **NONE** | Safe |
+| `src/components/AlbumsManager.tsx` | ✅ **NONE** | Safe Pattern |
+| `public/sw.js` | ✅ **REMEDIATED** | Fixed |
 
-### Detailed Analysis
+### Implemented Security Fixes
 
-#### MapViewSimple.tsx - **REQUIRES SECURITY FIX**
+#### MapViewSimple.tsx - ✅ **FIXED**
 
-**Vulnerability:** Direct `innerHTML` assignment with user-provided URLs.
+**Original Vulnerability:** Direct `innerHTML` assignment with user-provided URLs.
 
-**Affected Lines:**
+**Implemented Solution:** Created secure element factory functions:
+
 ```typescript
-// Line 24 - createPinStyle1
-el.innerHTML = `<img src="${user.profile_photo_url}" .../>`
+// Safe element creation helpers to prevent XSS
+const createSafeImageElement = (src: string, styles: string, alt = 'User'): HTMLImageElement => {
+  const img = document.createElement('img')
+  img.src = src || ''
+  img.alt = alt
+  img.style.cssText = styles
+  return img
+}
 
-// Line 54 - createPinStyle2
-innerDiv.innerHTML = `<img src="${user.profile_photo_url}" .../>`
+const createSafeTextElement = (tag: string, text: string, styles?: string): HTMLElement => {
+  const el = document.createElement(tag)
+  el.textContent = text // textContent is XSS-safe
+  if (styles) el.style.cssText = styles
+  return el
+}
 
-// Line 84 - createPinStyle3
-el.innerHTML = `<img src="${user.profile_photo_url}" .../>`
-
-// Line 151 - createPinStyle5
-circle.innerHTML = `<img src="${user.profile_photo_url}" .../>`
-
-// Lines 544-548 - Venue popup
-.setHTML(`<div>...${venue.name}...${venue.address}...</div>`)
+// Validation helpers for venue data
+const isFiniteNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
+const safeStr = (v: unknown, fallback = ''): string => (typeof v === 'string' ? v : fallback)
 ```
 
-**Attack Vector:**
+**Changes Applied:**
+- All 5 pin style functions now use `createSafeImageElement()` instead of innerHTML
+- Venue popups use `setDOMContent()` with safe text elements instead of `setHTML()`
+- User location popup uses `createSafeTextElement()` with `setDOMContent()`
+- Venue data validated with `isFiniteNumber()` and `safeStr()` helpers
+
+#### sw.js - ✅ **FIXED**
+
+**Original Vulnerability:** Open redirect via notification click handler.
+
+**Implemented Solution:** URL normalization to same-origin:
+
 ```javascript
-// Malicious profile_photo_url could be:
-"javascript:alert('XSS')"
-"x\" onerror=\"alert('XSS')"
-```
-
-**Required Fix:**
-```typescript
-// BEFORE (Vulnerable)
-el.innerHTML = `<img src="${user.profile_photo_url}" .../>`
-
-// AFTER (Secure)
-const img = document.createElement('img')
-img.src = user.profile_photo_url || ''
-img.style.cssText = 'width: 100%; height: 100%; ...'
-img.alt = user.display_name || 'User'
-el.appendChild(img)
-```
-
-**Recommendation:** Create a secure image element factory function.
-
-#### coming-soon/page.tsx - **NO VULNERABILITY**
-
-```typescript
-// Line 45 - Safe: hardcoded emoji, no user input
-sparkle.innerHTML = '✨'
-```
-
-**Status:** ✅ Approved - No user input involved.
-
-#### AlbumsManager.tsx - **NO VULNERABILITY**
-
-```typescript
-// Lines 6-11 - Safe HTML entity decoding pattern
-const decodeHtmlEntities = (text: string): string => {
-  const textarea = document.createElement('textarea')
-  textarea.innerHTML = text
-  return textarea.value
+// Normalize to same-origin absolute URL (prevents open redirect)
+let urlToOpen;
+try {
+  urlToOpen = new URL(path, self.location.origin).toString();
+} catch {
+  urlToOpen = new URL('/messages', self.location.origin).toString();
 }
 ```
 
-**Status:** ✅ Approved - Standard safe pattern for HTML entity decoding. Textarea is never added to DOM, only used for text value extraction.
+#### coming-soon/page.tsx - ✅ **NO VULNERABILITY**
+
+**Status:** Safe - Only hardcoded emoji used with innerHTML.
+
+#### AlbumsManager.tsx - ✅ **NO VULNERABILITY**
+
+**Status:** Safe - Standard HTML entity decoding pattern. Textarea never added to DOM.
 
 ### Security Sign-Off Summary
 
-| Component | Sign-Off Status | Condition |
-|-----------|-----------------|-----------|
-| MapViewSimple.tsx | ❌ **BLOCKED** | Must fix innerHTML → createElement |
-| coming-soon/page.tsx | ✅ **APPROVED** | No changes needed |
-| AlbumsManager.tsx | ✅ **APPROVED** | No changes needed |
+| Component | Sign-Off Status |
+|-----------|-----------------|
+| MapViewSimple.tsx | ✅ **APPROVED** |
+| sw.js | ✅ **APPROVED** |
+| coming-soon/page.tsx | ✅ **APPROVED** |
+| AlbumsManager.tsx | ✅ **APPROVED** |
 
-**Security Sprint Approval:** Conditional - MapViewSimple.tsx must be remediated before merge.
+**Security Sprint Approval:** ✅ **COMPLETE** - All identified vulnerabilities have been remediated.
 
 ---
 
@@ -186,14 +180,20 @@ const decodeHtmlEntities = (text: string): string => {
 
 ### 3.1 Service Worker Implementation
 
-**Current State:** No service worker detected in codebase.
+**Current State:** ✅ Service worker implemented at `public/sw.js`.
 
-**Recommended Architecture:**
+**Implemented Features:**
+- Push notification handling with secure URL normalization
+- Offline support with cache-first strategy for static assets
+- Network-first strategy for API responses
+- Background sync for offline messages
+
+**Architecture:**
 
 ```
 public/
-├── sw.js                 # Main service worker
-└── manifest.json         # PWA manifest (if not exists)
+├── sw.js                 # Main service worker (implemented)
+└── manifest.json         # PWA manifest
 
 src/
 ├── lib/
