@@ -465,6 +465,7 @@ CREATE INDEX idx_notifications_is_read ON notifications(is_read);
 // Returns user's notification preferences
 
 // PUT /api/notifications/preferences
+// Headers: X-CSRF-Token required
 // Body: Partial<NotificationPreferences>
 // Updates preferences
 
@@ -472,16 +473,61 @@ CREATE INDEX idx_notifications_is_read ON notifications(is_read);
 // Returns paginated notification list
 
 // PUT /api/notifications/:id/read
+// Headers: X-CSRF-Token required
 // Mark single notification as read
 
 // PUT /api/notifications/read-all
+// Headers: X-CSRF-Token required
 // Mark all as read
 
 // DELETE /api/notifications/:id
+// Headers: X-CSRF-Token required
 // Delete notification
 
 // GET /api/notifications/unread-count
 // Returns { count: number }
+```
+
+### 7.1 CSRF Token Requirement
+
+**CRITICAL:** All PUT/POST/DELETE requests require a valid CSRF token.
+
+Use the `withCSRFToken()` utility from `src/lib/csrf-client.ts`:
+
+```typescript
+import { withCSRFToken, clearCSRFToken } from '@/lib/csrf-client'
+
+// Example: Update notification preferences
+async function updatePreferences(prefs: Partial<NotificationPreferences>) {
+  const headers = await withCSRFToken({
+    'Content-Type': 'application/json'
+  })
+
+  const response = await fetch('/api/notifications/preferences', {
+    method: 'PUT',
+    headers,
+    credentials: 'include',
+    body: JSON.stringify(prefs)
+  })
+
+  if (response.status === 403) {
+    clearCSRFToken()
+    throw new Error('CSRF validation failed - please retry')
+  }
+
+  return response.json()
+}
+
+// Example: Mark notification as read
+async function markAsRead(notificationId: string) {
+  const headers = await withCSRFToken()
+
+  return fetch(`/api/notifications/${notificationId}/read`, {
+    method: 'PUT',
+    headers,
+    credentials: 'include'
+  })
+}
 ```
 
 ---

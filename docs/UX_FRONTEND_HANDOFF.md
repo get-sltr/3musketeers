@@ -277,6 +277,44 @@ interface NotificationListResponse {
 // Response: { success: true }
 ```
 
+### CSRF Token Requirement (CRITICAL)
+
+**All PUT, POST, DELETE requests require a valid X-CSRF-Token header.**
+
+Requests without proper CSRF tokens will return **403 Forbidden**.
+
+```typescript
+import { withCSRFToken, clearCSRFToken } from '@/lib/csrf-client'
+
+// CORRECT: Using withCSRFToken helper
+async function takeAction(reportId: string, action: ActionRequest) {
+  const headers = await withCSRFToken({
+    'Content-Type': 'application/json'
+  })
+
+  const response = await fetch(`/api/admin/reports/${reportId}/action`, {
+    method: 'PUT',
+    headers,
+    credentials: 'include',  // Required!
+    body: JSON.stringify(action)
+  })
+
+  // Handle expired token
+  if (response.status === 403) {
+    clearCSRFToken()
+    throw new Error('CSRF validation failed')
+  }
+
+  return response.json()
+}
+```
+
+**Key Points:**
+- Token is cached for 1 hour by `getCSRFToken()`
+- Use `clearCSRFToken()` on 403 errors to force refresh
+- Always include `credentials: 'include'`
+- See `src/lib/csrf-client.ts` for implementation
+
 ---
 
 ## Accessibility Checklist

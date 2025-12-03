@@ -418,6 +418,7 @@ interface ReportFilter {
 // Returns: Full report with reporter/reported profiles
 
 // PUT /api/admin/reports/:id/action
+// Headers: X-CSRF-Token required (see CSRF section below)
 // Body: { action: 'warn' | 'suspend' | 'ban' | 'dismiss', reason: string, duration?: number }
 // Returns: { success: boolean, log: ActivityLog }
 
@@ -432,7 +433,44 @@ interface ReportFilter {
 // Returns: { reports: Report[], actions: ActivityLog[], warnings: number }
 ```
 
-### 6.2 Database Schema Additions
+### 6.2 CSRF Token Requirement
+
+**CRITICAL:** All state-changing requests (PUT, POST, DELETE) require a valid CSRF token.
+
+Use the `withCSRFToken()` utility from `src/lib/csrf-client.ts`:
+
+```typescript
+import { withCSRFToken } from '@/lib/csrf-client'
+
+// Example: Taking action on a report
+async function takeAction(reportId: string, action: ModerationAction) {
+  const headers = await withCSRFToken({
+    'Content-Type': 'application/json'
+  })
+
+  const response = await fetch(`/api/admin/reports/${reportId}/action`, {
+    method: 'PUT',
+    headers,
+    credentials: 'include',
+    body: JSON.stringify(action)
+  })
+
+  if (response.status === 403) {
+    // CSRF token may be expired, clear cache and retry
+    clearCSRFToken()
+    throw new Error('CSRF validation failed - please retry')
+  }
+
+  return response.json()
+}
+```
+
+**Key Points:**
+- Token is automatically cached for 1 hour
+- Use `clearCSRFToken()` if you receive 403 errors
+- Always include `credentials: 'include'` with requests
+
+### 6.3 Database Schema Additions
 
 ```sql
 -- Moderation logs table
