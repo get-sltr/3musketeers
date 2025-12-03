@@ -44,30 +44,39 @@ self.addEventListener('activate', (event) => {
 
 // Handle push notifications
 self.addEventListener('push', (event) => {
-  console.log('Push notification received:', event);
-  
-  const data = event.data ? event.data.json() : {};
-  const title = data.title || 'New Message';
+  console.log('🔔 Push notification received:', event);
+
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (e) {
+    console.error('Failed to parse push data:', e);
+    // Fallback to text if JSON parsing fails
+    data = { body: event.data?.text() || 'New notification' };
+  }
+
+  const title = data.title || 'SLTR';
   const options = {
     body: data.body || 'You have a new message',
     icon: '/icon-192.png',
-    badge: '/badge-72.png',
+    badge: '/icon-96.png', // Use existing smaller icon as badge
     tag: data.tag || 'message-notification',
     data: {
       url: data.url || '/messages',
-      conversationId: data.conversationId
+      conversationId: data.conversationId,
+      type: data.type || 'message'
     },
     requireInteraction: false,
+    vibrate: [100, 50, 100], // Vibration pattern for mobile
     actions: [
       {
         action: 'open',
-        title: 'Open',
-        icon: '/icons/open.png'
+        title: 'Open'
+        // Removed icon references that don't exist
       },
       {
-        action: 'close',
-        title: 'Close',
-        icon: '/icons/close.png'
+        action: 'dismiss',
+        title: 'Dismiss'
       }
     ]
   };
@@ -79,22 +88,40 @@ self.addEventListener('push', (event) => {
 
 // Handle notification click
 self.addEventListener('notificationclick', (event) => {
-  console.log('Notification clicked:', event);
-  
+  console.log('🔔 Notification clicked:', event.action, event.notification.data);
+
   event.notification.close();
 
-  if (event.action === 'close') {
+  // Handle dismiss action - just close the notification
+  if (event.action === 'dismiss' || event.action === 'close') {
     return;
   }
 
-  const urlToOpen = event.notification.data?.url || '/messages';
-  
+  // Determine URL to open based on notification type
+  const notificationData = event.notification.data || {};
+  let urlToOpen = notificationData.url || '/messages';
+
+  // For conversation-specific notifications, go directly to that conversation
+  if (notificationData.conversationId) {
+    urlToOpen = `/messages/${notificationData.conversationId}`;
+  }
+
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then((clientList) => {
-        // Check if there's already a window open
+        // Check if there's already a window open at this URL
         for (const client of clientList) {
           if (client.url.includes(urlToOpen) && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        // Check if there's any SLTR window open, and navigate it
+        for (const client of clientList) {
+          if (client.url.includes(self.location.origin) && 'focus' in client) {
+            client.postMessage({
+              type: 'NOTIFICATION_CLICK',
+              url: urlToOpen
+            });
             return client.focus();
           }
         }
