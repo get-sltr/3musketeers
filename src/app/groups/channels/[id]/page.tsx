@@ -45,19 +45,26 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
 
         const participantName = profile?.display_name || user.id
 
-        // Get LiveKit token from Supabase Edge Function
-        const { data: tokenData, error: tokenError } = await supabase.functions.invoke('issue_video_token', {
-          body: {
+        // Get LiveKit token from Next.js API route
+        const response = await fetch('/api/livekit-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
             roomName: `group-${groupId}-${channelId}`,
             participantName,
-          },
+          }),
         })
 
-        if (tokenError || !tokenData) {
-          throw new Error(tokenError?.message || 'Failed to get LiveKit token')
+        if (!response.ok) {
+          const errorData = await response.json()
+          // Handle service unavailable (LiveKit not configured)
+          if (response.status === 503) {
+            throw new Error('Video calls are temporarily unavailable. Please try again later.')
+          }
+          throw new Error(errorData.error || 'Failed to get LiveKit token')
         }
 
-        const { token, url } = tokenData
+        const { token, url } = await response.json()
 
         // Connect to LiveKit room
         const newRoom = new Room()

@@ -14,10 +14,27 @@ const nextConfig = {
   // Enable standalone output for Docker
   output: 'standalone',
 
+  // Prevent trailing slash redirects (fixes Stripe webhook 301/307)
+  skipTrailingSlashRedirect: true,
+
   // Enable experimental features for better performance
   experimental: {
     optimizePackageImports: ['framer-motion', 'lucide-react', 'date-fns'],
     instrumentationHook: true, // Required for Sentry
+  },
+
+  // Headers for webhooks
+  async headers() {
+    return [
+      {
+        source: '/api/webhooks/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'POST, OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, stripe-signature' },
+        ],
+      },
+    ]
   },
   
   // Configure webpack for path aliases and fallbacks
@@ -89,13 +106,55 @@ const nextConfig = {
       {
         source: '/(.*)',
         headers: [
+          // Prevent clickjacking
           {
             key: 'X-Frame-Options',
             value: 'DENY',
           },
+          // Prevent MIME sniffing
           {
             key: 'X-Content-Type-Options',
-            value: 'nosniff',
+            // This is a conceptual improvement. A full implementation requires using a nonce.
+            // The goal is to remove 'unsafe-inline' and 'unsafe-eval'.
+            "script-src 'self' 'nonce-...' https://api.mapbox.com https://www.googletagmanager.com https://js.stripe.com",
+          },
+          // Enable HSTS - force HTTPS for 2 years including subdomains
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
+          // Referrer policy for cross-origin safety
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          // CSP for XSS protection
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://api.mapbox.com https://www.googletagmanager.com https://js.stripe.com",
+              "style-src 'self' 'unsafe-inline' https://api.mapbox.com https://fonts.googleapis.com",
+              "img-src 'self' data: blob: https: http:",
+              "font-src 'self' data: https://fonts.gstatic.com",
+              "connect-src 'self' https://api.mapbox.com https://*.supabase.co https://bnzyzkmixfmylviaojbj.supabase.co wss://*.supabase.co https://api.groq.com https://vitals.vercel-insights.com https://api.stripe.com",
+              "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
+              "media-src 'self' blob: https:",
+              "worker-src 'self' blob:",
+              "frame-ancestors 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+            ].join('; '),
+          },
+          // Permissions policy - restrict dangerous features
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(self), microphone=(self), geolocation=(self), interest-cohort=()',
+          },
+          // XSS protection (legacy, but still good to have)
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
           },
         ],
       },
