@@ -554,13 +554,23 @@ function MapViewSimple({
       if (userMarkerRef.current) {
         userMarkerRef.current.remove()
       }
-      
-      // Add new marker with safe popup content
-      const userPopupContent = createSafeTextElement('strong', 'You are here')
-      userMarkerRef.current = new mapboxgl.Marker({ color: '#00d4ff' })
-        .setLngLat(currentLocation)
-        .setPopup(new mapboxgl.Popup().setDOMContent(userPopupContent))
-        .addTo(map.current)
+
+      // Validate coordinates before creating marker
+      const isValidLngLat = (lngLat: [number, number] | null | undefined): lngLat is [number, number] => {
+        if (!lngLat) return false
+        const [lng, lat] = lngLat
+        return Number.isFinite(lng) && Number.isFinite(lat) &&
+               lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90
+      }
+
+      if (isValidLngLat(currentLocation)) {
+        // Add new marker with safe popup content
+        const userPopupContent = createSafeTextElement('strong', 'You are here')
+        userMarkerRef.current = new mapboxgl.Marker({ color: '#00d4ff' })
+          .setLngLat(currentLocation)
+          .setPopup(new mapboxgl.Popup().setDOMContent(userPopupContent))
+          .addTo(map.current)
+      }
     }
   }, [currentLocation])
 
