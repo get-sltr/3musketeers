@@ -22,6 +22,10 @@ const createSafeTextElement = (tag: string, text: string, styles?: string): HTML
   return el
 }
 
+// Validation helpers for venue data
+const isFiniteNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
+const safeStr = (v: unknown, fallback = ''): string => (typeof v === 'string' ? v : fallback)
+
 // PIN STYLE FUNCTIONS
 const createPinStyle1 = (user: any) => {
   const el = document.createElement('div')
@@ -570,24 +574,29 @@ function MapViewSimple({
 
     // Add new venue markers
     venues.forEach((venue: any) => {
+      // Validate venue coordinates before creating marker
+      if (!isFiniteNumber(venue.longitude) || !isFiniteNumber(venue.latitude)) {
+        return
+      }
+
       const el = createVenueMarker(
-        venue.name,
-        venue.type || 'restaurant',
-        venue.address || '',
+        safeStr(venue.name),
+        safeStr(venue.type, 'restaurant'),
+        safeStr(venue.address),
         () => {
           // Show venue info on click - using safe DOM creation
           const popupContent = document.createElement('div')
           popupContent.style.cssText = 'color: white; font-family: system-ui;'
 
-          const nameEl = createSafeTextElement('strong', venue.name || '', 'font-size: 14px; display: block; margin-bottom: 4px;')
-          const addressEl = createSafeTextElement('div', venue.address || '', 'font-size: 12px; color: rgba(255,255,255,0.7);')
-          const categoryEl = createSafeTextElement('div', venue.category || venue.type || '', 'font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px;')
+          const nameEl = createSafeTextElement('strong', safeStr(venue.name), 'font-size: 14px; display: block; margin-bottom: 4px;')
+          const addressEl = createSafeTextElement('div', safeStr(venue.address), 'font-size: 12px; color: rgba(255,255,255,0.7);')
+          const categoryEl = createSafeTextElement('div', safeStr(venue.category || venue.type), 'font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px;')
 
           popupContent.appendChild(nameEl)
           popupContent.appendChild(addressEl)
           popupContent.appendChild(categoryEl)
 
-          const popup = new mapboxgl.Popup({ offset: 25 })
+          new mapboxgl.Popup({ offset: 25 })
             .setLngLat([venue.longitude, venue.latitude])
             .setDOMContent(popupContent)
             .addTo(map.current)
