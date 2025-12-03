@@ -10,9 +10,9 @@ These files were identified as orphaned (not imported anywhere in the codebase) 
 
 | File | Original Purpose | Archived Date |
 |------|------------------|---------------|
-| `style.css` | Legacy design system with cyan-magenta palette | Dec 2024 |
-| `ultramodern.css` | Alternative modern styles with cyan-magenta palette | Dec 2024 |
-| `uv-effects.css` | UV effects for founder cards | Dec 2024 |
+| `style.css` | Legacy design system with cyan-magenta palette | Dec 2025 |
+| `ultramodern.css` | Alternative modern styles with cyan-magenta palette | Dec 2025 |
+| `uv-effects.css` | UV effects for founder cards | Dec 2025 |
 
 ## Active Design System
 
