@@ -7,7 +7,7 @@ import RealtimeManager from '../lib/realtime/RealtimeManager'
 
 interface UseRealtimeReturn {
   isConnected: boolean
-  sendMessage: (conversationId: string, content: string, messageType?: string, fileUrl?: string) => void
+  sendMessage: (conversationId: string, content: string, messageType?: string, fileUrl?: string, metadata?: Record<string, any>) => void
   startTyping: (conversationId: string) => void
   stopTyping: (conversationId: string) => void
   joinConversation: (conversationId: string) => void
@@ -84,7 +84,8 @@ export function useRealtime(): UseRealtimeReturn {
     conversationId: string,
     content: string,
     messageType: string = 'text',
-    fileUrl?: string
+    fileUrl?: string,
+    metadata?: Record<string, any>
   ) => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
@@ -122,8 +123,11 @@ export function useRealtime(): UseRealtimeReturn {
       messageData.message_type = messageType
     }
     
-    // Store file URL in metadata JSONB field (schema has metadata column)
-    if (fileUrl) {
+    // Store metadata in JSONB field (schema has metadata column)
+    if (metadata) {
+      messageData.metadata = metadata
+    } else if (fileUrl) {
+      // Fallback: if only fileUrl provided, store it in metadata
       messageData.metadata = { file_url: fileUrl }
     }
     

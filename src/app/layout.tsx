@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import "./globals.css";
 import '../styles/SLTRMapPin.css';
 import ClientProviders from '@/components/ClientProviders';
+import { SkipNavLink } from '@/components/ui/SkipNavLink';
 
 // Lazy load non-critical components to improve initial load
 const NotificationPrompt = dynamic(() => import('@/components/NotificationPrompt'), { ssr: false });
@@ -152,8 +153,14 @@ export default async function RootLayout({
         />
       </head>
       <body className={`${inter.variable} ${orbitron.variable} antialiased font-sans touch-pan-y overscroll-none`}>
+        {/* Skip Navigation Link - Accessibility */}
+        <SkipNavLink />
+
         <ClientProviders locale={locale}>
-          {children}
+          {/* Wrap children in main content container for skip nav target */}
+          <div id="main-content" role="main" tabIndex={-1} className="outline-none">
+            {children}
+          </div>
           <NotificationPrompt />
           {/* <TwoFactorSetup /> */}
           <AdminDashboard />

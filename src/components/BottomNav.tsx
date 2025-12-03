@@ -239,24 +239,46 @@ export default function BottomNav() {
         paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 16px)',
         minHeight: '70px'
       }}
+      role="navigation"
+      aria-label="Primary navigation"
     >
+      {/* Announcer for screen readers when unread count changes */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {unreadCount > 0
+          ? `You have ${unreadCount} unread message${unreadCount === 1 ? '' : 's'}`
+          : ''
+        }
+      </div>
+
       <div className="flex items-center justify-around h-14 max-w-screen-xl mx-auto px-4">
         {navItems.map((item) => (
           <button
             key={item.id}
             onClick={item.action}
+            aria-label={
+              item.id === 'messages' && unreadCount > 0
+                ? `${item.label}, ${unreadCount} unread`
+                : item.label
+            }
+            aria-current={activeTab === item.id ? 'page' : undefined}
             className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${
               activeTab === item.id
                 ? 'text-lime-400'
                 : 'text-white/50 hover:text-white/70'
             }`}
-            aria-label={item.label}
-            aria-current={activeTab === item.id ? 'page' : undefined}
           >
             <div className="relative text-xl" aria-hidden="true">{item.icon}</div>
             <span className="text-[9px] font-medium">{item.label}</span>
             {item.id === 'messages' && unreadCount > 0 && (
-              <span className="absolute top-1 right-1/4 bg-red-500 text-white text-[9px] font-bold leading-none rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center" aria-label={`${unreadCount} unread messages`}>
+              <span
+                className="absolute top-1 right-1/4 bg-red-500 text-white text-[9px] font-bold leading-none rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center"
+                aria-hidden="true"
+              >
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}

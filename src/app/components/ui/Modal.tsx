@@ -1,77 +1,47 @@
 'use client'
 
-import { useEffect, useId } from 'react'
-import { useFocusTrap } from '@/hooks/useFocusTrap'
+import { useEffect, useRef, useCallback } from 'react'
 
 interface ModalProps {
-  /** Whether the modal is currently open */
   isOpen: boolean
-  /** Callback when the modal should close */
   onClose: () => void
-  /** Modal content */
   children: React.ReactNode
-  /** Optional title displayed in the modal header */
   title?: string
-  /** Optional ref to the element that should receive initial focus */
-  initialFocusRef?: React.RefObject<HTMLElement>
-  /** Optional description ID for aria-describedby */
+  /** Optional aria-labelledby ID if title is provided externally */
+  ariaLabelledBy?: string
+  /** Optional aria-describedby ID for description */
   ariaDescribedBy?: string
-  /** Optional size variant */
-  size?: 'sm' | 'md' | 'lg' | 'xl'
-  /** Whether to show the close button */
-  showCloseButton?: boolean
 }
 
-const sizeClasses = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg',
-  xl: 'max-w-xl',
-}
-
-/**
- * Accessible Modal Dialog Component
- *
- * Features:
- * - Focus trap to keep keyboard focus within the modal
- * - ARIA attributes for screen reader accessibility
- * - Escape key to close
- * - Click outside to close
- * - Returns focus to trigger element on close
- *
- * @example
- * ```tsx
- * <Modal
- *   isOpen={isOpen}
- *   onClose={handleClose}
- *   title="Confirm Action"
- * >
- *   <p>Are you sure you want to proceed?</p>
- *   <button onClick={handleConfirm}>Confirm</button>
- * </Modal>
- * ```
- */
 export default function Modal({
   isOpen,
   onClose,
   children,
   title,
-  initialFocusRef,
-  ariaDescribedBy,
-  size = 'md',
-  showCloseButton = true,
+  ariaLabelledBy,
+  ariaDescribedBy
 }: ModalProps) {
-  const titleId = useId()
+  const modalRef = useRef<HTMLDivElement>(null)
+  const previousActiveElement = useRef<HTMLElement | null>(null)
 
-  // Use focus trap hook for accessibility
-  const { containerRef: modalRef } = useFocusTrap({
-    enabled: isOpen,
-    initialFocus: initialFocusRef,
-    returnFocusOnDeactivate: true,
-    onEscape: onClose,
-  })
+  // Store the previously focused element and restore on close
+  useEffect(() => {
+    if (isOpen) {
+      previousActiveElement.current = document.activeElement as HTMLElement
+      // Focus the modal container or first focusable element
+      setTimeout(() => {
+        const firstFocusable = modalRef.current?.querySelector<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        )
+        firstFocusable?.focus()
+      }, 50)
+    } else {
+      // Restore focus when modal closes
+      previousActiveElement.current?.focus()
+    }
+  }, [isOpen])
 
-  // Prevent body scroll when modal is open
+  // Lock body scroll when open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden'
@@ -84,12 +54,63 @@ export default function Modal({
     }
   }, [isOpen])
 
+  // Handle keyboard events (Escape to close, Tab to trap focus)
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      onClose()
+      return
+    }
+
+    // Focus trap
+    if (e.key === 'Tab' && modalRef.current) {
+      const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+
+      if (focusableElements.length === 0) return
+
+      const firstElement = focusableElements[0]
+      const lastElement = focusableElements[focusableElements.length - 1]
+
+      if (!firstElement || !lastElement) return
+
+      if (e.shiftKey) {
+        // Shift + Tab
+        if (document.activeElement === firstElement) {
+          e.preventDefault()
+          lastElement.focus()
+        }
+      } else {
+        // Tab
+        if (document.activeElement === lastElement) {
+          e.preventDefault()
+          firstElement.focus()
+        }
+      }
+    }
+  }, [onClose])
+
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown)
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isOpen, handleKeyDown])
+
   if (!isOpen) return null
+
+  const titleId = title ? 'modal-title' : ariaLabelledBy
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      role="presentation"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+      aria-describedby={ariaDescribedBy}
     >
       {/* Backdrop */}
       <div
@@ -98,55 +119,30 @@ export default function Modal({
         aria-hidden="true"
       />
 
-      {/* Modal Dialog */}
+      {/* Modal Content */}
       <div
         ref={modalRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={title ? titleId : undefined}
-        aria-describedby={ariaDescribedBy}
-        className={`relative w-full ${sizeClasses[size]} glass-bubble rounded-3xl overflow-hidden`}
+        className="relative w-full max-w-md glass-bubble rounded-3xl overflow-hidden"
       >
-        {/* Header */}
-        {(title || showCloseButton) && (
+        {title && (
           <div className="p-6 border-b border-white/10">
             <div className="flex items-center justify-between">
-              {title && (
-                <h2
-                  id={titleId}
-                  className="text-xl font-bold text-white"
-                >
-                  {title}
-                </h2>
-              )}
-              {showCloseButton && (
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="p-2 hover:bg-white/10 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sltr-primary,#00ff88)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-                  aria-label="Close modal"
-                >
-                  <svg
-                    className="w-5 h-5 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              )}
+              <h2 id="modal-title" className="text-xl font-bold text-white">
+                {title}
+              </h2>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-white/10 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-lime-400"
+                aria-label="Close modal"
+              >
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
           </div>
         )}
 
-        {/* Content */}
         <div className="p-6">
           {children}
         </div>

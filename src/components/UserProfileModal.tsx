@@ -7,6 +7,7 @@ import { blockUser } from '@/lib/safety'
 import ReportModal from './ReportModal'
 import { recordTap } from '@/lib/profileTracking'
 import { createClient } from '@/lib/supabase/client'
+import { useFeedback } from '@/contexts/FeedbackContext'
 
 const DEFAULT_PHOTO_PLACEHOLDER = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23222" width="100" height="100"/%3E%3Ctext fill="%23aaa" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"%3E?%3C/text%3E%3C/svg%3E'
 
@@ -60,6 +61,7 @@ export default function UserProfileModal({
   const [viewsRemaining, setViewsRemaining] = useState<number | null>(null)
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
+  const { showError, showSuccess, confirmDanger } = useFeedback()
 
   // 🔒 Track profile view for usage limits (free tier)
   useEffect(() => {
@@ -126,30 +128,36 @@ export default function UserProfileModal({
     try {
       const { startConversation } = await import('../utils/messaging')
       const conversationId = await startConversation(user.id)
-      
+
       if (conversationId) {
         onMessage(user.id)
         onClose()
         router.push(`/messages/${conversationId}`)
       } else {
         console.error('Failed to create/get conversation')
-        alert('Unable to start conversation. Please try again.')
+        showError('Unable to start conversation. Please try again.')
       }
     } catch (error) {
       console.error('Error starting conversation:', error)
-      alert('Unable to start conversation. Please try again.')
+      showError('Unable to start conversation. Please try again.')
     }
   }
 
   const handleBlock = async () => {
-    if (confirm(`Block ${user.username}? They won't be able to see your profile or message you.`)) {
+    const confirmed = await confirmDanger(
+      `Block ${user.username}?`,
+      "They won't be able to see your profile or message you. You can unblock them later from Settings."
+    )
+
+    if (confirmed) {
       const result = await blockUser(user.id, 'Blocked from profile')
       if (result.success) {
         setBlocked(true)
+        showSuccess(`${user.username} has been blocked`)
         onBlock?.(user.id)
         setTimeout(() => onClose(), 1000)
       } else {
-        alert(`Failed to block user: ${result.error || 'Unknown error'}`)
+        showError(`Failed to block user: ${result.error || 'Unknown error'}`)
       }
     }
   }
@@ -168,7 +176,7 @@ export default function UserProfileModal({
         {/* Current Photo */}
         <Image
           src={currentPhotoSrc}
-          alt={user.username}
+          alt={`Profile photo${photos.length > 1 ? ` ${currentPhotoIndex + 1} of ${photos.length}` : ''} of ${user.username}${user.age ? `, ${user.age} years old` : ''}`}
           fill
           sizes="100vw"
           className="object-contain"
@@ -278,12 +286,13 @@ export default function UserProfileModal({
                       const result = await recordTap(user.id)
                       if (result.success) {
                         setHasTapped(true)
+                        showSuccess(`Tap sent to ${user.username}!`)
                       } else {
-                        alert('Unable to send tap. Please try again.')
+                        showError('Unable to send tap. Please try again.')
                       }
                     } catch (err) {
                       console.error('Error sending tap:', err)
-                      alert('Unable to send tap. Please try again.')
+                      showError('Unable to send tap. Please try again.')
                     } finally {
                       setIsTapping(false)
                     }
@@ -452,7 +461,7 @@ export default function UserProfileModal({
         isOpen={showReportModal}
         onClose={() => setShowReportModal(false)}
         onSuccess={() => {
-          alert('Thank you for your report. Our team will review it shortly.')
+          showSuccess('Thank you for your report. Our team will review it shortly.')
         }}
       />
 

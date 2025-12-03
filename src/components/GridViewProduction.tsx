@@ -20,6 +20,7 @@ import { createClient } from '../lib/supabase/client'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
 import GridFilterBar, { GridFilters } from './GridFilterBar'
+import { useFeedback } from '@/contexts/FeedbackContext'
 
 // --- Import our new shared types and utils ---
 import { UserGridProfile, UserFullProfile } from '../lib/types/profile'
@@ -76,13 +77,14 @@ interface GridViewProductionProps {
   users?: UserGridProfile[]
 }
 
-export default function GridViewProduction({ 
+export default function GridViewProduction({
   onUserClick,
-  users: propsUsers = [] 
+  users: propsUsers = []
 }: GridViewProductionProps) {
   const supabase = createClient()
   const router = useRouter()
-  
+  const { confirmDanger } = useFeedback()
+
   // --- STATE MANAGEMENT ---
   // Users for the grid (light data) - use prop if provided, otherwise fetch
   const [users, setUsers] = useState<UserGridProfile[]>(propsUsers)
@@ -426,7 +428,12 @@ export default function GridViewProduction({
 
   const handleBlock = async () => {
     if (!selectedUser) return
-    if (!confirm('Block this user? They won\'t be able to see your profile or message you.')) return
+
+    const confirmed = await confirmDanger(
+      `Block ${selectedUser.display_name}?`,
+      "They won't be able to see your profile or message you. You can unblock them later from Settings."
+    )
+    if (!confirmed) return
 
     const blockedId = selectedUser.id
 
