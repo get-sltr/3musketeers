@@ -269,19 +269,53 @@ export default function SettingsPage() {
         </div>
 
         {/* Member Services Section */}
-        <div className="mb-12 bg-gradient-to-br from-purple-500/20 to-pink-500/20 backdrop-blur-xl border border-purple-500/30 p-8">
-          <h2 className="text-2xl font-bold text-white mb-4">Member Services</h2>
-          <p className="text-gray-400 mb-6">Explore features and services to enhance your experience</p>
-          
+        <div className="mb-12 bg-gradient-to-br from-lime-500/20 to-cyan-500/20 backdrop-blur-xl border border-lime-500/30 p-8">
+          <h2 className="text-2xl font-bold text-white mb-4">
+            {profile?.subscription_tier === 'plus' ? 'Your Membership' : 'Upgrade to sltr∝'}
+          </h2>
+          <p className="text-gray-400 mb-6">
+            {profile?.subscription_tier === 'plus'
+              ? 'You have full access to all premium features'
+              : 'Unlock unlimited messaging, video calls, and more'}
+          </p>
+
+          {profile?.subscription_tier !== 'plus' && (
+            <div className="mb-6 bg-black/30 rounded-xl p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-3xl">∝</span>
+                <div>
+                  <span className="text-lime-400 text-2xl font-bold">$4.99</span>
+                  <span className="text-gray-400 text-sm">/month</span>
+                </div>
+              </div>
+              <ul className="text-sm text-gray-300 space-y-1">
+                <li>✓ Unlimited messaging & profile views</li>
+                <li>✓ Video calls & groups</li>
+                <li>✓ See who viewed you</li>
+                <li>✓ Ad-free experience</li>
+              </ul>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row gap-4">
+            {profile?.subscription_tier !== 'plus' ? (
+              <button
+                onClick={() => router.push('/checkout/member')}
+                className="flex-1 px-6 py-4 bg-lime-400 text-black font-bold text-lg hover:scale-105 transition-transform rounded-xl shadow-lg"
+                style={{ boxShadow: '0 0 20px rgba(163, 230, 53, 0.3)' }}
+              >
+                Get sltr∝ Now
+              </button>
+            ) : (
+              <button
+                onClick={() => router.push('/pricing')}
+                className="flex-1 px-6 py-3 bg-white/10 text-white font-bold hover:bg-white/20 transition-all rounded-xl"
+              >
+                Manage Subscription
+              </button>
+            )}
             <button
-              onClick={() => router.push('/pricing')}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold hover:scale-105 transition-transform rounded-xl"
-            >
-              View Services
-            </button>
-            <button
-              onClick={() => router.push('/pricing')}
+              onClick={() => router.push('/founders-circle')}
               className="flex-1 px-6 py-3 border-2 border-yellow-500/50 text-yellow-400 font-bold hover:bg-yellow-500/10 transition-all rounded-xl"
             >
               Founder's Circle
