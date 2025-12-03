@@ -6,6 +6,22 @@ import { createSLTRMapboxMarker, cleanupSLTRMarker } from './SLTRMapPin'
 import { resolveProfilePhoto } from '../lib/utils/profile'
 import { createVenueMarker } from '../app/components/maps/VenueMarker'
 
+// Safe element creation helpers to prevent XSS
+const createSafeImageElement = (src: string, styles: string, alt = 'User'): HTMLImageElement => {
+  const img = document.createElement('img')
+  img.src = src || ''
+  img.alt = alt
+  img.style.cssText = styles
+  return img
+}
+
+const createSafeTextElement = (tag: string, text: string, styles?: string): HTMLElement => {
+  const el = document.createElement(tag)
+  el.textContent = text // textContent is XSS-safe
+  if (styles) el.style.cssText = styles
+  return el
+}
+
 // PIN STYLE FUNCTIONS
 const createPinStyle1 = (user: any) => {
   const el = document.createElement('div')
@@ -21,7 +37,12 @@ const createPinStyle1 = (user: any) => {
     border: 2px solid rgba(0, 217, 255, 0.9);
   `
   if (user.profile_photo_url) {
-    el.innerHTML = `<img src="${user.profile_photo_url}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; opacity: 0.9;" />`
+    const img = createSafeImageElement(
+      user.profile_photo_url,
+      'width: 100%; height: 100%; border-radius: 50%; object-fit: cover; opacity: 0.9;',
+      user.display_name || 'User'
+    )
+    el.appendChild(img)
   }
   el.addEventListener('mouseenter', () => {
     el.style.transform = 'scale(1.2)'
@@ -51,7 +72,12 @@ const createPinStyle2 = (user: any) => {
   if (user.profile_photo_url) {
     const innerDiv = document.createElement('div')
     innerDiv.style.cssText = `transform: rotate(-45deg); width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 4px;`
-    innerDiv.innerHTML = `<img src="${user.profile_photo_url}" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.9;" />`
+    const img = createSafeImageElement(
+      user.profile_photo_url,
+      'width: 100%; height: 100%; object-fit: cover; opacity: 0.9;',
+      user.display_name || 'User'
+    )
+    innerDiv.appendChild(img)
     el.appendChild(innerDiv)
   }
   el.addEventListener('mouseenter', () => {
@@ -81,7 +107,12 @@ const createPinStyle3 = (user: any) => {
     animation: pulse 2s infinite;
   `
   if (user.profile_photo_url) {
-    el.innerHTML = `<img src="${user.profile_photo_url}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; opacity: 0.85;" />`
+    const img = createSafeImageElement(
+      user.profile_photo_url,
+      'width: 100%; height: 100%; border-radius: 50%; object-fit: cover; opacity: 0.85;',
+      user.display_name || 'User'
+    )
+    el.appendChild(img)
   }
   el.addEventListener('mouseenter', () => {
     el.style.transform = 'scale(1.3)'
@@ -148,7 +179,12 @@ const createPinStyle5 = (user: any) => {
   if (user.profile_photo_url) {
     const circle = document.createElement('div')
     circle.style.cssText = `position: absolute; width: 30px; height: 30px; border-radius: 50%; top: 8px; left: -15px; overflow: hidden; border: 2px solid rgba(255, 255, 255, 0.8);`
-    circle.innerHTML = `<img src="${user.profile_photo_url}" style="width: 100%; height: 100%; object-fit: cover;" />`
+    const img = createSafeImageElement(
+      user.profile_photo_url,
+      'width: 100%; height: 100%; object-fit: cover;',
+      user.display_name || 'User'
+    )
+    circle.appendChild(img)
     el.appendChild(circle)
   }
   el.addEventListener('mouseenter', () => {
@@ -467,10 +503,11 @@ function MapViewSimple({
         userMarkerRef.current.remove()
       }
       
-      // Add new marker
+      // Add new marker with safe popup content
+      const userPopupContent = createSafeTextElement('strong', 'You are here')
       userMarkerRef.current = new mapboxgl.Marker({ color: '#00d4ff' })
         .setLngLat(currentLocation)
-        .setPopup(new mapboxgl.Popup().setHTML('<strong>You are here</strong>'))
+        .setPopup(new mapboxgl.Popup().setDOMContent(userPopupContent))
         .addTo(map.current)
     }
   }, [currentLocation])
@@ -538,16 +575,21 @@ function MapViewSimple({
         venue.type || 'restaurant',
         venue.address || '',
         () => {
-          // Show venue info on click
+          // Show venue info on click - using safe DOM creation
+          const popupContent = document.createElement('div')
+          popupContent.style.cssText = 'color: white; font-family: system-ui;'
+
+          const nameEl = createSafeTextElement('strong', venue.name || '', 'font-size: 14px; display: block; margin-bottom: 4px;')
+          const addressEl = createSafeTextElement('div', venue.address || '', 'font-size: 12px; color: rgba(255,255,255,0.7);')
+          const categoryEl = createSafeTextElement('div', venue.category || venue.type || '', 'font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px;')
+
+          popupContent.appendChild(nameEl)
+          popupContent.appendChild(addressEl)
+          popupContent.appendChild(categoryEl)
+
           const popup = new mapboxgl.Popup({ offset: 25 })
             .setLngLat([venue.longitude, venue.latitude])
-            .setHTML(`
-              <div style="color: white; font-family: system-ui;">
-                <strong style="font-size: 14px; display: block; margin-bottom: 4px;">${venue.name}</strong>
-                <div style="font-size: 12px; color: rgba(255,255,255,0.7);">${venue.address || ''}</div>
-                <div style="font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px;">${venue.category || venue.type || ''}</div>
-              </div>
-            `)
+            .setDOMContent(popupContent)
             .addTo(map.current)
         }
       )
