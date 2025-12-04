@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef, Suspense } from 'react'
+import { useEffect, useState, useRef, Suspense, use } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -396,7 +396,8 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
   )
 }
 
-export default function GroupDetailPage({ params }: { params: { id: string } }) {
+export default function GroupDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   return (
     <Suspense fallback={
       <MobileLayout>
@@ -405,7 +406,7 @@ export default function GroupDetailPage({ params }: { params: { id: string } }) 
         </div>
       </MobileLayout>
     }>
-      <GroupDetailContent groupId={params.id} />
+      <GroupDetailContent groupId={id} />
     </Suspense>
   )
 }

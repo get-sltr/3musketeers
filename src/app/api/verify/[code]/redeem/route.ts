@@ -3,10 +3,10 @@ import { NextResponse } from 'next/server';
 
 export async function POST(
   request: Request,
-  { params }: { params: { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
-  const supabase = createClient();
-  const { code } = params;
+  const supabase = await createClient();
+  const { code } = await params;
 
   try {
     // Get current user

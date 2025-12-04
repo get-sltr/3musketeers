@@ -17,7 +17,7 @@ import { getCachedProfile } from './cache'
 export async function requireAuth(
   request: NextRequest
 ): Promise<{ userId: string } | NextResponse> {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const {
     data: { user },
@@ -53,7 +53,7 @@ export async function requirePlus(
   if (authCheck instanceof NextResponse) return authCheck
 
   const { userId } = authCheck
-  const supabase = createClient()
+  const supabase = await createClient()
 
   // Use cached profile lookup (FAST)
   const profile = await getCachedProfile(userId, async () => {

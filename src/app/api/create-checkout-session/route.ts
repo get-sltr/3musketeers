@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user from Supabase to verify they're logged in
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError || !user) {

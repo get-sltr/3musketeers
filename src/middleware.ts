@@ -10,13 +10,14 @@ const intlMiddleware = createIntlMiddleware({
   localePrefix: 'as-needed'
 });
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Handle API routes with CSRF protection
   if (pathname.startsWith('/api/')) {
     // Check CSRF token for state-changing requests
-    if (!requireCsrf(request)) {
+    const csrfValid = await requireCsrf(request);
+    if (!csrfValid) {
       console.error(`CSRF validation failed for ${request.method} ${pathname}`);
       return NextResponse.json(
         { error: 'Invalid or missing CSRF token' },
