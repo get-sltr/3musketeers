@@ -9,7 +9,7 @@ import { generateCsrfToken, getCsrfCookieOptions, CSRF_COOKIE_NAME } from '@/lib
  */
 export async function GET(request: NextRequest) {
   try {
-    const token = generateCsrfToken()
+    const token = await generateCsrfToken()
 
     const response = NextResponse.json({
       token,

@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     const { feedback, email } = await request.json()
 
     // Get session from cookies
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const accessToken = cookieStore.get('sb-access-token')?.value
 
     if (!accessToken) {

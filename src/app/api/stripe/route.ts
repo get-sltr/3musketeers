@@ -114,7 +114,6 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseClient()
 
     // Check if user has a profile (optional)
-    const supabase = getSupabase()
     const { data: user } = await supabase
       .from('profiles')
       .select('id, founder, subscription_status')
@@ -131,7 +130,7 @@ export async function POST(request: NextRequest) {
 
     // Check founder availability
     if (priceType === 'founder') {
-      const { count } = await getSupabase()
+      const { count } = await supabase
         .from('profiles')
         .select('id', { count: 'exact', head: true })
         .eq('founder', true)
@@ -158,7 +157,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const stripe = getStripe()
     if (!stripe) {
       console.error('Stripe secret key is not configured')
       return NextResponse.json(
