@@ -70,16 +70,20 @@ async function createHmacSignature(secret: string, message: string): Promise<str
  * Timing-safe comparison for Edge Runtime
  */
 function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
-  if (a.length !== b.length) {
-    return false
-  }
+  const lengthA = a.length;
+  const lengthB = b.length;
 
-  let result = 0
-  for (let i = 0; i < a.length; i++) {
-    // Safe to use ! here since we already checked lengths are equal
-    result |= a[i]! ^ b[i]!
+  // Use a dummy buffer if lengths are different to prevent timing attacks.
+  const bufferA = lengthA === lengthB ? a : b;
+  const bufferB = b;
+
+  let result = lengthA ^ lengthB; // Start with length difference
+
+  for (let i = 0; i < lengthB; i++) {
+    // The loop runs up to lengthB. If lengthA !== lengthB, bufferA is a dummy.
+    result |= bufferA[i]! ^ bufferB[i]!;
   }
-  return result === 0
+  return result === 0;
 }
 
 /**
