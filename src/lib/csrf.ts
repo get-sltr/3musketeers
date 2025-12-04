@@ -15,10 +15,6 @@ const CSRF_HEADER_NAME = 'x-csrf-token'
 /**
  * Convert string to Uint8Array
  */
-function stringToUint8Array(str: string): Uint8Array {
-  return new TextEncoder().encode(str)
-}
-
 /**
  * Convert Uint8Array to hex string
  */
