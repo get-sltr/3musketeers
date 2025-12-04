@@ -2,9 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Typography: Use next/font CSS variables with system fallbacks */
+/* Typography: System font stack fallbacks */
 *, html, body {
-  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 /* ============================================================================
