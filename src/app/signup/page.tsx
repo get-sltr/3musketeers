@@ -1,10 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import SltrButton from '../../components/SltrButton'
+
+// Rate limit configuration
+const SIGNUP_COOLDOWN_MS = 60000 // 60 seconds between attempts
+const MAX_ATTEMPTS_PER_HOUR = 3
+const ATTEMPT_WINDOW_MS = 3600000 // 1 hour
 
 export default function SignupPage() {
   const [username, setUsername] = useState('')
@@ -15,9 +20,75 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null)
   const [ageError, setAgeError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [cooldown, setCooldown] = useState(0)
   const router = useRouter()
   const searchParams = useSearchParams()
   const [tier, setTier] = useState<'free' | 'member' | 'founder' | 'blackcard'>('free')
+
+  // Check rate limit on mount
+  useEffect(() => {
+    const checkRateLimit = () => {
+      try {
+        const lastAttempt = localStorage.getItem('sltr_signup_last_attempt')
+        if (lastAttempt) {
+          const elapsed = Date.now() - parseInt(lastAttempt, 10)
+          if (elapsed < SIGNUP_COOLDOWN_MS) {
+            setCooldown(Math.ceil((SIGNUP_COOLDOWN_MS - elapsed) / 1000))
+          }
+        }
+      } catch {}
+    }
+    checkRateLimit()
+  }, [])
+
+  // Cooldown countdown
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const timer = setTimeout(() => setCooldown(c => c - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [cooldown])
+
+  // Check if rate limited
+  const checkSignupRateLimit = useCallback((): { allowed: boolean; message?: string } => {
+    try {
+      const attemptsRaw = localStorage.getItem('sltr_signup_attempts')
+      const attempts: number[] = attemptsRaw ? JSON.parse(attemptsRaw) : []
+      const now = Date.now()
+
+      // Filter to attempts within the last hour
+      const recentAttempts = attempts.filter(t => now - t < ATTEMPT_WINDOW_MS)
+
+      if (recentAttempts.length >= MAX_ATTEMPTS_PER_HOUR) {
+        const oldestAttempt = Math.min(...recentAttempts)
+        const waitTime = Math.ceil((ATTEMPT_WINDOW_MS - (now - oldestAttempt)) / 60000)
+        return {
+          allowed: false,
+          message: `Too many signup attempts. Please try again in ${waitTime} minute${waitTime > 1 ? 's' : ''}.`
+        }
+      }
+
+      return { allowed: true }
+    } catch {
+      return { allowed: true }
+    }
+  }, [])
+
+  // Record signup attempt
+  const recordSignupAttempt = useCallback(() => {
+    try {
+      const attemptsRaw = localStorage.getItem('sltr_signup_attempts')
+      const attempts: number[] = attemptsRaw ? JSON.parse(attemptsRaw) : []
+      const now = Date.now()
+
+      // Filter to recent attempts and add new one
+      const recentAttempts = attempts.filter(t => now - t < ATTEMPT_WINDOW_MS)
+      recentAttempts.push(now)
+
+      localStorage.setItem('sltr_signup_attempts', JSON.stringify(recentAttempts))
+      localStorage.setItem('sltr_signup_last_attempt', now.toString())
+      setCooldown(Math.ceil(SIGNUP_COOLDOWN_MS / 1000))
+    } catch {}
+  }, [])
 
   useEffect(() => {
     const tierParam = searchParams?.get('tier')
@@ -57,6 +128,21 @@ export default function SignupPage() {
     setError(null)
     setAgeError(null)
 
+    // Check frontend rate limit first
+    const rateLimitCheck = checkSignupRateLimit()
+    if (!rateLimitCheck.allowed) {
+      setError(rateLimitCheck.message || 'Too many attempts. Please wait and try again.')
+      setLoading(false)
+      return
+    }
+
+    // Check if in cooldown
+    if (cooldown > 0) {
+      setError(`Please wait ${cooldown} seconds before trying again.`)
+      setLoading(false)
+      return
+    }
+
     // Age verification
     const age = calculateAge(dateOfBirth)
     if (age < 18) {
@@ -92,6 +178,9 @@ export default function SignupPage() {
       return
     }
 
+    // Record this signup attempt for rate limiting
+    recordSignupAttempt()
+
     // Always use production URL (getsltr.com) for redirects
     const { getAuthCallbackUrl } = await import('@/lib/utils/url')
     const redirectUrl = getAuthCallbackUrl('/app')
@@ -102,7 +191,7 @@ export default function SignupPage() {
       password,
       options: {
         emailRedirectTo: redirectUrl,
-        data: { 
+        data: {
           username,
           age: age,
           date_of_birth: dateOfBirth
@@ -111,7 +200,15 @@ export default function SignupPage() {
     })
 
     if (error) {
-      setError(error.message)
+      // Provide user-friendly error messages
+      let errorMessage = error.message
+      if (error.message.toLowerCase().includes('rate limit') ||
+          error.message.toLowerCase().includes('too many')) {
+        errorMessage = 'Too many signup attempts. Please wait a few minutes and try again, or check your email for an existing verification link.'
+      } else if (error.message.toLowerCase().includes('already registered')) {
+        errorMessage = 'This email is already registered. Try logging in instead.'
+      }
+      setError(errorMessage)
       setLoading(false)
     } else if (data.user) {
       // Create profile in profiles table with all required fields
@@ -339,14 +436,14 @@ export default function SignupPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || cooldown > 0}
             className="w-full py-3 rounded-2xl text-black font-semibold hover:opacity-90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
               background: '#ccff00',
               borderRadius: '16px'
             }}
           >
-            {loading ? 'Creating Account...' : 'Sign Up'}
+            {loading ? 'Creating Account...' : cooldown > 0 ? `Wait ${cooldown}s...` : 'Sign Up'}
           </button>
         </form>
 
