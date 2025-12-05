@@ -44,7 +44,8 @@ self.addEventListener('activate', (event) => {
 
 // Handle push notifications
 self.addEventListener('push', (event) => {
-  console.log('🔔 Push notification received:', event);
+  // Only log non-sensitive metadata
+  console.log('🔔 Push notification received');
 
   let data = {};
   try {
@@ -86,103 +87,56 @@ self.addEventListener('push', (event) => {
   );
 });
 
-// Allowed origins for safe navigation
-const ALLOWED_ORIGINS = [
-  'https://getsltr.com',
-  'https://www.getsltr.com',
-  'https://sltr.vercel.app'
-];
-
-// Check if running in development
-const isDev = self.location.hostname === 'localhost' || 
-              self.location.hostname === '127.0.0.1' ||
-              self.location.hostname.endsWith('.local');
-
-// Validate URL for safe navigation
-function isValidNotificationUrl(url) {
-  if (!url) return false;
-  
-  try {
-    const parsed = new URL(url, self.location.origin);
-    
-    // Allow relative URLs (same origin)
-    if (parsed.origin === self.location.origin) {
-      return true;
-    }
-    
-    // In development, allow localhost
-    if (isDev && (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1')) {
-      return true;
-    }
-    
-    // Check against allowed origins
-    return ALLOWED_ORIGINS.includes(parsed.origin);
-  } catch (e) {
-    console.error('Invalid notification URL:', url);
-    return false;
-  }
-}
-
 // Handle notification click
 self.addEventListener('notificationclick', (event) => {
-  console.log('🔔 Notification clicked:', event.action, event.notification.data);
+  // Only log action type, not sensitive notification data
+  console.log('🔔 Notification clicked:', event.action || 'default');
 
   event.notification.close();
 
-  // Handle dismiss action - just close the notification
   if (event.action === 'dismiss' || event.action === 'close') {
     return;
   }
 
-  // Get URL from notification data, default to messages
-  let urlToOpen = event.notification.data?.url || '/messages';
-  
-  // Validate URL for security - prevent open redirect
-  if (!isValidNotificationUrl(urlToOpen)) {
-    console.warn('Blocked unsafe notification URL:', urlToOpen);
-    urlToOpen = '/messages'; // Safe fallback
+  const notificationData = event.notification.data || {};
+  let path = notificationData.url || '/messages';
+
+  if (notificationData.conversationId) {
+    // Ensure conversationId doesn't contain path traversal characters
+    const safeId = String(notificationData.conversationId).replace(/[^a-zA-Z0-9_-]/g, '');
+    path = `/messages/${safeId}`;
   }
-  
-  // Ensure URL is absolute for openWindow
-  if (urlToOpen.startsWith('/')) {
-    urlToOpen = self.location.origin + urlToOpen;
+
+  // Normalize to same-origin absolute URL (prevents open redirect)
+  let urlToOpen;
+  try {
+    const url = new URL(path, self.location.origin);
+    if (url.origin !== self.location.origin) {
+      throw new Error('Cross-origin redirect blocked');
+    }
+    urlToOpen = url.toString();
+  } catch {
+    urlToOpen = new URL('/messages', self.location.origin).toString();
   }
-  
+
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then((clientList) => {
-        // Check if there's already a window/tab with our app open
+        // Try to focus a client already at the target URL
         for (const client of clientList) {
-          try {
-            const clientUrl = new URL(client.url);
-            const targetUrl = new URL(urlToOpen);
-            
-            // If same origin, navigate existing window
-            if (clientUrl.origin === targetUrl.origin && 'focus' in client) {
-              // Navigate to the target path if different
-              if (clientUrl.pathname !== targetUrl.pathname) {
-                // Try to post message for client-side navigation
-                // If client doesn't handle NAVIGATE, fall back to direct navigation
-                try {
-                  client.postMessage({
-                    type: 'NAVIGATE',
-                    url: targetUrl.pathname + targetUrl.search
-                  });
-                } catch (messageError) {
-                  console.log('postMessage failed, client will handle via focus');
-                }
-              }
-              return client.focus();
-            }
-          } catch (e) {
-            console.error('Error checking client URL:', e);
+          if (client.url && urlToOpen && client.url.startsWith(urlToOpen) && 'focus' in client) {
+            return client.focus();
           }
         }
-        
-        // Open new window if no existing window found
-        if (clients.openWindow) {
-          return clients.openWindow(urlToOpen);
+        // Focus any same-origin client and instruct it to navigate
+        for (const client of clientList) {
+          if (client.url && client.url.startsWith(self.location.origin) && 'focus' in client) {
+            client.postMessage({ type: 'NOTIFICATION_CLICK', url: urlToOpen });
+            return client.focus();
+          }
         }
+        // Open a new window
+        return clients.openWindow(urlToOpen);
       })
   );
 });
@@ -227,7 +181,13 @@ self.addEventListener('fetch', (event) => {
         return caches.match(event.request)
           .then(cachedResponse => {
             if (cachedResponse) {
-              console.log('📦 Serving from cache:', event.request.url);
+              // Only log pathname, not full URL with potential query params
+              try {
+                const url = new URL(event.request.url);
+                console.log('📦 Serving from cache:', url.pathname);
+              } catch {
+                console.log('📦 Serving from cache');
+              }
               return cachedResponse;
             }
             
