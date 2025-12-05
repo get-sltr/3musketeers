@@ -452,7 +452,7 @@ body {
 
 .message-sent {
   background: linear-gradient(135deg, #00ff88, #00cc6a);
-  color: #0a1628;
+  color: #ffffff;
   font-weight: 500;
   margin-left: auto;
   border-bottom-right-radius: var(--radius-sm);
