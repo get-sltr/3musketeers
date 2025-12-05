@@ -70,6 +70,8 @@ interface MapboxUsersProps {
   onNav?: (loc: { lat: number; lng: number }) => void
   holoTheme?: boolean // apply neon/glass Mapbox theming (fog/sky/3D)
   showVenues?: boolean // show LGBTQ venues
+  showRestaurants?: boolean // show restaurants
+  showBars?: boolean // show bars
   showHeatmap?: boolean // show user density heatmap
 }
 
@@ -115,6 +117,8 @@ export default function MapboxUsers({
   autoLoad = false,
   holoTheme = false,
   showVenues = false,
+  showRestaurants = false,
+  showBars = false,
   showHeatmap = false,
 }: MapboxUsersProps & { jitterMeters?: number; autoLoad?: boolean }) {
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -647,14 +651,17 @@ export default function MapboxUsers({
     }
   }, [mapLoaded, isConnected, joinMap, leaveMap, updateLocation, incognito, jitterMeters])
 
-  // Fetch and display LGBTQ venues
+  // Fetch and display venues (restaurants, bars, LGBTQ)
   useEffect(() => {
-    if (!mapLoaded || !mapRef.current || !showVenues) {
-      // Clear venues if toggled off
-      if (!showVenues) {
-        venueMarkersRef.current.forEach(marker => marker.remove())
-        venueMarkersRef.current = []
-      }
+    if (!mapLoaded || !mapRef.current) {
+      return
+    }
+
+    // If no venue types are enabled, clear markers
+    if (!showVenues && !showRestaurants && !showBars) {
+      venueMarkersRef.current.forEach(marker => marker.remove())
+      venueMarkersRef.current = []
+      setVenues([])
       return
     }
 
@@ -663,13 +670,40 @@ export default function MapboxUsers({
 
     const fetchVenues = async () => {
       try {
+        // Build types query based on what's enabled
+        const types: string[] = []
+        if (showRestaurants) types.push('restaurant')
+        if (showBars) types.push('bar')
+        if (showVenues) types.push('lgbtq')
+
+        if (types.length === 0) {
+          setVenues([])
+          return
+        }
+
         const response = await fetch(
-          `/api/venues/lgbtq?lat=${currentCenter.lat}&lng=${currentCenter.lng}&radius=5000`
+          `/api/venues/search?lat=${currentCenter.lat}&lng=${currentCenter.lng}&radius=5000&types=${types.join(',')}`
         )
         const data = await response.json()
-        setVenues(data.venues || [])
+        
+        // Filter venues based on what's enabled
+        let filteredVenues = data.venues || []
+        
+        if (showRestaurants && showBars && showVenues) {
+          // Show all
+        } else {
+          filteredVenues = filteredVenues.filter((venue: any) => {
+            if (showRestaurants && (venue.type === 'restaurant' || venue.type === 'cafe')) return true
+            if (showBars && venue.type === 'bar') return true
+            if (showVenues && (venue.type === 'lgbtq' || venue.type === 'club' || venue.type === 'sauna')) return true
+            return false
+          })
+        }
+        
+        setVenues(filteredVenues)
       } catch (error) {
-        console.error('Error fetching LGBTQ venues:', error)
+        console.error('Error fetching venues:', error)
+        setVenues([])
       }
     }
 
@@ -685,11 +719,16 @@ export default function MapboxUsers({
     return () => {
       map.off('moveend', onMoveEnd)
     }
-  }, [mapLoaded, showVenues])
+  }, [mapLoaded, showVenues, showRestaurants, showBars])
 
   // Render venue markers
   useEffect(() => {
-    if (!mapRef.current || !showVenues || venues.length === 0) return
+    if (!mapRef.current || venues.length === 0) {
+      // Clear markers if no venues
+      venueMarkersRef.current.forEach(marker => marker.remove())
+      venueMarkersRef.current = []
+      return
+    }
 
     // Clear existing venue markers
     venueMarkersRef.current.forEach(marker => marker.remove())
@@ -712,7 +751,7 @@ export default function MapboxUsers({
 
       venueMarkersRef.current.push(marker)
     })
-  }, [venues, showVenues])
+  }, [venues])
 
   // Add user density heatmap layer
   useEffect(() => {

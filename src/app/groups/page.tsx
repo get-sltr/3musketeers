@@ -33,11 +33,29 @@ export default function GroupsPage() {
         return
       }
       
+      // Auto-setup THE CLUB if it doesn't exist
+      await setupTheClub()
       await loadGroups()
       setLoading(false)
     }
     init()
   }, [router])
+
+  const setupTheClub = async () => {
+    try {
+      const response = await fetch('/api/groups/setup-club', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log('✅ THE CLUB setup:', data.message)
+      }
+    } catch (error) {
+      console.error('Error setting up THE CLUB:', error)
+    }
+  }
 
   const loadGroups = async () => {
     const supabase = createClient()

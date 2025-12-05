@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { erosAPI } from '@/lib/eros-api'
 
 interface ErosAIProps {
   conversationId: string
@@ -55,62 +56,32 @@ export default function ErosAI({ conversationId, onAIMessage }: ErosAIProps) {
     if (pos) localStorage.setItem('eros_ai_button_position', JSON.stringify(pos))
   }
 
-  // AI-powered conversation starters
-  const conversationStarters = [
-    "Hey! I noticed we have similar interests. What's your favorite hobby?",
-    "Your profile caught my attention! What's the best part of your day?",
-    "I see you're into [interest]. I love that too! What got you started?",
-    "Your photos are amazing! Where was that taken?",
-    "I noticed we're both [trait]. What's your take on [topic]?",
-    "Your bio is really interesting! Tell me more about [mention].",
-    "I see you're looking for [preference]. I'm curious about your experience with that.",
-    "Your style is great! Where do you get your inspiration from?",
-    "I noticed we're both into [activity]. What's your favorite part about it?",
-    "Your energy in your photos is contagious! What makes you happiest?"
-  ]
-
-  // AI-powered profile suggestions
-  const profileSuggestions = [
-    "Add more details about your interests to attract like-minded people",
-    "Your bio could be more engaging - try adding a fun fact about yourself",
-    "Consider adding photos that show your personality and hobbies",
-    "Your profile is great, but more photos would help people connect with you",
-    "Try adding what you're looking for to help people understand your goals",
-    "Your interests section could be more specific to help with matching",
-    "Consider adding your favorite activities to help people start conversations",
-    "Your profile is solid, but a fun ice-breaker question could help",
-    "Try adding what makes you unique to stand out from the crowd",
-    "Your profile is good, but more personal details would help people connect"
-  ]
-
   const handleAISend = async () => {
     if (!aiMessage.trim() || isThinking) return
 
+    const userMessage = aiMessage.trim()
     setIsThinking(true)
-    setAiHistory(prev => [...prev, `You: ${aiMessage}`])
+    setAiHistory(prev => [...prev, `You: ${userMessage}`])
+    setAiMessage('')
 
     try {
-      // Simulate AI thinking (replace with actual Perplexity API call)
-      await new Promise(resolve => setTimeout(resolve, 2000))
-
-      // Generate AI response based on message type
-      let aiResponse = ''
+      // Call the real EROS API
+      const response = await erosAPI.chat(userMessage, { 
+        context: 'chat_widget',
+        conversationId 
+      })
       
-      if (aiMessage.toLowerCase().includes('profile')) {
-        aiResponse = profileSuggestions[Math.floor(Math.random() * profileSuggestions.length)] || "Here are some profile tips to help you stand out..."
-      } else if (aiMessage.toLowerCase().includes('conversation') || aiMessage.toLowerCase().includes('message')) {
-        aiResponse = conversationStarters[Math.floor(Math.random() * conversationStarters.length)] || "Here's a great conversation starter..."
-      } else if (aiMessage.toLowerCase().includes('match') || aiMessage.toLowerCase().includes('compatible')) {
-        aiResponse = "Based on your profile and preferences, I'd suggest looking for people who share your interests in [activity] and have similar values. Try focusing on profiles that mention [interest] and seem to have a similar lifestyle."
-      } else {
-        aiResponse = "I'm here to help you make meaningful connections! I can help you improve your profile, suggest conversation starters, or give advice on finding compatible matches. What would you like help with?"
-      }
-
+      const aiResponse = response.response || "I'm having trouble responding right now. Please try again."
       setAiHistory(prev => [...prev, `EROS: ${aiResponse}`])
-      setAiMessage('')
-    } catch (error) {
+    } catch (error: any) {
       console.error('AI error:', error)
-      setAiHistory(prev => [...prev, `EROS: Sorry, I'm having trouble thinking right now. Try again in a moment!`])
+      const errorMessage = error?.message || 'Could not reach EROS. Please check your connection.'
+      
+      if (errorMessage.includes('Authentication required')) {
+        setAiHistory(prev => [...prev, `EROS: ❌ Please log in to use EROS.`])
+      } else {
+        setAiHistory(prev => [...prev, `EROS: ❌ Error: ${errorMessage}`])
+      }
     } finally {
       setIsThinking(false)
     }
@@ -161,7 +132,7 @@ export default function ErosAI({ conversationId, onAIMessage }: ErosAIProps) {
               <div className="text-2xl">🏹</div>
               <div>
                 <h3 className="text-white font-bold">EROS AI</h3>
-                <p className="text-xs text-white/60">Powered by Perplexity</p>
+                <p className="text-xs text-white/60">Powered by Claude AI</p>
               </div>
             </div>
             <button

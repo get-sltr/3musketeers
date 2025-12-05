@@ -26,6 +26,7 @@ import LocationSearch from '../components/LocationSearch'
 import WelcomeModal from '../../components/WelcomeModal'
 import ErosOnboardingModal from '../../components/ErosOnboardingModal'
 import { ErosFloatingButton } from '../../components/ErosFloatingButton'
+import AppTour, { useAppTour, APP_TOUR_STEPS } from '../../components/AppTour'
 import '../../styles/mobile-optimization.css'
 import { useRealtime } from '../../hooks/useRealtime'
 import { resolveProfilePhoto } from '@/lib/utils/profile'
@@ -98,7 +99,9 @@ export default function AppPage() {
   const [currentOrigin, setCurrentOrigin] = useState<[number, number] | null>(null)
   const [isFetching, setIsFetching] = useState(false)
   const [showErosOnboarding, setShowErosOnboarding] = useState(false)
+  const [showTour, setShowTour] = useState(false)
   const fetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const locationRequestedRef = useRef(false)
   
   // Use Zustand store for map session state
   const {
@@ -111,6 +114,8 @@ export default function AppPage() {
     vanillaMode,
     travelMode,
     showVenues,
+    showRestaurants,
+    showBars,
     showHeatmap,
     pinStyle,
     setRadiusMiles,
@@ -122,6 +127,8 @@ export default function AppPage() {
     setVanillaMode,
     setTravelMode,
     setShowVenues,
+    setShowRestaurants,
+    setShowBars,
     setShowHeatmap,
     setPinStyle,
     resetMapSettings,
@@ -211,6 +218,19 @@ export default function AppPage() {
               setShowErosOnboarding(true)
               localStorage.setItem('eros_onboarding_shown', 'true')
             }, 1000)
+          }
+          
+          // Show app tour after onboarding (check if tour not completed)
+          const tourCompleted = localStorage.getItem('app_tour_completed')
+          if (!tourCompleted) {
+            // Wait a bit after EROS onboarding potentially shows
+            setTimeout(() => {
+              if (!hasSeenErosOnboarding) {
+                // Will show after EROS onboarding closes
+              } else {
+                setShowTour(true)
+              }
+            }, 2000)
           }
         }
       }
@@ -459,32 +479,34 @@ export default function AppPage() {
       let originLat = profile?.latitude ?? null
       let originLon = profile?.longitude ?? null
 
-      // If no location, request it and save BEFORE showing page
-      if (!originLat || !originLon) {
+      // If no location, request it silently in background (only once)
+      if ((!originLat || !originLon) && !locationRequestedRef.current) {
+        locationRequestedRef.current = true // Prevent multiple requests
         console.log('📍 No location found, requesting permission...')
         if (navigator.geolocation) {
-          await new Promise<void>((resolve) => {
-            navigator.geolocation.getCurrentPosition(
-              async (position) => {
-                console.log('✅ Location granted:', position.coords.latitude, position.coords.longitude)
-                originLat = position.coords.latitude
-                originLon = position.coords.longitude
-                await supabase
-                  .from('profiles')
-                  .update({
-                    latitude: originLat,
-                    longitude: originLon
-                  })
-                  .eq('id', session.user.id)
-                resolve()
-              },
-              (error) => {
-                console.warn('⚠️ Location denied or unavailable:', error)
-                alert('Location access is required to use SLTR. Please enable location to see other users nearby!')
-                resolve()
-              }
-            )
-          })
+          navigator.geolocation.getCurrentPosition(
+            async (position) => {
+              console.log('✅ Location granted:', position.coords.latitude, position.coords.longitude)
+              originLat = position.coords.latitude
+              originLon = position.coords.longitude
+              
+              await supabase
+                .from('profiles')
+                .update({
+                  latitude: originLat,
+                  longitude: originLon
+                })
+                .eq('id', session.user.id)
+              
+              // Refresh users with new location
+              const origin: [number, number] = [originLon, originLat]
+              await fetchUsers(session.user.id, origin, { immediate: true })
+            },
+            (error) => {
+              console.warn('⚠️ Location denied or unavailable:', error)
+              locationRequestedRef.current = false // Allow retry if denied
+            }
+          )
         }
       }
 
@@ -829,10 +851,12 @@ export default function AppPage() {
         paddingBottom: viewMode === 'map' ? '0' : 'calc(80px + env(safe-area-inset-bottom))'
       }}>
         {/* Animated Header with transparency */}
-        <AnimatedHeader 
-          viewMode={viewMode} 
-          onViewModeChange={setViewMode} 
-        />
+        <div data-tour={viewMode === 'grid' ? 'grid-view' : 'map-view'}>
+          <AnimatedHeader 
+            viewMode={viewMode} 
+            onViewModeChange={setViewMode} 
+          />
+        </div>
 
       {/* Main Content */}
       <main className={viewMode === 'grid' ? 'pt-0' : 'pt-0'}>
@@ -855,10 +879,13 @@ export default function AppPage() {
               onToggle={() => toggleAdvertisingPanel()}
             />
             
-            <MapViewSimple pinStyle={pinStyle} center={mapCenter} />
+            <MapViewSimple 
+              pinStyle={pinStyle} 
+              center={mapCenter}
+            />
 
             {/* Location Search Bar */}
-            <div className="absolute top-16 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-20">
+            <div className="absolute top-16 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-20" data-tour="location-search">
               <LocationSearch
                 onLocationSelect={(lat, lng, placeName) => {
                   setMapCenter([lng, lat])
@@ -894,6 +921,10 @@ export default function AppPage() {
               onHostGroup={() => toggleHostingGroup(true)}
               showVenues={showVenues}
               onToggleVenues={setShowVenues}
+              showRestaurants={showRestaurants}
+              onToggleRestaurants={setShowRestaurants}
+              showBars={showBars}
+              onToggleBars={setShowBars}
               showHeatmap={showHeatmap}
               onToggleHeatmap={setShowHeatmap}
               pinStyle={pinStyle}
@@ -1017,14 +1048,32 @@ export default function AppPage() {
       {/* EROS Onboarding Modal - Introduces EROS AI */}
       <ErosOnboardingModal
         isOpen={showErosOnboarding}
-        onClose={() => setShowErosOnboarding(false)}
+        onClose={() => {
+          setShowErosOnboarding(false)
+          // Show tour after EROS onboarding closes (if not already completed)
+          const tourCompleted = localStorage.getItem('app_tour_completed')
+          if (!tourCompleted) {
+            setTimeout(() => setShowTour(true), 500)
+          }
+        }}
+      />
+
+      {/* App Tour - Spotlight guide */}
+      <AppTour
+        isOpen={showTour}
+        onClose={() => setShowTour(false)}
+        steps={APP_TOUR_STEPS}
       />
 
       {/* EROS Floating Chat Button */}
-      <ErosFloatingButton />
+      <div data-tour="eros-button">
+        <ErosFloatingButton />
+      </div>
 
       {/* Bottom Navigation */}
-      <BottomNav />
+      <nav data-tour="bottom-nav">
+        <BottomNav />
+      </nav>
       </div>
     </MobileLayout>
   )

@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { supabase } from '../lib/supabase.js';
-import { ErosAssistantService } from '../services/eros-assistant.js';
+import { ErosAssistantService } from '../services/eros-assistant';
 
 dotenv.config();
 

@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useState, memo } from 'react'
+import { useEffect, useRef, useState, memo, useCallback } from 'react'
 import { createClient } from '../lib/supabase/client'
 import { createSLTRMapboxMarker, cleanupSLTRMarker } from './SLTRMapPin'
 import { resolveProfilePhoto } from '../lib/utils/profile'
+import { createVenueMarker } from '../app/components/maps/VenueMarker'
 
 // PIN STYLE FUNCTIONS
 const createPinStyle1 = (user: any) => {
@@ -162,22 +163,40 @@ const createPinStyle5 = (user: any) => {
 }
 
 // Simple Mapbox map component using CDN approach
-function MapViewSimple({ pinStyle = 1, center }: { pinStyle?: number; center?: [number, number] | null }) {
+interface MapViewSimpleProps {
+  pinStyle?: number
+  center?: [number, number] | null
+}
+
+function MapViewSimple({ 
+  pinStyle = 1, 
+  center
+}: MapViewSimpleProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<any>(null)
   const [users, setUsers] = useState<any[]>([])
   const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null)
+  const [venues, setVenues] = useState<any[]>([])
+  const [mapLoaded, setMapLoaded] = useState(false)
   const markers = useRef<any[]>([])
+  const venueMarkers = useRef<any[]>([])
   const supabase = createClient()
+  const centerManuallySet = useRef(false) // Track if center was manually set (from search)
+  const lastCenterRef = useRef<[number, number] | null>(null) // Track last center to prevent unnecessary updates
 
-  // Get user's location
+  // Get user's location - only if center hasn't been manually set
   useEffect(() => {
     let isMounted = true
+    
+    // Don't override if center was manually set via search
+    if (centerManuallySet.current) {
+      return
+    }
     
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          if (isMounted) {
+          if (isMounted && !centerManuallySet.current) {
             setCurrentLocation([position.coords.longitude, position.coords.latitude])
           }
         },
@@ -187,14 +206,14 @@ function MapViewSimple({ pinStyle = 1, center }: { pinStyle?: number; center?: [
           if (process.env.NODE_ENV === 'development') {
             console.warn('Geolocation unavailable, using default location:', error.code)
           }
-          // Default to LA if location fails
-          if (isMounted) {
+          // Default to LA if location fails and center wasn't manually set
+          if (isMounted && !centerManuallySet.current) {
             setCurrentLocation([-118.2437, 34.0522])
           }
         }
       )
     } else {
-      if (isMounted) {
+      if (isMounted && !centerManuallySet.current) {
         setCurrentLocation([-118.2437, 34.0522])
       }
     }
@@ -264,22 +283,44 @@ function MapViewSimple({ pinStyle = 1, center }: { pinStyle?: number; center?: [
 
   // Initialize map - ONLY ONCE on mount
   const mapInitialized = useRef(false)
+  const isMountedRef = useRef(true)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  
   useEffect(() => {
+    // Reset mounted state on each mount
+    isMountedRef.current = true
+    
     if (!mapContainer.current || map.current || mapInitialized.current) return
     
     // Use center prop if available, otherwise use currentLocation, otherwise default to LA
-    const initialCenter = center || currentLocation || [-0.1276, 51.5074] // Default to London if neither set
+    // Don't default to London - use LA instead
+    const initialCenter = center || currentLocation || [-118.2437, 34.0522]
+    
+    // Track if center was provided (manually set)
+    if (center) {
+      centerManuallySet.current = true
+      lastCenterRef.current = center
+    }
 
-    // Wait for mapboxgl to be available from CDN
+    // Wait for mapboxgl to be available from CDN with timeout
+    let retryCount = 0
+    const maxRetries = 50 // 5 seconds max (50 * 100ms)
+    
     const initMap = () => {
+      // Abort if component unmounted during retry cycle
+      if (!isMountedRef.current) return
+      
       if (typeof window !== 'undefined' && (window as any).mapboxgl) {
         const mapboxgl = (window as any).mapboxgl
         // Use token directly - process.env doesn't always work in client components
         mapboxgl.accessToken = 'pk.eyJ1Ijoic2x0ciIsImEiOiJjbWh6Z3p3c2kwOTIyMmptenNid3lnbG8zIn0.NqKpGPFkrbUWoS0-rYfzhA'
         console.log('🗺️ Mapbox initialized')
 
+        // Guard against unmounted component
+        if (!mapContainer.current || !isMountedRef.current) return
+
         map.current = new mapboxgl.Map({
-          container: mapContainer.current!,
+          container: mapContainer.current,
           style: 'mapbox://styles/mapbox/dark-v11',
           center: initialCenter,
           zoom: 13,
@@ -291,7 +332,10 @@ function MapViewSimple({ pinStyle = 1, center }: { pinStyle?: number; center?: [
         
         // Wait for map to load before adding markers
         map.current.once('load', () => {
-          console.log('🗺️ Map loaded')
+          if (isMountedRef.current) {
+            console.log('🗺️ Map loaded')
+            setMapLoaded(true)
+          }
         })
 
         // Add navigation controls
@@ -311,26 +355,54 @@ function MapViewSimple({ pinStyle = 1, center }: { pinStyle?: number; center?: [
           document.head.appendChild(style)
         }
       } else {
-        // Retry if mapboxgl not loaded yet
-        setTimeout(initMap, 100)
+        retryCount++
+        if (retryCount < maxRetries && isMountedRef.current) {
+          // Retry if mapboxgl not loaded yet
+          timeoutRef.current = setTimeout(initMap, 100)
+        } else if (retryCount >= maxRetries) {
+          console.error('🗺️ Mapbox GL JS failed to load after 5 seconds')
+        }
       }
     }
 
     initMap()
 
     return () => {
+      // Mark as unmounted FIRST to prevent race conditions
+      isMountedRef.current = false
+      
+      // Clear pending timeout to prevent stale callbacks
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
+      
       if (map.current) {
         map.current.remove()
         map.current = null
-        mapInitialized.current = false
       }
+      
+      // Reset for potential remount
+      mapInitialized.current = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Only run once on mount
 
   // Fly to center when center prop changes (from location search)
+  // This prevents bounce-back by tracking manual center changes
   useEffect(() => {
     if (!map.current || !center) return
+    
+    // Prevent unnecessary updates if center hasn't actually changed
+    if (lastCenterRef.current && 
+        lastCenterRef.current[0] === center[0] && 
+        lastCenterRef.current[1] === center[1]) {
+      return
+    }
+    
+    // Mark center as manually set to prevent geolocation from overriding
+    centerManuallySet.current = true
+    lastCenterRef.current = center
     
     const mapboxgl = (window as any).mapboxgl
     if (mapboxgl && map.current) {
@@ -388,6 +460,91 @@ function MapViewSimple({ pinStyle = 1, center }: { pinStyle?: number; center?: [
         .addTo(map.current)
     }
   }, [currentLocation])
+
+  // Fetch venues - always show restaurants, bars, and LGBTQ venues
+  const fetchVenues = useCallback(async () => {
+    if (!map.current) {
+      setVenues([])
+      return
+    }
+
+    try {
+      const mapCenter = map.current.getCenter()
+      
+      // Always fetch all venue types: restaurants, bars, and LGBTQ venues
+      const response = await fetch(
+        `/api/venues/search?lat=${mapCenter.lat}&lng=${mapCenter.lng}&radius=5000&types=restaurant,bar,lgbtq`
+      )
+      const data = await response.json()
+      
+      setVenues(data.venues || [])
+    } catch (error) {
+      console.error('Error fetching venues:', error)
+      setVenues([])
+    }
+  }, [])
+
+  // Fetch venues when map loads and when map moves
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return
+
+    fetchVenues()
+
+    const onMoveEnd = () => {
+      fetchVenues()
+    }
+
+    map.current.on('moveend', onMoveEnd)
+
+    return () => {
+      map.current?.off('moveend', onMoveEnd)
+    }
+  }, [mapLoaded, fetchVenues])
+
+  // Render venue markers
+  useEffect(() => {
+    if (!map.current || venues.length === 0) {
+      // Clear venue markers if none
+      venueMarkers.current.forEach(marker => marker.remove())
+      venueMarkers.current = []
+      return
+    }
+
+    const mapboxgl = (window as any).mapboxgl
+    if (!mapboxgl) return
+
+    // Clear existing venue markers
+    venueMarkers.current.forEach(marker => marker.remove())
+    venueMarkers.current = []
+
+    // Add new venue markers
+    venues.forEach((venue: any) => {
+      const el = createVenueMarker(
+        venue.name,
+        venue.type || 'restaurant',
+        venue.address || '',
+        () => {
+          // Show venue info on click
+          const popup = new mapboxgl.Popup({ offset: 25 })
+            .setLngLat([venue.longitude, venue.latitude])
+            .setHTML(`
+              <div style="color: white; font-family: system-ui;">
+                <strong style="font-size: 14px; display: block; margin-bottom: 4px;">${venue.name}</strong>
+                <div style="font-size: 12px; color: rgba(255,255,255,0.7);">${venue.address || ''}</div>
+                <div style="font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px;">${venue.category || venue.type || ''}</div>
+              </div>
+            `)
+            .addTo(map.current)
+        }
+      )
+
+      const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
+        .setLngLat([venue.longitude, venue.latitude])
+        .addTo(map.current)
+
+      venueMarkers.current.push(marker)
+    })
+  }, [venues])
 
   // Refresh markers when users or pin style changes
   useEffect(() => {

@@ -214,7 +214,8 @@ export function clearOldRateLimits(): void {
 
   for (const [userId, timestamps] of rateLimitCache.entries()) {
     const recentRequests = timestamps.filter((ts) => now - ts < 60000)
-    if (recentRequests.length === 0 || recentRequests[recentRequests.length - 1] < fiveMinutesAgo) {
+    const lastRequest = recentRequests[recentRequests.length - 1]
+    if (recentRequests.length === 0 || (lastRequest && lastRequest < fiveMinutesAgo)) {
       rateLimitCache.delete(userId)
     } else {
       rateLimitCache.set(userId, recentRequests)

@@ -96,6 +96,9 @@ export default function GridViewProduction({
   // Report modal state
   const [isReporting, setIsReporting] = useState(false)
   
+  // Location error state - prevent toast spam
+  const [locationErrorShown, setLocationErrorShown] = useState(false)
+  
   // Current user state for header
   const [currentUserPhoto, setCurrentUserPhoto] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -140,6 +143,9 @@ export default function GridViewProduction({
   
   // 4. Auto-refresh every 15 seconds for real-time updates
   useEffect(() => {
+    // Don't auto-refresh if we've shown location error
+    if (locationErrorShown) return
+    
     const interval = setInterval(() => {
       console.log('🔄 Auto-refreshing grid...')
       fetchGridUsers()
@@ -147,7 +153,7 @@ export default function GridViewProduction({
     }, 15000) // 15 seconds
 
     return () => clearInterval(interval)
-  }, [])
+  }, [locationErrorShown])
   
   // 5. Subscribe to real-time profile updates
   useEffect(() => {
@@ -193,7 +199,12 @@ export default function GridViewProduction({
         .single()
 
       if (!profile?.latitude || !profile?.longitude) {
-        toast.error("Please set your location in your profile to see nearby users.");
+        // Only show error once to prevent toast spam
+        if (!locationErrorShown) {
+          toast.error("Please set your location in your profile to see nearby users.");
+          setLocationErrorShown(true)
+        }
+        setGridLoading(false)
         return
       }
 
