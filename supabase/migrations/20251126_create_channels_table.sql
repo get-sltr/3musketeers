@@ -26,34 +26,34 @@ DROP POLICY IF EXISTS "channels_select_all" ON public.channels;
 CREATE POLICY "channels_select_all" ON public.channels
   FOR SELECT USING (true);
 
--- Authenticated users can create channels if they are the group host
-DROP POLICY IF EXISTS "channels_insert_host" ON public.channels;
-CREATE POLICY "channels_insert_host" ON public.channels
+-- Authenticated users can create channels if they are the group owner
+DROP POLICY IF EXISTS "channels_insert_owner" ON public.channels;
+CREATE POLICY "channels_insert_owner" ON public.channels
   FOR INSERT WITH CHECK (
     auth.uid() = created_by
     AND EXISTS (
       SELECT 1 FROM public.groups
-      WHERE id = group_id AND host_id = auth.uid()
+      WHERE id = group_id AND owner_id = auth.uid()
     )
   );
 
--- Group hosts can update channels
-DROP POLICY IF EXISTS "channels_update_host" ON public.channels;
-CREATE POLICY "channels_update_host" ON public.channels
+-- Group owners can update channels
+DROP POLICY IF EXISTS "channels_update_owner" ON public.channels;
+CREATE POLICY "channels_update_owner" ON public.channels
   FOR UPDATE USING (
     EXISTS (
       SELECT 1 FROM public.groups
-      WHERE id = group_id AND host_id = auth.uid()
+      WHERE id = group_id AND owner_id = auth.uid()
     )
   );
 
--- Group hosts can delete channels
-DROP POLICY IF EXISTS "channels_delete_host" ON public.channels;
-CREATE POLICY "channels_delete_host" ON public.channels
+-- Group owners can delete channels
+DROP POLICY IF EXISTS "channels_delete_owner" ON public.channels;
+CREATE POLICY "channels_delete_owner" ON public.channels
   FOR DELETE USING (
     EXISTS (
       SELECT 1 FROM public.groups
-      WHERE id = group_id AND host_id = auth.uid()
+      WHERE id = group_id AND owner_id = auth.uid()
     )
   );
 

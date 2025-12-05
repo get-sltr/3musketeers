@@ -89,9 +89,9 @@ export default function GroupsPage() {
       const { error } = await supabase
         .from('groups')
         .insert({
-          name: groupName.trim(),
+          name: groupTitle.trim(),
           description: groupDescription.trim() || null,
-          host_id: user.id,
+          owner_id: user.id,
         })
 
       if (error) {
