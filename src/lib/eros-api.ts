@@ -31,8 +31,8 @@ class ErosAPIClient {
     if (baseUrl) {
       this.baseUrl = baseUrl;
     } else {
-      // EROS backend base URL with /api/v1 prefix
-      const backendUrl = process.env.NODE_ENV === 'development'
+      // EROS backend base URL (endpoints use /api/v1 prefix)
+      this.baseUrl = process.env.NODE_ENV === 'development'
         ? (process.env.NEXT_PUBLIC_DEV_BACKEND_URL || 'http://localhost:3001')
         : (process.env.NEXT_PUBLIC_EROS_BACKEND_URL || 'https://eros-backend-production.up.railway.app');
       this.baseUrl = `${backendUrl}/api/v1`;
@@ -190,7 +190,7 @@ class ErosAPIClient {
    * Get activity stats (admin)
    */
   async getActivityStats(): Promise<any> {
-    return this.request('/activity/stats');
+    return this.request('/api/v1/activity/stats');
   }
 
   // ========== MATCHES ==========
@@ -237,7 +237,7 @@ class ErosAPIClient {
     success: boolean;
     data: any[];
   }> {
-    return this.request('/matches/recommendations', {
+    return this.request('/api/v1/matches/recommendations', {
       method: 'POST',
       body: criteria || {},
     });
@@ -285,7 +285,7 @@ class ErosAPIClient {
     answer: string;
     sources?: string[];
   }> {
-    return this.request('/assistant/ask', {
+    return this.request('/api/v1/assistant/ask', {
       method: 'POST',
       body: { question, topic },
     });
@@ -299,7 +299,7 @@ class ErosAPIClient {
     translated: string;
     language: string;
   }> {
-    return this.request('/assistant/translate', {
+    return this.request('/api/v1/assistant/translate', {
       method: 'POST',
       body: { text, targetLanguage },
     });
@@ -313,7 +313,7 @@ class ErosAPIClient {
     advice: string;
     actionItems?: string[];
   }> {
-    return this.request('/assistant/advice', {
+    return this.request('/api/v1/assistant/advice', {
       method: 'POST',
       body: { topic, context },
     });
@@ -328,7 +328,7 @@ class ErosAPIClient {
     success: boolean;
     profile: any;
   }> {
-    return this.request('/users/profile');
+    return this.request('/api/v1/users/profile');
   }
 
   /**
@@ -338,7 +338,7 @@ class ErosAPIClient {
     success: boolean;
     profile: any;
   }> {
-    return this.request('/users/profile', {
+    return this.request('/api/v1/users/profile', {
       method: 'PUT',
       body: updates,
     });
@@ -351,7 +351,7 @@ class ErosAPIClient {
     success: boolean;
     profile: any;
   }> {
-    return this.request(`/users/${userId}/profile`);
+    return this.request(`/api/v1/users/${userId}/profile`);
   }
 
   // ========== HEALTH ==========

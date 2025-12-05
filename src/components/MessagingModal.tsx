@@ -55,7 +55,7 @@ export default function MessagingModal({
   const [conversationId, setConversationId] = useState<string | null>(initialConversationId || null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [showVideoCall, setShowVideoCall] = useState(false)
-  const [messageLoadError, setMessageLoadError] = useState<string | null>(null)
+  const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
@@ -185,7 +185,6 @@ export default function MessagingModal({
   }, [conversationId])
 
   const loadMessages = async (convId: string) => {
-    setMessageLoadError(null)
     try {
       const { data: messagesData, error } = await supabase
         .from('messages')
@@ -193,11 +192,7 @@ export default function MessagingModal({
         .eq('conversation_id', convId)
         .order('created_at', { ascending: true })
 
-      if (error) {
-        console.error('Error loading messages:', error)
-        setMessageLoadError('Failed to load messages. Tap to retry.')
-        return
-      }
+      if (error) return
 
       const transformedMessages: Message[] = messagesData?.map((msg: any) => ({
         id: msg.id,
@@ -212,7 +207,6 @@ export default function MessagingModal({
       scrollToBottom()
     } catch (err) {
       console.error('Error loading messages:', err)
-      setMessageLoadError('Failed to load messages. Tap to retry.')
     }
   }
 
@@ -386,16 +380,17 @@ export default function MessagingModal({
                 )
               })}
 
-              {/* Error Message */}
-              {messageLoadError && (
-                <button
-                  onClick={() => conversationId && loadMessages(conversationId)}
-                  className="flex justify-center py-4"
-                >
-                  <div className="bg-red-500/20 text-red-400 px-4 py-2 rounded-lg text-sm">
-                    {messageLoadError}
+              {/* Typing Indicator */}
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="bg-zinc-800 px-4 py-3 rounded-2xl rounded-bl-md">
+                    <div className="flex gap-1">
+                      <span className="w-2 h-2 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-2 h-2 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-2 h-2 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
                   </div>
-                </button>
+                </div>
               )}
 
               <div ref={messagesEndRef} />
