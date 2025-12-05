@@ -81,16 +81,39 @@ ALTER TABLE public.channel_messages ENABLE ROW LEVEL SECURITY;
 
 -- Channel messages RLS policies
 DROP POLICY IF EXISTS "channel_messages_select_all" ON public.channel_messages;
-CREATE POLICY "channel_messages_select_all" ON public.channel_messages
-  FOR SELECT USING (true);
+CREATE POLICY "channel_messages_select_group_member" ON public.channel_messages
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1
+      FROM public.channels c
+      JOIN public.group_members gm ON c.group_id = gm.group_id
+      WHERE c.id = channel_id AND gm.user_id = auth.uid()
+    )
+  );
 
 DROP POLICY IF EXISTS "channel_messages_insert_auth" ON public.channel_messages;
-CREATE POLICY "channel_messages_insert_auth" ON public.channel_messages
-  FOR INSERT WITH CHECK (auth.uid() = sender_id);
+CREATE POLICY "channel_messages_insert_group_member" ON public.channel_messages
+  FOR INSERT WITH CHECK (
+    auth.uid() = sender_id
+    AND EXISTS (
+      SELECT 1
+      FROM public.channels c
+      JOIN public.group_members gm ON c.group_id = gm.group_id
+      WHERE c.id = channel_id AND gm.user_id = auth.uid()
+    )
+  );
 
 DROP POLICY IF EXISTS "channel_messages_delete_sender" ON public.channel_messages;
-CREATE POLICY "channel_messages_delete_sender" ON public.channel_messages
-  FOR DELETE USING (auth.uid() = sender_id);
+CREATE POLICY "channel_messages_delete_group_member" ON public.channel_messages
+  FOR DELETE USING (
+    auth.uid() = sender_id
+    AND EXISTS (
+      SELECT 1
+      FROM public.channels c
+      JOIN public.group_members gm ON c.group_id = gm.group_id
+      WHERE c.id = channel_id AND gm.user_id = auth.uid()
+    )
+  );
 
 -- Function to update channels updated_at
 CREATE OR REPLACE FUNCTION public.update_channels_updated_at()
