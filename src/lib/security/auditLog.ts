@@ -148,9 +148,10 @@ export function getClientIP(request: Request): string {
 
   for (const header of headers) {
     const value = request.headers.get(header)
-    if (value) {
+    if (value && typeof value === 'string') {
       // x-forwarded-for can be a comma-separated list
-      return value.split(',')[0].trim()
+      const ip = value.split(',')[0]
+      return ip ? ip.trim() : 'unknown'
     }
   }
 
