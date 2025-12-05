@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { AccessToken } from 'livekit-server-sdk'
 import { createClient } from '@/lib/supabase/server'
+import { withCSRFProtection } from '@/lib/csrf-server'
 
 /**
  * Generate LiveKit access token for video/audio calls
  * This endpoint creates a token that allows users to join LiveKit rooms
  */
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
   try {
     const { roomName, participantName } = await request.json()
 
@@ -81,3 +82,4 @@ export async function POST(request: NextRequest) {
   }
 }
 
+export const POST = withCSRFProtection(handler)

@@ -1,29 +1,40 @@
 'use client'
 
-import { useState, useEffect, Suspense, use } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { csrfFetch } from '@/lib/csrf-client'
 import { Room } from 'livekit-client'
 import ConferenceRoom from '@/components/ConferenceRoom'
 import LoadingSkeleton from '@/components/LoadingSkeleton'
+import { useLiveKitStore } from '@/stores/useLiveKitStore'
 
 function ChannelRoomContent({ channelId }: { channelId: string }) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const channelType = searchParams?.get('type') || 'text'
   const groupId = searchParams?.get('group') || ''
-  
+
   const [room, setRoom] = useState<Room | null>(null)
   const [connecting, setConnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
+
+  // Use ref to track room for cleanup (avoids stale closure bug)
+  const roomRef = useRef<Room | null>(null)
+
+  // Get resetRoom from store to clear participants on disconnect
+  const resetRoom = useLiveKitStore((state) => state.resetRoom)
 
   useEffect(() => {
+    // All channels are now video rooms (includes text & voice)
+    const supabase = createClient()
+    let isMounted = true
+
     const connectToRoom = async () => {
-      if (channelType !== 'video' && channelType !== 'voice') {
-        // For text channels, redirect to chat interface
-        router.push(`/groups/${groupId}?channel=${channelId}`)
-        return
+      // Disconnect existing room if any (prevents duplicates on rejoin)
+      if (roomRef.current) {
+        roomRef.current.disconnect()
+        roomRef.current = null
+        resetRoom()
       }
 
       setConnecting(true)
@@ -46,7 +57,7 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
         const participantName = profile?.display_name || user.id
 
         // Get LiveKit token from Next.js API route
-        const response = await fetch('/api/livekit-token', {
+        const response = await csrfFetch('/api/livekit-token', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -57,14 +68,12 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
 
         if (!response.ok) {
           const errorData = await response.json()
-          // Handle service unavailable (LiveKit not configured)
-          if (response.status === 503) {
-            throw new Error('Video calls are temporarily unavailable. Please try again later.')
-          }
           throw new Error(errorData.error || 'Failed to get LiveKit token')
         }
 
         const { token, url } = await response.json()
+
+        if (!isMounted) return
 
         // Connect to LiveKit room
         const newRoom = new Room()
@@ -73,51 +82,70 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
           autoSubscribe: true,
         })
 
+        if (!isMounted) {
+          newRoom.disconnect()
+          return
+        }
+
+        // Store in ref for cleanup
+        roomRef.current = newRoom
+
         // Set participant metadata after connection
         await newRoom.localParticipant.setMetadata(JSON.stringify({
           userId: user.id,
           name: participantName,
           avatar: profile?.photo_url,
-          role: 'member', // Default role, can be 'host' if user created the group
+          role: 'member',
         }))
 
-        // Enable camera and microphone
-        if (channelType === 'video') {
-          await newRoom.localParticipant.setCameraEnabled(true)
-        }
+        // Enable camera and microphone (all rooms are video now)
+        await newRoom.localParticipant.setCameraEnabled(true)
         await newRoom.localParticipant.setMicrophoneEnabled(true)
 
         setRoom(newRoom)
 
         // Handle disconnection
         newRoom.on('disconnected', () => {
-          setRoom(null)
-          router.back()
+          if (isMounted) {
+            roomRef.current = null
+            setRoom(null)
+            resetRoom()
+            router.back()
+          }
         })
 
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to connect to room:', err)
-        setError(err.message || 'Failed to connect to video room')
+        if (isMounted) {
+          const message = err instanceof Error ? err.message : 'Failed to connect to video room'
+          setError(message)
+        }
       } finally {
-        setConnecting(false)
+        if (isMounted) {
+          setConnecting(false)
+        }
       }
     }
 
     connectToRoom()
 
+    // Cleanup function - uses ref to avoid stale closure
     return () => {
-      if (room) {
-        room.disconnect()
+      isMounted = false
+      if (roomRef.current) {
+        roomRef.current.disconnect()
+        roomRef.current = null
       }
+      resetRoom()
     }
-  }, [channelId, channelType, groupId, router, supabase])
+  }, [channelId, groupId, router, resetRoom])
 
   if (connecting) {
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-lime-400 mx-auto mb-4"></div>
-          <p className="text-white">Connecting to {channelType === 'video' ? 'video' : 'voice'} room...</p>
+          <p className="text-white">Connecting to video room...</p>
         </div>
       </div>
     )
@@ -147,16 +175,14 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
   return <ConferenceRoom room={room} />
 }
 
-export default function ChannelRoomPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
+export default function ChannelRoomPage({ params }: { params: { id: string } }) {
   return (
     <Suspense fallback={
       <div className="fixed inset-0 bg-black flex items-center justify-center">
         <LoadingSkeleton variant="fullscreen" />
       </div>
     }>
-      <ChannelRoomContent channelId={id} />
+      <ChannelRoomContent channelId={params.id} />
     </Suspense>
   )
 }
-

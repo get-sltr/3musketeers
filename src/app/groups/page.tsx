@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '../../lib/supabase/client'
+import { csrfFetch } from '@/lib/csrf-client'
 import BottomNav from '../../components/BottomNav'
 import MobileLayout from '../../components/MobileLayout'
 import { useHasFeature } from '@/hooks/usePrivileges'
@@ -49,7 +50,7 @@ export default function GroupsPage() {
 
   const setupTheClub = async () => {
     try {
-      const response = await fetch('/api/groups/setup-club', {
+      const response = await csrfFetch('/api/groups/setup-club', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       })

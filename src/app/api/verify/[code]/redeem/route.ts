@@ -1,12 +1,13 @@
 import { createClient } from '@/lib/supabase/server';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { withCSRFProtection } from '@/lib/csrf-server';
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ code: string }> }
+async function handler(
+  request: NextRequest,
+  { params }: { params: { code: string } }
 ) {
   const supabase = await createClient();
-  const { code } = await params;
+  const { code } = params;
 
   try {
     // Get current user
@@ -112,19 +113,24 @@ export async function POST(
   } catch (error) {
     console.error('Redemption error:', error);
 
-    // Log failed attempt
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    // Log failed attempt - need fresh supabase client for error logging
+    try {
+      const logSupabase = await createClient();
+      const {
+        data: { user },
+      } = await logSupabase.auth.getUser();
 
-    if (user) {
-      await supabase.from('verification_logs').insert({
-        verification_code: code,
-        user_id: user.id,
-        attempt_type: 'redeem',
-        success: false,
-        error_message: 'Server error',
-      });
+      if (user) {
+        await logSupabase.from('verification_logs').insert({
+          verification_code: code,
+          user_id: user.id,
+          attempt_type: 'redeem',
+          success: false,
+          error_message: 'Server error',
+        });
+      }
+    } catch {
+      // Ignore logging errors
     }
 
     return NextResponse.json(
@@ -132,4 +138,16 @@ export async function POST(
       { status: 500 }
     );
   }
+}
+
+// Note: withCSRFProtection doesn't support route params directly
+// We need to create a wrapper that handles the params
+export async function POST(
+  request: NextRequest,
+  context: { params: { code: string } }
+) {
+  const wrappedHandler = withCSRFProtection(
+    (req: NextRequest) => handler(req, context)
+  );
+  return wrappedHandler(request);
 }

@@ -1,24 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { withCSRFProtection } from '@/lib/csrf-server'
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY
-const stripe = stripeSecretKey
-  ? new Stripe(stripeSecretKey, {
-      apiVersion: '2025-10-29.clover'
-})
-  : null
+// ============================================
+// LAZY INITIALIZATION - DO NOT CREATE CLIENTS AT MODULE LOAD TIME
+// Clients are created only when first used at RUNTIME
+// ============================================
 
-// Lazy initialization to avoid build-time errors when env vars aren't available
-function getSupabaseClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+let _stripe: Stripe | null = null
+let _supabase: SupabaseClient | null = null
 
-  if (!url || !key) {
-    throw new Error('Supabase environment variables are not configured')
+function getStripe(): Stripe | null {
+  if (!_stripe) {
+    const key = process.env.STRIPE_SECRET_KEY
+    if (key) {
+      _stripe = new Stripe(key, { apiVersion: '2025-10-29.clover' })
+    }
   }
+  return _stripe
+}
 
-  return createClient(url, key)
+function getSupabase(): SupabaseClient {
+  if (!_supabase) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!url || !key) {
+      throw new Error('Supabase credentials not configured')
+    }
+
+    _supabase = createClient(url, key)
+  }
+  return _supabase
 }
 
 // Price IDs - these should be created in Stripe Dashboard
@@ -73,8 +87,7 @@ export async function GET(request: NextRequest) {
 
     // Get founder count
     if (action === 'founder-count') {
-      const supabase = getSupabaseClient()
-      const { count } = await supabase
+      const { count } = await getSupabase()
         .from('profiles')
         .select('id', { count: 'exact', head: true })
         .eq('founder', true)
@@ -91,8 +104,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
   } catch (error: unknown) {
+    console.error('Stripe API Error:', error)
     const message = error instanceof Error ? error.message : 'Request failed'
-    console.error('Stripe API Error:', message)
     return NextResponse.json(
       { error: message },
       { status: 500 }
@@ -100,7 +113,9 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+// TODO: Security review - userId and email should come from authenticated session, not request body
+// An attacker who knows a user's ID could potentially manipulate their Stripe data
+async function postHandler(request: NextRequest) {
   try {
     const { priceType, userId, email } = await request.json()
 
@@ -111,10 +126,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = getSupabaseClient()
+    // Validate price type
+    if (!['founder', 'member'].includes(priceType)) {
+      return NextResponse.json(
+        { error: 'Invalid price type' },
+        { status: 400 }
+      )
+    }
 
     // Check if user has a profile (optional)
-    const { data: user } = await supabase
+    const { data: user } = await getSupabase()
       .from('profiles')
       .select('id, founder, subscription_status')
       .eq('id', userId)
@@ -130,7 +151,7 @@ export async function POST(request: NextRequest) {
 
     // Check founder availability
     if (priceType === 'founder') {
-      const { count } = await supabase
+      const { count } = await getSupabase()
         .from('profiles')
         .select('id', { count: 'exact', head: true })
         .eq('founder', true)
@@ -144,10 +165,8 @@ export async function POST(request: NextRequest) {
     }
 
     const priceId = PRICE_IDS[priceType as keyof typeof PRICE_IDS]
-    
-    // Validate price ID format (must be properly configured)
-    if (!isValidPriceId(priceId)) {
-      console.error(`Invalid price ID for ${priceType}: ${priceId}`)
+
+    if (!priceId || !priceId.startsWith('price_')) {
       return NextResponse.json(
         { 
           error: 'Payment processing is temporarily unavailable. Price configuration error.',
@@ -157,6 +176,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const stripe = getStripe()
     if (!stripe) {
       console.error('Stripe secret key is not configured')
       return NextResponse.json(
@@ -194,11 +214,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ url: session.url })
   } catch (error: unknown) {
+    console.error('Stripe Checkout Error:', error)
     const message = error instanceof Error ? error.message : 'Checkout failed'
-    console.error('Stripe Checkout Error:', message)
     return NextResponse.json(
       { error: message },
       { status: 500 }
     )
   }
 }
+
+export const POST = withCSRFProtection(postHandler)

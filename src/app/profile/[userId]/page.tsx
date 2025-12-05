@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { csrfFetch } from '@/lib/csrf-client'
 import { DEFAULT_PROFILE_IMAGE } from '@/lib/utils/profile'
 import Link from 'next/link'
 
@@ -67,7 +68,7 @@ export default function UserProfilePage() {
 
   const handleTap = async () => {
     try {
-      const response = await fetch('/api/taps', {
+      const response = await csrfFetch('/api/taps', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to_user_id: userId })

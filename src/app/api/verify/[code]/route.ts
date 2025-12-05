@@ -3,10 +3,10 @@ import { NextResponse } from 'next/server';
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ code: string }> }
+  { params }: { params: { code: string } }
 ) {
   const supabase = await createClient();
-  const { code } = await params;
+  const { code } = params;
 
   try {
     // Check if code exists and get card details

@@ -1031,8 +1031,6 @@ export default function AppPage() {
             <CornerButtons
               onToggleMenu={() => window.dispatchEvent(new Event('toggle_map_session_menu'))}
               onCenter={handleCenterLocation}
-              onMessages={() => router.push('/messages')}
-              onGroups={() => router.push('/groups')}
               rightOffset={isLargeDesktop && showAdvertisingPanel ? 384 + 32 : 16}
             />
 

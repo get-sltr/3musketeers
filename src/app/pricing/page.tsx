@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
+import { csrfFetch } from '@/lib/csrf-client'
 import { useUser } from '@/hooks/useUser'
 
 interface CheckoutButtonProps {
@@ -31,7 +32,7 @@ function CheckoutButton({ priceType, className, disabled, children }: CheckoutBu
     try {
       const { data: { session } } = await supabase.auth.getSession()
       
-      const response = await fetch('/api/stripe', {
+      const response = await csrfFetch('/api/stripe', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
