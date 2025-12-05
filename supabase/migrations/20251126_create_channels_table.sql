@@ -23,8 +23,14 @@ ALTER TABLE public.channels ENABLE ROW LEVEL SECURITY;
 -- Channels RLS Policies
 -- Anyone can view channels in groups they can see
 DROP POLICY IF EXISTS "channels_select_all" ON public.channels;
-CREATE POLICY "channels_select_all" ON public.channels
-  FOR SELECT USING (true);
+CREATE POLICY "channels_select_view_own_groups" ON public.channels
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.group_members
+      WHERE group_members.group_id = channels.group_id
+      AND group_members.user_id = auth.uid()
+    )
+  );
 
 -- Authenticated users can create channels if they are the group host
 DROP POLICY IF EXISTS "channels_insert_host" ON public.channels;
