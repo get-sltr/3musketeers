@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
-import { withCSRFProtection } from '@/lib/csrf-server'
+import { getStripe } from '@/lib/stripe'
 
-function getStripe() {
-  return new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2025-10-29.clover',
-  })
-}
-
-async function handler(request: NextRequest) {
+export async function POST(req: NextRequest) {
   const stripe = getStripe()
   try {
-    const { tier } = await request.json()
+    const { tier } = await req.json()
     const supabase = await createClient()
 
     // Get authenticated user
@@ -80,5 +73,3 @@ async function handler(request: NextRequest) {
     )
   }
 }
-
-export const POST = withCSRFProtection(handler)

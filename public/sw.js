@@ -44,8 +44,7 @@ self.addEventListener('activate', (event) => {
 
 // Handle push notifications
 self.addEventListener('push', (event) => {
-  // Only log non-sensitive metadata
-  console.log('🔔 Push notification received');
+  console.log('🔔 Push notification received:', event);
 
   let data = {};
   try {
@@ -89,8 +88,7 @@ self.addEventListener('push', (event) => {
 
 // Handle notification click
 self.addEventListener('notificationclick', (event) => {
-  // Only log action type, not sensitive notification data
-  console.log('🔔 Notification clicked:', event.action || 'default');
+  console.log('Notification clicked:', event);
 
   event.notification.close();
 
@@ -98,45 +96,38 @@ self.addEventListener('notificationclick', (event) => {
     return;
   }
 
-  const notificationData = event.notification.data || {};
-  let path = notificationData.url || '/messages';
-
-  if (notificationData.conversationId) {
-    // Ensure conversationId doesn't contain path traversal characters
-    const safeId = String(notificationData.conversationId).replace(/[^a-zA-Z0-9_-]/g, '');
-    path = `/messages/${safeId}`;
+  // Normalize URL to app origin to prevent cross-origin navigation attacks
+  const data = event.notification.data || {};
+  let path = data.url || '/messages';
+  if (data.conversationId) {
+    path = `/messages/${data.conversationId}`;
   }
 
-  // Normalize to same-origin absolute URL (prevents open redirect)
-  let urlToOpen;
+  let targetUrl = new URL('/messages', self.location.origin).toString();
   try {
-    const url = new URL(path, self.location.origin);
-    if (url.origin !== self.location.origin) {
-      throw new Error('Cross-origin redirect blocked');
-    }
-    urlToOpen = url.toString();
+    targetUrl = new URL(path, self.location.origin).toString();
   } catch {
-    urlToOpen = new URL('/messages', self.location.origin).toString();
+    // fallback already set
   }
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then((clientList) => {
-        // Try to focus a client already at the target URL
+        // Focus a client already at the target URL
         for (const client of clientList) {
-          if (client.url && urlToOpen && client.url.startsWith(urlToOpen) && 'focus' in client) {
+          if (client.url && client.url.startsWith(targetUrl) && 'focus' in client) {
             return client.focus();
           }
         }
         // Focus any same-origin client and instruct it to navigate
         for (const client of clientList) {
           if (client.url && client.url.startsWith(self.location.origin) && 'focus' in client) {
-            client.postMessage({ type: 'NOTIFICATION_CLICK', url: urlToOpen });
+            client.postMessage({ type: 'NOTIFICATION_CLICK', url: targetUrl });
             return client.focus();
           }
         }
-        // Open a new window
-        return clients.openWindow(urlToOpen);
+        // Open a new window at the constrained URL
+        return clients.openWindow(targetUrl);
       })
   );
 });
@@ -181,13 +172,7 @@ self.addEventListener('fetch', (event) => {
         return caches.match(event.request)
           .then(cachedResponse => {
             if (cachedResponse) {
-              // Only log pathname, not full URL with potential query params
-              try {
-                const url = new URL(event.request.url);
-                console.log('📦 Serving from cache:', url.pathname);
-              } catch {
-                console.log('📦 Serving from cache');
-              }
+              console.log('📦 Serving from cache:', event.request.url);
               return cachedResponse;
             }
             

@@ -1,25 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Stripe from 'stripe'
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
-import { withCSRFProtection } from '@/lib/csrf-server'
+import { getStripeOptional } from '@/lib/stripe/client'
 
 // ============================================
 // LAZY INITIALIZATION - DO NOT CREATE CLIENTS AT MODULE LOAD TIME
 // Clients are created only when first used at RUNTIME
 // ============================================
 
-let _stripe: Stripe | null = null
 let _supabase: SupabaseClient | null = null
-
-function getStripe(): Stripe | null {
-  if (!_stripe) {
-    const key = process.env.STRIPE_SECRET_KEY
-    if (key) {
-      _stripe = new Stripe(key, { apiVersion: '2025-10-29.clover' })
-    }
-  }
-  return _stripe
-}
 
 function getSupabase(): SupabaseClient {
   if (!_supabase) {
@@ -36,49 +24,15 @@ function getSupabase(): SupabaseClient {
 }
 
 // Price IDs - these should be created in Stripe Dashboard
-const PRICE_IDS = {
-  founder: process.env.STRIPE_FOUNDER_PRICE_ID || 'price_founder', // One-time $199
-  member: process.env.STRIPE_MEMBER_PRICE_ID || 'price_member', // Monthly $12.99
+// Stripe price IDs are in format: price_1XXXXXXXXXXXXXXXXXXXXXX (28+ chars)
+function getPriceIds() {
+  return {
+    founder: process.env.STRIPE_FOUNDER_PRICE_ID || '',
+    member: process.env.STRIPE_MEMBER_PRICE_ID || process.env.STRIPE_PRICE_MEMBER || '',
+  }
 }
 
 const FOUNDER_LIMIT = 2000
-
-// Allowed origins for success/cancel URLs to prevent open redirect
-const ALLOWED_ORIGINS = [
-  'https://getsltr.com',
-  'https://www.getsltr.com',
-  'https://sltr.vercel.app',
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'http://127.0.0.1:3000',
-  'http://127.0.0.1:3001'
-]
-// Minimum length of the random portion after 'price_' prefix
-// Stripe price IDs typically have 14-24 characters after the prefix
-const STRIPE_PRICE_ID_MIN_LENGTH = 8
-
-/**
- * Validate that a price ID is properly configured
- * Must start with 'price_' and be a valid Stripe price ID format
- */
-function isValidPriceId(priceId: string | undefined): boolean {
-  if (!priceId) return false
-  // Stripe price IDs start with 'price_' followed by alphanumeric characters
-  const pattern = new RegExp(`^price_[a-zA-Z0-9]{${STRIPE_PRICE_ID_MIN_LENGTH},}$`)
-  return pattern.test(priceId)
-}
-
-/**
- * Get a safe origin for redirect URLs
- * Returns an allowed origin or falls back to production
- */
-function getSafeOrigin(requestOrigin: string | null): string {
-  if (requestOrigin && ALLOWED_ORIGINS.includes(requestOrigin)) {
-    return requestOrigin
-  }
-  // Default to production URL
-  return 'https://getsltr.com'
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -103,33 +57,22 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Stripe API Error:', error)
-    const message = error instanceof Error ? error.message : 'Request failed'
     return NextResponse.json(
-      { error: message },
+      { error: error.message || 'Request failed' },
       { status: 500 }
     )
   }
 }
 
-// TODO: Security review - userId and email should come from authenticated session, not request body
-// An attacker who knows a user's ID could potentially manipulate their Stripe data
-async function postHandler(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const { priceType, userId, email } = await request.json()
 
     if (!priceType || !userId || !email) {
       return NextResponse.json(
         { error: 'Missing required fields' },
-        { status: 400 }
-      )
-    }
-
-    // Validate price type
-    if (!['founder', 'member'].includes(priceType)) {
-      return NextResponse.json(
-        { error: 'Invalid price type' },
         { status: 400 }
       )
     }
@@ -164,33 +107,35 @@ async function postHandler(request: NextRequest) {
       }
     }
 
+    const PRICE_IDS = getPriceIds()
     const priceId = PRICE_IDS[priceType as keyof typeof PRICE_IDS]
 
-    if (!priceId || !priceId.startsWith('price_')) {
+    // Stripe price IDs should be at least 20 characters (e.g., price_1XXXXXXXXX...)
+    if (!priceId || priceId.length < 20) {
+      console.error(`Price ID not configured for ${priceType}. Available: founder=${PRICE_IDS.founder?.slice(0,10)}..., member=${PRICE_IDS.member?.slice(0,10)}...`)
       return NextResponse.json(
-        { 
-          error: 'Payment processing is temporarily unavailable. Price configuration error.',
-          code: 'PRICE_NOT_CONFIGURED'
-        },
+        { error: 'Payment system is being configured. Please try again shortly or contact support.' },
         { status: 503 }
       )
     }
 
-    const stripe = getStripe()
+    const stripe = getStripeOptional()
     if (!stripe) {
       console.error('Stripe secret key is not configured')
       return NextResponse.json(
-        { 
-          error: 'Payment processing is currently unavailable. Please try again later.',
-          code: 'STRIPE_NOT_CONFIGURED'
-        },
+        { error: 'Payment processing is currently unavailable. Please try again later.' },
         { status: 503 }
       )
     }
 
-    // Get safe origin for redirect URLs (prevent open redirect)
-    const requestOrigin = request.headers.get('origin')
-    const safeOrigin = getSafeOrigin(requestOrigin)
+    // Validate origin against allowlist to prevent open-redirect vulnerabilities
+    const rawOrigin = request.headers.get('origin') || ''
+    const allowedOrigins = new Set([
+      'https://getsltr.com',
+      'https://www.getsltr.com',
+      process.env.NEXT_PUBLIC_APP_URL || ''
+    ])
+    const safeOrigin = allowedOrigins.has(rawOrigin) ? rawOrigin : 'https://getsltr.com'
 
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
@@ -213,14 +158,11 @@ async function postHandler(request: NextRequest) {
     })
 
     return NextResponse.json({ url: session.url })
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Stripe Checkout Error:', error)
-    const message = error instanceof Error ? error.message : 'Checkout failed'
     return NextResponse.json(
-      { error: message },
+      { error: error.message || 'Checkout failed' },
       { status: 500 }
     )
   }
 }
-
-export const POST = withCSRFProtection(postHandler)

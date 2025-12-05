@@ -760,8 +760,9 @@ app.get('/api/v1/eros/diagnostic', (req, res) => {
   if (hasApiKey && apiKeyLength < 40) {
     issues.push(`API key appears too short (${apiKeyLength} chars, should be 50+ characters)`);
   }
-  if (hasApiKey && !apiKeyPrefix.startsWith('sk-ant-')) {
-    issues.push(`API key format may be incorrect (starts with "${apiKeyPrefix}", should start with "sk-ant-")`);
+  // Anthropic API keys can be 'sk-ant-...' or just 'sk-...'
+  if (hasApiKey && !apiKeyPrefix.startsWith('sk-')) {
+    issues.push(`API key format may be incorrect (starts with "${apiKeyPrefix}", should start with "sk-")`);
   }
   if (hasApiKey && !anthropicInitialized) {
     issues.push('API key set but Anthropic client not initialized - check server startup logs');
@@ -777,9 +778,9 @@ app.get('/api/v1/eros/diagnostic', (req, res) => {
   } else if (apiKeyLength < 40) {
     rootCause = 'invalid_api_key_length';
     recommendation = 'API key appears invalid - verify key in Anthropic console (https://console.anthropic.com/)';
-  } else if (!apiKeyPrefix.startsWith('sk-ant-')) {
+  } else if (!apiKeyPrefix.startsWith('sk-')) {
     rootCause = 'invalid_api_key_format';
-    recommendation = 'API key format incorrect - should start with "sk-ant-api03-". Get new key from Anthropic console';
+    recommendation = 'API key format incorrect - should start with "sk-". Get new key from Anthropic console';
   } else if (!anthropicInitialized) {
     rootCause = 'initialization_failed';
     recommendation = 'API key present but Anthropic client failed to initialize - check server startup logs';
@@ -794,11 +795,11 @@ app.get('/api/v1/eros/diagnostic', (req, res) => {
     api_key_present: hasApiKey,
     api_key_length: apiKeyLength,
     api_key_prefix: apiKeyPrefix,
-    expected_key_format: 'sk-ant-api03-... (50+ characters)',
+    expected_key_format: 'sk-... (40+ characters)',
     root_cause: rootCause,
     issues: issues.length > 0 ? issues : ['No obvious configuration issues - check API key validity and Anthropic account status'],
     recommendation: recommendation,
-    is_subscription_issue: rootCause === 'api_authentication_failure' && hasApiKey && apiKeyLength >= 40 && apiKeyPrefix.startsWith('sk-ant-')
+    is_subscription_issue: rootCause === 'api_authentication_failure' && hasApiKey && apiKeyLength >= 40 && apiKeyPrefix.startsWith('sk-')
   });
 });
 
@@ -923,7 +924,7 @@ app.get('/api/push/vapid-public-key', (req, res) => {
 app.post('/api/push/subscribe', async (req, res) => {
   try {
     const { userId, subscription } = req.body;
-    
+
     if (!userId || !subscription) {
       return res.status(400).json({ error: 'Missing userId or subscription' });
     }
@@ -948,6 +949,215 @@ app.post('/api/push/subscribe', async (req, res) => {
   } catch (error) {
     console.error('Subscribe error:', error);
     res.status(500).json({ error: 'Subscription failed' });
+  }
+});
+
+// Generic push notification endpoint (for taps, matches, etc.)
+app.post('/api/push/send', authenticateUser, async (req, res) => {
+  try {
+    const { title, body, tag, url, data } = req.body;
+    const userId = req.user.id; // Use authenticated user's ID
+
+    if (!title || !body) {
+      return res.status(400).json({ error: 'Missing required fields: title, body' });
+    }
+
+    if (!process.env.VAPID_PUBLIC_KEY) {
+      return res.status(503).json({ error: 'Push notifications not configured' });
+    }
+
+    // Get user's push subscriptions
+    const { data: subscriptions, error } = await supabase
+      .from('push_subscriptions')
+      .select('*')
+      .eq('user_id', userId);
+
+    if (error || !subscriptions || subscriptions.length === 0) {
+      return res.json({ success: true, sent: 0, message: 'No subscriptions found' });
+    }
+
+    const payload = JSON.stringify({
+      title,
+      body,
+      icon: '/icon-192.png',
+      badge: '/badge-72.png',
+      tag: tag || 'notification',
+      data: {
+        url: url || '/',
+        ...data
+      }
+    });
+
+    let sent = 0;
+    const sendPromises = subscriptions.map(sub => {
+      const pushSubscription = {
+        endpoint: sub.endpoint,
+        keys: { p256dh: sub.p256dh, auth: sub.auth }
+      };
+
+      return webpush.sendNotification(pushSubscription, payload)
+        .then(() => { sent++; })
+        .catch(err => {
+          // Remove invalid subscriptions
+          if (err.statusCode === 410 || err.statusCode === 404) {
+            supabase.from('push_subscriptions').delete().eq('id', sub.id);
+          }
+          console.error('Push send error:', err.statusCode, err.message);
+        });
+    });
+
+    await Promise.all(sendPromises);
+
+    res.json({ success: true, sent });
+  } catch (error) {
+    console.error('Push send error:', error);
+    res.status(500).json({ error: 'Failed to send notification' });
+  }
+});
+
+// Internal API key authentication middleware (for server-to-server calls)
+const authenticateInternalKey = (req, res, next) => {
+  const internalKey = req.headers['x-internal-key'];
+  const expectedKey = process.env.INTERNAL_API_KEY;
+
+  if (!expectedKey) {
+    console.error('INTERNAL_API_KEY not configured');
+    return res.status(503).json({ error: 'Internal API not configured' });
+  }
+
+  if (!internalKey || internalKey !== expectedKey) {
+    return res.status(401).json({ error: 'Invalid internal API key' });
+  }
+
+  next();
+};
+
+// Internal endpoint for sending tap notifications (server-to-server only)
+app.post('/api/internal/push/tap', authenticateInternalKey, async (req, res) => {
+  try {
+    const { targetUserId, tapperName, isMutual } = req.body;
+
+    if (!targetUserId || !tapperName) {
+      return res.status(400).json({ error: 'Missing required fields: targetUserId, tapperName' });
+    }
+
+    if (!process.env.VAPID_PUBLIC_KEY) {
+      return res.status(503).json({ error: 'Push notifications not configured' });
+    }
+
+    // Get user's push subscriptions
+    const { data: subscriptions, error } = await supabase
+      .from('push_subscriptions')
+      .select('*')
+      .eq('user_id', targetUserId);
+
+    if (error || !subscriptions || subscriptions.length === 0) {
+      return res.json({ success: true, sent: 0, message: 'No subscriptions found' });
+    }
+
+    const title = isMutual ? 'It\'s a Match! 🎉' : 'Someone tapped you! 👋';
+    const body = isMutual
+      ? `You and ${tapperName} both tapped each other!`
+      : `${tapperName} is interested in you`;
+
+    const payload = JSON.stringify({
+      title,
+      body,
+      icon: '/icon-192.png',
+      badge: '/badge-72.png',
+      tag: isMutual ? 'mutual-tap' : 'new-tap',
+      data: {
+        url: isMutual ? '/matches' : '/taps',
+        type: isMutual ? 'mutual_match' : 'new_tap'
+      }
+    });
+
+    let sent = 0;
+    const sendPromises = subscriptions.map(sub => {
+      const pushSubscription = {
+        endpoint: sub.endpoint,
+        keys: { p256dh: sub.p256dh, auth: sub.auth }
+      };
+
+      return webpush.sendNotification(pushSubscription, payload)
+        .then(() => { sent++; })
+        .catch(err => {
+          if (err.statusCode === 410 || err.statusCode === 404) {
+            supabase.from('push_subscriptions').delete().eq('id', sub.id);
+          }
+          console.error('Push send error:', err.statusCode, err.message);
+        });
+    });
+
+    await Promise.all(sendPromises);
+    res.json({ success: true, sent });
+  } catch (error) {
+    console.error('Internal push tap error:', error);
+    res.status(500).json({ error: 'Failed to send notification' });
+  }
+});
+
+// Internal endpoint for sending message notifications (server-to-server only)
+app.post('/api/internal/push/message', authenticateInternalKey, async (req, res) => {
+  try {
+    const { receiverId, senderName, messagePreview, conversationId } = req.body;
+
+    if (!receiverId || !senderName || !messagePreview || !conversationId) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    if (!process.env.VAPID_PUBLIC_KEY) {
+      return res.status(503).json({ error: 'Push notifications not configured' });
+    }
+
+    const { data: subscriptions, error } = await supabase
+      .from('push_subscriptions')
+      .select('*')
+      .eq('user_id', receiverId);
+
+    if (error || !subscriptions || subscriptions.length === 0) {
+      return res.json({ success: true, sent: 0, message: 'No subscriptions found' });
+    }
+
+    const truncatedPreview = messagePreview.length > 100
+      ? messagePreview.substring(0, 100) + '...'
+      : messagePreview;
+
+    const payload = JSON.stringify({
+      title: `New message from ${senderName}`,
+      body: truncatedPreview,
+      icon: '/icon-192.png',
+      badge: '/badge-72.png',
+      tag: `message-${conversationId}`,
+      data: {
+        url: `/messages/${conversationId}`,
+        type: 'new_message',
+        conversationId
+      }
+    });
+
+    let sent = 0;
+    const sendPromises = subscriptions.map(sub => {
+      const pushSubscription = {
+        endpoint: sub.endpoint,
+        keys: { p256dh: sub.p256dh, auth: sub.auth }
+      };
+
+      return webpush.sendNotification(pushSubscription, payload)
+        .then(() => { sent++; })
+        .catch(err => {
+          if (err.statusCode === 410 || err.statusCode === 404) {
+            supabase.from('push_subscriptions').delete().eq('id', sub.id);
+          }
+          console.error('Push send error:', err.statusCode, err.message);
+        });
+    });
+
+    await Promise.all(sendPromises);
+    res.json({ success: true, sent });
+  } catch (error) {
+    console.error('Internal push message error:', error);
+    res.status(500).json({ error: 'Failed to send notification' });
   }
 });
 

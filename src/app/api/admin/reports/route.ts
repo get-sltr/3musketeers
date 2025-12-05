@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient, isAdmin } from '@/lib/admin'
 
 export const dynamic = 'force-dynamic'
 
 /**
  * GET /api/admin/reports
- * List all reports with filters and pagination (super admin only)
+ * List all reports with filtering options
  */
 export async function GET(request: NextRequest) {
   try {
+    // 1. Authenticate user
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
@@ -19,49 +21,47 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Check if user is super admin
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('is_super_admin')
-      .eq('id', user.id)
-      .single()
-
-    if (profileError || !profile?.is_super_admin) {
+    // 2. Check admin status
+    if (!await isAdmin(user.id)) {
       return NextResponse.json(
-        { error: 'Forbidden: Super admin access required' },
+        { error: 'Forbidden - Admin access required' },
         { status: 403 }
       )
     }
 
-    // Parse query parameters
-    const { searchParams } = new URL(request.url)
-    const status = searchParams.get('status')
-    const category = searchParams.get('category')
-    const page = parseInt(searchParams.get('page') || '1', 10)
-    const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10), 100)
-    const offset = (page - 1) * limit
+    // 3. Parse query params
+    const searchParams = request.nextUrl.searchParams
+    const status = searchParams.get('status') // pending, reviewed, resolved, dismissed
+    const category = searchParams.get('category') // harassment, fake, inappropriate, spam, other
+    const limit = parseInt(searchParams.get('limit') || '50')
+    const offset = parseInt(searchParams.get('offset') || '0')
 
-    // Build query
-    let query = supabase
+    // 4. Fetch reports with admin client (bypasses RLS)
+    const adminClient = createAdminClient()
+
+    let query = adminClient
       .from('reports')
       .select(`
         *,
         reporter:profiles!reporter_user_id (
           id,
           display_name,
+          email,
           photo_url
         ),
         reported:profiles!reported_user_id (
           id,
           display_name,
-          photo_url,
-          account_status
+          email,
+          photo_url
         ),
         reviewer:profiles!reviewed_by (
           id,
           display_name
         )
-      `, { count: 'exact' })
+      `)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
 
     // Apply filters
     if (status) {
@@ -71,36 +71,53 @@ export async function GET(request: NextRequest) {
       query = query.eq('category', category)
     }
 
-    // Apply pagination and ordering
-    query = query
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
+    const { data: reports, error, count } = await query
 
-    const { data: reports, error: reportsError, count } = await query
-
-    if (reportsError) {
-      console.error('Error fetching reports:', reportsError)
+    if (error) {
+      console.error('Error fetching reports:', error)
       return NextResponse.json(
         { error: 'Failed to fetch reports' },
         { status: 500 }
       )
     }
 
+    // 5. Get stats
+    const [
+      { count: pendingCount },
+      { count: reviewedCount },
+      { count: resolvedCount },
+      { count: dismissedCount },
+      { count: totalCount }
+    ] = await Promise.all([
+      adminClient.from('reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+      adminClient.from('reports').select('*', { count: 'exact', head: true }).eq('status', 'reviewed'),
+      adminClient.from('reports').select('*', { count: 'exact', head: true }).eq('status', 'resolved'),
+      adminClient.from('reports').select('*', { count: 'exact', head: true }).eq('status', 'dismissed'),
+      adminClient.from('reports').select('*', { count: 'exact', head: true })
+    ]);
+
+    const statusCounts = {
+      pending: pendingCount || 0,
+      reviewed: reviewedCount || 0,
+      resolved: resolvedCount || 0,
+      dismissed: dismissedCount || 0,
+      total: totalCount || 0
+    };
+
     return NextResponse.json({
       reports,
       pagination: {
-        page,
         limit,
-        total: count || 0,
-        totalPages: Math.ceil((count || 0) / limit)
-      }
+        offset,
+        hasMore: (reports?.length || 0) === limit
+      },
+      stats: statusCounts
     })
 
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Unknown error'
-    console.error('Error in admin reports API:', message)
+  } catch (error: any) {
+    console.error('Error in admin reports GET:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error.message },
       { status: 500 }
     )
   }

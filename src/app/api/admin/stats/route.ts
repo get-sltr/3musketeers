@@ -1,26 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY!
-
-// Admin client bypasses RLS
-function createAdminClient() {
-  return createSupabaseClient(supabaseUrl, supabaseServiceKey)
-}
-
-// Check if user is super admin
-async function isAdmin(userId: string): Promise<boolean> {
-  const adminClient = createAdminClient()
-  const { data } = await adminClient
-    .from('profiles')
-    .select('is_super_admin')
-    .eq('id', userId)
-    .single()
-
-  return data?.is_super_admin === true
-}
+import { createAdminClient, isAdmin } from '@/lib/admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -134,12 +114,13 @@ export async function GET(request: NextRequest) {
     if (mostReportedUsers) {
       mostReportedUsers.forEach((report) => {
         const userId = report.reported_user_id
-        let entry = reportedUserCounts[userId]
-        if (!entry) {
-          entry = { user: report.reported, count: 0 }
-          reportedUserCounts[userId] = entry
+        if (!reportedUserCounts[userId]) {
+          reportedUserCounts[userId] = { user: report.reported, count: 0 }
         }
-        entry.count++
+        const userEntry = reportedUserCounts[userId]
+        if (userEntry) {
+          userEntry.count++
+        }
       })
     }
 

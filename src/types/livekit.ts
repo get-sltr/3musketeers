@@ -1,5 +1,3 @@
-import type { LocalTrack, RemoteTrack } from 'livekit-client'
-
 export type Role = 'host' | 'cohost' | 'guest' | 'member'
 
 export interface ParticipantMeta {
@@ -11,7 +9,7 @@ export interface ParticipantMeta {
 
 export interface ParticipantState {
   sid: string
-  identity?: string // Participant identity for better tracking
+  identity: string  // LiveKit identity for lookups
   userId: string
   name: string
   avatar?: string
@@ -20,9 +18,6 @@ export interface ParticipantState {
   isCameraOff: boolean
   isHandRaised: boolean
   isSpeaking: boolean
-  // Track references for attaching/detaching video elements
-  videoTrack?: LocalTrack | RemoteTrack
-  audioTrack?: LocalTrack | RemoteTrack
 }
 
 export interface SpotlightState {

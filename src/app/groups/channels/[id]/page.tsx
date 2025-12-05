@@ -1,40 +1,40 @@
 'use client'
 
-import { useState, useEffect, useRef, Suspense } from 'react'
+import { useState, useEffect, Suspense, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { csrfFetch } from '@/lib/csrf-client'
-import { Room } from 'livekit-client'
+import { Room, RoomEvent, ConnectionState } from 'livekit-client'
 import ConferenceRoom from '@/components/ConferenceRoom'
 import LoadingSkeleton from '@/components/LoadingSkeleton'
-import { useLiveKitStore } from '@/stores/useLiveKitStore'
 
 function ChannelRoomContent({ channelId }: { channelId: string }) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const channelType = searchParams?.get('type') || 'text'
   const groupId = searchParams?.get('group') || ''
 
   const [room, setRoom] = useState<Room | null>(null)
   const [connecting, setConnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [displayName, setDisplayName] = useState<string>('Video Room')
 
-  // Use ref to track room for cleanup (avoids stale closure bug)
+  // Use ref to prevent multiple connection attempts
+  const connectionAttempted = useRef(false)
   const roomRef = useRef<Room | null>(null)
-
-  // Get resetRoom from store to clear participants on disconnect
-  const resetRoom = useLiveKitStore((state) => state.resetRoom)
+  const isDisconnecting = useRef(false)
 
   useEffect(() => {
-    // All channels are now video rooms (includes text & voice)
+    // Prevent multiple connections
+    if (connectionAttempted.current) return
+    connectionAttempted.current = true
+
     const supabase = createClient()
-    let isMounted = true
 
     const connectToRoom = async () => {
-      // Disconnect existing room if any (prevents duplicates on rejoin)
-      if (roomRef.current) {
-        roomRef.current.disconnect()
-        roomRef.current = null
-        resetRoom()
+      if (channelType !== 'video' && channelType !== 'voice') {
+        // For text channels, redirect to chat interface
+        router.push(`/groups/${groupId}?channel=${channelId}`)
+        return
       }
 
       setConnecting(true)
@@ -54,10 +54,31 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
           .eq('id', user.id)
           .single()
 
+        // Fetch channel and group info for display name
+        const { data: channelData } = await supabase
+          .from('channels')
+          .select('name, group_id')
+          .eq('id', channelId)
+          .single()
+
+        let roomDisplayName = 'Video Room'
+        if (channelData) {
+          const { data: groupData } = await supabase
+            .from('groups')
+            .select('name')
+            .eq('id', channelData.group_id || groupId)
+            .single()
+
+          roomDisplayName = groupData?.name
+            ? `${groupData.name} - ${channelData.name}`
+            : channelData.name
+        }
+        setDisplayName(roomDisplayName)
+
         const participantName = profile?.display_name || user.id
 
         // Get LiveKit token from Next.js API route
-        const response = await csrfFetch('/api/livekit-token', {
+        const response = await fetch('/api/livekit-token', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -73,22 +94,26 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
 
         const { token, url } = await response.json()
 
-        if (!isMounted) return
-
         // Connect to LiveKit room
-        const newRoom = new Room()
+        const newRoom = new Room({
+          // Adaptive streaming for better performance with many participants
+          adaptiveStream: true,
+          dynacast: true,
+          // Faster reconnection
+          disconnectOnPageLeave: false,
+        })
+
+        // Handle connection state changes
+        newRoom.on(RoomEvent.ConnectionStateChanged, (state: ConnectionState) => {
+          console.log('Connection state:', state)
+          if (state === ConnectionState.Disconnected && !isDisconnecting.current) {
+            console.log('Unexpected disconnect, attempting to stay in room view')
+          }
+        })
 
         await newRoom.connect(url, token, {
           autoSubscribe: true,
         })
-
-        if (!isMounted) {
-          newRoom.disconnect()
-          return
-        }
-
-        // Store in ref for cleanup
-        roomRef.current = newRoom
 
         // Set participant metadata after connection
         await newRoom.localParticipant.setMetadata(JSON.stringify({
@@ -98,54 +123,52 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
           role: 'member',
         }))
 
-        // Enable camera and microphone (all rooms are video now)
-        await newRoom.localParticipant.setCameraEnabled(true)
+        // Enable camera and microphone
+        if (channelType === 'video') {
+          await newRoom.localParticipant.setCameraEnabled(true)
+        }
         await newRoom.localParticipant.setMicrophoneEnabled(true)
 
+        roomRef.current = newRoom
         setRoom(newRoom)
 
-        // Handle disconnection
+        // Handle disconnection - only navigate back if intentional
         newRoom.on('disconnected', () => {
-          if (isMounted) {
-            roomRef.current = null
+          if (isDisconnecting.current) {
             setRoom(null)
-            resetRoom()
+            roomRef.current = null
+            connectionAttempted.current = false
             router.back()
           }
         })
 
-      } catch (err: unknown) {
+      } catch (err: any) {
         console.error('Failed to connect to room:', err)
-        if (isMounted) {
-          const message = err instanceof Error ? err.message : 'Failed to connect to video room'
-          setError(message)
-        }
+        setError(err.message || 'Failed to connect to video room')
+        connectionAttempted.current = false
       } finally {
-        if (isMounted) {
-          setConnecting(false)
-        }
+        setConnecting(false)
       }
     }
 
     connectToRoom()
 
-    // Cleanup function - uses ref to avoid stale closure
     return () => {
-      isMounted = false
       if (roomRef.current) {
+        isDisconnecting.current = true
         roomRef.current.disconnect()
         roomRef.current = null
       }
-      resetRoom()
+      connectionAttempted.current = false
     }
-  }, [channelId, groupId, router, resetRoom])
+  }, [channelId, channelType, groupId, router])
 
   if (connecting) {
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-lime-400 mx-auto mb-4"></div>
-          <p className="text-white">Connecting to video room...</p>
+          <p className="text-white">Connecting to {channelType === 'video' ? 'video' : 'voice'} room...</p>
         </div>
       </div>
     )
@@ -172,7 +195,7 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
     return null
   }
 
-  return <ConferenceRoom room={room} />
+  return <ConferenceRoom room={room} displayName={displayName} />
 }
 
 export default function ChannelRoomPage({ params }: { params: { id: string } }) {
@@ -186,3 +209,4 @@ export default function ChannelRoomPage({ params }: { params: { id: string } }) 
     </Suspense>
   )
 }
+
