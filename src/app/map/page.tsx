@@ -6,8 +6,8 @@ import dynamic from 'next/dynamic';
 import { DEFAULT_PROFILE_IMAGE } from '@/lib/utils/profile';
 import { createClient } from '@/lib/supabase/client';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import '../styles/map-view.css';
-import '../styles/map-pin-drawer.css';
+import '@/styles/map-view.css';
+import '@/styles/map-pin-drawer.css';
 
 const MapView = dynamic(() => import('../components/MapView'), { ssr: false });
 
