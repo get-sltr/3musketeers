@@ -1,5 +1,6 @@
 const { withSentryConfig } = require("@sentry/nextjs");
-const withNextIntl = require('next-intl/plugin')('./src/i18n/request.ts');
+// next-intl temporarily disabled for Next.js 15 compatibility
+// const withNextIntl = require('next-intl/plugin')('./src/i18n/request.ts');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -160,8 +161,7 @@ const nextConfig = {
 }
 
 // Make sure adding Sentry options is the last code to run before exporting
-// Wrap with next-intl first, then Sentry if enabled
-const configWithIntl = withNextIntl(nextConfig);
+// next-intl temporarily disabled for Next.js 15 compatibility
 
 // Sentry configuration - only enable if all required env vars are present
 const shouldUseSentry = 
@@ -176,5 +176,5 @@ const sentryWebpackPluginOptions = {
 };
 
 module.exports = shouldUseSentry
-  ? withSentryConfig(configWithIntl, sentryWebpackPluginOptions)
-  : configWithIntl;
+  ? withSentryConfig(nextConfig, sentryWebpackPluginOptions)
+  : nextConfig;

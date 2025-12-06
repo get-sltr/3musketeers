@@ -1,14 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import createIntlMiddleware from 'next-intl/middleware';
-import { locales, defaultLocale } from './i18n/config';
 import { requireCsrf } from './lib/csrf';
-
-const intlMiddleware = createIntlMiddleware({
-  locales,
-  defaultLocale,
-  localePrefix: 'as-needed'
-});
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -29,8 +21,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Handle i18n routing for page routes
-  const response = intlMiddleware(request);
+  // Pass through for page routes (i18n temporarily disabled for Next.js 15 compatibility)
+  const response = NextResponse.next();
 
   // Add security headers
   response.headers.set('X-DNS-Prefetch-Control', 'on');
@@ -44,9 +36,8 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Include both page routes and API routes
+  // Only API routes need middleware now
   matcher: [
-    '/((?!_next|_vercel|.*\\..*).*)', // Page routes (excluding static files)
-    '/api/:path*' // All API routes
+    '/api/:path*'
   ]
 };
