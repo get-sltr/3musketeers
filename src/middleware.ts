@@ -1,13 +1,16 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import createIntlMiddleware from 'next-intl/middleware';
+import { routing } from './i18n/routing';
 import { requireCsrf } from './lib/csrf';
+
+const intlMiddleware = createIntlMiddleware(routing);
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Handle API routes with CSRF protection
+  // Handle API routes with CSRF protection (skip i18n)
   if (pathname.startsWith('/api/')) {
-    // Check CSRF token for state-changing requests
     const csrfValid = await requireCsrf(request);
     if (!csrfValid) {
       console.error(`CSRF validation failed for ${request.method} ${pathname}`);
@@ -16,13 +19,11 @@ export async function middleware(request: NextRequest) {
         { status: 403 }
       );
     }
-
-    // CSRF check passed, continue to API handler
     return NextResponse.next();
   }
 
-  // Pass through for page routes (i18n temporarily disabled for Next.js 15 compatibility)
-  const response = NextResponse.next();
+  // Handle i18n routing for page routes
+  const response = intlMiddleware(request);
 
   // Add security headers
   response.headers.set('X-DNS-Prefetch-Control', 'on');
@@ -36,8 +37,9 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Only API routes need middleware now
   matcher: [
+    // Match all paths except static files and Next.js internals
+    '/((?!_next|_vercel|.*\\..*).*)',
     '/api/:path*'
   ]
 };
