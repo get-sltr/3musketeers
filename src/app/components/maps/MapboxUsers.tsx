@@ -206,7 +206,7 @@ export default function MapboxUsers({
 
       // Add click handler for map
       if (onMapClick) {
-        mapRef.current.on('click', (e) => {
+        mapRef.current.on('click', (e: { lngLat: { lng: number; lat: number } }) => {
           onMapClick(e.lngLat.lng, e.lngLat.lat)
         })
       }
@@ -973,9 +973,9 @@ function applyNightTheme(map: mapboxgl.Map) {
 
   try {
     const roadLayers = (map.getStyle().layers || [])
-      .filter(l => l.type === 'line' && (l.id.includes('road') || l.id.includes('street')))
-      .map(l => l.id)
-    roadLayers.forEach(id => {
+      .filter((l: { type: string; id: string }) => l.type === 'line' && (l.id.includes('road') || l.id.includes('street')))
+      .map((l: { id: string }) => l.id)
+    roadLayers.forEach((id: string) => {
       try {
         map.setPaintProperty(id, 'line-color', 'rgba(235, 241, 255, 0.9)')
         if (map.getPaintProperty(id, 'line-width') !== undefined) {

@@ -4,11 +4,7 @@ import { z } from 'zod'
  * Validation schema for Stripe checkout request
  */
 export const StripeCheckoutSchema = z.object({
-  tier: z.enum(['member', 'founder', 'blackcard'], {
-    errorMap: () => ({
-      message: 'Invalid tier. Must be one of: member, founder, blackcard',
-    }),
-  }),
+  tier: z.enum(['member', 'founder', 'blackcard']),
 })
 
 export type StripeCheckoutInput = z.infer<typeof StripeCheckoutSchema>
@@ -25,7 +21,7 @@ export function validateCheckoutInput(data: unknown): {
     const result = StripeCheckoutSchema.safeParse(data)
     
     if (!result.success) {
-      const errors = result.error.errors.map((e) => e.message).join(', ')
+      const errors = result.error.issues.map((e) => e.message).join(', ')
       return {
         success: false,
         error: errors,

@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-function getStripe() {
+// Force dynamic to prevent build-time execution
+export const dynamic = 'force-dynamic'
+
+// Lazy load Stripe and Supabase clients
+const getStripe = () => {
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY
   if (!stripeSecretKey) return null
   return new Stripe(stripeSecretKey, {
@@ -10,12 +14,10 @@ function getStripe() {
   })
 }
 
-function getSupabase() {
+const getSupabase = () => {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !key) {
-    throw new Error('Supabase credentials not configured')
-  }
+  if (!url || !key) return null
   return createClient(url, key)
 }
 
@@ -67,6 +69,9 @@ function getSafeOrigin(requestOrigin: string | null): string {
 export async function GET(request: NextRequest) {
   try {
     const supabase = getSupabase()
+    if (!supabase) {
+      return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
+    }
     const { searchParams } = new URL(request.url)
     const action = searchParams.get('action')
 
@@ -102,6 +107,10 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = getSupabase()
     const stripe = getStripe()
+    
+    if (!supabase) {
+      return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
+    }
     const { priceType, userId, email } = await request.json()
 
     if (!priceType || !userId || !email) {

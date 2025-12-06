@@ -296,6 +296,6 @@ export async function recordFeatureUsage(userId: string, feature: Feature): Prom
       used_at: new Date().toISOString(),
     })
   } catch {
-    // Silently fail if table doesn't exist - feature tracking is optional
+    // Feature tracking is optional - silently fail if table doesn't exist
   }
 }
