@@ -114,29 +114,3 @@ export function clearCsrfToken(): void {
   tokenExpiry = 0
 }
 
-/**
- * Fetch wrapper that automatically includes CSRF token for state-changing requests
- * Use this instead of fetch() for POST, PUT, PATCH, DELETE requests to protected endpoints
- */
-export async function csrfFetch(
-  url: string,
-  options: RequestInit = {}
-): Promise<Response> {
-  const method = (options.method || 'GET').toUpperCase()
-
-  // Only add CSRF token for state-changing methods
-  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
-    const token = await getCSRFToken()
-    const headers = new Headers(options.headers || {})
-    headers.set('X-CSRF-Token', token)
-
-    return fetch(url, {
-      ...options,
-      headers,
-      credentials: 'include',
-    })
-  }
-
-  // For GET/HEAD, just pass through
-  return fetch(url, options)
-}

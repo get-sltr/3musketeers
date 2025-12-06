@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
 
     // Get founder count
     if (action === 'founder-count') {
-      const { count } = await getSupabase()
+      const { count } = await supabase
         .from('profiles')
         .select('id', { count: 'exact', head: true })
         .eq('founder', true)
@@ -106,7 +106,6 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const supabase = getSupabase()
-    const stripe = getStripe()
     
     if (!supabase) {
       return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
@@ -129,7 +128,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user has a profile (optional)
-    const { data: user } = await getSupabase()
+    const { data: user } = await supabase
       .from('profiles')
       .select('id, founder, subscription_status')
       .eq('id', userId)
@@ -145,7 +144,7 @@ export async function POST(request: NextRequest) {
 
     // Check founder availability
     if (priceType === 'founder') {
-      const { count } = await getSupabase()
+      const { count } = await supabase
         .from('profiles')
         .select('id', { count: 'exact', head: true })
         .eq('founder', true)

@@ -4,6 +4,7 @@ import Stripe from 'stripe'
  * Stripe API version used across the application.
  * Keep this constant to ensure consistent API behavior.
  */
+const STRIPE_API_VERSION = '2025-10-29.clover' as const
 
 /**
  * Lazy-initialized Stripe client singleton.

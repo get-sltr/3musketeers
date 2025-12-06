@@ -32,7 +32,7 @@ class ErosAPIClient {
       this.baseUrl = baseUrl;
     } else {
       // EROS backend base URL (endpoints use /api/v1 prefix)
-      this.baseUrl = process.env.NODE_ENV === 'development'
+      const backendUrl = process.env.NODE_ENV === 'development'
         ? (process.env.NEXT_PUBLIC_DEV_BACKEND_URL || 'http://localhost:3001')
         : (process.env.NEXT_PUBLIC_EROS_BACKEND_URL || 'https://eros-backend-production.up.railway.app');
       this.baseUrl = `${backendUrl}/api/v1`;

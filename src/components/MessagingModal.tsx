@@ -351,8 +351,9 @@ export default function MessagingModal({
             <>
               {messages.map((message, index) => {
                 const isSent = message.sender_id === currentUserId
+                const prevMessage = messages[index - 1]
                 const showTime = index === 0 ||
-                  new Date(message.created_at).getTime() - new Date(messages[index - 1].created_at).getTime() > 300000
+                  (prevMessage && new Date(message.created_at).getTime() - new Date(prevMessage.created_at).getTime() > 300000)
 
                 return (
                   <div key={message.id}>
