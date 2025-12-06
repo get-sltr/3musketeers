@@ -746,23 +746,27 @@ app.get('/api/health', (req, res) => {
 });
 
 // EROS diagnostic endpoint (for debugging Anthropic API issues)
-app.get('/api/v1/eros/diagnostic', (req, res) => {
+// SECURITY: Requires authentication - never expose API key details publicly
+app.get('/api/v1/eros/diagnostic', authenticateUser, (req, res) => {
   const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
   const apiKeyLength = process.env.ANTHROPIC_API_KEY?.length || 0;
-  const apiKeyPrefix = process.env.ANTHROPIC_API_KEY?.substring(0, 15) || 'NOT SET';
   const anthropicInitialized = !!anthropic;
   
-  // Determine possible issues
+  // SECURITY: Only check format validity, never expose actual key content
+  const hasValidFormat = hasApiKey && 
+    apiKeyLength >= 40 && 
+    process.env.ANTHROPIC_API_KEY?.startsWith('sk-ant-');
+  
+  // Determine possible issues (without exposing sensitive data)
   const issues = [];
   if (!hasApiKey) {
-    issues.push('ANTHROPIC_API_KEY environment variable not set in Railway');
+    issues.push('ANTHROPIC_API_KEY environment variable not set');
   }
   if (hasApiKey && apiKeyLength < 40) {
-    issues.push(`API key appears too short (${apiKeyLength} chars, should be 50+ characters)`);
+    issues.push('API key appears too short');
   }
-  // Anthropic API keys can be 'sk-ant-...' or just 'sk-...'
-  if (hasApiKey && !apiKeyPrefix.startsWith('sk-')) {
-    issues.push(`API key format may be incorrect (starts with "${apiKeyPrefix}", should start with "sk-")`);
+  if (hasApiKey && !process.env.ANTHROPIC_API_KEY?.startsWith('sk-ant-')) {
+    issues.push('API key format may be incorrect');
   }
   if (hasApiKey && !anthropicInitialized) {
     issues.push('API key set but Anthropic client not initialized - check server startup logs');
@@ -774,37 +778,36 @@ app.get('/api/v1/eros/diagnostic', (req, res) => {
   
   if (!hasApiKey) {
     rootCause = 'missing_api_key';
-    recommendation = 'Set ANTHROPIC_API_KEY in Railway environment variables with your Anthropic API key';
+    recommendation = 'Set ANTHROPIC_API_KEY in Railway environment variables';
   } else if (apiKeyLength < 40) {
     rootCause = 'invalid_api_key_length';
-    recommendation = 'API key appears invalid - verify key in Anthropic console (https://console.anthropic.com/)';
-  } else if (!apiKeyPrefix.startsWith('sk-')) {
+    recommendation = 'API key appears invalid - verify key in Anthropic console';
+  } else if (!process.env.ANTHROPIC_API_KEY?.startsWith('sk-ant-')) {
     rootCause = 'invalid_api_key_format';
-    recommendation = 'API key format incorrect - should start with "sk-". Get new key from Anthropic console';
+    recommendation = 'API key format incorrect - get new key from Anthropic console';
   } else if (!anthropicInitialized) {
     rootCause = 'initialization_failed';
     recommendation = 'API key present but Anthropic client failed to initialize - check server startup logs';
   } else {
-    rootCause = 'api_authentication_failure';
-    recommendation = 'API key appears valid but API calls are failing. Possible causes: 1) Key expired/revoked, 2) Billing/quota issue, 3) Network/firewall blocking Anthropic API. Check Anthropic console for account status.';
+    rootCause = 'none';
+    recommendation = 'Configuration appears correct. If issues persist, check Anthropic console for account status.';
   }
   
+  // SECURITY: Return sanitized status information only
   res.json({
     eros_status: anthropicInitialized ? 'configured' : 'not_configured',
     anthropic_initialized: anthropicInitialized,
     api_key_present: hasApiKey,
-    api_key_length: apiKeyLength,
-    api_key_prefix: apiKeyPrefix,
-    expected_key_format: 'sk-... (40+ characters)',
+    api_key_valid_format: hasValidFormat,
     root_cause: rootCause,
-    issues: issues.length > 0 ? issues : ['No obvious configuration issues - check API key validity and Anthropic account status'],
-    recommendation: recommendation,
-    is_subscription_issue: rootCause === 'api_authentication_failure' && hasApiKey && apiKeyLength >= 40 && apiKeyPrefix.startsWith('sk-')
+    issues: issues.length > 0 ? issues : ['No configuration issues detected'],
+    recommendation: recommendation
   });
 });
 
 // Test Anthropic API key directly
-app.get('/api/v1/eros/test-api-key', async (req, res) => {
+// SECURITY: Requires authentication - prevents unauthorized API key testing
+app.get('/api/v1/eros/test-api-key', authenticateUser, async (req, res) => {
   if (!anthropic) {
     return res.status(500).json({
       error: 'Anthropic client not initialized',
@@ -815,7 +818,7 @@ app.get('/api/v1/eros/test-api-key', async (req, res) => {
   try {
     // Make a minimal test API call
     const testResponse = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-3-haiku-20240307',
       max_tokens: 10,
       messages: [
         { role: 'user', content: 'Say "test" if you can read this.' }
@@ -834,39 +837,33 @@ app.get('/api/v1/eros/test-api-key', async (req, res) => {
     });
   } catch (error) {
     const status = error?.status || error?.statusCode;
-    const errorMessage = error?.message || '';
+    // SECURITY: Don't expose raw error messages
+    const errorMessage = error?.message || 'Unknown error';
     
     let errorType = 'unknown';
     let solution = 'Check Anthropic console for account status';
     
     if (status === 401 || status === 403) {
       errorType = 'authentication_failed';
-      solution = 'API key is invalid, expired, or revoked. Go to https://console.anthropic.com/ to: 1) Check if key is active, 2) Verify billing is set up, 3) Create a new API key if needed';
+      solution = 'API key issue - check Anthropic console';
     } else if (status === 429) {
       errorType = 'rate_limit';
-      solution = 'Rate limit exceeded. Wait a few minutes and try again, or upgrade your Anthropic plan';
+      solution = 'Rate limit exceeded. Wait a few minutes and try again';
     } else if (status === 402) {
       errorType = 'payment_required';
-      solution = 'Billing issue - payment method required or account suspended. Go to https://console.anthropic.com/ to add payment method';
+      solution = 'Billing issue - check Anthropic console';
     } else if (errorMessage.includes('quota') || errorMessage.includes('billing')) {
       errorType = 'billing_quota';
-      solution = 'Billing/quota issue. Check Anthropic console for: 1) Payment method, 2) Usage limits, 3) Account status';
+      solution = 'Billing/quota issue - check Anthropic console';
     }
 
+    // SECURITY: Return sanitized error info only
     res.status(status || 500).json({
       status: 'error',
       api_key_valid: false,
       error_type: errorType,
       http_status: status,
-      error_message: errorMessage,
-      solution: solution,
-      full_error: {
-        message: errorMessage,
-        status: status,
-        statusCode: error?.statusCode,
-        code: error?.code,
-        type: error?.type
-      }
+      solution: solution
     });
   }
 });
@@ -924,7 +921,7 @@ app.get('/api/push/vapid-public-key', (req, res) => {
 app.post('/api/push/subscribe', async (req, res) => {
   try {
     const { userId, subscription } = req.body;
-
+    
     if (!userId || !subscription) {
       return res.status(400).json({ error: 'Missing userId or subscription' });
     }
@@ -949,215 +946,6 @@ app.post('/api/push/subscribe', async (req, res) => {
   } catch (error) {
     console.error('Subscribe error:', error);
     res.status(500).json({ error: 'Subscription failed' });
-  }
-});
-
-// Generic push notification endpoint (for taps, matches, etc.)
-app.post('/api/push/send', authenticateUser, async (req, res) => {
-  try {
-    const { title, body, tag, url, data } = req.body;
-    const userId = req.user.id; // Use authenticated user's ID
-
-    if (!title || !body) {
-      return res.status(400).json({ error: 'Missing required fields: title, body' });
-    }
-
-    if (!process.env.VAPID_PUBLIC_KEY) {
-      return res.status(503).json({ error: 'Push notifications not configured' });
-    }
-
-    // Get user's push subscriptions
-    const { data: subscriptions, error } = await supabase
-      .from('push_subscriptions')
-      .select('*')
-      .eq('user_id', userId);
-
-    if (error || !subscriptions || subscriptions.length === 0) {
-      return res.json({ success: true, sent: 0, message: 'No subscriptions found' });
-    }
-
-    const payload = JSON.stringify({
-      title,
-      body,
-      icon: '/icon-192.png',
-      badge: '/badge-72.png',
-      tag: tag || 'notification',
-      data: {
-        url: url || '/',
-        ...data
-      }
-    });
-
-    let sent = 0;
-    const sendPromises = subscriptions.map(sub => {
-      const pushSubscription = {
-        endpoint: sub.endpoint,
-        keys: { p256dh: sub.p256dh, auth: sub.auth }
-      };
-
-      return webpush.sendNotification(pushSubscription, payload)
-        .then(() => { sent++; })
-        .catch(err => {
-          // Remove invalid subscriptions
-          if (err.statusCode === 410 || err.statusCode === 404) {
-            supabase.from('push_subscriptions').delete().eq('id', sub.id);
-          }
-          console.error('Push send error:', err.statusCode, err.message);
-        });
-    });
-
-    await Promise.all(sendPromises);
-
-    res.json({ success: true, sent });
-  } catch (error) {
-    console.error('Push send error:', error);
-    res.status(500).json({ error: 'Failed to send notification' });
-  }
-});
-
-// Internal API key authentication middleware (for server-to-server calls)
-const authenticateInternalKey = (req, res, next) => {
-  const internalKey = req.headers['x-internal-key'];
-  const expectedKey = process.env.INTERNAL_API_KEY;
-
-  if (!expectedKey) {
-    console.error('INTERNAL_API_KEY not configured');
-    return res.status(503).json({ error: 'Internal API not configured' });
-  }
-
-  if (!internalKey || internalKey !== expectedKey) {
-    return res.status(401).json({ error: 'Invalid internal API key' });
-  }
-
-  next();
-};
-
-// Internal endpoint for sending tap notifications (server-to-server only)
-app.post('/api/internal/push/tap', authenticateInternalKey, async (req, res) => {
-  try {
-    const { targetUserId, tapperName, isMutual } = req.body;
-
-    if (!targetUserId || !tapperName) {
-      return res.status(400).json({ error: 'Missing required fields: targetUserId, tapperName' });
-    }
-
-    if (!process.env.VAPID_PUBLIC_KEY) {
-      return res.status(503).json({ error: 'Push notifications not configured' });
-    }
-
-    // Get user's push subscriptions
-    const { data: subscriptions, error } = await supabase
-      .from('push_subscriptions')
-      .select('*')
-      .eq('user_id', targetUserId);
-
-    if (error || !subscriptions || subscriptions.length === 0) {
-      return res.json({ success: true, sent: 0, message: 'No subscriptions found' });
-    }
-
-    const title = isMutual ? 'It\'s a Match! 🎉' : 'Someone tapped you! 👋';
-    const body = isMutual
-      ? `You and ${tapperName} both tapped each other!`
-      : `${tapperName} is interested in you`;
-
-    const payload = JSON.stringify({
-      title,
-      body,
-      icon: '/icon-192.png',
-      badge: '/badge-72.png',
-      tag: isMutual ? 'mutual-tap' : 'new-tap',
-      data: {
-        url: isMutual ? '/matches' : '/taps',
-        type: isMutual ? 'mutual_match' : 'new_tap'
-      }
-    });
-
-    let sent = 0;
-    const sendPromises = subscriptions.map(sub => {
-      const pushSubscription = {
-        endpoint: sub.endpoint,
-        keys: { p256dh: sub.p256dh, auth: sub.auth }
-      };
-
-      return webpush.sendNotification(pushSubscription, payload)
-        .then(() => { sent++; })
-        .catch(err => {
-          if (err.statusCode === 410 || err.statusCode === 404) {
-            supabase.from('push_subscriptions').delete().eq('id', sub.id);
-          }
-          console.error('Push send error:', err.statusCode, err.message);
-        });
-    });
-
-    await Promise.all(sendPromises);
-    res.json({ success: true, sent });
-  } catch (error) {
-    console.error('Internal push tap error:', error);
-    res.status(500).json({ error: 'Failed to send notification' });
-  }
-});
-
-// Internal endpoint for sending message notifications (server-to-server only)
-app.post('/api/internal/push/message', authenticateInternalKey, async (req, res) => {
-  try {
-    const { receiverId, senderName, messagePreview, conversationId } = req.body;
-
-    if (!receiverId || !senderName || !messagePreview || !conversationId) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    if (!process.env.VAPID_PUBLIC_KEY) {
-      return res.status(503).json({ error: 'Push notifications not configured' });
-    }
-
-    const { data: subscriptions, error } = await supabase
-      .from('push_subscriptions')
-      .select('*')
-      .eq('user_id', receiverId);
-
-    if (error || !subscriptions || subscriptions.length === 0) {
-      return res.json({ success: true, sent: 0, message: 'No subscriptions found' });
-    }
-
-    const truncatedPreview = messagePreview.length > 100
-      ? messagePreview.substring(0, 100) + '...'
-      : messagePreview;
-
-    const payload = JSON.stringify({
-      title: `New message from ${senderName}`,
-      body: truncatedPreview,
-      icon: '/icon-192.png',
-      badge: '/badge-72.png',
-      tag: `message-${conversationId}`,
-      data: {
-        url: `/messages/${conversationId}`,
-        type: 'new_message',
-        conversationId
-      }
-    });
-
-    let sent = 0;
-    const sendPromises = subscriptions.map(sub => {
-      const pushSubscription = {
-        endpoint: sub.endpoint,
-        keys: { p256dh: sub.p256dh, auth: sub.auth }
-      };
-
-      return webpush.sendNotification(pushSubscription, payload)
-        .then(() => { sent++; })
-        .catch(err => {
-          if (err.statusCode === 410 || err.statusCode === 404) {
-            supabase.from('push_subscriptions').delete().eq('id', sub.id);
-          }
-          console.error('Push send error:', err.statusCode, err.message);
-        });
-    });
-
-    await Promise.all(sendPromises);
-    res.json({ success: true, sent });
-  } catch (error) {
-    console.error('Internal push message error:', error);
-    res.status(500).json({ error: 'Failed to send notification' });
   }
 });
 
@@ -1227,106 +1015,48 @@ app.post('/api/v1/heartbeat', authenticateUser, async (req, res) => {
 app.get('/api/v1/matches/daily', authenticateUser, async (req, res) => {
   try {
     const userId = req.user.id;
-    const limit = Math.min(parseInt(req.query.limit) || 8, 20);
-    const today = new Date().toISOString().split('T')[0];
+    const limit = parseInt(req.query.limit) || 10;
 
-    // 1. Load user profile for context
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, city, latitude, longitude, subscription_tier, founder, is_super_admin, display_name, age, position, gender_identity, looking_for')
-      .eq('id', userId)
-      .single();
-
-    if (profileError || !profile) {
-      console.error('Daily matches profile error:', profileError);
-      return res.status(400).json({ error: 'Profile incomplete. Please update your profile first.' });
-    }
-
-    const isPremium = profile.founder || profile.is_super_admin || profile.subscription_tier === 'plus';
-    if (!isPremium) {
-      return res.status(402).json({
-        error: 'SLTR Pro required',
-        message: 'Daily Matches is a SLTR Pro feature. Upgrade to unlock curated matches.'
-      });
-    }
-
-    if (!profile.city || !profile.latitude || !profile.longitude) {
-      return res.status(400).json({
-        error: 'Location required',
-        message: 'Set your city/location to receive daily matches.'
-      });
-    }
-
-    // 2. Try cached matches for today
-    const { data: cachedMatches } = await supabase
+    // Fetch daily matches (would be pre-computed by EROS scheduler)
+    // Note: match_type might be NULL for older matches, so we use .or() to handle both
+    const { data: matches, error } = await supabase
       .from('matches')
-      .select(`
-        *,
-        matched_profile:profiles!matched_user_id (
-          id,
-          display_name,
-          age,
-          position,
-          gender_identity,
-          city,
-          bio:about,
-          photos,
-          photo_url,
-          online,
-          last_active,
-          dtfn,
-          party_friendly,
-          distance_miles,
-          subscription_tier
-        )
-      `)
+      .select('*')
       .eq('user_id', userId)
-      .eq('match_type', 'daily_v2')
-      .gte('created_at', `${today}T00:00:00.000Z`)
-      .order('rank', { ascending: true })
+      .or('match_type.eq.daily,match_type.is.null')
+      .order('created_at', { ascending: false })
       .limit(limit);
 
-    if (cachedMatches && cachedMatches.length >= Math.min(limit, 3)) {
-      return res.json({
-        success: true,
-        matches: cachedMatches,
-        count: cachedMatches.length,
-        cached: true,
-        date: today,
-        source: 'EROS',
-      });
-    }
-
-    // 3. Need to generate fresh matches
-    const matcher = getMatcher();
-    const generated = await matcher.generateDailyMatches(userId, limit);
-
-    // Ensure we got matches
-    if (!generated?.matches || generated.matches.length === 0) {
+    if (error) {
+      console.error('Fetch matches error:', error);
+      // Return empty array instead of error if table doesn't exist or no matches
       return res.json({
         success: true,
         matches: [],
         count: 0,
-        date: today,
         source: 'EROS',
-        message: 'No matches found today. Check back tomorrow!'
+        date: new Date().toISOString().split('T')[0],
+        message: 'No matches found yet'
       });
     }
 
     res.json({
       success: true,
-      matches: generated.matches,
-      count: generated.matches.length,
-      cached: false,
-      date: today,
+      matches: matches || [],
+      count: matches?.length || 0,
       source: 'EROS',
+      date: new Date().toISOString().split('T')[0]
     });
   } catch (error) {
     console.error('Daily matches error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to load daily matches',
-      message: error.message || 'Unknown error',
+    // Return empty array instead of error for better UX
+    res.json({
+      success: true,
+      matches: [],
+      count: 0,
+      source: 'EROS',
+      date: new Date().toISOString().split('T')[0],
+      error: error.message || 'No matches available yet'
     });
   }
 });
@@ -1415,7 +1145,7 @@ Be concise, warm, supportive, and helpful. Keep responses under 150 words. Focus
 
         // Call Claude API
         const claudeResponse = await anthropic.messages.create({
-          model: 'claude-3-5-sonnet-20241022',
+          model: 'claude-3-haiku-20240307',
           max_tokens: 1024,
           system: systemPrompt,
           messages
