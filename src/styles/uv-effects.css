@@ -1,0 +1,169 @@
+/* UV Effects for Dynamic Founder Card - REWRITTEN */
+
+/* --- Base Keyframes --- */
+
+@keyframes uvFlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  @keyframes uvPulse {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.1); }
+  }
+  
+  /* RECOMMENDATION: Consolidated keyframe for background flow */
+  @keyframes backgroundFlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  @keyframes qrUV {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.8; }
+  }
+  
+  @keyframes nfcPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.8; }
+  }
+  
+  
+  /* --- UV Mode --- */
+  /* Base class defines the layout */
+  .uv-mode {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .uv-mode::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(45deg, 
+      rgba(0, 212, 255, 0.1) 0%, 
+      rgba(255, 0, 255, 0.1) 25%, 
+      rgba(255, 165, 0, 0.1) 50%, 
+      rgba(0, 212, 255, 0.1) 75%, 
+      rgba(255, 0, 255, 0.1) 100%);
+    background-size: 400% 400%;
+    z-index: 1;
+    pointer-events: none; /* CRITICAL: Prevents blocking clicks */
+  }
+  
+  .uv-mode::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle at 50% 50%, 
+      rgba(0, 212, 255, 0.2) 0%, 
+      rgba(255, 0, 255, 0.1) 30%, 
+      transparent 70%);
+    z-index: 2;
+    pointer-events: none; /* CRITICAL: Prevents blocking clicks */
+  }
+  
+  /* RECOMMENDATION: Animations are OFF by default.
+     Add 'uv-active' class via JS to turn them on. */
+  @media (prefers-reduced-motion: no-preference) {
+    .uv-active.uv-mode::before {
+      animation: uvFlow 3s ease-in-out infinite;
+    }
+    .uv-active.uv-mode::after {
+      animation: uvPulse 2s ease-in-out infinite;
+    }
+  }
+  
+  /* --- Movement Effects --- */
+  /* Uses 'currentColor' to inherit text color. Excellent! */
+  .movement-glow {
+    transition: all 0.3s ease;
+    box-shadow: 0 0 20px currentColor;
+  }
+  
+  .movement-glow:hover {
+    box-shadow: 0 0 40px currentColor;
+  }
+  
+  /* Dynamic gradient (controlled by JS variables) */
+  .dynamic-gradient {
+    background: linear-gradient(45deg, 
+      var(--movement-color-1, #00d4ff) 0%, 
+      var(--movement-color-2, #ff00ff) 50%, 
+      var(--movement-color-3, #ffa500) 100%);
+    background-size: 200% 200%;
+  }
+  
+  .dynamic-text {
+    background: linear-gradient(45deg, #00d4ff, #ff00ff, #ffa500);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* RECOMMENDATION: Respects reduced motion */
+  @media (prefers-reduced-motion: no-preference) {
+    .dynamic-gradient {
+      animation: backgroundFlow 4s ease-in-out infinite;
+    }
+    .dynamic-text {
+      animation: backgroundFlow 3s ease-in-out infinite;
+    }
+  }
+  
+  /* --- Component-Specific Effects (QR, NFC) --- */
+  .qr-uv {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .qr-uv::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(45deg, 
+      rgba(0, 212, 255, 0.3) 0%, 
+      rgba(255, 0, 255, 0.3) 50%, 
+      rgba(255, 165, 0, 0.3) 100%);
+  s  z-index: 1;
+    pointer-events: none; /* CRITICAL: Add this */
+  }
+  
+  .nfc-pulse {
+    /* Base styles */
+    opacity: 1;
+    transform: scale(1);
+  }
+  
+  /* RECOMMENDATION: Respects reduced motion */
+  @media (prefers-reduced-motion: no-preference) {
+    .qr-uv::before {
+      animation: qrUV 2s ease-in-out infinite;
+    }
+    .nfc-pulse {
+      animation: nfcPulse 1.5s ease-in-out infinite;
+    }
+  }
+  
+  /* Phone movement responsive effects */
+  @media (prefers-reduced-motion: no-preference) {
+    .movement-responsive {
+      transition: transform 0.1s ease;
+    }
+  }
+  
+  /* UV Mode Toggle Animation */
+  .uv-toggle {
+    transition: all 0.5s ease;
+  }
+  
+  .uv-toggle.active {
+    background: linear-gradient(45deg, 
+      rgba(0, 212, 255, 0.2) 0%, 
+      rgba(255, 0, 255, 0.2) 50%, 
+      rgba(255, 165, 0, 0.2) 100%);
+    box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+  }
