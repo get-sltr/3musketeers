@@ -6,48 +6,6 @@ import { createSLTRMapboxMarker, cleanupSLTRMarker } from './SLTRMapPin'
 import { resolveProfilePhoto } from '../lib/utils/profile'
 import { createVenueMarker } from '../app/components/maps/VenueMarker'
 
-// Safe element creation helpers to prevent XSS
-const isHttpUrl = (value: string | null | undefined): boolean => {
-  if (!value) return false
-  try {
-    const u = new URL(value, window.location.origin)
-    return u.protocol === 'http:' || u.protocol === 'https:'
-  } catch {
-    return false
-  }
-}
-
-const createSafeImageElement = (src: string, styles: string, alt = 'User'): HTMLImageElement => {
-  const img = document.createElement('img')
-  img.alt = alt
-  img.style.cssText = styles
-  img.referrerPolicy = 'no-referrer'
-  img.loading = 'lazy'
-  if (isHttpUrl(src)) {
-    img.src = src
-  } else {
-    img.src = '' // fallback to empty to avoid unsafe schemes
-  }
-  img.onerror = () => {
-    // Remove or hide the image on error to avoid broken content
-    if (img.parentElement) {
-      img.parentElement.removeChild(img)
-    }
-  }
-  return img
-}
-
-const createSafeTextElement = (tag: string, text: string, styles?: string): HTMLElement => {
-  const el = document.createElement(tag)
-  el.textContent = text ?? '' // textContent is XSS-safe
-  if (styles) el.style.cssText = styles
-  return el
-}
-
-// Validation helpers for venue data
-const isFiniteNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
-const safeStr = (v: unknown, fallback = ''): string => (typeof v === 'string' ? v : fallback)
-
 // PIN STYLE FUNCTIONS
 // Safe image element creation helper to prevent XSS
 const createSafeImage = (src: string | null | undefined, styles: string): HTMLImageElement | null => {
@@ -88,12 +46,8 @@ const createPinStyle1 = (user: any) => {
     transition: all 0.3s ease;
     border: 2px solid rgba(0, 217, 255, 0.9);
   `
-  if (user.profile_photo_url) {
-    const img = createSafeImageElement(
-      user.profile_photo_url,
-      'width: 100%; height: 100%; border-radius: 50%; object-fit: cover; opacity: 0.9;',
-      user.display_name || 'User'
-    )
+  const img = createSafeImage(user.profile_photo_url, 'width: 100%; height: 100%; border-radius: 50%; object-fit: cover; opacity: 0.9;')
+  if (img) {
     el.appendChild(img)
   }
   el.addEventListener('mouseenter', () => {
@@ -124,12 +78,10 @@ const createPinStyle2 = (user: any) => {
   if (user.profile_photo_url) {
     const innerDiv = document.createElement('div')
     innerDiv.style.cssText = `transform: rotate(-45deg); width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 4px;`
-    const img = createSafeImageElement(
-      user.profile_photo_url,
-      'width: 100%; height: 100%; object-fit: cover; opacity: 0.9;',
-      user.display_name || 'User'
-    )
-    innerDiv.appendChild(img)
+    const img = createSafeImage(user.profile_photo_url, 'width: 100%; height: 100%; object-fit: cover; opacity: 0.9;')
+    if (img) {
+      innerDiv.appendChild(img)
+    }
     el.appendChild(innerDiv)
   }
   el.addEventListener('mouseenter', () => {
@@ -158,12 +110,8 @@ const createPinStyle3 = (user: any) => {
     position: relative;
     animation: pulse 2s infinite;
   `
-  if (user.profile_photo_url) {
-    const img = createSafeImageElement(
-      user.profile_photo_url,
-      'width: 100%; height: 100%; border-radius: 50%; object-fit: cover; opacity: 0.85;',
-      user.display_name || 'User'
-    )
+  const img = createSafeImage(user.profile_photo_url, 'width: 100%; height: 100%; border-radius: 50%; object-fit: cover; opacity: 0.85;')
+  if (img) {
     el.appendChild(img)
   }
   el.addEventListener('mouseenter', () => {
@@ -231,12 +179,10 @@ const createPinStyle5 = (user: any) => {
   if (user.profile_photo_url) {
     const circle = document.createElement('div')
     circle.style.cssText = `position: absolute; width: 30px; height: 30px; border-radius: 50%; top: 8px; left: -15px; overflow: hidden; border: 2px solid rgba(255, 255, 255, 0.8);`
-    const img = createSafeImageElement(
-      user.profile_photo_url,
-      'width: 100%; height: 100%; object-fit: cover;',
-      user.display_name || 'User'
-    )
-    circle.appendChild(img)
+    const img = createSafeImage(user.profile_photo_url, 'width: 100%; height: 100%; object-fit: cover;')
+    if (img) {
+      circle.appendChild(img)
+    }
     el.appendChild(circle)
   }
   el.addEventListener('mouseenter', () => {
@@ -408,13 +354,13 @@ function MapViewSimple({
       
       if (typeof window !== 'undefined' && (window as any).mapboxgl) {
         const mapboxgl = (window as any).mapboxgl
-        // Use token from environment variable - NEVER hardcode tokens
         const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+
         if (!mapboxToken) {
-          console.error('❌ NEXT_PUBLIC_MAPBOX_TOKEN not configured - map features disabled')
-          setMapError('Map configuration error. Please contact support.')
+          console.error('🗺️ Mapbox token not configured - set NEXT_PUBLIC_MAPBOX_TOKEN')
           return
         }
+
         mapboxgl.accessToken = mapboxToken
         console.log('🗺️ Mapbox initialized')
 
@@ -560,23 +506,12 @@ function MapViewSimple({
       if (userMarkerRef.current) {
         userMarkerRef.current.remove()
       }
-
-      // Validate coordinates before creating marker
-      const isValidLngLat = (lngLat: [number, number] | null | undefined): lngLat is [number, number] => {
-        if (!lngLat) return false
-        const [lng, lat] = lngLat
-        return Number.isFinite(lng) && Number.isFinite(lat) &&
-               lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90
-      }
-
-      if (isValidLngLat(currentLocation)) {
-        // Add new marker with safe popup content
-        const userPopupContent = createSafeTextElement('strong', 'You are here')
-        userMarkerRef.current = new mapboxgl.Marker({ color: '#00d4ff' })
-          .setLngLat(currentLocation)
-          .setPopup(new mapboxgl.Popup().setDOMContent(userPopupContent))
-          .addTo(map.current)
-      }
+      
+      // Add new marker
+      userMarkerRef.current = new mapboxgl.Marker({ color: '#00d4ff' })
+        .setLngLat(currentLocation)
+        .setPopup(new mapboxgl.Popup().setHTML('<strong>You are here</strong>'))
+        .addTo(map.current)
     }
   }, [currentLocation])
 
@@ -638,29 +573,36 @@ function MapViewSimple({
 
     // Add new venue markers
     venues.forEach((venue: any) => {
-      // Validate venue coordinates before creating marker
-      if (!isFiniteNumber(venue.longitude) || !isFiniteNumber(venue.latitude)) {
-        return
-      }
-
       const el = createVenueMarker(
-        safeStr(venue.name),
-        safeStr(venue.type, 'restaurant'),
-        safeStr(venue.address),
+        venue.name,
+        venue.type || 'restaurant',
+        venue.address || '',
         () => {
-          // Show venue info on click - using safe DOM creation
+          // Show venue info on click - using safe DOM manipulation
           const popupContent = document.createElement('div')
           popupContent.style.cssText = 'color: white; font-family: system-ui;'
 
-          const nameEl = createSafeTextElement('strong', safeStr(venue.name), 'font-size: 14px; display: block; margin-bottom: 4px;')
-          const addressEl = createSafeTextElement('div', safeStr(venue.address), 'font-size: 12px; color: rgba(255,255,255,0.7);')
-          const categoryEl = createSafeTextElement('div', safeStr(venue.category || venue.type), 'font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px;')
-
+          const nameEl = document.createElement('strong')
+          nameEl.style.cssText = 'font-size: 14px; display: block; margin-bottom: 4px;'
+          nameEl.textContent = venue.name || 'Unknown venue'
           popupContent.appendChild(nameEl)
-          popupContent.appendChild(addressEl)
-          popupContent.appendChild(categoryEl)
 
-          new mapboxgl.Popup({ offset: 25 })
+          if (venue.address) {
+            const addressEl = document.createElement('div')
+            addressEl.style.cssText = 'font-size: 12px; color: rgba(255,255,255,0.7);'
+            addressEl.textContent = venue.address
+            popupContent.appendChild(addressEl)
+          }
+
+          const categoryText = venue.category || venue.type || ''
+          if (categoryText) {
+            const categoryEl = document.createElement('div')
+            categoryEl.style.cssText = 'font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px;'
+            categoryEl.textContent = categoryText
+            popupContent.appendChild(categoryEl)
+          }
+
+          const popup = new mapboxgl.Popup({ offset: 25 })
             .setLngLat([venue.longitude, venue.latitude])
             .setDOMContent(popupContent)
             .addTo(map.current)
