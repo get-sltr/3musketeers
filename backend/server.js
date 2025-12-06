@@ -746,22 +746,27 @@ app.get('/api/health', (req, res) => {
 });
 
 // EROS diagnostic endpoint (for debugging Anthropic API issues)
-app.get('/api/v1/eros/diagnostic', (req, res) => {
+// SECURITY: Requires authentication - never expose API key details publicly
+app.get('/api/v1/eros/diagnostic', authenticateUser, (req, res) => {
   const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
   const apiKeyLength = process.env.ANTHROPIC_API_KEY?.length || 0;
-  const apiKeyPrefix = process.env.ANTHROPIC_API_KEY?.substring(0, 15) || 'NOT SET';
   const anthropicInitialized = !!anthropic;
   
-  // Determine possible issues
+  // SECURITY: Only check format validity, never expose actual key content
+  const hasValidFormat = hasApiKey && 
+    apiKeyLength >= 40 && 
+    process.env.ANTHROPIC_API_KEY?.startsWith('sk-ant-');
+  
+  // Determine possible issues (without exposing sensitive data)
   const issues = [];
   if (!hasApiKey) {
-    issues.push('ANTHROPIC_API_KEY environment variable not set in Railway');
+    issues.push('ANTHROPIC_API_KEY environment variable not set');
   }
   if (hasApiKey && apiKeyLength < 40) {
-    issues.push(`API key appears too short (${apiKeyLength} chars, should be 50+ characters)`);
+    issues.push('API key appears too short');
   }
-  if (hasApiKey && !apiKeyPrefix.startsWith('sk-ant-')) {
-    issues.push(`API key format may be incorrect (starts with "${apiKeyPrefix}", should start with "sk-ant-")`);
+  if (hasApiKey && !process.env.ANTHROPIC_API_KEY?.startsWith('sk-ant-')) {
+    issues.push('API key format may be incorrect');
   }
   if (hasApiKey && !anthropicInitialized) {
     issues.push('API key set but Anthropic client not initialized - check server startup logs');
@@ -773,37 +778,36 @@ app.get('/api/v1/eros/diagnostic', (req, res) => {
   
   if (!hasApiKey) {
     rootCause = 'missing_api_key';
-    recommendation = 'Set ANTHROPIC_API_KEY in Railway environment variables with your Anthropic API key';
+    recommendation = 'Set ANTHROPIC_API_KEY in Railway environment variables';
   } else if (apiKeyLength < 40) {
     rootCause = 'invalid_api_key_length';
-    recommendation = 'API key appears invalid - verify key in Anthropic console (https://console.anthropic.com/)';
-  } else if (!apiKeyPrefix.startsWith('sk-ant-')) {
+    recommendation = 'API key appears invalid - verify key in Anthropic console';
+  } else if (!process.env.ANTHROPIC_API_KEY?.startsWith('sk-ant-')) {
     rootCause = 'invalid_api_key_format';
-    recommendation = 'API key format incorrect - should start with "sk-ant-api03-". Get new key from Anthropic console';
+    recommendation = 'API key format incorrect - get new key from Anthropic console';
   } else if (!anthropicInitialized) {
     rootCause = 'initialization_failed';
     recommendation = 'API key present but Anthropic client failed to initialize - check server startup logs';
   } else {
-    rootCause = 'api_authentication_failure';
-    recommendation = 'API key appears valid but API calls are failing. Possible causes: 1) Key expired/revoked, 2) Billing/quota issue, 3) Network/firewall blocking Anthropic API. Check Anthropic console for account status.';
+    rootCause = 'none';
+    recommendation = 'Configuration appears correct. If issues persist, check Anthropic console for account status.';
   }
   
+  // SECURITY: Return sanitized status information only
   res.json({
     eros_status: anthropicInitialized ? 'configured' : 'not_configured',
     anthropic_initialized: anthropicInitialized,
     api_key_present: hasApiKey,
-    api_key_length: apiKeyLength,
-    api_key_prefix: apiKeyPrefix,
-    expected_key_format: 'sk-ant-api03-... (50+ characters)',
+    api_key_valid_format: hasValidFormat,
     root_cause: rootCause,
-    issues: issues.length > 0 ? issues : ['No obvious configuration issues - check API key validity and Anthropic account status'],
-    recommendation: recommendation,
-    is_subscription_issue: rootCause === 'api_authentication_failure' && hasApiKey && apiKeyLength >= 40 && apiKeyPrefix.startsWith('sk-ant-')
+    issues: issues.length > 0 ? issues : ['No configuration issues detected'],
+    recommendation: recommendation
   });
 });
 
 // Test Anthropic API key directly
-app.get('/api/v1/eros/test-api-key', async (req, res) => {
+// SECURITY: Requires authentication - prevents unauthorized API key testing
+app.get('/api/v1/eros/test-api-key', authenticateUser, async (req, res) => {
   if (!anthropic) {
     return res.status(500).json({
       error: 'Anthropic client not initialized',
@@ -814,7 +818,7 @@ app.get('/api/v1/eros/test-api-key', async (req, res) => {
   try {
     // Make a minimal test API call
     const testResponse = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-3-haiku-20240307',
       max_tokens: 10,
       messages: [
         { role: 'user', content: 'Say "test" if you can read this.' }
@@ -833,39 +837,33 @@ app.get('/api/v1/eros/test-api-key', async (req, res) => {
     });
   } catch (error) {
     const status = error?.status || error?.statusCode;
-    const errorMessage = error?.message || '';
+    // SECURITY: Don't expose raw error messages
+    const errorMessage = error?.message || 'Unknown error';
     
     let errorType = 'unknown';
     let solution = 'Check Anthropic console for account status';
     
     if (status === 401 || status === 403) {
       errorType = 'authentication_failed';
-      solution = 'API key is invalid, expired, or revoked. Go to https://console.anthropic.com/ to: 1) Check if key is active, 2) Verify billing is set up, 3) Create a new API key if needed';
+      solution = 'API key issue - check Anthropic console';
     } else if (status === 429) {
       errorType = 'rate_limit';
-      solution = 'Rate limit exceeded. Wait a few minutes and try again, or upgrade your Anthropic plan';
+      solution = 'Rate limit exceeded. Wait a few minutes and try again';
     } else if (status === 402) {
       errorType = 'payment_required';
-      solution = 'Billing issue - payment method required or account suspended. Go to https://console.anthropic.com/ to add payment method';
+      solution = 'Billing issue - check Anthropic console';
     } else if (errorMessage.includes('quota') || errorMessage.includes('billing')) {
       errorType = 'billing_quota';
-      solution = 'Billing/quota issue. Check Anthropic console for: 1) Payment method, 2) Usage limits, 3) Account status';
+      solution = 'Billing/quota issue - check Anthropic console';
     }
 
+    // SECURITY: Return sanitized error info only
     res.status(status || 500).json({
       status: 'error',
       api_key_valid: false,
       error_type: errorType,
       http_status: status,
-      error_message: errorMessage,
-      solution: solution,
-      full_error: {
-        message: errorMessage,
-        status: status,
-        statusCode: error?.statusCode,
-        code: error?.code,
-        type: error?.type
-      }
+      solution: solution
     });
   }
 });
@@ -1147,7 +1145,7 @@ Be concise, warm, supportive, and helpful. Keep responses under 150 words. Focus
 
         // Call Claude API
         const claudeResponse = await anthropic.messages.create({
-          model: 'claude-3-5-sonnet-20241022',
+          model: 'claude-3-haiku-20240307',
           max_tokens: 1024,
           system: systemPrompt,
           messages

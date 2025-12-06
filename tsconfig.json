@@ -26,5 +26,5 @@
     "noUncheckedIndexedAccess": true
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "sltr-backend", "backend/node_modules", "beckend"]
+  "exclude": ["node_modules", "sltr-backend", "backend/node_modules", "beckend", "3musketeers", "backend"]
 }
