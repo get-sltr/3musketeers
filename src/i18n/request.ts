@@ -1,13 +1,18 @@
 import { notFound } from 'next/navigation'
 import { getRequestConfig } from 'next-intl/server'
-import { locales, type Locale } from './config'
+import { locales, defaultLocale, type Locale } from './config'
 
-export default getRequestConfig(async ({ locale }) => {
-  const validatedLocale = locale as Locale
-  if (!locales.includes(validatedLocale)) notFound()
+export default getRequestConfig(async ({ requestLocale }) => {
+  // Get locale from the request (async in next-intl v4)
+  let locale = await requestLocale
+  
+  // Fallback to default if not valid
+  if (!locale || !locales.includes(locale as Locale)) {
+    locale = defaultLocale
+  }
 
   return {
-    locale: validatedLocale,
-    messages: (await import(`../../messages/${validatedLocale}.json`)).default
+    locale,
+    messages: (await import(`../../messages/${locale}.json`)).default
   }
 })
