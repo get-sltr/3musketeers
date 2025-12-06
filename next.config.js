@@ -20,7 +20,6 @@ const nextConfig = {
   // Enable experimental features for better performance
   experimental: {
     optimizePackageImports: ['framer-motion', 'lucide-react', 'date-fns'],
-    instrumentationHook: true, // Required for Sentry
   },
 
   // Headers for webhooks

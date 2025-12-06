@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense, useRef } from 'react'
+import { useState, useEffect, Suspense, useRef, use } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Room, RoomEvent, ConnectionState } from 'livekit-client'
@@ -198,14 +198,15 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
   return <ConferenceRoom room={room} displayName={displayName} />
 }
 
-export default function ChannelRoomPage({ params }: { params: { id: string } }) {
+export default function ChannelRoomPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   return (
     <Suspense fallback={
       <div className="fixed inset-0 bg-black flex items-center justify-center">
         <LoadingSkeleton variant="fullscreen" />
       </div>
     }>
-      <ChannelRoomContent channelId={params.id} />
+      <ChannelRoomContent channelId={id} />
     </Suspense>
   )
 }

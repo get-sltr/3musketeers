@@ -4,10 +4,10 @@ import { withCSRFProtection } from '@/lib/csrf-server';
 
 async function handler(
   request: NextRequest,
-  { params }: { params: { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   const supabase = await createClient();
-  const { code } = params;
+  const { code } = await params;
 
   try {
     // Get current user
@@ -144,7 +144,7 @@ async function handler(
 // We need to create a wrapper that handles the params
 export async function POST(
   request: NextRequest,
-  context: { params: { code: string } }
+  context: { params: Promise<{ code: string }> }
 ) {
   const wrappedHandler = withCSRFProtection(
     (req: NextRequest) => handler(req, context)
