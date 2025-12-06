@@ -1,0 +1,134 @@
+/* Map Pin Drawer Styles */
+
+.map-pin-drawer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.map-pin-drawer-header {
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  background: white;
+}
+
+.map-pin-drawer-handle {
+  width: 40px;
+  height: 4px;
+  background: #ddd;
+  border-radius: 2px;
+  margin: 8px auto;
+}
+
+.map-pin-drawer-content {
+  padding: 16px;
+}
+
+.map-pin-profile {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.map-pin-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.map-pin-info {
+  flex: 1;
+}
+
+.map-pin-name {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.map-pin-distance {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+.map-pin-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.map-pin-action-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.map-pin-action-btn.primary {
+  background: #ff6b6b;
+  color: white;
+}
+
+.map-pin-action-btn.primary:hover {
+  background: #ff5252;
+}
+
+.map-pin-action-btn.secondary {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.map-pin-action-btn.secondary:hover {
+  background: #e0e0e0;
+}
+
+@media (max-width: 768px) {
+  .map-pin-drawer {
+    max-height: 70vh;
+  }
+
+  .map-pin-drawer-header {
+    padding: 12px;
+  }
+
+  .map-pin-drawer-content {
+    padding: 12px;
+  }
+
+  .map-pin-profile {
+    gap: 12px;
+  }
+
+  .map-pin-image {
+    width: 70px;
+    height: 70px;
+  }
+}
