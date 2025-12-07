@@ -139,7 +139,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://api.mapbox.com https://fonts.googleapis.com",
               "img-src 'self' data: blob: https: http:",
               "font-src 'self' data: https://fonts.gstatic.com",
-              "connect-src 'self' https://api.mapbox.com https://*.supabase.co https://bnzyzkmixfmylviaojbj.supabase.co wss://*.supabase.co https://api.groq.com https://vitals.vercel-insights.com https://api.stripe.com https://*.ingest.sentry.io https://*.sentry.io https://eros-backend.getsltr.com",
+              "connect-src 'self' https://api.mapbox.com https://*.supabase.co https://bnzyzkmixfmylviaojbj.supabase.co wss://*.supabase.co https://api.groq.com https://vitals.vercel-insights.com https://api.stripe.com https://*.ingest.sentry.io https://*.sentry.io https://eros-backend.getsltr.com https://eros-backend-production.up.railway.app",
               "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
               "media-src 'self' blob: https:",
               "worker-src 'self' blob:",
