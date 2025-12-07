@@ -66,10 +66,103 @@ services:
     networks:
       - sltr-network
 
+  # ============================================
+  # TheHive Security Platform
+  # ============================================
+
+  # Elasticsearch (required by TheHive)
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.9
+    container_name: sltr-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200/_cluster/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - sltr-network
+
+  # Cassandra (required by TheHive)
+  cassandra:
+    image: cassandra:4.1
+    container_name: sltr-cassandra
+    environment:
+      - CASSANDRA_CLUSTER_NAME=sltr-thehive
+      - HEAP_NEWSIZE=512M
+      - MAX_HEAP_SIZE=1024M
+    volumes:
+      - cassandra-data:/var/lib/cassandra
+    ports:
+      - "9042:9042"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "cqlsh", "-e", "describe keyspaces"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    networks:
+      - sltr-network
+
+  # TheHive - Security Incident Response Platform
+  thehive:
+    image: strangebee/thehive:5.2
+    container_name: sltr-thehive
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      cassandra:
+        condition: service_healthy
+    environment:
+      - JVM_OPTS=-Xms512m -Xmx1024m
+    volumes:
+      - thehive-data:/opt/thp/thehive/data
+      - ./thehive/application.conf:/etc/thehive/application.conf:ro
+    ports:
+      - "9000:9000"
+    restart: unless-stopped
+    networks:
+      - sltr-network
+
+  # Cortex - Analysis Engine (optional, for automated analysis)
+  cortex:
+    image: thehiveproject/cortex:3.1.7
+    container_name: sltr-cortex
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      - job_directory=/opt/cortex/jobs
+    volumes:
+      - cortex-data:/opt/cortex/jobs
+      - ./cortex/application.conf:/etc/cortex/application.conf:ro
+    ports:
+      - "9001:9001"
+    restart: unless-stopped
+    networks:
+      - sltr-network
+
 networks:
   sltr-network:
     driver: bridge
 
 volumes:
   redis-data:
+    driver: local
+  elasticsearch-data:
+    driver: local
+  cassandra-data:
+    driver: local
+  thehive-data:
+    driver: local
+  cortex-data:
     driver: local
