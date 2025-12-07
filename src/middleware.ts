@@ -13,6 +13,7 @@ export async function middleware(request: NextRequest) {
   const csrfExemptRoutes = [
     '/api/webhooks', // Stripe webhooks
     '/api/health', // Health checks
+    '/api/livekit-token', // LiveKit video calls
     '/api/v1/heartbeat', // EROS heartbeat
     '/api/v1/matches', // EROS matches
     '/api/v1/assistant', // EROS chat
