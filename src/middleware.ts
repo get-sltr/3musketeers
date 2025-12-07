@@ -9,8 +9,21 @@ const intlMiddleware = createIntlMiddleware(routing);
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Handle API routes with CSRF protection (skip i18n)
-  if (pathname.startsWith('/api/')) {
+  // Routes that should skip CSRF protection
+  const csrfExemptRoutes = [
+    '/api/webhooks', // Stripe webhooks
+    '/api/health', // Health checks
+    '/api/v1/heartbeat', // EROS heartbeat
+    '/api/v1/matches', // EROS matches
+    '/api/v1/assistant', // EROS chat
+    '/api/v1/activity', // EROS activity
+  ];
+
+  // Check if route is exempt from CSRF
+  const isExempt = csrfExemptRoutes.some(route => pathname.startsWith(route));
+
+  // Handle API routes with CSRF protection (skip exempt routes)
+  if (pathname.startsWith('/api/') && !isExempt) {
     const csrfValid = await requireCsrf(request);
     if (!csrfValid) {
       console.error(`CSRF validation failed for ${request.method} ${pathname}`);
@@ -38,7 +51,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Match all paths except static files and Next.js internals
     '/((?!_next|_vercel|.*\\..*).*)',
     '/api/:path*'
   ]
