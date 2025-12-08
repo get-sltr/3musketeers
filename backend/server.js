@@ -814,7 +814,7 @@ app.get('/api/v1/eros/test-api-key', async (req, res) => {
   try {
     // Make a minimal test API call
     const testResponse = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-3-haiku-20240307',
       max_tokens: 10,
       messages: [
         { role: 'user', content: 'Say "test" if you can read this.' }
@@ -1205,7 +1205,7 @@ Be concise, warm, supportive, and helpful. Keep responses under 150 words. Focus
 
         // Call Claude API
         const claudeResponse = await anthropic.messages.create({
-          model: 'claude-3-5-sonnet-20241022',
+          model: 'claude-3-haiku-20240307',
           max_tokens: 1024,
           system: systemPrompt,
           messages
