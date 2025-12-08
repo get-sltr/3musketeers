@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '../lib/supabase/client'
 import { RealtimeChannel } from '@supabase/supabase-js'
-import RealtimeManager from '../lib/realtime/RealtimeManager'
+import { getRealtimeManager } from '../lib/realtime/RealtimeManager'
 
 interface UseRealtimeReturn {
   isConnected: boolean
@@ -28,19 +28,21 @@ export function useRealtime(): UseRealtimeReturn {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
+      const manager = getRealtimeManager()
+      
       // Check current connection status first
-      const currentStatus = RealtimeManager.getConnectionStatus()
+      const currentStatus = manager.getConnectionStatus()
       setIsConnected(currentStatus)
 
       // Only attempt connection if not already connected
       if (!currentStatus) {
-        const connected = await RealtimeManager.connect(user.id)
+        const connected = await manager.connect(user.id)
         setIsConnected(connected)
       }
 
       // Listen for connection status changes
-      unsubConnect = RealtimeManager.on('realtime:connected', () => setIsConnected(true))
-      unsubError = RealtimeManager.on('realtime:error', () => setIsConnected(false))
+      unsubConnect = manager.on('realtime:connected', () => setIsConnected(true))
+      unsubError = manager.on('realtime:error', () => setIsConnected(false))
     }
 
     initRealtime()
@@ -53,23 +55,24 @@ export function useRealtime(): UseRealtimeReturn {
   }, [])
 
   const joinConversation = useCallback((conversationId: string) => {
+    const manager = getRealtimeManager()
     // Subscribe to message events from global manager
-    RealtimeManager.on('message:new', (message) => {
+    manager.on('message:new', (message) => {
       if (message.conversation_id === conversationId) {
         window.dispatchEvent(new CustomEvent('new_message', { detail: message }))
       }
     })
-    RealtimeManager.on('message:updated', (message) => {
+    manager.on('message:updated', (message) => {
       if (message.conversation_id === conversationId) {
         window.dispatchEvent(new CustomEvent('message_updated', { detail: message }))
       }
     })
-    RealtimeManager.on('user:typing', (data) => {
+    manager.on('user:typing', (data) => {
       if (data.conversationId === conversationId) {
         window.dispatchEvent(new CustomEvent('user_typing', { detail: data }))
       }
     })
-    RealtimeManager.on('user:stop_typing', (data) => {
+    manager.on('user:stop_typing', (data) => {
       if (data.conversationId === conversationId) {
         window.dispatchEvent(new CustomEvent('user_stop_typing', { detail: data }))
       }
@@ -144,14 +147,14 @@ export function useRealtime(): UseRealtimeReturn {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    RealtimeManager.broadcast('typing_start', { userId: user.id, conversationId })
+    getRealtimeManager().broadcast('typing_start', { userId: user.id, conversationId })
   }, [supabase])
 
   const stopTyping = useCallback(async (conversationId: string) => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    RealtimeManager.broadcast('typing_stop', { userId: user.id, conversationId })
+    getRealtimeManager().broadcast('typing_stop', { userId: user.id, conversationId })
   }, [supabase])
 
   const markMessageRead = useCallback(async (messageId: string, conversationId: string) => {

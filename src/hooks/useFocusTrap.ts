@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useCallback, RefObject, useState } from 'react'
+import { useRef, useEffect, useCallback, useState, RefObject } from 'react'
 
 interface UseFocusTrapOptions {
   enabled?: boolean
@@ -21,6 +21,13 @@ interface UseFocusTrapReturn {
 /**
  * Custom hook for trapping focus within a container element.
  * Useful for modals, dialogs, and other overlay components.
+ *
+ * Features:
+ * - Traps Tab/Shift+Tab navigation within container
+ * - Returns focus to previously focused element on deactivate
+ * - Handles Escape key to close
+ * - Handles click outside to close
+ * - Prevents memory leaks with proper cleanup
  */
 export function useFocusTrap(options: UseFocusTrapOptions = {}): UseFocusTrapReturn {
   const {
@@ -34,18 +41,7 @@ export function useFocusTrap(options: UseFocusTrapOptions = {}): UseFocusTrapRet
 
   const containerRef = useRef<HTMLDivElement>(null)
   const previouslyFocusedElement = useRef<HTMLElement | null>(null)
-  // ref for internal handlers (stable, avoids stale closures)
-  const isActiveRef = useRef(false)
-  // reactive state exposed to consumers
   const [isActive, setIsActive] = useState(false)
-  // mounted guard to avoid setState after unmount
-  const mountedRef = useRef(true)
-  useEffect(() => {
-    mountedRef.current = true
-    return () => {
-      mountedRef.current = false
-    }
-  }, [])
 
   // Track restore focus timeout to prevent memory leaks
   const restoreFocusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -75,9 +71,9 @@ export function useFocusTrap(options: UseFocusTrapOptions = {}): UseFocusTrapRet
   // Focus the first focusable element
   const focusFirstElement = useCallback(() => {
     const focusableElements = getFocusableElements()
-    const firstEl = focusableElements[0]
-    if (firstEl) {
-      firstEl.focus()
+    const firstElement = focusableElements[0]
+    if (firstElement) {
+      firstElement.focus()
     } else {
       // If no focusable elements, focus the container itself
       containerRef.current?.focus()
@@ -101,25 +97,23 @@ export function useFocusTrap(options: UseFocusTrapOptions = {}): UseFocusTrapRet
 
   // Activate focus trap
   const activate = useCallback(() => {
-    if (isActiveRef.current) return
+    if (isActive) return
 
     // Store currently focused element
     previouslyFocusedElement.current = document.activeElement as HTMLElement
-    isActiveRef.current = true
-    if (mountedRef.current) setIsActive(true)
+    setIsActive(true)
 
     // Focus initial element after a small delay to ensure DOM is ready
     requestAnimationFrame(() => {
       handleInitialFocus()
     })
-  }, [handleInitialFocus])
+  }, [isActive, handleInitialFocus])
 
   // Deactivate focus trap
   const deactivate = useCallback(() => {
-    if (!isActiveRef.current) return
+    if (!isActive) return
 
-    isActiveRef.current = false
-    if (mountedRef.current) setIsActive(false)
+    setIsActive(false)
 
     // Clear any pending restore focus timeout
     if (restoreFocusTimeoutRef.current) {
@@ -134,7 +128,7 @@ export function useFocusTrap(options: UseFocusTrapOptions = {}): UseFocusTrapRet
         restoreFocusTimeoutRef.current = null
       }, 0)
     }
-  }, [returnFocusOnDeactivate])
+  }, [isActive, returnFocusOnDeactivate])
 
   // Main effect for activating/deactivating the focus trap
   useEffect(() => {
@@ -148,8 +142,7 @@ export function useFocusTrap(options: UseFocusTrapOptions = {}): UseFocusTrapRet
 
     // Store currently focused element before trapping
     previouslyFocusedElement.current = document.activeElement as HTMLElement
-    isActiveRef.current = true
-    if (mountedRef.current) setIsActive(true)
+    setIsActive(true)
 
     // Handle initial focus with a small delay
     const timeoutId = setTimeout(() => {
@@ -158,7 +151,7 @@ export function useFocusTrap(options: UseFocusTrapOptions = {}): UseFocusTrapRet
 
     // Handle Tab key to trap focus
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (!isActiveRef.current || !containerRef.current) return
+      if (!containerRef.current) return
 
       // Handle Escape key
       if (event.key === 'Escape' && onEscape) {
@@ -171,26 +164,27 @@ export function useFocusTrap(options: UseFocusTrapOptions = {}): UseFocusTrapRet
       // Handle Tab key
       if (event.key === 'Tab') {
         const focusableElements = getFocusableElements()
-        if (focusableElements.length === 0) {
+        const firstElement = focusableElements[0]
+        const lastElement = focusableElements[focusableElements.length - 1]
+
+        if (!firstElement || !lastElement) {
           event.preventDefault()
           return
         }
 
-        const firstElement = focusableElements[0]
-        const lastElement = focusableElements[focusableElements.length - 1]
         const activeElement = document.activeElement
 
         if (event.shiftKey) {
           // Shift + Tab: Move backwards
           if (activeElement === firstElement || !containerRef.current.contains(activeElement)) {
             event.preventDefault()
-            lastElement?.focus()
+            lastElement.focus()
           }
         } else {
           // Tab: Move forwards
           if (activeElement === lastElement || !containerRef.current.contains(activeElement)) {
             event.preventDefault()
-            firstElement?.focus()
+            firstElement.focus()
           }
         }
       }
@@ -198,7 +192,7 @@ export function useFocusTrap(options: UseFocusTrapOptions = {}): UseFocusTrapRet
 
     // Handle click outside
     const handleClickOutside = (event: MouseEvent) => {
-      if (!isActiveRef.current || !containerRef.current) return
+      if (!containerRef.current) return
 
       const target = event.target as Node
       if (!containerRef.current.contains(target)) {
@@ -214,7 +208,7 @@ export function useFocusTrap(options: UseFocusTrapOptions = {}): UseFocusTrapRet
 
     // Prevent focus from leaving the container
     const handleFocusIn = (event: FocusEvent) => {
-      if (!isActiveRef.current || !containerRef.current) return
+      if (!containerRef.current) return
 
       const target = event.target as Node
       if (!containerRef.current.contains(target)) {
@@ -236,8 +230,7 @@ export function useFocusTrap(options: UseFocusTrapOptions = {}): UseFocusTrapRet
       document.removeEventListener('mousedown', handleClickOutside, true)
       document.removeEventListener('focusin', handleFocusIn, true)
 
-      isActiveRef.current = false
-      if (mountedRef.current) setIsActive(false)
+      setIsActive(false)
 
       // Return focus to the previously focused element
       if (returnFocusOnDeactivate && previouslyFocusedElement.current) {

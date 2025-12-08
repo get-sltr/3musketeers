@@ -1,23 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY
-const stripe = stripeSecretKey
-  ? new Stripe(stripeSecretKey, {
-      apiVersion: '2025-10-29.clover'
-})
-  : null
+// Force dynamic to prevent build-time execution
+export const dynamic = 'force-dynamic'
 
-// Lazy initialization to avoid build-time errors when env vars aren't available
-function getSupabaseClient() {
+// Lazy load Stripe and Supabase clients
+const getStripe = () => {
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY
+  if (!stripeSecretKey) return null
+  return new Stripe(stripeSecretKey, {
+    apiVersion: '2025-10-29.clover'
+  })
+}
+
+const getSupabase = () => {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  if (!url || !key) {
-    throw new Error('Supabase environment variables are not configured')
-  }
-
+  if (!url || !key) return null
   return createClient(url, key)
 }
 
@@ -68,12 +68,15 @@ function getSafeOrigin(requestOrigin: string | null): string {
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = getSupabase()
+    if (!supabase) {
+      return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
+    }
     const { searchParams } = new URL(request.url)
     const action = searchParams.get('action')
 
     // Get founder count
     if (action === 'founder-count') {
-      const supabase = getSupabaseClient()
       const { count } = await supabase
         .from('profiles')
         .select('id', { count: 'exact', head: true })
@@ -102,6 +105,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = getSupabase()
+    
+    if (!supabase) {
+      return NextResponse.json({ error: 'Service unavailable' }, { status: 503 })
+    }
     const { priceType, userId, email } = await request.json()
 
     if (!priceType || !userId || !email) {
@@ -111,10 +119,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = getSupabaseClient()
+    // Validate price type
+    if (!['founder', 'member'].includes(priceType)) {
+      return NextResponse.json(
+        { error: 'Invalid price type' },
+        { status: 400 }
+      )
+    }
 
     // Check if user has a profile (optional)
-    const supabase = getSupabase()
     const { data: user } = await supabase
       .from('profiles')
       .select('id, founder, subscription_status')
@@ -131,7 +144,7 @@ export async function POST(request: NextRequest) {
 
     // Check founder availability
     if (priceType === 'founder') {
-      const { count } = await getSupabase()
+      const { count } = await supabase
         .from('profiles')
         .select('id', { count: 'exact', head: true })
         .eq('founder', true)

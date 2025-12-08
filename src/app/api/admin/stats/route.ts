@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient, isAdmin } from '@/lib/admin'
 
 export const dynamic = 'force-dynamic'
 
 /**
  * GET /api/admin/stats
- * Get aggregate statistics for admin dashboard (super admin only)
+ * Get moderation dashboard statistics
  */
 export async function GET(request: NextRequest) {
   try {
+    // 1. Authenticate user
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
@@ -19,113 +21,142 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Check if user is super admin
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('is_super_admin')
-      .eq('id', user.id)
-      .single()
-
-    if (profileError || !profile?.is_super_admin) {
+    // 2. Check admin status
+    if (!await isAdmin(user.id)) {
       return NextResponse.json(
-        { error: 'Forbidden: Super admin access required' },
+        { error: 'Forbidden - Admin access required' },
         { status: 403 }
       )
     }
 
-    // Get moderation stats using the database function
-    const { data: moderationStats, error: modStatsError } = await supabase
-      .rpc('get_moderation_stats', { p_admin_id: user.id })
-      .single()
+    const adminClient = createAdminClient()
 
-    if (modStatsError) {
-      console.error('Error fetching moderation stats:', modStatsError)
-      // Continue without moderation stats if function doesn't exist yet
-    }
+    // 3. Get report statistics
+    const [
+      { count: pendingReports },
+      { count: totalReports },
+      { count: todayReports },
+      { count: weekReports }
+    ] = await Promise.all([
+      adminClient.from('reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+      adminClient.from('reports').select('*', { count: 'exact', head: true }),
+      adminClient.from('reports').select('*', { count: 'exact', head: true }).gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
+      adminClient.from('reports').select('*', { count: 'exact', head: true }).gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+    ])
 
-    // Get report category breakdown
-    const { data: categoryBreakdown, error: categoryError } = await supabase
+    // 4. Get user statistics
+    const [
+      { count: totalUsers },
+      { count: activeUsers },
+      { count: suspendedUsers },
+      { count: bannedUsers },
+      { count: newUsersToday }
+    ] = await Promise.all([
+      adminClient.from('profiles').select('*', { count: 'exact', head: true }),
+      adminClient.from('profiles').select('*', { count: 'exact', head: true }).eq('account_status', 'active'),
+      adminClient.from('profiles').select('*', { count: 'exact', head: true }).eq('account_status', 'suspended'),
+      adminClient.from('profiles').select('*', { count: 'exact', head: true }).eq('account_status', 'banned'),
+      adminClient.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+    ])
+
+    // 5. Get moderation action statistics
+    const [
+      { count: todayActions },
+      { count: weekActions }
+    ] = await Promise.all([
+      adminClient.from('moderation_actions').select('*', { count: 'exact', head: true }).gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
+      adminClient.from('moderation_actions').select('*', { count: 'exact', head: true }).gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+    ])
+
+    // 6. Get reports by category
+    const { data: reportsByCategory } = await adminClient
       .from('reports')
-      .select('category, status')
+      .select('category')
 
-    let categories: Record<string, { total: number; pending: number }> = {}
-    if (!categoryError && categoryBreakdown) {
-      for (const report of categoryBreakdown) {
-        const category = report.category
-        if (!categories[category]) {
-          categories[category] = { total: 0, pending: 0 }
-        }
-        const cat = categories[category]
-        if (cat) {
-          cat.total++
-          if (report.status === 'pending') {
-            cat.pending++
-          }
-        }
-      }
+    const categoryCounts: Record<string, number> = {}
+    if (reportsByCategory) {
+      reportsByCategory.forEach((report) => {
+        categoryCounts[report.category] = (categoryCounts[report.category] || 0) + 1
+      })
     }
 
-    // Get recent moderation actions
-    const { data: recentActions, error: actionsError } = await supabase
+    // 7. Get recent moderation actions
+    const { data: recentActions } = await adminClient
       .from('moderation_actions')
       .select(`
         id,
         action_type,
-        reason,
         created_at,
-        target:profiles!target_user_id (
-          id,
-          display_name,
-          photo_url
+        admin:profiles!admin_id (
+          display_name
         ),
-        admin:profiles!admin_user_id (
-          id,
+        target:profiles!target_user_id (
           display_name
         )
       `)
       .order('created_at', { ascending: false })
       .limit(10)
 
-    if (actionsError) {
-      console.error('Error fetching recent actions:', actionsError)
-      // Continue without recent actions
+    // 8. Get most reported users
+    const { data: mostReportedUsers } = await adminClient
+      .from('reports')
+      .select(`
+        reported_user_id,
+        reported:profiles!reported_user_id (
+          id,
+          display_name,
+          photo_url
+        )
+      `)
+      .eq('status', 'pending')
+
+    const reportedUserCounts: Record<string, { user: any; count: number }> = {}
+    if (mostReportedUsers) {
+      mostReportedUsers.forEach((report) => {
+        const userId = report.reported_user_id
+        if (!reportedUserCounts[userId]) {
+          reportedUserCounts[userId] = { user: report.reported, count: 0 }
+        }
+        const userEntry = reportedUserCounts[userId]
+        if (userEntry) {
+          userEntry.count++
+        }
+      })
     }
 
-    // Get top reported users
-    const { data: topReported, error: topReportedError } = await supabase
-      .rpc('get_top_reported_users', { p_admin_id: user.id, p_limit: 5 })
-
-    if (topReportedError) {
-      console.error('Error fetching top reported users:', topReportedError)
-      // Continue without top reported users
-    }
+    const topReportedUsers = Object.values(reportedUserCounts)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5)
 
     return NextResponse.json({
-      stats: moderationStats || {
-        total_reports: 0,
-        pending_reports: 0,
-        reviewed_reports: 0,
-        resolved_reports: 0,
-        dismissed_reports: 0,
-        total_users: 0,
-        active_users: 0,
-        warned_users: 0,
-        suspended_users: 0,
-        banned_users: 0,
-        total_moderation_actions: 0,
-        actions_last_24h: 0,
-        actions_last_7d: 0
+      reports: {
+        pending: pendingReports || 0,
+        total: totalReports || 0,
+        today: todayReports || 0,
+        thisWeek: weekReports || 0,
+        byCategory: categoryCounts
       },
-      category_breakdown: categories,
-      recent_actions: recentActions || [],
-      top_reported_users: topReported || []
+      users: {
+        total: totalUsers || 0,
+        active: activeUsers || 0,
+        suspended: suspendedUsers || 0,
+        banned: bannedUsers || 0,
+        newToday: newUsersToday || 0
+      },
+      moderation: {
+        actionsToday: todayActions || 0,
+        actionsThisWeek: weekActions || 0,
+        recentActions: recentActions || []
+      },
+      alerts: {
+        topReportedUsers
+      }
     })
 
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Unknown error'
-    console.error('Error in admin stats API:', message)
+  } catch (error: any) {
+    console.error('Error fetching admin stats:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error.message },
       { status: 500 }
     )
   }

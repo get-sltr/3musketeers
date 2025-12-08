@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { withCSRFProtection } from '@/lib/csrf-server'
 
-export async function POST(request: Request) {
+async function handler(request: NextRequest) {
   try {
     const { userId } = await request.json()
 
@@ -40,7 +41,8 @@ export async function POST(request: Request) {
     }
 
     // 2. Delete auth user (requires admin/service role)
-    // Note: This uses the service role key to delete the auth user
+    // TODO: This should use a separate admin client with SUPABASE_SERVICE_ROLE_KEY
+    // The current createClient() uses anon key which won't have admin.deleteUser permissions
     const supabaseAdmin = await createClient()
     const { error: deleteAuthError } = await supabaseAdmin.auth.admin.deleteUser(userId)
 
@@ -62,3 +64,5 @@ export async function POST(request: Request) {
     )
   }
 }
+
+export const POST = withCSRFProtection(handler)

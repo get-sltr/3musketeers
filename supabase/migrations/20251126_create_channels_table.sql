@@ -23,37 +23,43 @@ ALTER TABLE public.channels ENABLE ROW LEVEL SECURITY;
 -- Channels RLS Policies
 -- Anyone can view channels in groups they can see
 DROP POLICY IF EXISTS "channels_select_all" ON public.channels;
-CREATE POLICY "channels_select_all" ON public.channels
-  FOR SELECT USING (true);
+CREATE POLICY "channels_select_view_own_groups" ON public.channels
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.group_members
+      WHERE group_members.group_id = channels.group_id
+      AND group_members.user_id = auth.uid()
+    )
+  );
 
--- Authenticated users can create channels if they are the group host
-DROP POLICY IF EXISTS "channels_insert_host" ON public.channels;
-CREATE POLICY "channels_insert_host" ON public.channels
+-- Authenticated users can create channels if they are the group owner
+DROP POLICY IF EXISTS "channels_insert_owner" ON public.channels;
+CREATE POLICY "channels_insert_owner" ON public.channels
   FOR INSERT WITH CHECK (
     auth.uid() = created_by
     AND EXISTS (
       SELECT 1 FROM public.groups
-      WHERE id = group_id AND host_id = auth.uid()
+      WHERE id = group_id AND owner_id = auth.uid()
     )
   );
 
--- Group hosts can update channels
-DROP POLICY IF EXISTS "channels_update_host" ON public.channels;
-CREATE POLICY "channels_update_host" ON public.channels
+-- Group owners can update channels
+DROP POLICY IF EXISTS "channels_update_owner" ON public.channels;
+CREATE POLICY "channels_update_owner" ON public.channels
   FOR UPDATE USING (
     EXISTS (
       SELECT 1 FROM public.groups
-      WHERE id = group_id AND host_id = auth.uid()
+      WHERE id = group_id AND owner_id = auth.uid()
     )
   );
 
--- Group hosts can delete channels
-DROP POLICY IF EXISTS "channels_delete_host" ON public.channels;
-CREATE POLICY "channels_delete_host" ON public.channels
+-- Group owners can delete channels
+DROP POLICY IF EXISTS "channels_delete_owner" ON public.channels;
+CREATE POLICY "channels_delete_owner" ON public.channels
   FOR DELETE USING (
     EXISTS (
       SELECT 1 FROM public.groups
-      WHERE id = group_id AND host_id = auth.uid()
+      WHERE id = group_id AND owner_id = auth.uid()
     )
   );
 
@@ -75,16 +81,39 @@ ALTER TABLE public.channel_messages ENABLE ROW LEVEL SECURITY;
 
 -- Channel messages RLS policies
 DROP POLICY IF EXISTS "channel_messages_select_all" ON public.channel_messages;
-CREATE POLICY "channel_messages_select_all" ON public.channel_messages
-  FOR SELECT USING (true);
+CREATE POLICY "channel_messages_select_group_member" ON public.channel_messages
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1
+      FROM public.channels c
+      JOIN public.group_members gm ON c.group_id = gm.group_id
+      WHERE c.id = channel_id AND gm.user_id = auth.uid()
+    )
+  );
 
 DROP POLICY IF EXISTS "channel_messages_insert_auth" ON public.channel_messages;
-CREATE POLICY "channel_messages_insert_auth" ON public.channel_messages
-  FOR INSERT WITH CHECK (auth.uid() = sender_id);
+CREATE POLICY "channel_messages_insert_group_member" ON public.channel_messages
+  FOR INSERT WITH CHECK (
+    auth.uid() = sender_id
+    AND EXISTS (
+      SELECT 1
+      FROM public.channels c
+      JOIN public.group_members gm ON c.group_id = gm.group_id
+      WHERE c.id = channel_id AND gm.user_id = auth.uid()
+    )
+  );
 
 DROP POLICY IF EXISTS "channel_messages_delete_sender" ON public.channel_messages;
-CREATE POLICY "channel_messages_delete_sender" ON public.channel_messages
-  FOR DELETE USING (auth.uid() = sender_id);
+CREATE POLICY "channel_messages_delete_group_member" ON public.channel_messages
+  FOR DELETE USING (
+    auth.uid() = sender_id
+    AND EXISTS (
+      SELECT 1
+      FROM public.channels c
+      JOIN public.group_members gm ON c.group_id = gm.group_id
+      WHERE c.id = channel_id AND gm.user_id = auth.uid()
+    )
+  );
 
 -- Function to update channels updated_at
 CREATE OR REPLACE FUNCTION public.update_channels_updated_at()

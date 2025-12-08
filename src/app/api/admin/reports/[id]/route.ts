@@ -1,22 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient, isAdmin } from '@/lib/admin'
 
 export const dynamic = 'force-dynamic'
 
-interface RouteParams {
-  params: Promise<{ id: string }>
-}
-
 /**
  * GET /api/admin/reports/[id]
- * Get a specific report with full details (super admin only)
+ * Get a single report by ID
  */
 export async function GET(
   request: NextRequest,
-  { params }: RouteParams
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
+
+    // 1. Authenticate user
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
@@ -27,39 +26,31 @@ export async function GET(
       )
     }
 
-    // Check if user is super admin
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('is_super_admin')
-      .eq('id', user.id)
-      .single()
-
-    if (profileError || !profile?.is_super_admin) {
+    // 2. Check admin status
+    if (!await isAdmin(user.id)) {
       return NextResponse.json(
-        { error: 'Forbidden: Super admin access required' },
+        { error: 'Forbidden - Admin access required' },
         { status: 403 }
       )
     }
 
-    // Get report with joined data
-    const { data: report, error: reportError } = await supabase
+    // 3. Fetch report with admin client
+    const adminClient = createAdminClient()
+    const { data: report, error } = await adminClient
       .from('reports')
       .select(`
         *,
         reporter:profiles!reporter_user_id (
           id,
           display_name,
-          username,
+          email,
           photo_url
         ),
         reported:profiles!reported_user_id (
           id,
           display_name,
-          username,
-          photo_url,
-          account_status,
-          account_status_reason,
-          created_at
+          email,
+          photo_url
         ),
         reviewer:profiles!reviewed_by (
           id,
@@ -69,27 +60,19 @@ export async function GET(
       .eq('id', id)
       .single()
 
-    if (reportError) {
-      if (reportError.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: 'Report not found' },
-          { status: 404 }
-        )
-      }
-      console.error('Error fetching report:', reportError)
+    if (error || !report) {
       return NextResponse.json(
-        { error: 'Failed to fetch report' },
-        { status: 500 }
+        { error: 'Report not found' },
+        { status: 404 }
       )
     }
 
     return NextResponse.json({ report })
 
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Unknown error'
-    console.error('Error in admin report API:', message)
+  } catch (error: any) {
+    console.error('Error fetching report:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error.message },
       { status: 500 }
     )
   }
@@ -97,14 +80,16 @@ export async function GET(
 
 /**
  * PATCH /api/admin/reports/[id]
- * Update a report status (super admin only)
+ * Update report status and add admin notes
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: RouteParams
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
+
+    // 1. Authenticate user
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
@@ -115,20 +100,15 @@ export async function PATCH(
       )
     }
 
-    // Check if user is super admin
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('is_super_admin')
-      .eq('id', user.id)
-      .single()
-
-    if (profileError || !profile?.is_super_admin) {
+    // 2. Check admin status
+    if (!await isAdmin(user.id)) {
       return NextResponse.json(
-        { error: 'Forbidden: Super admin access required' },
+        { error: 'Forbidden - Admin access required' },
         { status: 403 }
       )
     }
 
+    // 3. Parse request body
     const body = await request.json()
     const { status, admin_notes } = body
 
@@ -136,28 +116,31 @@ export async function PATCH(
     const validStatuses = ['pending', 'reviewed', 'resolved', 'dismissed']
     if (status && !validStatuses.includes(status)) {
       return NextResponse.json(
-        { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
+        { error: 'Invalid status. Must be: pending, reviewed, resolved, or dismissed' },
         { status: 400 }
       )
     }
 
-    // Build update object
-    const updateData: Record<string, unknown> = {
+    // 4. Update report with admin client
+    const adminClient = createAdminClient()
+    const updateData: Record<string, any> = {
       updated_at: new Date().toISOString()
     }
 
     if (status) {
       updateData.status = status
-      updateData.reviewed_by = user.id
-      updateData.reviewed_at = new Date().toISOString()
+      // Set reviewed_by and reviewed_at when status changes from pending
+      if (status !== 'pending') {
+        updateData.reviewed_by = user.id
+        updateData.reviewed_at = new Date().toISOString()
+      }
     }
 
     if (admin_notes !== undefined) {
       updateData.admin_notes = admin_notes
     }
 
-    // Update report
-    const { data: report, error: updateError } = await supabase
+    const { data: updatedReport, error } = await adminClient
       .from('reports')
       .update(updateData)
       .eq('id', id)
@@ -165,42 +148,71 @@ export async function PATCH(
         *,
         reporter:profiles!reporter_user_id (
           id,
-          display_name
+          display_name,
+          email
         ),
         reported:profiles!reported_user_id (
           id,
           display_name,
-          account_status
-        ),
-        reviewer:profiles!reviewed_by (
-          id,
-          display_name
+          email
         )
       `)
       .single()
 
-    if (updateError) {
-      if (updateError.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: 'Report not found' },
-          { status: 404 }
-        )
-      }
-      console.error('Error updating report:', updateError)
+    if (error) {
+      console.error('Error updating report:', error)
       return NextResponse.json(
-        { error: 'Failed to update report' },
+        { error: 'Failed to update report', details: error.message },
         { status: 500 }
       )
     }
 
-    return NextResponse.json({ report })
+    // 5. Log the moderation action
+    await logModerationAction(adminClient, {
+      admin_id: user.id,
+      action_type: 'report_status_update',
+      target_report_id: id,
+      details: {
+        new_status: status,
+        admin_notes: admin_notes
+      }
+    })
 
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Unknown error'
-    console.error('Error in admin report update API:', message)
+    return NextResponse.json({
+      success: true,
+      report: updatedReport
+    })
+
+  } catch (error: any) {
+    console.error('Error updating report:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error.message },
       { status: 500 }
     )
+  }
+}
+
+// Helper function to log moderation actions
+async function logModerationAction(adminClient: any, action: {
+  admin_id: string
+  action_type: string
+  target_user_id?: string
+  target_report_id?: string
+  details: Record<string, any>
+}) {
+  try {
+    await adminClient
+      .from('moderation_actions')
+      .insert({
+        admin_id: action.admin_id,
+        action_type: action.action_type,
+        target_user_id: action.target_user_id,
+        target_report_id: action.target_report_id,
+        details: action.details,
+        created_at: new Date().toISOString()
+      })
+  } catch (error) {
+    // Log error but don't fail the main operation
+    console.error('Failed to log moderation action:', error)
   }
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef, Suspense } from 'react'
+import { useEffect, useState, useRef, Suspense, use } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -40,6 +40,8 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
   const [sending, setSending] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [activeChannel, setActiveChannel] = useState<Channel | null>(null)
+  const [isMember, setIsMember] = useState(false)
+  const [joining, setJoining] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -66,6 +68,34 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
         .single()
 
       setGroup(groupData)
+
+      // Check if user is a member
+      const { data: memberData } = await supabase
+        .from('group_members')
+        .select('id')
+        .eq('group_id', groupId)
+        .eq('user_id', user.id)
+        .single()
+
+      if (memberData) {
+        setIsMember(true)
+      } else if (groupData && !groupData.is_private) {
+        // Auto-join public groups
+        const { error: joinError } = await supabase
+          .from('group_members')
+          .insert({
+            group_id: groupId,
+            user_id: user.id,
+            role: 'member'
+          })
+
+        if (!joinError) {
+          setIsMember(true)
+          console.log('Auto-joined public group:', groupData.name)
+        } else {
+          console.error('Failed to auto-join group:', joinError)
+        }
+      }
 
       // Load channels for this group
       const { data: channelsData } = await supabase
@@ -148,9 +178,41 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
     }
   }, [activeChannel, groupId, supabase])
 
+  const handleJoinGroup = async () => {
+    if (!currentUserId || joining) return
+
+    setJoining(true)
+    try {
+      const { error } = await supabase
+        .from('group_members')
+        .insert({
+          group_id: groupId,
+          user_id: currentUserId,
+          role: 'member'
+        })
+
+      if (error) {
+        console.error('Error joining group:', error)
+        alert('Failed to join group. You may need an invitation.')
+      } else {
+        setIsMember(true)
+      }
+    } catch (err) {
+      console.error('Error:', err)
+    } finally {
+      setJoining(false)
+    }
+  }
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newMessage.trim() || !currentUserId || sending) return
+
+    // Check membership before sending
+    if (!isMember) {
+      alert('You need to join this group to send messages')
+      return
+    }
 
     setSending(true)
     try {
@@ -164,12 +226,17 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
 
       if (error) {
         console.error('Error sending message:', error)
-        alert('Failed to send message')
+        if (error.message?.includes('violates row-level security')) {
+          alert('You need to be a member of this group to send messages')
+        } else {
+          alert('Failed to send message: ' + error.message)
+        }
       } else {
         setNewMessage('')
       }
     } catch (err) {
       console.error('Error:', err)
+      alert('Failed to send message')
     } finally {
       setSending(false)
     }
@@ -227,7 +294,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
                   </svg>
                 </button>
                 <div>
-                  <h1 className="text-white text-lg font-bold">{group.name || group.title}</h1>
+                  <h1 className="text-white text-lg font-bold">{group.name}</h1>
                   {activeChannel && (
                     <p className="text-white/60 text-sm">#{activeChannel.name}</p>
                   )}
@@ -333,22 +400,35 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
 
             {/* Message Input */}
             <div className="fixed bottom-16 left-0 right-0 bg-black/90 backdrop-blur-xl border-t border-white/10 p-4">
-              <form onSubmit={handleSendMessage} className="flex gap-2">
-                <input
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type a message..."
-                  className="flex-1 rounded-full bg-white/10 border border-white/20 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-lime-400"
-                />
-                <button
-                  type="submit"
-                  disabled={!newMessage.trim() || sending}
-                  className="px-6 py-3 rounded-full bg-lime-400 text-black font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-all"
-                >
-                  {sending ? '...' : 'Send'}
-                </button>
-              </form>
+              {isMember ? (
+                <form onSubmit={handleSendMessage} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Type a message..."
+                    className="flex-1 rounded-full bg-white/10 border border-white/20 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-lime-400"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!newMessage.trim() || sending}
+                    className="px-6 py-3 rounded-full bg-lime-400 text-black font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-all"
+                  >
+                    {sending ? '...' : 'Send'}
+                  </button>
+                </form>
+              ) : (
+                <div className="flex items-center justify-center gap-3">
+                  <span className="text-white/60">Join this group to participate in chat</span>
+                  <button
+                    onClick={handleJoinGroup}
+                    disabled={joining}
+                    className="px-6 py-3 rounded-full bg-lime-400 text-black font-semibold disabled:opacity-50 hover:scale-105 transition-all"
+                  >
+                    {joining ? 'Joining...' : 'Join Group'}
+                  </button>
+                </div>
+              )}
             </div>
           </>
         ) : (
@@ -357,7 +437,7 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
             <div className="text-center">
               <div className="text-6xl mb-4">📹</div>
               <h2 className="text-white text-xl font-bold mb-2">
-                {group.name || group.title}
+                {group.name}
               </h2>
               <p className="text-white/60 mb-6">
                 {group.description || 'Join a channel to start chatting or connect via video/voice'}
@@ -396,7 +476,8 @@ function GroupDetailContent({ groupId }: { groupId: string }) {
   )
 }
 
-export default function GroupDetailPage({ params }: { params: { id: string } }) {
+export default function GroupDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   return (
     <Suspense fallback={
       <MobileLayout>
@@ -405,7 +486,7 @@ export default function GroupDetailPage({ params }: { params: { id: string } }) 
         </div>
       </MobileLayout>
     }>
-      <GroupDetailContent groupId={params.id} />
+      <GroupDetailContent groupId={id} />
     </Suspense>
   )
 }

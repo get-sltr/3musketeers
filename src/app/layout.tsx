@@ -1,30 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Orbitron } from 'next/font/google';
-import dynamic from 'next/dynamic';
 import "./globals.css";
 import '../styles/SLTRMapPin.css';
 import ClientProviders from '@/components/ClientProviders';
 import { SkipNavLink } from '@/components/ui/SkipNavLink';
-
-// Lazy load non-critical components to improve initial load
-const NotificationPrompt = dynamic(() => import('@/components/NotificationPrompt'), { ssr: false });
-const AdminDashboard = dynamic(() => import('@/components/AdminDashboard'), { ssr: false });
-
-// Optimized font loading - eliminates render-blocking requests
-const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-inter',
-  preload: true,
-});
-
-const orbitron = Orbitron({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-orbitron',
-  weight: '900',
-  preload: true,
-});
 
 export const metadata: Metadata = {
   title: {
@@ -152,7 +130,7 @@ export default async function RootLayout({
           defer
         />
       </head>
-      <body className={`${inter.variable} ${orbitron.variable} antialiased font-sans touch-pan-y overscroll-none`}>
+      <body className="antialiased font-sans touch-pan-y overscroll-none">
         {/* Skip Navigation Link - Accessibility */}
         <SkipNavLink />
 
@@ -161,9 +139,6 @@ export default async function RootLayout({
           <div id="main-content" role="main" tabIndex={-1} className="outline-none">
             {children}
           </div>
-          <NotificationPrompt />
-          {/* <TwoFactorSetup /> */}
-          <AdminDashboard />
         </ClientProviders>
       </body>
     </html>

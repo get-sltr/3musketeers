@@ -113,3 +113,4 @@ export function clearCsrfToken(): void {
   cachedToken = null
   tokenExpiry = 0
 }
+

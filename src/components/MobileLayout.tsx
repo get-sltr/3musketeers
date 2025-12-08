@@ -69,8 +69,8 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
         }
         
         .mobile-portrait {
-          padding-top: env(safe-area-inset-top);
-          padding-bottom: env(safe-area-inset-bottom);
+          padding-top: max(env(safe-area-inset-top), 20px);
+          /* padding-bottom handled by individual components for better control */
         }
         
         .mobile-landscape {
@@ -100,12 +100,13 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
         
         .mobile-nav-hints {
           position: fixed;
-          bottom: 20px;
+          bottom: 100px; /* Above the bottom nav */
           left: 50%;
           transform: translateX(-50%);
-          z-index: 1000;
+          z-index: 40; /* Below bottom nav z-50 */
           opacity: 0.7;
-          animation: fadeInOut 3s ease-in-out infinite;
+          animation: fadeInOut 3s ease-in-out forwards;
+          pointer-events: none;
         }
         
         .nav-hint {
@@ -139,23 +140,22 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
           user-select: text;
         }
         
-        /* Performance optimizations */
+        /* Performance optimizations - REMOVED transform to not break fixed positioning */
         .mobile-optimized {
-          will-change: transform;
-          transform: translateZ(0);
-          backface-visibility: hidden;
+          /* transform: translateZ(0); - REMOVED: breaks position:fixed on children! */
+          /* will-change: transform; - REMOVED: breaks position:fixed on children! */
         }
         
         /* Safe area handling */
         @supports (padding: max(0px)) {
           .mobile-portrait {
             padding-top: max(env(safe-area-inset-top), 20px);
-            padding-bottom: max(env(safe-area-inset-bottom), 20px);
+            /* padding-bottom handled by BottomNav component */
           }
-          
+
           .mobile-landscape {
-            padding-left: max(env(safe-area-inset-left), 20px);
-            padding-right: max(env(safe-area-inset-right), 20px);
+            padding-left: max(env(safe-area-inset-left), 0px);
+            padding-right: max(env(safe-area-inset-right), 0px);
           }
         }
       `}</style>

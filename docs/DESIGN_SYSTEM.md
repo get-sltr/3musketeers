@@ -1,429 +1,396 @@
 # SLTR Design System
 
-> **Version:** 1.0
-> **Last Updated:** December 2024
-> **Theme:** Dark Navy with Lime Green Accents
-
-## Overview
-
-This document serves as the **single source of truth** for all design tokens, color palettes, typography, spacing, and component styles in the SLTR application. All CSS files and components should reference these values.
+> **Version**: 1.0.0
+> **Last Updated**: 2025-12-02
+> **Status**: Active
 
 ---
 
-## 1. Color Palette
+## Overview
+
+SLTR uses a cohesive dark-mode design system built on glassmorphism principles with lime green (#00ff88) as the primary accent color. This document serves as the single source of truth for all design decisions.
+
+---
+
+## Color Palette
 
 ### Primary Colors
 
-| Token | Hex | RGB | Usage |
-|-------|-----|-----|-------|
-| `--sltr-primary` | `#00ff88` | `0, 255, 136` | Primary action buttons, highlights |
-| `--sltr-primary-dark` | `#00cc6a` | `0, 204, 106` | Hover states, gradients |
-| `--sltr-secondary` | `#ffffff` | `255, 255, 255` | Text, secondary elements |
-| `--sltr-accent` | `#00ff88` | `0, 255, 136` | Accent elements, icons |
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--sltr-primary` | `#00ff88` | Primary actions, success states, highlights |
+| `--sltr-primary-dark` | `#00cc6a` | Hover states, gradients |
+| `--sltr-primary-light` | `#88ffaa` | Subtle highlights, disabled states |
 
-### Semantic Colors
-
-| Token | Hex | Usage |
-|-------|-----|-------|
-| `--sltr-success` | `#00ff88` | Success states, online indicators |
-| `--sltr-warning` | `#ffaa00` | Warnings, caution states |
-| `--sltr-danger` | `#ff4444` | Errors, destructive actions |
-| `--sltr-info` | `#00d4ff` | Information, links |
-
-### Background Colors
-
-| Token | Hex | Usage |
-|-------|-----|-------|
-| `--bg-primary` | `#0a1628` | Main background |
-| `--bg-secondary` | `#0d1b2a` | Elevated surfaces |
-| `--bg-tertiary` | `#1b2838` | Cards, modals |
-
-### Text Colors
+### Navy Theme (Backgrounds)
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| `--text-primary` | `#ffffff` | Primary text |
-| `--text-secondary` | `rgba(255, 255, 255, 0.85)` | Secondary text |
-| `--text-muted` | `rgba(255, 255, 255, 0.6)` | Disabled, hints |
+| `--sltr-navy` | `#0a1628` | App background |
+| `--sltr-navy-light` | `#0d1b2a` | Card backgrounds |
+| `--sltr-navy-dark` | `#061018` | Overlays, modals |
+| `--sltr-navy-card` | `#1b2838` | Elevated surfaces |
 
-### Glassmorphism
+### Semantic Colors
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--sltr-success` | `#00ff88` | Success messages, online status |
+| `--sltr-warning` | `#ffaa00` | Warnings, cautions |
+| `--sltr-danger` | `#ff4444` | Errors, destructive actions |
+| `--sltr-info` | `#00d4ff` | Information, links |
+
+### Glass Effect Colors
 
 | Token | Value | Usage |
 |-------|-------|-------|
 | `--glass-bg` | `rgba(255, 255, 255, 0.05)` | Glass background |
+| `--glass-bg-hover` | `rgba(255, 255, 255, 0.1)` | Glass hover state |
 | `--glass-border` | `rgba(255, 255, 255, 0.1)` | Glass borders |
-| `--glass-shadow` | `0 8px 32px rgba(0, 0, 0, 0.3)` | Glass elevation |
+| `--glass-border-hover` | `rgba(0, 255, 136, 0.4)` | Hover border highlight |
 
 ---
 
-## 2. Typography
+## Typography
 
-### Font Family
+### Font Families
 
 ```css
---font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+/* Body text */
+font-family: var(--font-inter), 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+
+/* Display/Headlines */
+font-family: var(--font-orbitron), 'Orbitron', system-ui, sans-serif;
 ```
 
 ### Font Sizes
 
-| Token | Size | Usage |
-|-------|------|-------|
-| `--font-size-xs` | `0.75rem` (12px) | Captions, badges |
-| `--font-size-sm` | `0.875rem` (14px) | Small text, labels |
-| `--font-size-base` | `1rem` (16px) | Body text |
-| `--font-size-lg` | `1.125rem` (18px) | Large text |
-| `--font-size-xl` | `1.25rem` (20px) | Subheadings |
-| `--font-size-2xl` | `1.5rem` (24px) | Headings |
-| `--font-size-3xl` | `1.875rem` (30px) | Large headings |
-| `--font-size-4xl` | `2.25rem` (36px) | Display text |
-| `--font-size-5xl` | `3rem` (48px) | Hero text |
+| Size | Value | Line Height | Usage |
+|------|-------|-------------|-------|
+| `xs` | 0.75rem (12px) | 1rem | Labels, captions |
+| `sm` | 0.875rem (14px) | 1.25rem | Secondary text |
+| `base` | 1rem (16px) | 1.5rem | Body text |
+| `lg` | 1.125rem (18px) | 1.75rem | Emphasized text |
+| `xl` | 1.25rem (20px) | 1.75rem | Section headers |
+| `2xl` | 1.5rem (24px) | 2rem | Page headers |
 
 ### Font Weights
 
 | Weight | Value | Usage |
 |--------|-------|-------|
-| Regular | 400 | Body text |
-| Medium | 500 | Emphasized text |
+| Normal | 500 | Body text |
 | Semibold | 600 | Buttons, labels |
-| Bold | 700 | Headings |
-| Extrabold | 800 | Display text |
+| Bold | 700 | Headers, emphasis |
 
 ---
 
-## 3. Spacing System
+## Spacing
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--space-xs` | `0.25rem` (4px) | Tight spacing |
-| `--space-sm` | `0.5rem` (8px) | Small gaps |
-| `--space-md` | `1rem` (16px) | Default spacing |
-| `--space-lg` | `1.5rem` (24px) | Section spacing |
-| `--space-xl` | `2rem` (32px) | Large spacing |
-| `--space-2xl` | `3rem` (48px) | Extra large |
-| `--space-3xl` | `4rem` (64px) | Page sections |
+Based on an 8px grid system with a 4px smallest unit.
 
----
-
-## 4. Border Radius
-
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--radius-sm` | `0.375rem` (6px) | Small elements |
-| `--radius-md` | `0.5rem` (8px) | Buttons, inputs |
-| `--radius-lg` | `0.75rem` (12px) | Cards |
-| `--radius-xl` | `1rem` (16px) | Modals |
-| `--radius-2xl` | `1.5rem` (24px) | Large cards |
-| `--radius-full` | `9999px` | Pills, avatars |
+| Token | Value | Pixels |
+|-------|-------|--------|
+| `--space-xs` | 0.25rem | 4px |
+| `--space-sm` | 0.5rem | 8px |
+| `--space-md` | 1rem | 16px |
+| `--space-lg` | 1.5rem | 24px |
+| `--space-xl` | 2rem | 32px |
+| `--space-2xl` | 3rem | 48px |
+| `--space-3xl` | 4rem | 64px |
 
 ---
 
-## 5. Shadows
+## Border Radius
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--shadow-sm` | `0 1px 2px rgba(0, 0, 0, 0.05)` | Subtle elevation |
-| `--shadow-md` | `0 4px 6px rgba(0, 0, 0, 0.1)` | Cards |
-| `--shadow-lg` | `0 10px 15px rgba(0, 0, 0, 0.1)` | Modals |
-| `--shadow-xl` | `0 20px 25px rgba(0, 0, 0, 0.1)` | Dropdowns |
-| `--shadow-2xl` | `0 25px 50px rgba(0, 0, 0, 0.25)` | Prominent elements |
-
-### Glow Effects
-
-```css
-/* Primary glow */
-box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
-
-/* Intense glow (hover) */
-box-shadow: 0 0 40px rgba(0, 255, 136, 0.6);
-
-/* Online indicator glow */
-box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
-```
+| Token | Value | Pixels | Usage |
+|-------|-------|--------|-------|
+| `--radius-sm` | 0.375rem | 6px | Small buttons, tags |
+| `--radius-md` | 0.5rem | 8px | Input fields |
+| `--radius-lg` | 0.75rem | 12px | Cards, modals |
+| `--radius-xl` | 1rem | 16px | Large cards |
+| `--radius-2xl` | 1.5rem | 24px | Feature cards |
+| `--radius-full` | 9999px | - | Pills, avatars |
 
 ---
 
-## 6. Transitions
+## Shadows
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| `--transition-fast` | `150ms ease-out` | Hover states |
-| `--transition-normal` | `300ms ease-out` | Default animations |
+| `--shadow-sm` | `0 1px 2px rgba(0, 0, 0, 0.4)` | Subtle elevation |
+| `--shadow-md` | `0 4px 12px rgba(0, 0, 0, 0.4)` | Cards, buttons |
+| `--shadow-lg` | `0 8px 32px rgba(0, 0, 0, 0.6)` | Modals, overlays |
+| `--shadow-glow` | `0 0 20px rgba(0, 255, 136, 0.5)` | Primary glow effect |
+
+---
+
+## Transitions
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--transition-fast` | `150ms ease-out` | Hover states, micro-interactions |
+| `--transition-normal` | `300ms ease-out` | Standard transitions |
 | `--transition-slow` | `500ms ease-out` | Complex animations |
-| `--transition-bounce` | `300ms cubic-bezier(0.68, -0.55, 0.265, 1.55)` | Playful interactions |
+| `--transition-bounce` | `300ms cubic-bezier(0.68, -0.55, 0.265, 1.55)` | Playful bounce |
 
 ---
 
-## 7. Gradients
+## Z-Index Scale
 
-### Primary Gradient
-
-```css
-background: linear-gradient(135deg, #00ff88, #00cc6a);
-```
-
-### Accent Gradient
-
-```css
-background: linear-gradient(135deg, #00ff88, #00dd77);
-```
-
-### Dark Background Gradient
-
-```css
-background: linear-gradient(135deg, #0a1628, #1b2838);
-```
-
-### Text Gradient
-
-```css
-background: linear-gradient(135deg, #00ff88, #ffffff);
--webkit-background-clip: text;
--webkit-text-fill-color: transparent;
-```
+| Token | Value | Usage |
+|-------|-------|-------|
+| `dropdown` | 50 | Dropdown menus |
+| `sticky` | 100 | Sticky headers, nav |
+| `modal` | 200 | Modal dialogs |
+| `popover` | 300 | Popovers, tooltips |
+| `tooltip` | 400 | Tooltip overlays |
+| `toast` | 500 | Toast notifications |
 
 ---
 
-## 8. Component Styles
+## Component Patterns
 
-### Buttons
+### Glass Bubble
 
-#### Primary Button
+The primary interactive element style.
+
 ```css
-.btn-primary {
-  background: linear-gradient(135deg, var(--sltr-primary), var(--sltr-primary-dark));
-  color: var(--bg-primary);
-  font-weight: 700;
-  border-radius: var(--radius-lg);
-  padding: var(--space-md) var(--space-lg);
-  box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
-  transition: all var(--transition-normal);
+.glass-bubble {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 300ms ease-out;
+  color: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 255, 136, 0.5);
-}
-```
-
-#### Glass Button
-```css
-.btn-glass {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  color: var(--text-primary);
-  backdrop-filter: blur(20px);
-  border-radius: var(--radius-lg);
-}
-
-.btn-glass:hover {
+.glass-bubble:hover {
   background: rgba(255, 255, 255, 0.1);
-  border-color: var(--sltr-primary);
+  border-color: rgba(0, 255, 136, 0.4);
+  color: rgba(255, 255, 255, 1);
+  text-shadow: 0 0 20px rgba(0, 255, 136, 0.8);
+  box-shadow: 0 4px 16px rgba(0, 255, 136, 0.3);
+}
+
+.glass-bubble.active {
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 200, 100, 0.2));
+  border-color: rgba(0, 255, 136, 0.5);
+  color: rgba(255, 255, 255, 1);
+  text-shadow: 0 0 20px rgba(0, 255, 136, 0.9);
+  box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
 }
 ```
 
-### Cards
+### Glass Card
+
+Container for content sections.
 
 ```css
-.card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-xl);
-  padding: var(--space-lg);
-  box-shadow: var(--shadow-lg);
-}
-
-.card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-2xl);
-  border-color: var(--sltr-primary);
+.glass-card {
+  background: rgba(10, 22, 40, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.1);
 }
 ```
 
-### Inputs
+### Gradient Button
+
+Primary action button.
 
 ```css
-.input {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-md) var(--space-lg);
-  color: var(--text-primary);
-  backdrop-filter: blur(20px);
+.gradient-button {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 8px 16px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(12px);
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.input:focus {
-  outline: none;
-  border-color: var(--sltr-primary);
-  box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.15);
+.gradient-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(0, 255, 136, 0.4);
+  color: rgba(255, 255, 255, 1);
+  text-shadow: 0 0 20px rgba(0, 255, 136, 0.8);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 255, 136, 0.2);
+}
+
+.gradient-button:active,
+.gradient-button.active {
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.3), rgba(0, 200, 100, 0.3));
+  border-color: rgba(0, 255, 136, 0.6);
+  color: rgba(255, 255, 255, 1);
+  text-shadow: 0 0 20px rgba(0, 255, 136, 1);
+  box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+  transform: translateY(0);
+}
+```
+
+### Chat Bubbles
+
+```css
+/* Sent messages (current user) */
+.sent-bubble {
+  background: linear-gradient(135deg, var(--sltr-primary), var(--sltr-primary-dark));
+  border-radius: 20px 20px 4px 20px;
+  padding: 12px 16px;
+  max-width: 70%;
+  color: #0a1628;
+  font-weight: 500;
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+}
+
+/* Received messages */
+.received-bubble {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px 20px 20px 4px;
+  padding: 12px 16px;
+  max-width: 70%;
+  backdrop-filter: blur(10px);
 }
 ```
 
 ---
 
-## 9. Accessibility Requirements
+## Layout Tokens
+
+| Token | Value | Description |
+|-------|-------|-------------|
+| `--header-height` | 64px | Fixed header height |
+| `--bottom-nav-height` | 64px | Bottom navigation height |
+| `--filter-bar-height` | 56px | Filter bar height |
+| `--sticky-ui-height` | calc(var(--header-height) + var(--filter-bar-height)) | Combined sticky elements |
+
+---
+
+## Breakpoints
+
+| Name | Value | Usage |
+|------|-------|-------|
+| `sm` | 640px | Large phones |
+| `md` | 768px | Tablets |
+| `lg` | 1024px | Small desktops |
+| `xl` | 1280px | Large desktops |
+| `2xl` | 1536px | Extra large screens |
+
+---
+
+## Tailwind Integration
+
+Custom colors in `tailwind.config.ts`:
+
+```typescript
+colors: {
+  sltr: {
+    navy: {
+      DEFAULT: '#0a1628',
+      light: '#0d1b2a',
+      dark: '#061018',
+      card: '#1b2838',
+    },
+    lime: {
+      DEFAULT: '#00ff88',
+      dark: '#00cc6a',
+      light: '#88ffaa',
+    },
+    white: '#ffffff',
+  },
+}
+```
+
+**Usage in components**:
+
+```tsx
+<div className="bg-sltr-navy text-sltr-lime">
+  <button className="bg-sltr-lime/20 hover:bg-sltr-lime/30 text-sltr-lime">
+    Action
+  </button>
+</div>
+```
+
+---
+
+## Accessibility Requirements
+
+### Color Contrast
+
+- Text on dark backgrounds: minimum 4.5:1 ratio
+- Large text (18px+): minimum 3:1 ratio
+- Interactive elements: minimum 3:1 ratio
 
 ### Focus States
 
+All interactive elements must have visible focus indicators:
+
 ```css
-*:focus-visible {
-  outline: 2px solid var(--sltr-primary);
+:focus-visible {
+  outline: 2px solid var(--sltr-primary, #00ff88);
   outline-offset: 2px;
 }
 ```
 
-### Minimum Touch Targets
+### Motion Preferences
 
-- **Mobile:** 44x44px minimum
-- **Desktop:** 24x24px minimum for icons with adequate spacing
-
-### Color Contrast
-
-| Element | Requirement |
-|---------|-------------|
-| Body text | 4.5:1 minimum |
-| Large text (18px+) | 3:1 minimum |
-| UI components | 3:1 minimum |
-
-### Reduced Motion
+Respect user's motion preferences:
 
 ```css
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 ```
 
 ---
 
-## 10. Responsive Breakpoints
+## File References
 
-| Name | Min Width | Usage |
-|------|-----------|-------|
-| Mobile | 0 | Default (mobile-first) |
-| Tablet | 480px | Small tablets |
-| Desktop | 768px | Tablets, small laptops |
-| Large | 1024px | Laptops |
-| XL | 1280px | Large screens |
-
-### Media Query Examples
-
-```css
-/* Mobile-first approach */
-.grid {
-  grid-template-columns: repeat(1, 1fr);
-}
-
-@media (min-width: 480px) {
-  .grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 768px) {
-  .grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (min-width: 1024px) {
-  .grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-```
+| File | Purpose |
+|------|---------|
+| `src/app/globals.css` | Primary design tokens and base styles |
+| `tailwind.config.ts` | Tailwind color and typography extensions |
+| `src/styles/SLTRMapPin.css` | Map-specific styles |
+| `src/styles/FounderCard.css` | Founder card component styles |
+| `src/styles/mobile-optimization.css` | Mobile-specific overrides |
 
 ---
 
-## 11. CSS Variables Reference
+## Migration Notes
 
-### Complete :root Block
+### Deprecated Patterns
 
-```css
-:root {
-  /* Primary Colors */
-  --sltr-primary: #00ff88;
-  --sltr-primary-dark: #00cc6a;
-  --sltr-secondary: #ffffff;
-  --sltr-accent: #00ff88;
+The following patterns are deprecated and should not be used:
 
-  /* Semantic Colors */
-  --sltr-success: #00ff88;
-  --sltr-warning: #ffaa00;
-  --sltr-danger: #ff4444;
-  --sltr-info: #00d4ff;
+1. **Cyan-Magenta gradients** (`#00d4ff` to `#ff00ff`)
+   - Replace with lime primary gradient
+   - Exception: Secondary accent elements only
 
-  /* Background Colors */
-  --bg-primary: #0a1628;
-  --bg-secondary: #0d1b2a;
-  --bg-tertiary: #1b2838;
+2. **Hardcoded colors**
+   - Always use CSS variables or Tailwind classes
+   - Never use hex codes directly in components
 
-  /* Text Colors */
-  --text-primary: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.85);
-  --text-muted: rgba(255, 255, 255, 0.6);
-
-  /* Glass Effects */
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-
-  /* Typography */
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
-  --font-size-xs: 0.75rem;
-  --font-size-sm: 0.875rem;
-  --font-size-base: 1rem;
-  --font-size-lg: 1.125rem;
-  --font-size-xl: 1.25rem;
-  --font-size-2xl: 1.5rem;
-  --font-size-3xl: 1.875rem;
-  --font-size-4xl: 2.25rem;
-  --font-size-5xl: 3rem;
-
-  /* Spacing */
-  --space-xs: 0.25rem;
-  --space-sm: 0.5rem;
-  --space-md: 1rem;
-  --space-lg: 1.5rem;
-  --space-xl: 2rem;
-  --space-2xl: 3rem;
-  --space-3xl: 4rem;
-
-  /* Border Radius */
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  --radius-2xl: 1.5rem;
-  --radius-full: 9999px;
-
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
-  --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.25);
-
-  /* Transitions */
-  --transition-fast: 150ms ease-out;
-  --transition-normal: 300ms ease-out;
-  --transition-slow: 500ms ease-out;
-  --transition-bounce: 300ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
-
-  /* Layout */
-  --header-height: 64px;
-  --bottom-nav-height: 64px;
-  --filter-bar-height: 57px;
-}
-```
+3. **Orphaned CSS files**
+   - `src/styles/style.css` - ARCHIVED
+   - `src/styles/ultramodern.css` - ARCHIVED
+   - `src/styles/uv-effects.css` - ARCHIVED
 
 ---
 
-## Document History
-
-| Date | Version | Changes |
-|------|---------|---------|
-| Dec 2024 | 1.0 | Initial design system documentation |
+**Document maintained by**: Tech Lead
+**Review cycle**: Monthly

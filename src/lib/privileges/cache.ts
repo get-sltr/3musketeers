@@ -47,7 +47,9 @@ class LRUCache<K, V> {
     // Remove oldest if at capacity
     if (this.cache.size >= this.maxSize) {
       const firstKey = this.cache.keys().next().value
-      this.cache.delete(firstKey)
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey)
+      }
     }
     this.cache.set(key, value)
   }
@@ -215,7 +217,7 @@ export function clearOldRateLimits(): void {
   for (const [userId, timestamps] of rateLimitCache.entries()) {
     const recentRequests = timestamps.filter((ts) => now - ts < 60000)
     const lastRequest = recentRequests[recentRequests.length - 1]
-    if (recentRequests.length === 0 || (lastRequest && lastRequest < fiveMinutesAgo)) {
+    if (recentRequests.length === 0 || (lastRequest !== undefined && lastRequest < fiveMinutesAgo)) {
       rateLimitCache.delete(userId)
     } else {
       rateLimitCache.set(userId, recentRequests)

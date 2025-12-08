@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '../lib/supabase/client'
 import { useRealtime } from '../hooks/useRealtime'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import VideoCall from './VideoCall'
 
 interface User {
@@ -11,6 +12,8 @@ interface User {
   display_name?: string
   photo?: string
   photos?: string[]
+  age?: number
+  distance?: string
 }
 
 interface Message {
@@ -29,11 +32,22 @@ interface MessagingModalProps {
   conversationId?: string | null
 }
 
-export default function MessagingModal({ 
-  user, 
-  isOpen, 
-  onClose, 
-  conversationId: initialConversationId 
+/**
+ * Grindr-Style Messaging Modal
+ *
+ * Features:
+ * - Full-screen on mobile, slide-in panel on desktop
+ * - Orange sent messages (Grindr signature)
+ * - Gray received messages
+ * - Minimal header with back arrow
+ * - Focus trap for accessibility
+ * - Real-time messaging via Supabase
+ */
+export default function MessagingModal({
+  user,
+  isOpen,
+  onClose,
+  conversationId: initialConversationId
 }: MessagingModalProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
@@ -41,15 +55,36 @@ export default function MessagingModal({
   const [conversationId, setConversationId] = useState<string | null>(initialConversationId || null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [showVideoCall, setShowVideoCall] = useState(false)
+  const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
-  
-  const { 
-    isConnected, 
-    sendMessage: realtimeSendMessage, 
-    joinConversation, 
-    leaveConversation 
+
+  // Focus trap for accessibility
+  const { containerRef } = useFocusTrap({
+    enabled: isOpen,
+    onEscape: onClose,
+    returnFocusOnDeactivate: true,
+  })
+
+  const {
+    isConnected,
+    sendMessage: realtimeSendMessage,
+    joinConversation,
+    leaveConversation
   } = useRealtime()
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [isOpen])
 
   // Get current user
   useEffect(() => {
@@ -73,8 +108,7 @@ export default function MessagingModal({
         const { data: { user: currentUser } } = await supabase.auth.getUser()
         if (!currentUser) return
 
-        // Check if conversation exists
-        const { data: existingConv, error: fetchError } = await supabase
+        const { data: existingConv } = await supabase
           .from('conversations')
           .select('id')
           .or(`and(user1_id.eq.${currentUser.id},user2_id.eq.${user.id}),and(user1_id.eq.${user.id},user2_id.eq.${currentUser.id})`)
@@ -83,7 +117,6 @@ export default function MessagingModal({
         if (existingConv) {
           setConversationId(existingConv.id)
         } else {
-          // Create new conversation
           const { data: newConv, error: insertError } = await supabase
             .from('conversations')
             .insert({
@@ -95,8 +128,6 @@ export default function MessagingModal({
 
           if (newConv && !insertError) {
             setConversationId(newConv.id)
-          } else {
-            console.error('Error creating conversation:', insertError)
           }
         }
       } catch (error) {
@@ -124,7 +155,7 @@ export default function MessagingModal({
     }
   }, [conversationId, isConnected, joinConversation, leaveConversation])
 
-  // Listen for new messages via Supabase Realtime
+  // Listen for new messages
   useEffect(() => {
     if (!conversationId) return
 
@@ -161,10 +192,7 @@ export default function MessagingModal({
         .eq('conversation_id', convId)
         .order('created_at', { ascending: true })
 
-      if (error) {
-        console.error('Error loading messages:', error)
-        return
-      }
+      if (error) return
 
       const transformedMessages: Message[] = messagesData?.map((msg: any) => ({
         id: msg.id,
@@ -191,13 +219,9 @@ export default function MessagingModal({
       const { data: { user: currentUser } } = await supabase.auth.getUser()
       if (!currentUser) return
 
-      // Use Supabase Realtime to send message
-      // Realtime will automatically broadcast to subscribers
       if (isConnected && realtimeSendMessage) {
         await realtimeSendMessage(conversationId, newMessage.trim(), 'text')
-        // Message will appear via Realtime subscription, no need to reload
       } else {
-        // Fallback: insert directly to database
         const { error } = await supabase
           .from('messages')
           .insert({
@@ -207,15 +231,13 @@ export default function MessagingModal({
             content: newMessage.trim()
           })
 
-        if (error) {
-          console.error('Error sending message:', error)
-          return
+        if (!error) {
+          loadMessages(conversationId)
         }
-
-        loadMessages(conversationId)
       }
 
       setNewMessage('')
+      inputRef.current?.focus()
     } catch (err) {
       console.error('Error sending message:', err)
     } finally {
@@ -229,131 +251,192 @@ export default function MessagingModal({
     }, 100)
   }
 
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
   if (!isOpen || !user) return null
+
+  const userPhoto = user.photos?.[0] || user.photo || '/default-avatar.png'
+  const userName = user.display_name || user.username || 'User'
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-        <div className="w-full max-w-2xl h-[80vh] max-h-[600px] bg-black/95 backdrop-blur-xl border border-lime-400/20 rounded-2xl overflow-hidden flex flex-col shadow-2xl">
-          {/* Header - Shows who you're messaging */}
-          <div className="flex items-center gap-3 p-4 border-b border-white/10 bg-gradient-to-r from-lime-400/10 to-lime-400/5">
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-white/10 rounded-lg transition-all"
-            >
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            
-            <img
-              src={user.photos?.[0] || user.photo || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23222" width="100" height="100"/%3E%3Ctext fill="%23aaa" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"%3E?%3C/text%3E%3C/svg%3E'}
-              alt={user.display_name || user.username}
-              className="w-10 h-10 rounded-full object-cover border-2 border-lime-400/30"
-            />
-            
-            <div className="flex-1">
-              <h2 className="text-white font-bold text-lg">
-                {user.display_name || user.username || 'User'}
-              </h2>
-              <p className="text-white/60 text-xs">
-                {isConnected ? 'Real-time • Online' : 'Offline'}
-              </p>
-            </div>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm md:bg-black/40"
+        onClick={onClose}
+      />
 
-            {/* Video Call Button */}
+      {/* Modal Container - Full screen mobile, slide-in desktop */}
+      <div
+        ref={containerRef as React.RefObject<HTMLDivElement>}
+        tabIndex={-1}
+        className="fixed inset-0 z-50 flex flex-col bg-black md:inset-y-0 md:right-0 md:left-auto md:w-[420px] md:shadow-2xl"
+      >
+        {/* Header - Grindr Style */}
+        <header className="flex items-center gap-3 px-4 py-3 bg-black border-b border-white/10">
+          {/* Back Button */}
+          <button
+            onClick={onClose}
+            className="p-2 -ml-2 hover:bg-white/10 rounded-full transition-colors"
+            aria-label="Close chat"
+          >
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+
+          {/* User Photo */}
+          <img
+            src={userPhoto}
+            alt={userName}
+            className="w-10 h-10 rounded-full object-cover"
+          />
+
+          {/* User Info */}
+          <div className="flex-1 min-w-0">
+            <h2 className="text-white font-semibold truncate">
+              {userName}{user.age ? `, ${user.age}` : ''}
+            </h2>
+            <p className="text-white/50 text-xs truncate">
+              {user.distance || (isConnected ? 'Online' : 'Offline')}
+            </p>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-1">
+            {/* Video Call */}
             <button
               onClick={() => setShowVideoCall(true)}
               disabled={!conversationId || !currentUserId}
-              className="px-4 py-2 bg-gradient-to-r from-fuchsia-500 to-purple-600 hover:from-fuchsia-600 hover:to-purple-700 text-white rounded-full font-semibold flex items-center gap-2 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Start Video Call"
+              className="p-2 hover:bg-white/10 rounded-full transition-colors disabled:opacity-40"
+              aria-label="Video call"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
-              <span className="hidden sm:inline">Video</span>
             </button>
 
-            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
+            {/* More Options */}
+            <button
+              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              aria-label="More options"
+            >
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+              </svg>
+            </button>
           </div>
+        </header>
 
-          {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-            {messages.length === 0 ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                  <div className="text-6xl mb-4">💬</div>
-                  <p className="text-white/60">No messages yet</p>
-                  <p className="text-white/40 text-sm mt-2">Start the conversation!</p>
-                </div>
-              </div>
-            ) : (
-              messages.map((message) => {
+        {/* Messages Area */}
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 bg-zinc-950">
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center px-8">
+              <img
+                src={userPhoto}
+                alt={userName}
+                className="w-24 h-24 rounded-full object-cover mb-4 opacity-60"
+              />
+              <p className="text-white/60 text-lg font-medium">{userName}</p>
+              <p className="text-white/40 text-sm mt-1">
+                Say hi to start the conversation
+              </p>
+            </div>
+          ) : (
+            <>
+              {messages.map((message, index) => {
                 const isSent = message.sender_id === currentUserId
+                const prevMessage = messages[index - 1]
+                const showTime = index === 0 ||
+                  (prevMessage && new Date(message.created_at).getTime() - new Date(prevMessage.created_at).getTime() > 300000)
+
                 return (
-                  <div
-                    key={message.id}
-                    className={`flex ${isSent ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-[70%] px-4 py-2 rounded-2xl ${
-                        isSent
-                          ? 'bg-lime-400 text-black'
-                          : 'bg-white/10 text-white'
-                      }`}
-                    >
-                      <p className="text-sm">{message.content}</p>
-                      <p className={`text-xs mt-1 ${isSent ? 'text-white/70' : 'text-white/50'}`}>
-                        {new Date(message.created_at).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
+                  <div key={message.id}>
+                    {showTime && (
+                      <div className="text-center my-3">
+                        <span className="text-white/30 text-xs">
+                          {formatTime(message.created_at)}
+                        </span>
+                      </div>
+                    )}
+                    <div className={`flex ${isSent ? 'justify-end' : 'justify-start'}`}>
+                      <div
+                        className={`max-w-[85%] px-4 py-2.5 rounded-2xl ${
+                          isSent
+                            ? 'bg-orange-500 text-white rounded-br-md'
+                            : 'bg-zinc-800 text-white rounded-bl-md'
+                        }`}
+                      >
+                        <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">
+                          {message.content}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 )
-              })
-            )}
-            <div ref={messagesEndRef} />
-          </div>
+              })}
 
-          {/* Message Input */}
-          <div className="p-4 border-t border-white/10">
-            <form onSubmit={sendMessage} className="flex gap-3">
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder={`Message ${user.display_name || user.username || 'User'}...`}
-                className="flex-1 bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all duration-300"
-                disabled={sending || !conversationId}
-              />
-              <button
-                type="submit"
-                disabled={!newMessage.trim() || sending || !conversationId}
-                className="px-6 py-3 bg-lime-400 text-black rounded-xl font-semibold hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {sending ? '...' : 'Send'}
-              </button>
-            </form>
-          </div>
+              {/* Typing Indicator */}
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="bg-zinc-800 px-4 py-3 rounded-2xl rounded-bl-md">
+                    <div className="flex gap-1">
+                      <span className="w-2 h-2 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-2 h-2 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-2 h-2 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
+            </>
+          )}
         </div>
 
-        <style jsx>{`
-          .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-          }
-          .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-          }
-          .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(0, 212, 255, 0.3);
-            border-radius: 3px;
-          }
-          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: rgba(0, 212, 255, 0.5);
-          }
-        `}</style>
+        {/* Input Area - Grindr Style */}
+        <div className="px-3 py-3 bg-black border-t border-white/10">
+          <form onSubmit={sendMessage} className="flex items-center gap-2">
+            {/* Photo Button */}
+            <button
+              type="button"
+              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              aria-label="Send photo"
+            >
+              <svg className="w-6 h-6 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </button>
+
+            {/* Text Input */}
+            <input
+              ref={inputRef}
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="Message..."
+              className="flex-1 bg-zinc-900 border-0 rounded-full px-4 py-2.5 text-white text-[15px] placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+              disabled={sending || !conversationId}
+            />
+
+            {/* Send Button */}
+            <button
+              type="submit"
+              disabled={!newMessage.trim() || sending || !conversationId}
+              className="p-2 bg-orange-500 hover:bg-orange-600 rounded-full transition-colors disabled:opacity-40 disabled:hover:bg-orange-500"
+              aria-label="Send message"
+            >
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              </svg>
+            </button>
+          </form>
+        </div>
       </div>
 
       {/* Video Call Modal */}
@@ -362,11 +445,10 @@ export default function MessagingModal({
           conversationId={conversationId}
           currentUserId={currentUserId}
           otherUserId={user.id}
-          otherUserName={user.display_name || user.username || 'User'}
+          otherUserName={userName}
           onEndCall={() => setShowVideoCall(false)}
         />
       )}
     </>
   )
 }
-

@@ -68,11 +68,17 @@ export default function VerifyEmailPage() {
       })
 
       if (error) {
-        setResendError(error.message)
+        // Provide user-friendly error messages for rate limits
+        let errorMessage = error.message
+        if (error.message.toLowerCase().includes('rate limit') ||
+            error.message.toLowerCase().includes('too many')) {
+          errorMessage = 'Too many email requests. Please wait a few minutes before trying again.'
+        }
+        setResendError(errorMessage)
       } else {
         setResendSuccess(true)
-        // Set 30-second cooldown after successful resend
-        setResendCooldown(30)
+        // Set 60-second cooldown after successful resend to prevent rate limits
+        setResendCooldown(60)
       }
     } catch (err) {
       setResendError('Failed to resend email. Please try again.')

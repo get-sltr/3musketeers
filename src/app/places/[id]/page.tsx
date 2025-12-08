@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, use } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
-export default function PlaceDetailPage({ params }: { params: { id: string } }) {
+export default function PlaceDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const supabase = createClient()
   const router = useRouter()
   const [place, setPlace] = useState<any>(null)
@@ -12,12 +13,12 @@ export default function PlaceDetailPage({ params }: { params: { id: string } }) 
 
   useEffect(() => {
     const run = async () => {
-      const { data } = await supabase.from('places').select('*').eq('id', params.id).single()
+      const { data } = await supabase.from('places').select('*').eq('id', id).single()
       setPlace(data)
       setLoading(false)
     }
     run()
-  }, [params.id, supabase])
+  }, [id, supabase])
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-white/60">Loading…</div>
   if (!place) return <div className="min-h-screen flex items-center justify-center text-white/60">Not found</div>

@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useRef, use } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Room } from 'livekit-client'
+import { Room, RoomEvent, ConnectionState } from 'livekit-client'
 import ConferenceRoom from '@/components/ConferenceRoom'
 import LoadingSkeleton from '@/components/LoadingSkeleton'
 
@@ -12,13 +12,24 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
   const searchParams = useSearchParams()
   const channelType = searchParams?.get('type') || 'text'
   const groupId = searchParams?.get('group') || ''
-  
+
   const [room, setRoom] = useState<Room | null>(null)
   const [connecting, setConnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
+  const [displayName, setDisplayName] = useState<string>('Video Room')
+
+  // Use ref to prevent multiple connection attempts
+  const connectionAttempted = useRef(false)
+  const roomRef = useRef<Room | null>(null)
+  const isDisconnecting = useRef(false)
 
   useEffect(() => {
+    // Prevent multiple connections
+    if (connectionAttempted.current) return
+    connectionAttempted.current = true
+
+    const supabase = createClient()
+
     const connectToRoom = async () => {
       if (channelType !== 'video' && channelType !== 'voice') {
         // For text channels, redirect to chat interface
@@ -43,6 +54,27 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
           .eq('id', user.id)
           .single()
 
+        // Fetch channel and group info for display name
+        const { data: channelData } = await supabase
+          .from('channels')
+          .select('name, group_id')
+          .eq('id', channelId)
+          .single()
+
+        let roomDisplayName = 'Video Room'
+        if (channelData) {
+          const { data: groupData } = await supabase
+            .from('groups')
+            .select('name')
+            .eq('id', channelData.group_id || groupId)
+            .single()
+
+          roomDisplayName = groupData?.name
+            ? `${groupData.name} - ${channelData.name}`
+            : channelData.name
+        }
+        setDisplayName(roomDisplayName)
+
         const participantName = profile?.display_name || user.id
 
         // Get LiveKit token from Next.js API route
@@ -57,17 +89,27 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
 
         if (!response.ok) {
           const errorData = await response.json()
-          // Handle service unavailable (LiveKit not configured)
-          if (response.status === 503) {
-            throw new Error('Video calls are temporarily unavailable. Please try again later.')
-          }
           throw new Error(errorData.error || 'Failed to get LiveKit token')
         }
 
         const { token, url } = await response.json()
 
         // Connect to LiveKit room
-        const newRoom = new Room()
+        const newRoom = new Room({
+          // Adaptive streaming for better performance with many participants
+          adaptiveStream: true,
+          dynacast: true,
+          // Faster reconnection
+          disconnectOnPageLeave: false,
+        })
+
+        // Handle connection state changes
+        newRoom.on(RoomEvent.ConnectionStateChanged, (state: ConnectionState) => {
+          console.log('Connection state:', state)
+          if (state === ConnectionState.Disconnected && !isDisconnecting.current) {
+            console.log('Unexpected disconnect, attempting to stay in room view')
+          }
+        })
 
         await newRoom.connect(url, token, {
           autoSubscribe: true,
@@ -78,7 +120,7 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
           userId: user.id,
           name: participantName,
           avatar: profile?.photo_url,
-          role: 'member', // Default role, can be 'host' if user created the group
+          role: 'member',
         }))
 
         // Enable camera and microphone
@@ -87,17 +129,23 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
         }
         await newRoom.localParticipant.setMicrophoneEnabled(true)
 
+        roomRef.current = newRoom
         setRoom(newRoom)
 
-        // Handle disconnection
+        // Handle disconnection - only navigate back if intentional
         newRoom.on('disconnected', () => {
-          setRoom(null)
-          router.back()
+          if (isDisconnecting.current) {
+            setRoom(null)
+            roomRef.current = null
+            connectionAttempted.current = false
+            router.back()
+          }
         })
 
       } catch (err: any) {
         console.error('Failed to connect to room:', err)
         setError(err.message || 'Failed to connect to video room')
+        connectionAttempted.current = false
       } finally {
         setConnecting(false)
       }
@@ -106,11 +154,14 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
     connectToRoom()
 
     return () => {
-      if (room) {
-        room.disconnect()
+      if (roomRef.current) {
+        isDisconnecting.current = true
+        roomRef.current.disconnect()
+        roomRef.current = null
       }
+      connectionAttempted.current = false
     }
-  }, [channelId, channelType, groupId, router, supabase])
+  }, [channelId, channelType, groupId, router])
 
   if (connecting) {
     return (
@@ -144,17 +195,18 @@ function ChannelRoomContent({ channelId }: { channelId: string }) {
     return null
   }
 
-  return <ConferenceRoom room={room} />
+  return <ConferenceRoom room={room} displayName={displayName} />
 }
 
-export default function ChannelRoomPage({ params }: { params: { id: string } }) {
+export default function ChannelRoomPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   return (
     <Suspense fallback={
       <div className="fixed inset-0 bg-black flex items-center justify-center">
         <LoadingSkeleton variant="fullscreen" />
       </div>
     }>
-      <ChannelRoomContent channelId={params.id} />
+      <ChannelRoomContent channelId={id} />
     </Suspense>
   )
 }

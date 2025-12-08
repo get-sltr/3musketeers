@@ -1,30 +1,38 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import { locales, defaultLocale } from './i18n/config';
+import { routing } from './i18n/routing';
 import { requireCsrf } from './lib/csrf';
 
-const intlMiddleware = createIntlMiddleware({
-  locales,
-  defaultLocale,
-  localePrefix: 'as-needed'
-});
+const intlMiddleware = createIntlMiddleware(routing);
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Handle API routes with CSRF protection
-  if (pathname.startsWith('/api/')) {
-    // Check CSRF token for state-changing requests
-    if (!requireCsrf(request)) {
+  // Routes that should skip CSRF protection
+  const csrfExemptRoutes = [
+    '/api/webhooks', // Stripe webhooks
+    '/api/health', // Health checks
+    '/api/livekit-token', // LiveKit video calls
+    '/api/v1/heartbeat', // EROS heartbeat
+    '/api/v1/matches', // EROS matches
+    '/api/v1/assistant', // EROS chat
+    '/api/v1/activity', // EROS activity
+  ];
+
+  // Check if route is exempt from CSRF
+  const isExempt = csrfExemptRoutes.some(route => pathname.startsWith(route));
+
+  // Handle API routes with CSRF protection (skip exempt routes)
+  if (pathname.startsWith('/api/') && !isExempt) {
+    const csrfValid = await requireCsrf(request);
+    if (!csrfValid) {
       console.error(`CSRF validation failed for ${request.method} ${pathname}`);
       return NextResponse.json(
         { error: 'Invalid or missing CSRF token' },
         { status: 403 }
       );
     }
-
-    // CSRF check passed, continue to API handler
     return NextResponse.next();
   }
 
@@ -43,9 +51,8 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Include both page routes and API routes
   matcher: [
-    '/((?!_next|_vercel|.*\\..*).*)', // Page routes (excluding static files)
-    '/api/:path*' // All API routes
+    '/((?!_next|_vercel|.*\\..*).*)',
+    '/api/:path*'
   ]
 };

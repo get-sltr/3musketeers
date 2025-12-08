@@ -1,27 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase/server'
+import { withCSRFProtection } from '@/lib/csrf-server'
 
-export async function POST(request: NextRequest) {
+// TODO: Standardize to use createClient() from @/lib/supabase/server consistently
+async function handler(request: NextRequest) {
   try {
     const { feedback, email } = await request.json()
 
-    // Get session from cookies
-    const cookieStore = cookies()
-    const accessToken = cookieStore.get('sb-access-token')?.value
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-    if (!accessToken) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken)
-
-    if (!user) {
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -43,3 +32,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to submit feedback' }, { status: 500 })
   }
 }
+
+export const POST = withCSRFProtection(handler)

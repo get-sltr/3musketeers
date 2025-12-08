@@ -13,7 +13,7 @@ type EventHandler = (payload: any) => void
 
 class RealtimeManager {
   private static instance: RealtimeManager
-  private supabase = createClient()
+  private _supabase: ReturnType<typeof createClient> | null = null
   private channel: RealtimeChannel | null = null
   private eventHandlers: Map<string, Set<EventHandler>> = new Map()
   private isConnected = false
@@ -25,6 +25,14 @@ class RealtimeManager {
   private currentUserId: string | null = null
 
   private constructor() {}
+
+  // Lazy-initialize Supabase client to avoid build-time errors
+  private get supabase() {
+    if (!this._supabase) {
+      this._supabase = createClient()
+    }
+    return this._supabase
+  }
 
   static getInstance(): RealtimeManager {
     if (!RealtimeManager.instance) {
@@ -254,4 +262,6 @@ class RealtimeManager {
   }
 }
 
-export default RealtimeManager.getInstance()
+// Export a getter function to ensure lazy initialization
+export const getRealtimeManager = () => RealtimeManager.getInstance()
+export default RealtimeManager

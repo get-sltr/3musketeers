@@ -2,7 +2,7 @@
 
 **Purpose:** Track daily updates, completed work, and progress to avoid repeating tasks.
 
-**Last Updated:** Tuesday, November 12, 2025 at 11:45 PM
+**Last Updated:** Monday, December 2, 2025 at 9:30 PM
 
 ---
 
@@ -54,6 +54,155 @@ These files should auto-open when you open the project:
 ---
 
 ## 📅 SESSION LOGS
+
+### Monday, December 2, 2025 (CSRF Protection Implementation & Security Hardening)
+**Session Start:** Monday, December 2, 2025 (Evening – Security Code Review & Implementation)
+
+**Summary:**
+Complete implementation of CSRF (Cross-Site Request Forgery) protection across all state-changing API routes. This session addressed a critical security gap where CSRF protection code existed but was not being applied due to middleware configuration issues.
+
+**Completed:**
+- [x] **Code Review & Issue Identification** – Conducted comprehensive security code review
+  - **Critical Issue Found:** Middleware matcher `['/((?!api|_next|_vercel|.*\\..*).*)']` was excluding `/api` routes from CSRF validation
+  - **Impact:** All POST/PUT/DELETE API endpoints were unprotected despite having CSRF utilities
+  - **Decision:** Chose Option B (individual route wrapping) over fixing middleware matcher for granular control
+
+- [x] **Phase 1: Supabase Server Async Fix** – Fixed async/await pattern in server-side Supabase client
+  - **Issue:** `cookies()` in Next.js 14+ App Router is async but was called synchronously
+  - **Files Fixed:**
+    - `src/lib/supabase/server.ts` – Made `createClient()` async, added env validation
+    - `src/lib/privileges/middleware.ts` – Added `await` to both `createClient()` calls
+    - `src/app/api/verify/[code]/route.ts` – Added `await` to `createClient()`
+  - **Commit:** `fedb7d6`
+
+- [x] **Phase 2: CSRF Protection for delete-account Route** – Protected critical account deletion endpoint
+  - **File:** `src/app/api/delete-account/route.ts`
+  - **Changes:** Added `withCSRFProtection` wrapper, changed `Request` to `NextRequest`
+  - **Note:** Added TODO for admin client service role key issue
+  - **Commit:** `41feb02`
+
+- [x] **Phase 3: CSRF Protection for Checkout Routes** – Protected all payment-related endpoints
+  - **Files:**
+    - `src/app/api/create-checkout-session/route.ts` – CSRF + fixed `await createClient()` + error typing
+    - `src/app/api/stripe/checkout/route.ts` – CSRF protection
+    - `src/app/api/stripe/route.ts` – CSRF + security TODO for userId from request body
+  - **Security Note:** `stripe/route.ts` accepts userId from request body instead of session – flagged for follow-up
+  - **Commit:** `83a9de9`
+
+- [x] **Phase 4: CSRF Protection for User Interaction Routes** – Protected taps, video, and verification endpoints
+  - **Files:**
+    - `src/app/api/taps/route.ts` – CSRF on POST only (GET unchanged for read-only)
+    - `src/app/api/livekit-token/route.ts` – CSRF protection
+    - `src/app/api/verify/[code]/redeem/route.ts` – CSRF with route params wrapper + fixed `await`
+  - **Commit:** `b3b2c85`
+
+- [x] **Phase 5: Complete CSRF Implementation** – Updated all remaining routes and client-side callers
+  - **API Routes Protected:**
+    - `src/app/api/daily/create-room/route.ts` – CSRF + error typing fix
+    - `src/app/api/groups/setup-club/route.ts` – CSRF on POST (GET unchanged)
+    - `src/app/api/feedback/welcome/route.ts` – CSRF + standardized to use server client
+  - **Client-Side Helper Created:**
+    - `src/lib/csrf-client.ts` – Added `csrfFetch()` wrapper for automatic token handling
+  - **Client-Side Files Updated (9 files):**
+    - `src/app/groups/channels/[id]/page.tsx` – livekit-token calls
+    - `src/app/profile/[userId]/page.tsx` – taps calls
+    - `src/app/pricing/page.tsx` – stripe calls
+    - `src/app/profile/page.tsx` – delete-account calls
+    - `src/app/verify/[code]/page.tsx` – verify/redeem calls
+    - `src/app/checkout/[tier]/page.tsx` – create-checkout-session calls
+    - `src/app/groups/page.tsx` – setup-club calls
+    - `src/components/VideoCall.tsx` – daily/create-room calls
+    - `src/components/WelcomeModal.tsx` – feedback/welcome calls
+  - **Additional Fix:** `package.json` – Node engine `24.x` → `22.x` (24.x doesn't exist)
+  - **Commit:** `f19000e`
+
+**Files Created:**
+- None (all changes were modifications to existing files)
+
+**Files Modified (23 files total):**
+
+*API Routes (10 files):*
+- `src/app/api/delete-account/route.ts`
+- `src/app/api/create-checkout-session/route.ts`
+- `src/app/api/stripe/checkout/route.ts`
+- `src/app/api/stripe/route.ts`
+- `src/app/api/livekit-token/route.ts`
+- `src/app/api/taps/route.ts`
+- `src/app/api/verify/[code]/redeem/route.ts`
+- `src/app/api/daily/create-room/route.ts`
+- `src/app/api/groups/setup-club/route.ts`
+- `src/app/api/feedback/welcome/route.ts`
+
+*Server-Side Utilities (3 files):*
+- `src/lib/supabase/server.ts`
+- `src/lib/privileges/middleware.ts`
+- `src/app/api/verify/[code]/route.ts`
+
+*Client-Side (10 files):*
+- `src/lib/csrf-client.ts`
+- `src/app/groups/channels/[id]/page.tsx`
+- `src/app/profile/[userId]/page.tsx`
+- `src/app/pricing/page.tsx`
+- `src/app/profile/page.tsx`
+- `src/app/verify/[code]/page.tsx`
+- `src/app/checkout/[tier]/page.tsx`
+- `src/app/groups/page.tsx`
+- `src/components/VideoCall.tsx`
+- `src/components/WelcomeModal.tsx`
+
+*Configuration:*
+- `package.json`
+
+**Technical Highlights:**
+- **CSRF Token Flow:** Client fetches token from `/api/csrf-token` → stores in cookie with `httpOnly`, `secure`, `sameSite: strict` → includes in `X-CSRF-Token` header on requests
+- **csrfFetch() Helper:** New wrapper function that automatically fetches and includes CSRF token for POST/PUT/PATCH/DELETE requests
+- **Timing-Safe Comparison:** CSRF validation uses constant-time comparison to prevent timing attacks
+- **Cache Strategy:** Client-side token cached for 1 hour to reduce API calls
+- **Webhook Exemption:** `/api/webhooks/*` routes remain unprotected (they use signature verification)
+
+**Security Improvements:**
+1. All 10 state-changing API routes now require valid CSRF tokens
+2. Proper error typing (`any` → `unknown`) with type guards
+3. Runtime environment variable validation in Supabase client
+4. Added security TODOs for follow-up issues:
+   - `stripe/route.ts`: userId should come from session, not request body
+   - `delete-account/route.ts`: Admin client needs service role key
+   - `feedback/welcome/route.ts`: Standardize Supabase client pattern
+
+**Routes Summary:**
+
+| Route | Protection | Notes |
+|-------|------------|-------|
+| `/api/delete-account` | ✅ CSRF | Critical - account deletion |
+| `/api/create-checkout-session` | ✅ CSRF | Payment initiation |
+| `/api/stripe/checkout` | ✅ CSRF | Stripe checkout |
+| `/api/stripe` (POST) | ✅ CSRF | + Security TODO |
+| `/api/livekit-token` | ✅ CSRF | Video call tokens |
+| `/api/taps` (POST) | ✅ CSRF | GET unchanged |
+| `/api/daily/create-room` | ✅ CSRF | Video rooms |
+| `/api/groups/setup-club` (POST) | ✅ CSRF | GET unchanged |
+| `/api/feedback/welcome` | ✅ CSRF | User feedback |
+| `/api/verify/[code]/redeem` | ✅ CSRF | Code redemption |
+| `/api/webhooks/*` | ❌ Exempt | Signature verification |
+
+**Git Commits (5 total):**
+```
+f19000e feat(security): complete CSRF protection implementation
+b3b2c85 feat(security): add CSRF protection to taps, livekit-token, and verify routes
+83a9de9 feat(security): add CSRF protection to checkout routes
+41feb02 feat(security): add CSRF protection to delete-account route
+fedb7d6 feat(auth): fix supabase server async cookie handling
+```
+
+**Branch:** `claude/code-review-setup-01WAYKpDyorKdeohMNqWgVhY`
+
+**Next Steps (Recommended):**
+1. Security review of `stripe/route.ts` userId pattern
+2. Create admin Supabase client with service role key for `delete-account`
+3. Add rate limiting to `/api/csrf-token` endpoint
+4. Consider adding CSRF token rotation on sensitive operations
+
+---
 
 ### Tuesday, November 12, 2025 (Full-Screen Mobile Experience & 3x4 Grid Layout)
 **Session Start:** Tuesday, November 12, 2025 (Evening – Mobile App Transformation)

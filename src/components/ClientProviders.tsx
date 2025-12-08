@@ -4,6 +4,11 @@ import { NextIntlClientProvider } from 'next-intl'
 import { ReactNode, useState, useEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { FeedbackProvider } from '@/contexts/FeedbackContext'
+import dynamic from 'next/dynamic'
+
+// Lazy load non-critical components to improve initial load
+const NotificationPrompt = dynamic(() => import('@/components/NotificationPrompt'), { ssr: false })
+const AdminDashboard = dynamic(() => import('@/components/AdminDashboard'), { ssr: false })
 
 interface ClientProvidersProps {
   children: ReactNode
@@ -40,6 +45,8 @@ export default function ClientProviders({ children, locale = 'en' }: ClientProvi
     <NextIntlClientProvider locale={locale} messages={messages}>
       <FeedbackProvider>
         {children}
+        <NotificationPrompt />
+        <AdminDashboard />
         <Toaster
           position="top-center"
           toastOptions={{

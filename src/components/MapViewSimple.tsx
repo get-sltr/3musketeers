@@ -354,13 +354,13 @@ function MapViewSimple({
       
       if (typeof window !== 'undefined' && (window as any).mapboxgl) {
         const mapboxgl = (window as any).mapboxgl
-        // Use token from environment variable - NEVER hardcode tokens
         const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+
         if (!mapboxToken) {
-          console.error('❌ NEXT_PUBLIC_MAPBOX_TOKEN not configured - map features disabled')
-          setMapError('Map configuration error. Please contact support.')
+          console.error('🗺️ Mapbox token not configured - set NEXT_PUBLIC_MAPBOX_TOKEN')
           return
         }
+
         mapboxgl.accessToken = mapboxToken
         console.log('🗺️ Mapbox initialized')
 

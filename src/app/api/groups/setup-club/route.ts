@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { withCSRFProtection } from '@/lib/csrf-server'
 
-// GET endpoint for easy setup
+// GET endpoint for easy setup (no CSRF needed for GET)
 export async function GET() {
   return handleSetup()
 }
 
-// POST endpoint for setup
-export async function POST(request: NextRequest) {
+// POST endpoint for setup (CSRF protected)
+async function postHandler(request: NextRequest) {
   return handleSetup()
 }
+
+export const POST = withCSRFProtection(postHandler)
 
 async function handleSetup() {
   try {
@@ -43,7 +46,7 @@ async function handleSetup() {
         .insert({
           name: 'The Club sltr',
           description: 'The premier club for video conferencing, voice chats, and messaging. Connect, chat, and vibe with the community!',
-          host_id: user.id,
+          owner_id: user.id,
         })
         .select('id')
         .single()
@@ -131,7 +134,7 @@ async function handleSetup() {
       },
     ]
 
-    const createdChannels: any[] = []
+    const createdChannels: unknown[] = []
 
     // Create channels if they don't exist
     for (const channel of channelsToCreate) {
@@ -182,12 +185,12 @@ async function handleSetup() {
         ? 'The Club sltr created successfully with all channels!'
         : 'The Club sltr already exists. Channels verified.',
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error setting up The Club sltr:', error)
+    const message = error instanceof Error ? error.message : 'Failed to setup The Club sltr'
     return NextResponse.json(
-      { error: error.message || 'Failed to setup The Club sltr' },
+      { error: message },
       { status: 500 }
     )
   }
 }
-

@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       }
       
       return NextResponse.json(
-        { error: 'Failed to send tap', details: tapError.message },
+        { error: 'Failed to send tap' },
         { status: 500 }
       )
     }
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
     const message = error instanceof Error ? error.message : 'Unknown error'
     console.error('Error in taps API:', message)
     return NextResponse.json(
-      { error: 'Internal server error', details: message },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

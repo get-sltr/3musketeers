@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
 import { getTierConfig, TierType } from '@/config/tiers'
-
-function getStripe() {
-  return new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2025-10-29.clover',
-  })
-}
+import { getStripe } from '@/lib/stripe'
 
 export async function POST(request: NextRequest) {
   const stripe = getStripe()
@@ -33,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user from Supabase to verify they're logged in
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
     if (userError || !user) {

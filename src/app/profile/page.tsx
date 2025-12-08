@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import type { ReactNode } from 'react'
 import { createClient } from '../../lib/supabase/client'
+import { csrfFetch } from '@/lib/csrf-client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -529,7 +530,7 @@ export default function ProfilePage() {
       if (!user) return
 
       // Call API to delete account
-      const response = await fetch('/api/delete-account', {
+      const response = await csrfFetch('/api/delete-account', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id })

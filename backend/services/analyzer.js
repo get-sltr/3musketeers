@@ -48,8 +48,9 @@ function createValidatedAnthropicClient() {
     return null;
   }
 
-  if (!apiKey.startsWith('sk-ant-')) {
-    console.error('❌ EROS Analyzer: Invalid ANTHROPIC_API_KEY format (should start with sk-ant-)');
+  // Anthropic API keys can be 'sk-ant-...' or just 'sk-...'
+  if (!apiKey.startsWith('sk-')) {
+    console.error('❌ EROS Analyzer: Invalid ANTHROPIC_API_KEY format (should start with sk-)');
     return null;
   }
 

@@ -1,13 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import Stripe from 'stripe'
-
-function getStripe() {
-  return new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2025-10-29.clover',
-  })
-}
+import { getStripe } from '@/lib/stripe'
 
 /**
  * Creates a Stripe Identity verification session
