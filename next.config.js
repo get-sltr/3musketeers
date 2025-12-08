@@ -23,19 +23,6 @@ const nextConfig = {
     instrumentationHook: true, // Required for Sentry
   },
 
-  // Headers for webhooks
-  async headers() {
-    return [
-      {
-        source: '/api/webhooks/:path*',
-        headers: [
-          { key: 'Access-Control-Allow-Origin', value: '*' },
-          { key: 'Access-Control-Allow-Methods', value: 'POST, OPTIONS' },
-          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, stripe-signature' },
-        ],
-      },
-    ]
-  },
   
   // Configure webpack for path aliases and fallbacks
   webpack: (config, { isServer, webpack }) => {
@@ -100,9 +87,19 @@ const nextConfig = {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
   
-  // Headers for security
+  // Headers for security and webhooks
   async headers() {
     return [
+      // Webhook CORS headers
+      {
+        source: '/api/webhooks/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'POST, OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, stripe-signature' },
+        ],
+      },
+      // Security headers for all routes
       {
         source: '/(.*)',
         headers: [
@@ -131,11 +128,11 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://api.mapbox.com https://www.googletagmanager.com https://js.stripe.com",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://api.mapbox.com https://www.googletagmanager.com https://js.stripe.com https://static.cloudflareinsights.com",
               "style-src 'self' 'unsafe-inline' https://api.mapbox.com https://fonts.googleapis.com",
               "img-src 'self' data: blob: https: http:",
               "font-src 'self' data: https://fonts.gstatic.com",
-              "connect-src 'self' https://api.mapbox.com https://*.supabase.co https://bnzyzkmixfmylviaojbj.supabase.co wss://*.supabase.co https://api.groq.com https://vitals.vercel-insights.com https://api.stripe.com",
+              "connect-src 'self' https://api.mapbox.com https://*.supabase.co https://bnzyzkmixfmylviaojbj.supabase.co wss://*.supabase.co https://api.groq.com https://vitals.vercel-insights.com https://api.stripe.com https://*.ingest.sentry.io https://*.sentry.io",
               "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
               "media-src 'self' blob: https:",
               "worker-src 'self' blob:",
