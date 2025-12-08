@@ -48,24 +48,6 @@ services:
     networks:
       - sltr-network
 
-  # Redis (for caching and real-time features)
-  redis:
-    image: redis:7-alpine
-    container_name: sltr-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-    command: redis-server --appendonly yes
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-    networks:
-      - sltr-network
-
   # ============================================
   # TheHive Security Platform
   # ============================================
@@ -156,8 +138,6 @@ networks:
     driver: bridge
 
 volumes:
-  redis-data:
-    driver: local
   elasticsearch-data:
     driver: local
   cassandra-data:
